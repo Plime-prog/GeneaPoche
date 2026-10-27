@@ -1,6 +1,6 @@
 # GénéaPoche
 
-Application Android **privée** de généalogie de poche : recherches généalogiques en France (actes de naissance, mariage, décès), sans rien oublier.
+Application Android de généalogie de poche : recherches généalogiques en France (actes de naissance, mariage, décès), sans rien oublier.
 
 ## Objectif
 
@@ -13,6 +13,11 @@ Un outil léger pour :
 - **exporter en GEDCOM 5.5.1** pour alimenter Heredis.
 
 Périmètre : ~100 antécédents max, France uniquement, actes N/M/D.
+
+## Numérotation
+
+- **Sosa-Stradonitz** : 1 = de cujus (personne de référence), père = 2n, mère = 2n+1. Attribution automatique quand on lie un père ou une mère depuis une fiche Sosa.
+- **d'Aboville** pour les latéraux (descendants hors ligne directe) : prérempli quand on ajoute un enfant (ex : enfant n°2 du Sosa 1 → 1.2).
 
 ## Installation
 
@@ -27,8 +32,8 @@ Périmètre : ~100 antécédents max, France uniquement, actes N/M/D.
 
 ## Feuille de route
 
-1. ✅ Squelette : fiches personnes (nom, prénom, naissance, décès) + stockage local JSON.
-2. ⬜ Fiche complète : tous les champs d'acte N/M/D, père, mère, époux(se), tous les enfants, métier, lieux.
+1. ✅ Squelette : fiches personnes + stockage local JSON.
+2. ✅ Fiche complète : champs séparés date/lieu (naissance, mariage, décès), sexe, profession, père, mère, conjoint(e), tous les enfants ; numéro **Sosa** + numérotation **d'Aboville** pour les latéraux.
 3. ⬜ Pastilles vertes/rouges sur chaque donnée (vérifié / à vérifier).
 4. ⬜ Journal de recherches (pistes à creuser, cochables, datées).
 5. ⬜ Stockage d'actes : images et captures d'écran liées à une personne.
