@@ -336,10 +336,10 @@ fun AppEcran(ctx: Context) {
         AlertDialog(
             onDismissRequest = { confirmSuppression = null },
             title = { Text("Supprimer ?") },
-            text = { Text("Supprimer d\u00E9finitivement " + cible.titre() + " ? Les liens de parent\u00E9 seront retir\u00E9s.") },
+            text = { Text("Supprimer d\u00E9finitivement " + (cible?.titre() ?: "") + " ? Les liens de parent\u00E9 seront retir\u00E9s.") },
             confirmButton = {
                 TextButton(onClick = {
-                    supprimer(cible)
+                    cible?.let { supprimer(it) }
                     confirmSuppression = null
                 }) { Text("Supprimer") }
             },
