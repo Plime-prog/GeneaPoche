@@ -771,7 +771,7 @@ fun CartePiste(
             Checkbox(
                 checked = piste.faite,
                 onCheckedChange = { onBasculer() },
-                colors = CheckboxDefaults.checkboxColors(
+                colors = CheckboxDefaults.colors(
                     checkedColor = CouleurVert,
                     checkmarkColor = Color.White
                 )
@@ -1156,7 +1156,7 @@ fun CartePistesPersonne(
                     Checkbox(
                         checked = piste.faite,
                         onCheckedChange = { onBasculer(piste) },
-                        colors = CheckboxDefaults.checkboxColors(
+                        colors = CheckboxDefaults.colors(
                             checkedColor = CouleurVert,
                             checkmarkColor = Color.White
                         )
