@@ -47,6 +47,9 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -84,6 +87,35 @@ import java.util.Locale
 // Couleurs des pastilles
 val CouleurVert = Color(0xFF2E7D32)
 val CouleurRouge = Color(0xFFC62828)
+
+// Palette GeneaPoche : vert genealogie, bruns d'archives, fond ivoire.
+val PaletteGeneaPoche = lightColorScheme(
+    primary = Color(0xFF2E5D3A),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFB7E4C0),
+    onPrimaryContainer = Color(0xFF0E2E15),
+    secondary = Color(0xFF6D5334),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFF6E0C8),
+    onSecondaryContainer = Color(0xFF261903),
+    tertiary = Color(0xFF8A4A2B),
+    onTertiary = Color(0xFFFFFFFF),
+    background = Color(0xFFFDFBF4),
+    onBackground = Color(0xFF1B1C18),
+    surface = Color(0xFFFDFBF4),
+    onSurface = Color(0xFF1B1C18),
+    surfaceVariant = Color(0xFFEEE9DE),
+    onSurfaceVariant = Color(0xFF4A4639),
+    outline = Color(0xFF7C7767)
+)
+
+val FormesGeneaPoche = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp)
+)
 
 private val formatJour = SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE)
 
@@ -136,7 +168,7 @@ class MainActivity : ComponentActivity() {
         // FLAG_SECURE : captures d'ecran et apercu dans les recents interdits
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         setContent {
-            MaterialTheme {
+            MaterialTheme(colorScheme = PaletteGeneaPoche, shapes = FormesGeneaPoche) {
                 AppEcran(this, verrou)
             }
         }
@@ -176,6 +208,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var pistePersonnePre by remember { mutableStateOf(0L) }
     var acteVisionne by remember { mutableStateOf<Acte?>(null) }
     var pisteRecherche by remember { mutableStateOf<Piste?>(null) }
+    var arbreCentre by remember { mutableStateOf(0L) }
 
     fun enregistrer(): Boolean {
         val ok1 = Stockage.sauver(ctx, personnes)
@@ -382,7 +415,15 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             },
             onVoirActe = { acteVisionne = it },
             noterRecherche = { pisteRecherche = it },
-            noterSuggestion = { personne, sug -> noterDepuisSuggestion(personne, sug) }
+            noterSuggestion = { personne, sug -> noterDepuisSuggestion(personne, sug) },
+            arbreCentre = if (arbreCentre != 0L) {
+                arbreCentre
+            } else {
+                personnes.firstOrNull { it.sosa.trim() == "1" }?.id
+                    ?: personnes.firstOrNull()?.id
+                    ?: 0L
+            },
+            onArbreCentre = { arbreCentre = it }
         )
     }
 

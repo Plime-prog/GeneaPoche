@@ -57,6 +57,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import com.plime.geneapoche.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -119,7 +127,9 @@ fun EcranApplication(
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
     noterRecherche: (Piste) -> Unit,
-    noterSuggestion: (Personne, Suggestion) -> Unit
+    noterSuggestion: (Personne, Suggestion) -> Unit,
+    arbreCentre: Long,
+    onArbreCentre: (Long) -> Unit
 ) {
     BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty() || dialoguePiste) {
         when {
@@ -134,7 +144,17 @@ fun EcranApplication(
 
     if (ouverte == null) {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("G\u00E9n\u00E9aPoche") }) },
+            topBar = {
+                TopAppBar(
+                    title = { Text("G\u00E9n\u00E9aPoche") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = PaletteGeneaPoche.primary,
+                        titleContentColor = Color.White,
+                        navigationIconContentColor = Color.White,
+                        actionIconContentColor = Color.White
+                    )
+                )
+            },
             bottomBar = {
                 NavigationBar {
                     NavigationBarItem(
@@ -149,6 +169,12 @@ fun EcranApplication(
                         icon = { Icon(Icons.Filled.List, contentDescription = null) },
                         label = { Text("Journal") }
                     )
+                    NavigationBarItem(
+                        selected = onglet == 2,
+                        onClick = { onOnglet(2) },
+                        icon = { Icon(painterResource(R.drawable.ic_arbre), contentDescription = null) },
+                        label = { Text("Arbre") }
+                    )
                 }
             },
             floatingActionButton = {
@@ -156,7 +182,7 @@ fun EcranApplication(
                     FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
                         Icon(Icons.Filled.Add, contentDescription = "Ajouter")
                     }
-                } else {
+                } else if (onglet == 1) {
                     FloatingActionButton(onClick = { onPistePersonnePre(0L); onDialoguePiste(true) }) {
                         Icon(Icons.Filled.Add, contentDescription = "Nouvelle piste")
                     }
@@ -190,6 +216,13 @@ fun EcranApplication(
                         }
                     }
                 }
+            } else if (onglet == 2) {
+                EcranArbre(
+                    personnes = personnes,
+                    idCentre = arbreCentre,
+                    onOuvrir = { onIdOuvert(it); onArbreCentre(it) },
+                    onCentrerSur = { onArbreCentre(it) }
+                )
             } else {
                 EcranJournal(
                     pistes = pistes,
@@ -346,6 +379,24 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
             Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
+            val couleurAvatar = when (p.sexe) {
+                "F" -> Color(0xFF9C6B4F)
+                "M" -> Color(0xFF3E6B48)
+                else -> Color(0xFF6D5334)
+            }
+            Box(
+                Modifier.size(44.dp).clip(CircleShape).background(couleurAvatar),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    initiale.toString(),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(p.titre(), style = MaterialTheme.typography.titleMedium)
                 val num = p.numeroAffiche()
