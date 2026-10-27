@@ -2,6 +2,7 @@ package com.plime.geneapoche
 
 import android.content.Context
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -24,10 +26,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -47,21 +52,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+
+// Couleurs des pastilles
+val CouleurVert = Color(0xFF2E7D32)
+val CouleurRouge = Color(0xFFC62828)
 
 // ---------------------------------------------------------------- Aides numerotation
 
 fun personneParId(liste: List<Personne>, id: Long): Personne? =
     liste.firstOrNull { it.id == id }
 
-// Sosa du parent d'une personne : pere = 2n, mere = 2n+1 (si sosa connu).
 fun sosaParent(p: Personne, mere: Boolean): String {
     val s = p.sosa.trim().toLongOrNull() ?: return ""
     return (if (mere) 2L * s + 1L else 2L * s).toString()
 }
 
-// Prefixe d'Aboville d'une personne = son propre lateral, sinon son sosa.
 fun prefixeLateral(p: Personne): String {
     val l = p.lateral.trim()
     if (l.isNotEmpty()) return l
@@ -81,26 +92,50 @@ fun lateralValide(s: String): Boolean {
     return Regex("^[0-9]+(\\.[0-9]+)*$").matches(t)
 }
 
+// ---------------------------------------------------------------- Etat de verrouillage
+
+class Verrou {
+    var deverrouille by mutableStateOf(false)
+    var dernierArret by mutableStateOf(0L)
+}
+
 // ---------------------------------------------------------------- Activite
 
 class MainActivity : ComponentActivity() {
+    val verrou = Verrou()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // FLAG_SECURE : captures d'ecran et apercu dans les recents interdits
+        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         setContent {
             MaterialTheme {
-                AppEcran(this)
+                AppEcran(this, verrou)
             }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        verrou.dernierArret = System.currentTimeMillis()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val d = verrou.dernierArret
+        if (d > 0L && System.currentTimeMillis() - d > 60_000L) {
+            verrou.deverrouille = false
         }
     }
 }
 
 // ---------------------------------------------------------------- Ecran principal
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppEcran(ctx: Context) {
+fun AppEcran(ctx: Context, verrou: Verrou) {
     val personnes = remember { mutableStateListOf<Personne>() }
     var charge by remember { mutableStateOf(false) }
+    var aPin by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
     var idOuvert by remember { mutableStateOf(0L) }
     var editionOuverte by remember { mutableStateOf(false) }
@@ -126,7 +161,6 @@ fun AppEcran(ctx: Context) {
         if (idOuvert == p.id) idOuvert = 0L
     }
 
-    // Lier une personne (role pere / mere / conjoint / enfant) a la personne ouverte
     fun lier(role: String, cibleId: Long) {
         val p = personneParId(personnes, idOuvert) ?: return
         val cible = personneParId(personnes, cibleId) ?: return
@@ -161,7 +195,7 @@ fun AppEcran(ctx: Context) {
                 if (cible.sosa.isBlank() && cible.lateral.isBlank()) {
                     val pref = prefixeLateral(p)
                     if (pref.isNotEmpty()) {
-                        cible.lateral = pref + "." + (p.enfants.size - 1 + 1).toString()
+                        cible.lateral = pref + "." + p.enfants.size.toString()
                     }
                 }
             }
@@ -191,16 +225,206 @@ fun AppEcran(ctx: Context) {
         enregistrer()
     }
 
+    // Chargement uniquement apres deverrouillage (rien ne s'affiche sans PIN)
+    LaunchedEffect(verrou.deverrouille) {
+        if (verrou.deverrouille && !charge) {
+            personnes.addAll(Stockage.charger(ctx))
+            charge = true
+        }
+    }
+    LaunchedEffect(Unit) { aPin = Stockage.aPin(ctx) }
+
+    // ------------------------------------------------------------ Porte PIN
+
+    if (!aPin) {
+        DialogueCreationPin(onCree = { pin ->
+            if (Stockage.definirPin(ctx, pin)) {
+                aPin = true
+                verrou.deverrouille = true
+            } else {
+                message = "Echec de la cr\u00E9ation du PIN."
+            }
+        })
+    } else if (!verrou.deverrouille) {
+        EcranPin(
+            ctx = ctx,
+            onDeverrouille = {
+                Stockage.reinitialiserEchecs(ctx)
+                verrou.deverrouille = true
+            }
+        )
+    } else {
+        EcranApplication(
+            personnes = personnes,
+            charge = charge,
+            message = message,
+            onMessage = { message = it },
+            idOuvert = idOuvert,
+            onIdOuvert = { idOuvert = it },
+            editionOuverte = editionOuverte,
+            onEditionOuverte = { editionOuverte = it },
+            editionCible = editionCible,
+            onEditionCible = { editionCible = it },
+            pickerRole = pickerRole,
+            onPickerRole = { pickerRole = it },
+            confirmSuppression = confirmSuppression,
+            onConfirmSuppression = { confirmSuppression = it },
+            enregistrer = { enregistrer() },
+            supprimer = { supprimer(it) },
+            lier = { role, id -> lier(role, id) },
+            delier = { role, id -> delier(role, id) }
+        )
+    }
+}
+
+// ------------------------------------------------------------ Creation du PIN
+
+@Composable
+fun DialogueCreationPin(onCree: (String) -> Unit) {
+    var pin1 by remember { mutableStateOf("") }
+    var pin2 by remember { mutableStateOf("") }
+    var erreur by remember { mutableStateOf("") }
+    Surface(Modifier.fillMaxSize()) {
+        Column(
+            Modifier.fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(Icons.Filled.Lock, contentDescription = null)
+            Text("Bienvenue dans G\u00E9n\u00E9aPoche", style = MaterialTheme.typography.titleLarge)
+            Text("D\u00E9finissez un code PIN pour prot\u00E9ger vos donn\u00E9es.", Modifier.padding(vertical = 8.dp))
+            OutlinedTextField(
+                value = pin1,
+                onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) pin1 = it },
+                label = { Text("Code PIN (4 \u00E0 8 chiffres)") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = pin2,
+                onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) pin2 = it },
+                label = { Text("Confirmez le code") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            )
+            if (erreur.isNotEmpty()) {
+                Text(erreur, color = CouleurRouge, modifier = Modifier.padding(vertical = 8.dp))
+            }
+            Text(
+                "Attention : sans ce code, vos donn\u00E9es sont ind\u00E9chiffrables (aucune r\u00E9cup\u00E9ration possible).",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+            OutlinedButton(
+                onClick = {
+                    if (pin1.length < 4) {
+                        erreur = "Le code doit contenir au moins 4 chiffres."
+                    } else if (pin1 != pin2) {
+                        erreur = "Les deux codes ne correspondent pas."
+                    } else {
+                        erreur = ""
+                        onCree(pin1)
+                    }
+                },
+                enabled = pin1.isNotEmpty() && pin2.isNotEmpty()
+            ) { Text("Cr\u00E9er le code") }
+        }
+    }
+}
+
+// ------------------------------------------------------------ Ecran de deverrouillage
+
+@Composable
+fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
+    var pin by remember { mutableStateOf("") }
+    var erreur by remember { mutableStateOf("") }
+    var blocage by remember { mutableStateOf(0L) }
+
     LaunchedEffect(Unit) {
-        personnes.addAll(Stockage.charger(ctx))
-        charge = true
+        while (true) {
+            blocage = Stockage.secondesBlocage(ctx)
+            delay(1000L)
+        }
     }
 
+    Surface(Modifier.fillMaxSize()) {
+        Column(
+            Modifier.fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(Icons.Filled.Lock, contentDescription = null)
+            Text("G\u00E9n\u00E9aPoche est verrouill\u00E9", style = MaterialTheme.typography.titleLarge)
+            Text("Entrez votre code PIN.", Modifier.padding(vertical = 8.dp))
+            OutlinedTextField(
+                value = pin,
+                onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) pin = it },
+                label = { Text("Code PIN") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                isError = erreur.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth()
+            )
+            if (erreur.isNotEmpty()) {
+                Text(erreur, color = CouleurRouge, modifier = Modifier.padding(vertical = 6.dp))
+            }
+            if (blocage > 0L) {
+                Text(
+                    "Trop d'essais. R\u00E9essayez dans " + blocage + " s.",
+                    color = CouleurRouge,
+                    modifier = Modifier.padding(vertical = 6.dp)
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = {
+                    if (Stockage.verifierPin(ctx, pin)) {
+                        onDeverrouille()
+                    } else {
+                        Stockage.enregistrerEchec(ctx)
+                        blocage = Stockage.secondesBlocage(ctx)
+                        erreur = "Code incorrect."
+                    }
+                    pin = ""
+                },
+                enabled = pin.isNotEmpty() && blocage == 0L
+            ) { Text("D\u00E9verrouiller") }
+        }
+    }
+}
+
+// ------------------------------------------------------------ Application deverrouillee
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EcranApplication(
+    personnes: List<Personne>,
+    charge: Boolean,
+    message: String,
+    onMessage: (String) -> Unit,
+    idOuvert: Long,
+    onIdOuvert: (Long) -> Unit,
+    editionOuverte: Boolean,
+    onEditionOuverte: (Boolean) -> Unit,
+    editionCible: Personne?,
+    onEditionCible: (Personne?) -> Unit,
+    pickerRole: String,
+    onPickerRole: (String) -> Unit,
+    confirmSuppression: Personne?,
+    onConfirmSuppression: (Personne?) -> Unit,
+    enregistrer: () -> Unit,
+    supprimer: (Personne) -> Unit,
+    lier: (String, Long) -> Unit,
+    delier: (String, Long) -> Unit
+) {
     BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty()) {
         when {
-            pickerRole.isNotEmpty() -> pickerRole = ""
-            editionOuverte -> editionOuverte = false
-            else -> idOuvert = 0L
+            pickerRole.isNotEmpty() -> onPickerRole("")
+            editionOuverte -> onEditionOuverte(false)
+            else -> onIdOuvert(0L)
         }
     }
 
@@ -210,7 +434,7 @@ fun AppEcran(ctx: Context) {
         Scaffold(
             topBar = { TopAppBar(title = { Text("G\u00E9n\u00E9aPoche") }) },
             floatingActionButton = {
-                FloatingActionButton(onClick = { editionCible = null; editionOuverte = true }) {
+                FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
                     Icon(Icons.Filled.Add, contentDescription = "Ajouter")
                 }
             }
@@ -235,8 +459,8 @@ fun AppEcran(ctx: Context) {
                     items(triees) { p ->
                         CartePersonne(
                             p,
-                            onOuvrir = { idOuvert = p.id },
-                            onSupprimer = { confirmSuppression = p }
+                            onOuvrir = { onIdOuvert(p.id) },
+                            onSupprimer = { onConfirmSuppression(p) }
                         )
                     }
                 }
@@ -247,22 +471,26 @@ fun AppEcran(ctx: Context) {
         EcranPersonne(
             personnes = personnes,
             p = p,
-            onOuvrir = { idOuvert = it },
-            onRetour = { idOuvert = 0L },
-            onModifier = { editionCible = p; editionOuverte = true },
-            onSupprimer = { confirmSuppression = p },
-            onChoisir = { pickerRole = it },
-            onRetirer = { role, enfantId -> delier(role, enfantId) }
+            onOuvrir = { onIdOuvert(it) },
+            onRetour = { onIdOuvert(0L) },
+            onModifier = { onEditionCible(p); onEditionOuverte(true) },
+            onSupprimer = { onConfirmSuppression(p) },
+            onChoisir = { onPickerRole(it) },
+            onRetirer = { role, enfantId -> delier(role, enfantId) },
+            onEtat = { section, valeur ->
+                p.changerEtat(section, valeur)
+                enregistrer()
+            }
         )
     }
 
     if (message.isNotEmpty()) {
         AlertDialog(
-            onDismissRequest = { message = "" },
+            onDismissRequest = { onMessage("") },
             title = { Text("Information") },
             text = { Text(message) },
             confirmButton = {
-                TextButton(onClick = { message = "" }) { Text("OK") }
+                TextButton(onClick = { onMessage("") }) { Text("OK") }
             }
         )
     }
@@ -272,12 +500,14 @@ fun AppEcran(ctx: Context) {
         DialogueEdition(
             cible = editionCible,
             idNouvelle = prochainId,
-            onValider = { p ->
-                if (editionCible == null) personnes.add(p)
+            onValider = { p2 ->
+                if (editionCible == null) {
+                    (personnes as? MutableList<Personne>)?.add(p2)
+                }
                 enregistrer()
-                editionOuverte = false
+                onEditionOuverte(false)
             },
-            onAnnuler = { editionOuverte = false }
+            onAnnuler = { onEditionOuverte(false) }
         )
     }
 
@@ -302,7 +532,7 @@ fun AppEcran(ctx: Context) {
             else -> "Ajouter un enfant"
         }
         AlertDialog(
-            onDismissRequest = { pickerRole = "" },
+            onDismissRequest = { onPickerRole("") },
             title = { Text(titrePicker) },
             text = {
                 if (candidats.isEmpty()) {
@@ -326,7 +556,7 @@ fun AppEcran(ctx: Context) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = { pickerRole = "" }) { Text("Annuler") }
+                TextButton(onClick = { onPickerRole("") }) { Text("Annuler") }
             }
         )
     }
@@ -334,17 +564,17 @@ fun AppEcran(ctx: Context) {
     if (confirmSuppression != null) {
         val cible = confirmSuppression
         AlertDialog(
-            onDismissRequest = { confirmSuppression = null },
+            onDismissRequest = { onConfirmSuppression(null) },
             title = { Text("Supprimer ?") },
             text = { Text("Supprimer d\u00E9finitivement " + (cible?.titre() ?: "") + " ? Les liens de parent\u00E9 seront retir\u00E9s.") },
             confirmButton = {
                 TextButton(onClick = {
                     cible?.let { supprimer(it) }
-                    confirmSuppression = null
+                    onConfirmSuppression(null)
                 }) { Text("Supprimer") }
             },
             dismissButton = {
-                TextButton(onClick = { confirmSuppression = null }) { Text("Annuler") }
+                TextButton(onClick = { onConfirmSuppression(null) }) { Text("Annuler") }
             }
         )
     }
@@ -377,6 +607,9 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
                     if (d.isNotEmpty()) morceaux.add("D. " + d)
                     Text(morceaux.joinToString("  \u2013  "), style = MaterialTheme.typography.bodySmall)
                 }
+                if (p.aVerifier()) {
+                    Text("\u00C0 v\u00E9rifier", color = CouleurRouge, style = MaterialTheme.typography.bodySmall)
+                }
             }
             IconButton(onClick = onSupprimer) {
                 Icon(Icons.Filled.Close, contentDescription = "Supprimer")
@@ -397,7 +630,8 @@ fun EcranPersonne(
     onModifier: () -> Unit,
     onSupprimer: () -> Unit,
     onChoisir: (String) -> Unit,
-    onRetirer: (String, Long) -> Unit
+    onRetirer: (String, Long) -> Unit,
+    onEtat: (String, String) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -422,10 +656,33 @@ fun EcranPersonne(
         LazyColumn(
             Modifier.fillMaxSize().padding(marges).padding(horizontal = 12.dp)
         ) {
-            item { CarteIdentite(p) }
-            item { CarteEvenement("Naissance", p.dateNaissance, p.lieuNaissance) }
-            item { CarteEvenement("Mariage", p.dateMariage, p.lieuMariage) }
-            item { CarteEvenement("D\u00E9c\u00E8s", p.dateDeces, p.lieuDeces) }
+            item {
+                CarteIdentite(
+                    p,
+                    onEtat = { v -> onEtat("identite", v) }
+                )
+            }
+            item {
+                CarteEvenement(
+                    "Naissance", p.dateNaissance, p.lieuNaissance,
+                    p.etatDe("naissance"),
+                    onEtat = { v -> onEtat("naissance", v) }
+                )
+            }
+            item {
+                CarteEvenement(
+                    "Mariage", p.dateMariage, p.lieuMariage,
+                    p.etatDe("mariage"),
+                    onEtat = { v -> onEtat("mariage", v) }
+                )
+            }
+            item {
+                CarteEvenement(
+                    "D\u00E9c\u00E8s", p.dateDeces, p.lieuDeces,
+                    p.etatDe("deces"),
+                    onEtat = { v -> onEtat("deces", v) }
+                )
+            }
             item {
                 CarteFamille(
                     personnes = personnes,
@@ -441,10 +698,10 @@ fun EcranPersonne(
 }
 
 @Composable
-fun CarteIdentite(p: Personne) {
+fun CarteIdentite(p: Personne, onEtat: (String) -> Unit) {
     Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            Text("Identit\u00E9", fontWeight = FontWeight.Bold)
+            EnteteAvecPastilles("Identit\u00E9", p.etatIdentite, onEtat)
             Ligne("Sosa", p.sosa.trim())
             Ligne("Num\u00E9ro lat\u00E9ral (d'Aboville)", p.lateral.trim())
             Ligne("Nom", p.nom.trim())
@@ -456,16 +713,55 @@ fun CarteIdentite(p: Personne) {
 }
 
 @Composable
-fun CarteEvenement(titre: String, date: String, lieu: String) {
+fun CarteEvenement(
+    titre: String,
+    date: String,
+    lieu: String,
+    etat: String,
+    onEtat: (String) -> Unit
+) {
     val d = date.trim()
     val l = lieu.trim()
-    if (d.isEmpty() && l.isEmpty()) return
+    if (d.isEmpty() && l.isEmpty() && etat.isEmpty()) return
     Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            Text(titre, fontWeight = FontWeight.Bold)
+            EnteteAvecPastilles(titre, etat, onEtat)
             Ligne("Date", d)
             Ligne("Lieu", l)
         }
+    }
+}
+
+@Composable
+fun EnteteAvecPastilles(titre: String, etat: String, onEtat: (String) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(titre, fontWeight = FontWeight.Bold, Modifier.weight(1f))
+        FilterChip(
+            selected = etat == "vert",
+            onClick = { onEtat(if (etat == "vert") "" else "vert") },
+            label = { Text("V\u00E9rifi\u00E9") },
+            colors = FilterChipDefaults.filterChipColors(
+                containerColor = CouleurVert.copy(alpha = 0.15f),
+                labelColor = CouleurVert,
+                selectedContainerColor = CouleurVert,
+                selectedLabelColor = Color.White
+            )
+        )
+        Spacer(Modifier.width(6.dp))
+        FilterChip(
+            selected = etat == "rouge",
+            onClick = { onEtat(if (etat == "rouge") "" else "rouge") },
+            label = { Text("\u00C0 v\u00E9rifier") },
+            colors = FilterChipDefaults.filterChipColors(
+                containerColor = CouleurRouge.copy(alpha = 0.15f),
+                labelColor = CouleurRouge,
+                selectedContainerColor = CouleurRouge,
+                selectedLabelColor = Color.White
+            )
+        )
     }
 }
 

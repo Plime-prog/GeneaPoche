@@ -14,6 +14,15 @@ Un outil léger pour :
 
 Périmètre : ~100 antécédents max, France uniquement, actes N/M/D.
 
+## Sécurité
+
+- **Aucune permission** dans le manifeste : pas d'Internet, aucune donnée ne peut être transmise.
+- Stockage local **chiffré AES-256/GCM**, clé dans AndroidKeyStore (jamais exportable), sauvegarde vérifiée avec copie `.bak`.
+- **Code PIN** : PBKDF2-HmacSHA256 (150 000 itérations, sel aléatoire), blocage progressif (5 erreurs → 30 s / 2 min / 10 min / 1 h).
+- **FLAG_SECURE** : captures d'écran et aperçu dans les applications récentes interdits.
+- Reverrouillage automatique après plus de 60 secondes en arrière-plan.
+- ⚠️ Sans le code PIN, les données sont indéchiffrables : aucune récupération possible.
+
 ## Numérotation
 
 - **Sosa-Stradonitz** : 1 = de cujus (personne de référence), père = 2n, mère = 2n+1. Attribution automatique quand on lie un père ou une mère depuis une fiche Sosa.
@@ -32,9 +41,9 @@ Périmètre : ~100 antécédents max, France uniquement, actes N/M/D.
 
 ## Feuille de route
 
-1. ✅ Squelette : fiches personnes + stockage local JSON.
+1. ✅ Squelette : fiches personnes + stockage local.
 2. ✅ Fiche complète : champs séparés date/lieu (naissance, mariage, décès), sexe, profession, père, mère, conjoint(e), tous les enfants ; numéro **Sosa** + numérotation **d'Aboville** pour les latéraux.
-3. ⬜ Pastilles vertes/rouges sur chaque donnée (vérifié / à vérifier).
+3. ✅ Pastilles vertes (vérifié) / rouges (à vérifier) par section de fiche, signalées dans la liste.
 4. ⬜ Journal de recherches (pistes à creuser, cochables, datées).
 5. ⬜ Stockage d'actes : images et captures d'écran liées à une personne.
 6. ⬜ Liens directs vers les Archives départementales.

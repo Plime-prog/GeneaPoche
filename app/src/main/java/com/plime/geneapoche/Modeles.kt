@@ -7,6 +7,7 @@ import org.json.JSONObject
 // Convention : id = 0 signifie "non renseigne" pour les references (pere, mere, conjoint).
 // Sosa : numerotation Sosa-Stradonitz (de cujus = 1, pere = 2n, mere = 2n+1).
 // Lateral : numerotation d'Aboville pour les descendants hors ligne directe (ex "1.3").
+// Etat : "" (neutre), "vert" (verifie), "rouge" (a verifier) par section de la fiche.
 
 data class Personne(
     val id: Long,
@@ -22,6 +23,10 @@ data class Personne(
     var lieuMariage: String = "",
     var dateDeces: String = "",
     var lieuDeces: String = "",
+    var etatIdentite: String = "",
+    var etatNaissance: String = "",
+    var etatMariage: String = "",
+    var etatDeces: String = "",
     var pere: Long = 0L,
     var mere: Long = 0L,
     var conjoint: Long = 0L,
@@ -41,6 +46,27 @@ data class Personne(
         return ""
     }
 
+    fun aVerifier(): Boolean {
+        return etatIdentite == "rouge" || etatNaissance == "rouge" ||
+            etatMariage == "rouge" || etatDeces == "rouge"
+    }
+
+    fun etatDe(section: String): String = when (section) {
+        "identite" -> etatIdentite
+        "naissance" -> etatNaissance
+        "mariage" -> etatMariage
+        else -> etatDeces
+    }
+
+    fun changerEtat(section: String, valeur: String) {
+        when (section) {
+            "identite" -> etatIdentite = valeur
+            "naissance" -> etatNaissance = valeur
+            "mariage" -> etatMariage = valeur
+            else -> etatDeces = valeur
+        }
+    }
+
     fun versJson(): JSONObject {
         val o = JSONObject()
         o.put("id", id)
@@ -56,6 +82,10 @@ data class Personne(
         o.put("lieuMariage", lieuMariage)
         o.put("dateDeces", dateDeces)
         o.put("lieuDeces", lieuDeces)
+        o.put("etatIdentite", etatIdentite)
+        o.put("etatNaissance", etatNaissance)
+        o.put("etatMariage", etatMariage)
+        o.put("etatDeces", etatDeces)
         o.put("pere", pere)
         o.put("mere", mere)
         o.put("conjoint", conjoint)
@@ -84,6 +114,10 @@ data class Personne(
                 lieuMariage = o.optString("lieuMariage", ""),
                 dateDeces = o.optString("dateDeces", ""),
                 lieuDeces = o.optString("lieuDeces", ancienDeces),
+                etatIdentite = o.optString("etatIdentite", ""),
+                etatNaissance = o.optString("etatNaissance", ""),
+                etatMariage = o.optString("etatMariage", ""),
+                etatDeces = o.optString("etatDeces", ""),
                 pere = o.optLong("pere", 0L),
                 mere = o.optLong("mere", 0L),
                 conjoint = o.optLong("conjoint", 0L),
