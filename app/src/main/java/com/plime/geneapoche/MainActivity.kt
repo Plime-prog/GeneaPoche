@@ -355,6 +355,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 enregistrer()
             },
             actes = actes,
+            ajouterActe = { personneId, uri, type, titre -> ajouterActe(personneId, uri, type, titre) },
             onSupprimerActe = {
                 Stockage.supprimerImage(ctx, it.id)
                 actes.remove(it)
@@ -522,6 +523,7 @@ fun EcranApplication(
     basculerPiste: (Piste) -> Unit,
     supprimerPiste: (Piste) -> Unit,
     actes: List<Acte>,
+    ajouterActe: (Long, Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit
 ) {
@@ -623,8 +625,7 @@ fun EcranApplication(
             onNouvellePiste = { onPistePersonnePre(p.id); onDialoguePiste(true) },
             onBasculerPiste = { basculerPiste(it) },
             actes = actes,
-            onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },
-            onSupprimerActe = { onSupprimerActe(it) },
+            onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },            onSupprimerActe = { onSupprimerActe(it) },
             onVoirActe = { onVoirActe(it) }
         )
     }
@@ -938,7 +939,6 @@ fun EcranPersonne(
     onEtat: (String, String) -> Unit,
     onNouvellePiste: () -> Unit,
     onBasculerPiste: (Piste) -> Unit,
-    actes: List<Acte>,
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit
