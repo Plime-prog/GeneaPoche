@@ -136,13 +136,51 @@ data class Personne(
 
 // ---------------------------------------------------------------- Modele Piste (journal de recherches)
 
+// Compte-rendu d'une recherche effectuee aux archives :
+// "le JJ/MM/AAAA : rien trouve, jusqu'a la page X. Reprendre les TD de VILLE a partir de ANNEE."
+data class Recherche(
+    val date: Long = 0L,
+    val resultat: String = "R", // "R" rien, "T" trouve
+    val page: String = "",
+    val repriseVille: String = "",
+    val repriseAnnee: String = "",
+    val note: String = ""
+) {
+    fun versJson(): JSONObject {
+        val o = JSONObject()
+        o.put("date", date)
+        o.put("resultat", resultat)
+        o.put("page", page)
+        o.put("repriseVille", repriseVille)
+        o.put("repriseAnnee", repriseAnnee)
+        o.put("note", note)
+        return o
+    }
+
+    companion object {
+        fun depuisJson(o: JSONObject): Recherche = Recherche(
+            date = o.optLong("date", 0L),
+            resultat = o.optString("resultat", "R"),
+            page = o.optString("page", ""),
+            repriseVille = o.optString("repriseVille", ""),
+            repriseAnnee = o.optString("repriseAnnee", ""),
+            note = o.optString("note", "")
+        )
+    }
+}
+
 data class Piste(
     val id: Long,
     var texte: String = "",
     var personneId: Long = 0L,
     var creation: Long = 0L,
     var faite: Boolean = false,
-    var cloture: Long = 0L
+    var cloture: Long = 0L,
+    var type: String = "P", // "P" piste libre, "A" issue d'une suggestion
+    var lieu: String = "",
+    var debut: String = "",
+    var fin: String = "",
+    var historique: MutableList<Recherche> = mutableListOf()
 ) {
     fun versJson(): JSONObject {
         val o = JSONObject()
@@ -152,6 +190,13 @@ data class Piste(
         o.put("creation", creation)
         o.put("faite", faite)
         o.put("cloture", cloture)
+        o.put("type", type)
+        o.put("lieu", lieu)
+        o.put("debut", debut)
+        o.put("fin", fin)
+        val tableau = JSONArray()
+        historique.forEach { tableau.put(it.versJson()) }
+        o.put("historique", tableau)
         return o
     }
 
@@ -162,7 +207,19 @@ data class Piste(
             personneId = o.optLong("personneId", 0L),
             creation = o.optLong("creation", 0L),
             faite = o.optBoolean("faite", false),
-            cloture = o.optLong("cloture", 0L)
+            cloture = o.optLong("cloture", 0L),
+            type = o.optString("type", "P"),
+            lieu = o.optString("lieu", ""),
+            debut = o.optString("debut", ""),
+            fin = o.optString("fin", ""),
+            historique = mutableListOf<Recherche>().apply {
+                val tableau = o.optJSONArray("historique")
+                if (tableau != null) {
+                    for (i in 0 until tableau.length()) {
+                        add(Recherche.depuisJson(tableau.getJSONObject(i)))
+                    }
+                }
+            }
         )
     }
 }
