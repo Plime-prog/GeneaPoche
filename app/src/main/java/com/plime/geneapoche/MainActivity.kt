@@ -27,9 +27,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -37,6 +41,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -59,10 +65,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 // Couleurs des pastilles
 val CouleurVert = Color(0xFF2E7D32)
 val CouleurRouge = Color(0xFFC62828)
+
+private val formatJour = SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE)
+
+fun formaterDate(ts: Long): String =
+    if (ts > 0L) formatJour.format(Date(ts)) else ""
 
 // ---------------------------------------------------------------- Aides numerotation
 
@@ -135,19 +149,24 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppEcran(ctx: Context, verrou: Verrou) {
     val personnes = remember { mutableStateListOf<Personne>() }
+    val pistes = remember { mutableStateListOf<Piste>() }
     var charge by remember { mutableStateOf(false) }
     var aPin by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
     var idOuvert by remember { mutableStateOf(0L) }
+    var onglet by remember { mutableStateOf(0) }
     var editionOuverte by remember { mutableStateOf(false) }
     var editionCible by remember { mutableStateOf<Personne?>(null) }
     var pickerRole by remember { mutableStateOf("") }
     var confirmSuppression by remember { mutableStateOf<Personne?>(null) }
+    var dialoguePiste by remember { mutableStateOf(false) }
+    var pistePersonnePre by remember { mutableStateOf(0L) }
 
     fun enregistrer(): Boolean {
-        val ok = Stockage.sauver(ctx, personnes)
-        message = if (ok) "Enregistr\u00E9." else "Echec de l'enregistrement."
-        return ok
+        val ok1 = Stockage.sauver(ctx, personnes)
+        val ok2 = Stockage.sauverJournal(ctx, pistes)
+        message = if (ok1 && ok2) "Enregistr\u00E9." else "Echec de l'enregistrement."
+        return ok1 && ok2
     }
 
     fun supprimer(p: Personne) {
@@ -158,6 +177,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             if (q.conjoint == p.id) q.conjoint = 0L
             q.enfants.remove(p.id)
         }
+        pistes.forEach { if (it.personneId == p.id) it.personneId = 0L }
         enregistrer()
         if (idOuvert == p.id) idOuvert = 0L
     }
@@ -226,10 +246,24 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         enregistrer()
     }
 
+    fun ajouterPiste(texte: String, personneId: Long) {
+        val nouvelId = (pistes.maxOfOrNull { it.id } ?: 0L) + 1L
+        pistes.add(Piste(nouvelId, texte, personneId, System.currentTimeMillis(), false, 0L))
+        enregistrer()
+        dialoguePiste = false
+    }
+
+    fun basculerPiste(piste: Piste) {
+        piste.faite = !piste.faite
+        piste.cloture = if (piste.faite) System.currentTimeMillis() else 0L
+        enregistrer()
+    }
+
     // Chargement uniquement apres deverrouillage (rien ne s'affiche sans PIN)
     LaunchedEffect(verrou.deverrouille) {
         if (verrou.deverrouille && !charge) {
             personnes.addAll(Stockage.charger(ctx))
+            pistes.addAll(Stockage.chargerJournal(ctx))
             charge = true
         }
     }
@@ -257,11 +291,14 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     } else {
         EcranApplication(
             personnes = personnes,
+            pistes = pistes,
             charge = charge,
             message = message,
             onMessage = { message = it },
             idOuvert = idOuvert,
             onIdOuvert = { idOuvert = it },
+            onglet = onglet,
+            onOnglet = { onglet = it },
             editionOuverte = editionOuverte,
             onEditionOuverte = { editionOuverte = it },
             editionCible = editionCible,
@@ -273,7 +310,17 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             enregistrer = { enregistrer() },
             supprimer = { supprimer(it) },
             lier = { role, id -> lier(role, id) },
-            delier = { role, id -> delier(role, id) }
+            delier = { role, id -> delier(role, id) },
+            dialoguePiste = dialoguePiste,
+            onDialoguePiste = { dialoguePiste = it },
+            pistePersonnePre = pistePersonnePre,
+            onPistePersonnePre = { pistePersonnePre = it },
+            ajouterPiste = { t, id -> ajouterPiste(t, id) },
+            basculerPiste = { basculerPiste(it) },
+            supprimerPiste = {
+                pistes.remove(it)
+                enregistrer()
+            }
         )
     }
 }
@@ -403,11 +450,14 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
 @Composable
 fun EcranApplication(
     personnes: List<Personne>,
+    pistes: List<Piste>,
     charge: Boolean,
     message: String,
     onMessage: (String) -> Unit,
     idOuvert: Long,
     onIdOuvert: (Long) -> Unit,
+    onglet: Int,
+    onOnglet: (Int) -> Unit,
     editionOuverte: Boolean,
     onEditionOuverte: (Boolean) -> Unit,
     editionCible: Personne?,
@@ -419,10 +469,18 @@ fun EcranApplication(
     enregistrer: () -> Unit,
     supprimer: (Personne) -> Unit,
     lier: (String, Long) -> Unit,
-    delier: (String, Long) -> Unit
+    delier: (String, Long) -> Unit,
+    dialoguePiste: Boolean,
+    onDialoguePiste: (Boolean) -> Unit,
+    pistePersonnePre: Long,
+    onPistePersonnePre: (Long) -> Unit,
+    ajouterPiste: (String, Long) -> Unit,
+    basculerPiste: (Piste) -> Unit,
+    supprimerPiste: (Piste) -> Unit
 ) {
-    BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty()) {
+    BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty() || dialoguePiste) {
         when {
+            dialoguePiste -> onDialoguePiste(false)
             pickerRole.isNotEmpty() -> onPickerRole("")
             editionOuverte -> onEditionOuverte(false)
             else -> onIdOuvert(0L)
@@ -434,9 +492,31 @@ fun EcranApplication(
     if (ouverte == null) {
         Scaffold(
             topBar = { TopAppBar(title = { Text("G\u00E9n\u00E9aPoche") }) },
+            bottomBar = {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = onglet == 0,
+                        onClick = { onOnglet(0) },
+                        icon = { Icon(Icons.Filled.Person, contentDescription = null) },
+                        label = { Text("Personnes") }
+                    )
+                    NavigationBarItem(
+                        selected = onglet == 1,
+                        onClick = { onOnglet(1) },
+                        icon = { Icon(Icons.Filled.List, contentDescription = null) },
+                        label = { Text("Journal") }
+                    )
+                }
+            },
             floatingActionButton = {
-                FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
-                    Icon(Icons.Filled.Add, contentDescription = "Ajouter")
+                if (onglet == 0) {
+                    FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Ajouter")
+                    }
+                } else {
+                    FloatingActionButton(onClick = { onPistePersonnePre(0L); onDialoguePiste(true) }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Nouvelle piste")
+                    }
                 }
             }
         ) { marges ->
@@ -444,33 +524,44 @@ fun EcranApplication(
                 Column(Modifier.fillMaxSize().padding(marges).padding(16.dp)) {
                     Text("Chargement...")
                 }
-            } else if (personnes.isEmpty()) {
-                Column(
-                    Modifier.fillMaxSize().padding(marges).padding(16.dp),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text("Aucune personne pour le moment.")
-                    Text("Touchez le bouton + pour ajouter la premi\u00E8re personne (de cujus, Sosa 1).")
-                }
-            } else {
-                val triees = personnes.sortedWith(
-                    compareBy({ it.sosa.trim().toLongOrNull() ?: Long.MAX_VALUE }, { it.titre() })
-                )
-                LazyColumn(Modifier.fillMaxSize().padding(marges).padding(vertical = 4.dp)) {
-                    items(triees) { p ->
-                        CartePersonne(
-                            p,
-                            onOuvrir = { onIdOuvert(p.id) },
-                            onSupprimer = { onConfirmSuppression(p) }
-                        )
+            } else if (onglet == 0) {
+                if (personnes.isEmpty()) {
+                    Column(
+                        Modifier.fillMaxSize().padding(marges).padding(16.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text("Aucune personne pour le moment.")
+                        Text("Touchez le bouton + pour ajouter la premi\u00E8re personne (de cujus, Sosa 1).")
+                    }
+                } else {
+                    val triees = personnes.sortedWith(
+                        compareBy({ it.sosa.trim().toLongOrNull() ?: Long.MAX_VALUE }, { it.titre() })
+                    )
+                    LazyColumn(Modifier.fillMaxSize().padding(marges).padding(vertical = 4.dp)) {
+                        items(triees) { p ->
+                            CartePersonne(
+                                p,
+                                onOuvrir = { onIdOuvert(p.id) },
+                                onSupprimer = { onConfirmSuppression(p) }
+                            )
+                        }
                     }
                 }
+            } else {
+                EcranJournal(
+                    pistes = pistes,
+                    personnes = personnes,
+                    onBasculer = { basculerPiste(it) },
+                    onSupprimer = { supprimerPiste(it) },
+                    onOuvrirPersonne = { onIdOuvert(it) }
+                )
             }
         }
     } else {
         val p = ouverte
         EcranPersonne(
             personnes = personnes,
+            pistes = pistes,
             p = p,
             onOuvrir = { onIdOuvert(it) },
             onRetour = { onIdOuvert(0L) },
@@ -481,7 +572,9 @@ fun EcranApplication(
             onEtat = { section, valeur ->
                 p.changerEtat(section, valeur)
                 enregistrer()
-            }
+            },
+            onNouvellePiste = { onPistePersonnePre(p.id); onDialoguePiste(true) },
+            onBasculerPiste = { basculerPiste(it) }
         )
     }
 
@@ -509,6 +602,15 @@ fun EcranApplication(
                 onEditionOuverte(false)
             },
             onAnnuler = { onEditionOuverte(false) }
+        )
+    }
+
+    if (dialoguePiste) {
+        DialoguePiste(
+            personnes = personnes,
+            personnePredefinie = pistePersonnePre,
+            onValider = { texte, personneId -> ajouterPiste(texte, personneId) },
+            onAnnuler = { onDialoguePiste(false) }
         )
     }
 
@@ -619,12 +721,161 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
     }
 }
 
+// ---------------------------------------------------------------- Journal
+
+@Composable
+fun EcranJournal(
+    pistes: List<Piste>,
+    personnes: List<Personne>,
+    onBasculer: (Piste) -> Unit,
+    onSupprimer: (Piste) -> Unit,
+    onOuvrirPersonne: (Long) -> Unit
+) {
+    if (pistes.isEmpty()) {
+        Column(
+            Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text("Aucune piste de recherche.")
+            Text("Touchez le bouton + pour noter une recherche \u00E0 faire : rien ne sera oubli\u00E9.")
+        }
+    } else {
+        val triees = pistes.sortedWith(compareBy({ it.faite }, { -it.creation }))
+        LazyColumn(Modifier.fillMaxSize().padding(vertical = 4.dp)) {
+            items(triees) { piste ->
+                CartePiste(
+                    piste = piste,
+                    personnes = personnes,
+                    onBasculer = { onBasculer(piste) },
+                    onSupprimer = { onSupprimer(piste) },
+                    onOuvrirPersonne = onOuvrirPersonne
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun CartePiste(
+    piste: Piste,
+    personnes: List<Personne>,
+    onBasculer: () -> Unit,
+    onSupprimer: () -> Unit,
+    onOuvrirPersonne: (Long) -> Unit
+) {
+    Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp)) {
+        Row(
+            Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = piste.faite,
+                onCheckedChange = { onBasculer() },
+                colors = CheckboxDefaults.checkboxColors(
+                    checkedColor = CouleurVert,
+                    checkmarkColor = Color.White
+                )
+            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    piste.texte,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (piste.faite) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified
+                )
+                val c = personneParId(personnes, piste.personneId)
+                if (c != null) {
+                    Text(
+                        "\u2192 " + c.titre(),
+                        Modifier.clickable { onOuvrirPersonne(piste.personneId) },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                val dates = mutableListOf<String>()
+                dates.add("cr\u00E9\u00E9e le " + formaterDate(piste.creation))
+                if (piste.faite) dates.add("faite le " + formaterDate(piste.cloture))
+                Text(dates.joinToString(" \u2013 "), style = MaterialTheme.typography.bodySmall)
+            }
+            IconButton(onClick = onSupprimer) {
+                Icon(Icons.Filled.Close, contentDescription = "Supprimer")
+            }
+        }
+    }
+}
+
+@Composable
+fun DialoguePiste(
+    personnes: List<Personne>,
+    personnePredefinie: Long,
+    onValider: (String, Long) -> Unit,
+    onAnnuler: () -> Unit
+) {
+    var texte by remember { mutableStateOf("") }
+    var personneId by remember { mutableStateOf(personnePredefinie) }
+    var pickerOuvert by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onAnnuler,
+        title = { Text("Nouvelle piste de recherche") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = texte,
+                    onValueChange = { texte = it },
+                    label = { Text("Quoi rechercher ? (acte, ann\u00E9e, lieu...)") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                val liee = personneParId(personnes, personneId)
+                OutlinedButton(onClick = { pickerOuvert = true }, Modifier.padding(top = 8.dp)) {
+                    Text(
+                        if (liee == null) "Lier une personne (facultatif)"
+                        else "Personne : " + liee.titre()
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onValider(texte.trim(), personneId) },
+                enabled = texte.isNotBlank()
+            ) { Text("Enregistrer") }
+        },
+        dismissButton = {
+            TextButton(onClick = onAnnuler) { Text("Annuler") }
+        }
+    )
+
+    if (pickerOuvert) {
+        AlertDialog(
+            onDismissRequest = { pickerOuvert = false },
+            title = { Text("Personne concern\u00E9e") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    TextButton(onClick = { personneId = 0L; pickerOuvert = false }) {
+                        Text("Aucune personne")
+                    }
+                    personnes.sortedBy { it.titre() }.forEach { c ->
+                        TextButton(onClick = { personneId = c.id; pickerOuvert = false }) {
+                            Text(c.titre())
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { pickerOuvert = false }) { Text("Fermer") }
+            }
+        )
+    }
+}
+
 // ---------------------------------------------------------------- Fiche personne
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EcranPersonne(
     personnes: List<Personne>,
+    pistes: List<Piste>,
     p: Personne,
     onOuvrir: (Long) -> Unit,
     onRetour: () -> Unit,
@@ -632,7 +883,9 @@ fun EcranPersonne(
     onSupprimer: () -> Unit,
     onChoisir: (String) -> Unit,
     onRetirer: (String, Long) -> Unit,
-    onEtat: (String, String) -> Unit
+    onEtat: (String, String) -> Unit,
+    onNouvellePiste: () -> Unit,
+    onBasculerPiste: (Piste) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -691,6 +944,14 @@ fun EcranPersonne(
                     onOuvrir = onOuvrir,
                     onChoisir = onChoisir,
                     onRetirer = onRetirer
+                )
+            }
+            item {
+                CartePistesPersonne(
+                    pistes = pistes,
+                    p = p,
+                    onNouvellePiste = onNouvellePiste,
+                    onBasculer = onBasculerPiste
                 )
             }
             item { Spacer(Modifier.height(24.dp)) }
@@ -868,6 +1129,49 @@ fun LienParent(
             )
             IconButton(onClick = onRetirer) {
                 Icon(Icons.Filled.Close, contentDescription = "Retirer")
+            }
+        }
+    }
+}
+
+@Composable
+fun CartePistesPersonne(
+    pistes: List<Piste>,
+    p: Personne,
+    onNouvellePiste: () -> Unit,
+    onBasculer: (Piste) -> Unit
+) {
+    Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+            Text("Pistes de recherche", fontWeight = FontWeight.Bold)
+            val deCettePersonne = pistes.filter { it.personneId == p.id }
+            if (deCettePersonne.isEmpty()) {
+                Text("Aucune piste pour cette personne.", style = MaterialTheme.typography.bodySmall)
+            }
+            deCettePersonne.forEach { piste ->
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = piste.faite,
+                        onCheckedChange = { onBasculer(piste) },
+                        colors = CheckboxDefaults.checkboxColors(
+                            checkedColor = CouleurVert,
+                            checkmarkColor = Color.White
+                        )
+                    )
+                    Text(
+                        piste.texte,
+                        Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (piste.faite) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified
+                    )
+                }
+            }
+            OutlinedButton(onClick = onNouvellePiste, Modifier.padding(top = 4.dp)) {
+                Icon(Icons.Filled.Add, contentDescription = null)
+                Text("Nouvelle piste pour cette personne")
             }
         }
     }

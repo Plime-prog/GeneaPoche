@@ -16,14 +16,14 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 
 // Stockage chiffre AES-256/GCM (cle AndroidKeyStore, jamais exportable).
+// Deux fichiers chiffres : personnes.bin et journal.bin (+ .bak/.tmp de securite).
 // PIN : PBKDF2-HmacSHA256 (150 000 iterations, sel aleatoire 128 bits), comparaison temps constant.
 // Blocage : 5 erreurs -> paliers 30 s / 2 min / 10 min / 1 h.
 // Aucune permission Internet dans le manifeste : rien ne peut etre transmis.
 
 object Stockage {
-    private const val FICHIER = "personnes.bin"
-    private const val FICHIER_BAK = "personnes.bin.bak"
-    private const val FICHIER_TMP = "personnes.bin.tmp"
+    private const val FICHIER_PERSONNES = "personnes.bin"
+    private const val FICHIER_JOURNAL = "journal.bin"
     private const val ANCIEN_FICHIER_CLAIR = "personnes.json"
     private const val ALIAS_CLE = "geneapoche_cle"
     private const val PREFS = "geneapoche_secu"
@@ -142,7 +142,7 @@ object Stockage {
         return if (reste > 0L) reste else 0L
     }
 
-    // ------------------------------------------------------------ Lecture / ecriture chiffree
+    // ------------------------------------------------------------ Personnes (chiffre)
 
     fun charger(ctx: Context): MutableList<Personne> {
         val liste = mutableListOf<Personne>()
@@ -150,18 +150,16 @@ object Stockage {
         try {
             val legacy = File(ctx.filesDir, ANCIEN_FICHIER_CLAIR)
             if (legacy.exists()) {
-                val octets = legacy.readBytes()
-                ajouterDepuisTexte(liste, String(octets))
+                ajouterPersonnesDepuisTexte(liste, String(legacy.readBytes()))
                 if (sauver(ctx, liste)) legacy.delete()
                 return liste
             }
         } catch (e: Exception) {
             // on continue sur la lecture chiffree
         }
-        // Lecture chiffree : principal, sinon copie de securite
-        val octets = lireBrut(ctx, FICHIER) ?: lireBrut(ctx, FICHIER_BAK) ?: return liste
+        val octets = lireFichier(ctx, FICHIER_PERSONNES) ?: return liste
         val clair = dechiffrer(octets) ?: return liste
-        ajouterDepuisTexte(liste, String(clair))
+        ajouterPersonnesDepuisTexte(liste, String(clair))
         return liste
     }
 
@@ -169,13 +167,13 @@ object Stockage {
         return try {
             val tableau = JSONArray()
             liste.forEach { tableau.put(it.versJson()) }
-            ecrireBrut(ctx, chiffrer(tableau.toString().toByteArray()))
+            ecrireFichier(ctx, FICHIER_PERSONNES, chiffrer(tableau.toString().toByteArray()))
         } catch (e: Exception) {
             false
         }
     }
 
-    private fun ajouterDepuisTexte(liste: MutableList<Personne>, texte: String) {
+    private fun ajouterPersonnesDepuisTexte(liste: MutableList<Personne>, texte: String) {
         try {
             val tableau = JSONArray(texte)
             for (i in 0 until tableau.length()) {
@@ -186,15 +184,43 @@ object Stockage {
         }
     }
 
-    // Ecriture securisee : tmp -> relecture + comparaison -> bak -> renommage
-    private fun ecrireBrut(ctx: Context, octets: ByteArray): Boolean {
+    // ------------------------------------------------------------ Journal (chiffre)
+
+    fun chargerJournal(ctx: Context): MutableList<Piste> {
+        val liste = mutableListOf<Piste>()
+        val octets = lireFichier(ctx, FICHIER_JOURNAL) ?: return liste
+        val clair = dechiffrer(octets) ?: return liste
+        try {
+            val tableau = JSONArray(String(clair))
+            for (i in 0 until tableau.length()) {
+                liste.add(Piste.depuisJson(tableau.getJSONObject(i)))
+            }
+        } catch (e: Exception) {
+            // journal illisible : vide
+        }
+        return liste
+    }
+
+    fun sauverJournal(ctx: Context, liste: List<Piste>): Boolean {
         return try {
-            val tmp = File(ctx.filesDir, FICHIER_TMP)
-            val principal = File(ctx.filesDir, FICHIER)
-            val bak = File(ctx.filesDir, FICHIER_BAK)
+            val tableau = JSONArray()
+            liste.forEach { tableau.put(it.versJson()) }
+            ecrireFichier(ctx, FICHIER_JOURNAL, chiffrer(tableau.toString().toByteArray()))
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // ------------------------------------------------------------ Fichiers chiffres generiques
+
+    // Ecriture securisee : tmp -> relecture + comparaison -> bak -> renommage
+    private fun ecrireFichier(ctx: Context, nom: String, octets: ByteArray): Boolean {
+        return try {
+            val tmp = File(ctx.filesDir, nom + ".tmp")
+            val principal = File(ctx.filesDir, nom)
+            val bak = File(ctx.filesDir, nom + ".bak")
             tmp.writeBytes(octets)
-            val relu = tmp.readBytes()
-            if (!MessageDigest.isEqual(relu, octets)) {
+            if (!MessageDigest.isEqual(tmp.readBytes(), octets)) {
                 tmp.delete()
                 return false
             }
@@ -216,10 +242,15 @@ object Stockage {
         }
     }
 
-    private fun lireBrut(ctx: Context, nom: String): ByteArray? {
+    private fun lireFichier(ctx: Context, nom: String): ByteArray? {
         return try {
             val f = File(ctx.filesDir, nom)
-            if (!f.exists()) null else f.readBytes()
+            if (f.exists()) {
+                f.readBytes()
+            } else {
+                val bak = File(ctx.filesDir, nom + ".bak")
+                if (bak.exists()) bak.readBytes() else null
+            }
         } catch (e: Exception) {
             null
         }

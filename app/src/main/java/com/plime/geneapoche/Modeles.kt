@@ -133,3 +133,36 @@ data class Personne(
         }
     }
 }
+
+// ---------------------------------------------------------------- Modele Piste (journal de recherches)
+
+data class Piste(
+    val id: Long,
+    var texte: String = "",
+    var personneId: Long = 0L,
+    var creation: Long = 0L,
+    var faite: Boolean = false,
+    var cloture: Long = 0L
+) {
+    fun versJson(): JSONObject {
+        val o = JSONObject()
+        o.put("id", id)
+        o.put("texte", texte)
+        o.put("personneId", personneId)
+        o.put("creation", creation)
+        o.put("faite", faite)
+        o.put("cloture", cloture)
+        return o
+    }
+
+    companion object {
+        fun depuisJson(o: JSONObject): Piste = Piste(
+            id = o.optLong("id", 0L),
+            texte = o.optString("texte", ""),
+            personneId = o.optLong("personneId", 0L),
+            creation = o.optLong("creation", 0L),
+            faite = o.optBoolean("faite", false),
+            cloture = o.optLong("cloture", 0L)
+        )
+    }
+}
