@@ -1,11 +1,18 @@
 package com.plime.geneapoche
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -60,10 +67,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -150,6 +161,7 @@ class MainActivity : ComponentActivity() {
 fun AppEcran(ctx: Context, verrou: Verrou) {
     val personnes = remember { mutableStateListOf<Personne>() }
     val pistes = remember { mutableStateListOf<Piste>() }
+    val actes = remember { mutableStateListOf<Acte>() }
     var charge by remember { mutableStateOf(false) }
     var aPin by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
@@ -161,12 +173,14 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var confirmSuppression by remember { mutableStateOf<Personne?>(null) }
     var dialoguePiste by remember { mutableStateOf(false) }
     var pistePersonnePre by remember { mutableStateOf(0L) }
+    var acteVisionne by remember { mutableStateOf<Acte?>(null) }
 
     fun enregistrer(): Boolean {
         val ok1 = Stockage.sauver(ctx, personnes)
         val ok2 = Stockage.sauverJournal(ctx, pistes)
-        message = if (ok1 && ok2) "Enregistr\u00E9." else "Echec de l'enregistrement."
-        return ok1 && ok2
+        val ok3 = Stockage.sauverActes(ctx, actes)
+        message = if (ok1 && ok2 && ok3) "Enregistr\u00E9." else "Echec de l'enregistrement."
+        return ok1 && ok2 && ok3
     }
 
     fun supprimer(p: Personne) {
@@ -178,6 +192,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             q.enfants.remove(p.id)
         }
         pistes.forEach { if (it.personneId == p.id) it.personneId = 0L }
+        val actesASupprimer = actes.filter { it.personneId == p.id }
+        actes.removeAll(actesASupprimer)
+        actesASupprimer.forEach { Stockage.supprimerImage(ctx, it.id) }
         enregistrer()
         if (idOuvert == p.id) idOuvert = 0L
     }
@@ -259,11 +276,27 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         enregistrer()
     }
 
+    fun ajouterActe(personneId: Long, uri: Uri, type: String, titre: String) {
+        val jpg = compresserVersJpeg(ctx, uri)
+        if (jpg == null) {
+            message = "Impossible de lire cette image."
+            return
+        }
+        val nouvelId = (actes.maxOfOrNull { it.id } ?: 0L) + 1L
+        if (Stockage.sauverImage(ctx, nouvelId, jpg)) {
+            actes.add(Acte(nouvelId, personneId, type, titre, System.currentTimeMillis()))
+            enregistrer()
+        } else {
+            message = "Echec de l'enregistrement de l'image."
+        }
+    }
+
     // Chargement uniquement apres deverrouillage (rien ne s'affiche sans PIN)
     LaunchedEffect(verrou.deverrouille) {
         if (verrou.deverrouille && !charge) {
             personnes.addAll(Stockage.charger(ctx))
             pistes.addAll(Stockage.chargerJournal(ctx))
+            actes.addAll(Stockage.chargerActes(ctx))
             charge = true
         }
     }
@@ -320,8 +353,19 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             supprimerPiste = {
                 pistes.remove(it)
                 enregistrer()
-            }
+            },
+            actes = actes,
+            onSupprimerActe = {
+                Stockage.supprimerImage(ctx, it.id)
+                actes.remove(it)
+                enregistrer()
+            },
+            onVoirActe = { acteVisionne = it }
         )
+    }
+
+    acteVisionne?.let { a ->
+        VisionneuseActe(ctx = ctx, acte = a, onFermer = { acteVisionne = null })
     }
 }
 
@@ -476,7 +520,10 @@ fun EcranApplication(
     onPistePersonnePre: (Long) -> Unit,
     ajouterPiste: (String, Long) -> Unit,
     basculerPiste: (Piste) -> Unit,
-    supprimerPiste: (Piste) -> Unit
+    supprimerPiste: (Piste) -> Unit,
+    actes: List<Acte>,
+    onSupprimerActe: (Acte) -> Unit,
+    onVoirActe: (Acte) -> Unit
 ) {
     BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty() || dialoguePiste) {
         when {
@@ -574,7 +621,11 @@ fun EcranApplication(
                 enregistrer()
             },
             onNouvellePiste = { onPistePersonnePre(p.id); onDialoguePiste(true) },
-            onBasculerPiste = { basculerPiste(it) }
+            onBasculerPiste = { basculerPiste(it) },
+            actes = actes,
+            onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },
+            onSupprimerActe = { onSupprimerActe(it) },
+            onVoirActe = { onVoirActe(it) }
         )
     }
 
@@ -876,6 +927,7 @@ fun DialoguePiste(
 fun EcranPersonne(
     personnes: List<Personne>,
     pistes: List<Piste>,
+    actes: List<Acte>,
     p: Personne,
     onOuvrir: (Long) -> Unit,
     onRetour: () -> Unit,
@@ -885,7 +937,11 @@ fun EcranPersonne(
     onRetirer: (String, Long) -> Unit,
     onEtat: (String, String) -> Unit,
     onNouvellePiste: () -> Unit,
-    onBasculerPiste: (Piste) -> Unit
+    onBasculerPiste: (Piste) -> Unit,
+    actes: List<Acte>,
+    onAjouterActe: (Uri, String, String) -> Unit,
+    onSupprimerActe: (Acte) -> Unit,
+    onVoirActe: (Acte) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -952,6 +1008,15 @@ fun EcranPersonne(
                     p = p,
                     onNouvellePiste = onNouvellePiste,
                     onBasculer = onBasculerPiste
+                )
+            }
+            item {
+                CarteActesPersonne(
+                    actes = actes,
+                    p = p,
+                    onAjouterActe = onAjouterActe,
+                    onSupprimerActe = onSupprimerActe,
+                    onVoirActe = onVoirActe
                 )
             }
             item { Spacer(Modifier.height(24.dp)) }
@@ -1172,6 +1237,198 @@ fun CartePistesPersonne(
             OutlinedButton(onClick = onNouvellePiste, Modifier.padding(top = 4.dp)) {
                 Icon(Icons.Filled.Add, contentDescription = null)
                 Text("Nouvelle piste pour cette personne")
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- Actes (images chiffrees)
+
+fun libelleType(t: String): String = when (t) {
+    "N" -> "Naissance"
+    "M" -> "Mariage"
+    "D" -> "D\u00E9c\u00E8s"
+    else -> "Autre"
+}
+
+// Import d'une image (capture d'ecran ou photo) : redimensionnee puis compressee en JPEG.
+fun compresserVersJpeg(ctx: Context, uri: Uri): ByteArray? {
+    return try {
+        val donnees = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+        val bornes = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(donnees, 0, donnees.size, bornes)
+        var ech = 1
+        while ((bornes.outWidth / (ech * 2)) >= 1200 || (bornes.outHeight / (ech * 2)) >= 1200) {
+            ech *= 2
+        }
+        val opts = BitmapFactory.Options().apply { inSampleSize = ech }
+        val brut = BitmapFactory.decodeByteArray(donnees, 0, donnees.size, opts) ?: return null
+        val sortie = java.io.ByteArrayOutputStream()
+        brut.compress(Bitmap.CompressFormat.JPEG, 85, sortie)
+        brut.recycle()
+        sortie.toByteArray()
+    } catch (e: Exception) {
+        null
+    }
+}
+
+@Composable
+fun CarteActesPersonne(
+    actes: List<Acte>,
+    p: Personne,
+    onAjouterActe: (Uri, String, String) -> Unit,
+    onSupprimerActe: (Acte) -> Unit,
+    onVoirActe: (Acte) -> Unit
+) {
+    var dialogueOuvert by remember { mutableStateOf(false) }
+    var typeEnAttente by remember { mutableStateOf("N") }
+    var titreEnAttente by remember { mutableStateOf("") }
+
+    val lanceur = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            onAjouterActe(uri, typeEnAttente, titreEnAttente)
+        }
+        typeEnAttente = "N"
+        titreEnAttente = ""
+    }
+
+    Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+            Text("Actes et images", fontWeight = FontWeight.Bold)
+            val deCettePersonne = actes.filter { it.personneId == p.id }
+            if (deCettePersonne.isEmpty()) {
+                Text(
+                    "Aucun acte stock\u00E9. Importez une capture d'\u00E9cran ou une photo d'acte (elle sera chiffr\u00E9e).",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            deCettePersonne.forEach { acte ->
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        libelleType(acte.type),
+                        Modifier.clickable { onVoirActe(acte) },
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    val t = acte.titre.trim()
+                    Text(
+                        if (t.isNotEmpty()) t else "(sans titre)",
+                        Modifier.weight(1f).clickable { onVoirActe(acte) },
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    IconButton(onClick = { onSupprimerActe(acte) }) {
+                        Icon(Icons.Filled.Close, contentDescription = "Supprimer")
+                    }
+                }
+            }
+            OutlinedButton(onClick = { dialogueOuvert = true }, Modifier.padding(top = 4.dp)) {
+                Icon(Icons.Filled.Add, contentDescription = null)
+                Text("Ajouter un acte")
+            }
+        }
+    }
+
+    if (dialogueOuvert) {
+        DialogueNouvelActe(
+            onValider = { type, titre ->
+                typeEnAttente = type
+                titreEnAttente = titre
+                dialogueOuvert = false
+                lanceur.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            },
+            onAnnuler = { dialogueOuvert = false }
+        )
+    }
+}
+
+@Composable
+fun DialogueNouvelActe(
+    onValider: (String, String) -> Unit,
+    onAnnuler: () -> Unit
+) {
+    var type by remember { mutableStateOf("N") }
+    var titre by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onAnnuler,
+        title = { Text("Nouvel acte") },
+        text = {
+            Column {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FilterChip(selected = type == "N", onClick = { type = "N" }, label = { Text("Naissance") })
+                    FilterChip(selected = type == "M", onClick = { type = "M" }, label = { Text("Mariage") })
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FilterChip(selected = type == "D", onClick = { type = "D" }, label = { Text("D\u00E9c\u00E8s") })
+                    FilterChip(selected = type == "A", onClick = { type = "A" }, label = { Text("Autre") })
+                }
+                OutlinedTextField(
+                    value = titre,
+                    onValueChange = { titre = it },
+                    label = { Text("Titre (facultatif)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                )
+                Text(
+                    "L'image reste sur l'appareil, chiffr\u00E9e. Rien n'est transmis.",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onValider(type, titre.trim()) }) { Text("Choisir l'image") }
+        },
+        dismissButton = {
+            TextButton(onClick = onAnnuler) { Text("Annuler") }
+        }
+    )
+}
+
+@Composable
+fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
+    val bmp = remember(acte.id) {
+        val octets = Stockage.lireImage(ctx, acte.id)
+        if (octets != null) BitmapFactory.decodeByteArray(octets, 0, octets.size) else null
+    }
+    Dialog(
+        onDismissRequest = onFermer,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize().padding(12.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val t = acte.titre.trim()
+                    Text(
+                        if (t.isNotEmpty()) libelleType(acte.type) + " \u2013 " + t else libelleType(acte.type),
+                        Modifier.weight(1f),
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onFermer) {
+                        Icon(Icons.Filled.Close, contentDescription = "Fermer")
+                    }
+                }
+                if (bmp == null) {
+                    Text("Image illisible.", color = CouleurRouge)
+                } else {
+                    Image(
+                        bitmap = bmp.asImageBitmap(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxWidth().weight(1f)
+                    )
+                }
             }
         }
     }

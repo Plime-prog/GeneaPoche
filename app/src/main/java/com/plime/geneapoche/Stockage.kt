@@ -24,6 +24,8 @@ import javax.crypto.spec.PBEKeySpec
 object Stockage {
     private const val FICHIER_PERSONNES = "personnes.bin"
     private const val FICHIER_JOURNAL = "journal.bin"
+    private const val FICHIER_ACTES = "actes.bin"
+    private const val DOSSIER_IMAGES = "actes_img"
     private const val ANCIEN_FICHIER_CLAIR = "personnes.json"
     private const val ALIAS_CLE = "geneapoche_cle"
     private const val PREFS = "geneapoche_secu"
@@ -208,6 +210,62 @@ object Stockage {
             ecrireFichier(ctx, FICHIER_JOURNAL, chiffrer(tableau.toString().toByteArray()))
         } catch (e: Exception) {
             false
+        }
+    }
+
+    // ------------------------------------------------------------ Actes (index chiffre + images chiffrees)
+
+    fun chargerActes(ctx: Context): MutableList<Acte> {
+        val liste = mutableListOf<Acte>()
+        val octets = lireFichier(ctx, FICHIER_ACTES) ?: return liste
+        val clair = dechiffrer(octets) ?: return liste
+        try {
+            val tableau = JSONArray(String(clair))
+            for (i in 0 until tableau.length()) {
+                liste.add(Acte.depuisJson(tableau.getJSONObject(i)))
+            }
+        } catch (e: Exception) {
+            // actes illisibles : vide
+        }
+        return liste
+    }
+
+    fun sauverActes(ctx: Context, liste: List<Acte>): Boolean {
+        return try {
+            val tableau = JSONArray()
+            liste.forEach { tableau.put(it.versJson()) }
+            ecrireFichier(ctx, FICHIER_ACTES, chiffrer(tableau.toString().toByteArray()))
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // Images chiffrees, une par acte : actes_img/acte_<id>.bin
+    fun sauverImage(ctx: Context, id: Long, octets: ByteArray): Boolean {
+        return try {
+            val dossier = File(ctx.filesDir, DOSSIER_IMAGES)
+            if (!dossier.exists()) dossier.mkdirs()
+            File(dossier, "acte_" + id + ".bin").writeBytes(chiffrer(octets))
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun lireImage(ctx: Context, id: Long): ByteArray? {
+        return try {
+            val f = File(File(ctx.filesDir, DOSSIER_IMAGES), "acte_" + id + ".bin")
+            if (!f.exists()) null else dechiffrer(f.readBytes())
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun supprimerImage(ctx: Context, id: Long) {
+        try {
+            File(File(ctx.filesDir, DOSSIER_IMAGES), "acte_" + id + ".bin").delete()
+        } catch (e: Exception) {
+            // rien a faire
         }
     }
 

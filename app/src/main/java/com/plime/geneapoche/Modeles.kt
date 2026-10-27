@@ -166,3 +166,33 @@ data class Piste(
         )
     }
 }
+
+// ---------------------------------------------------------------- Modele Acte (image chiffree liee a une personne)
+
+data class Acte(
+    val id: Long,
+    var personneId: Long = 0L,
+    var type: String = "N",
+    var titre: String = "",
+    var creation: Long = 0L
+) {
+    fun versJson(): JSONObject {
+        val o = JSONObject()
+        o.put("id", id)
+        o.put("personneId", personneId)
+        o.put("type", type)
+        o.put("titre", titre)
+        o.put("creation", creation)
+        return o
+    }
+
+    companion object {
+        fun depuisJson(o: JSONObject): Acte = Acte(
+            id = o.optLong("id", 0L),
+            personneId = o.optLong("personneId", 0L),
+            type = o.optString("type", "N"),
+            titre = o.optString("titre", ""),
+            creation = o.optLong("creation", 0L)
+        )
+    }
+}
