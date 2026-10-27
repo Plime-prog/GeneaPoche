@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -738,7 +739,7 @@ fun EnteteAvecPastilles(titre: String, etat: String, onEtat: (String) -> Unit) {
         Modifier.fillMaxWidth().padding(bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(titre, fontWeight = FontWeight.Bold, Modifier.weight(1f))
+        Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold)
         FilterChip(
             selected = etat == "vert",
             onClick = { onEtat(if (etat == "vert") "" else "vert") },
