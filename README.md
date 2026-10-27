@@ -45,7 +45,7 @@ Périmètre : ~100 antécédents max, France uniquement, actes N/M/D.
 2. ✅ Fiche complète : champs séparés date/lieu (naissance, mariage, décès), sexe, profession, père, mère, conjoint(e), tous les enfants ; numéro **Sosa** + numérotation **d'Aboville** pour les latéraux.
 3. ✅ Pastilles vertes (vérifié) / rouges (à vérifier) par section de fiche, signalées dans la liste.
 4. ✅ Journal de recherches : pistes à creuser cochables (case verte), datées (création/clôture), liées à une personne ; onglets Personnes / Journal.
-5. ⬜ Stockage d'actes : images et captures d'écran liées à une personne.
+5. ✅ Stockage d'actes : images et captures d'écran liées à une personne, importées via le sélecteur de photos du système (aucune permission), redimensionnées, compressées et **chiffrées sur l'appareil** ; visionneuse plein écran.
 6. ⬜ Liens directs vers les Archives départementales.
 7. ⬜ Arbre simple (ascendance/descendance) centré sur une personne.
 8. ⬜ Export GEDCOM 5.5.1 (importable dans Heredis).
