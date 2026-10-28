@@ -4,10 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// ---------------------------------------------------------------- Export GEDCOM 5.5.1
-
-// Construction d'un fichier GEDCOM 5.5.1 (LINEAGE-LINKED, UTF-8) importable
-// dans Heredis, Geneatique, Ancestry, FamilySearch, etc.
+// ---------------------------------------------------------------- Export / import GEDCOM 5.5.1
 
 fun moisGedcom(m: Int): String = when (m) {
     1 -> "JAN"; 2 -> "FEB"; 3 -> "MAR"; 4 -> "APR"; 5 -> "MAY"; 6 -> "JUN"
@@ -26,10 +23,20 @@ fun dateGedcom(s: String): String? {
     Regex("vers\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
         return "ABT " + m.groupValues[1]
     }
-    Regex("(\\d{1,2})\\s*(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
+    Regex("avant\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
+        return "BEF " + m.groupValues[1]
+    }
+    Regex("apr\\u00E8s\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
+        return "AFT " + m.groupValues[1]
+    }
+    Regex("(\\d{1,2})\\s*(janvier|fevrier|f\\u00E9vrier|mars|avril|mai|juin|juillet|aout|ao\\u00FBt|septembre|octobre|novembre|decembre|d\\u00E9cembre)\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
         val nom = m.groupValues[2].lowercase(Locale.FRANCE)
-        val mois = listOf("janvier", "fevrier", "mars", "avril", "mai", "juin", "juillet", "aout", "septembre", "octobre", "novembre", "decembre").indexOf(nom) + 1
-        if (mois in 1..12) return m.groupValues[1] + " " + moisGedcom(mois) + " " + m.groupValues[3]
+        val index = when (nom) {
+            "janvier" -> 1; "fevrier", "f\u00E9vrier" -> 2; "mars" -> 3; "avril" -> 4; "mai" -> 5
+            "juin" -> 6; "juillet" -> 7; "aout", "ao\u00FBt" -> 8; "septembre" -> 9
+            "octobre" -> 10; "novembre" -> 11; else -> 12
+        }
+        if (index in 1..12) return m.groupValues[1] + " " + moisGedcom(index) + " " + m.groupValues[3]
     }
     Regex("(\\d{4})").find(t)?.let { m ->
         return m.groupValues[1]
@@ -37,19 +44,52 @@ fun dateGedcom(s: String): String? {
     return null
 }
 
-fun construireGedcom(personnes: List<Personne>): String {
+// Heure GEDCOM ("2 TIME hh:mm") si l'heure est renseignee.
+fun heureGedcom(s: String): String? {
+    val m = Regex("(\\d{1,2}):(\\d{2})").find(s.trim()) ?: return null
+    return m.groupValues[1] + ":" + m.groupValues[2]
+}
+
+// Ensemble des personnes lies a une personne donnee (parents, conjoints, enfants),
+// pour exporter une branche complete.
+fun brancheDe(personnes: List<Personne>, idCentre: Long): Set<Long> {
+    val res = mutableSetOf<Long>()
+    if (personneParId(personnes, idCentre) == null) return res
+    val attente = ArrayDeque<Long>()
+    attente.addLast(idCentre)
+    res.add(idCentre)
+    while (attente.isNotEmpty()) {
+        val id = attente.removeFirst()
+        val p = personneParId(personnes, id) ?: continue
+        val proches = listOf(p.pere, p.mere, p.conjoint) + p.conjointsSupp + p.enfants
+        proches.forEach { idP ->
+            if (idP != 0L && !res.contains(idP) && personneParId(personnes, idP) != null) {
+                res.add(idP)
+                attente.addLast(idP)
+            }
+        }
+    }
+    return res
+}
+
+fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null): String {
+    val personnes = if (sousEnsemble == null) toutes else toutes.filter { sousEnsemble.contains(it.id) }
     fun cleCouple(a: Long, b: Long): Pair<Long, Long> = if (a < b) a to b else b to a
     fun xrefIndi(id: Long): String = "@I" + id.toString() + "@"
     fun xrefFam(c: Pair<Long, Long>): String = "@F" + c.first.toString() + "_" + c.second.toString() + "@"
 
-    // Familles : couples (pere, mere) et couples (personne, conjoint), avec leurs enfants.
+    // Familles : couples (personne, conjoint) et couples (pere, mere), avec leurs enfants.
     val familles = mutableMapOf<Pair<Long, Long>, MutableList<Long>>()
     personnes.forEach { p ->
-        if (p.conjoint != 0L) {
-            val liste = familles.getOrPut(cleCouple(p.id, p.conjoint)) { mutableListOf() }
-            p.enfants.forEach { e -> if (!liste.contains(e)) liste.add(e) }
+        p.tousConjoints().forEach { co ->
+            if (personnes.any { it.id == co }) {
+                val liste = familles.getOrPut(cleCouple(p.id, co)) { mutableListOf() }
+                p.enfants.forEach { e -> if (!liste.contains(e)) liste.add(e) }
+            }
         }
-        if (p.pere != 0L && p.mere != 0L) {
+        if (p.pere != 0L && p.mere != 0L &&
+            personnes.any { it.id == p.pere } && personnes.any { it.id == p.mere }
+        ) {
             val liste = familles.getOrPut(cleCouple(p.pere, p.mere)) { mutableListOf() }
             if (!liste.contains(p.id)) liste.add(p.id)
         }
@@ -59,38 +99,45 @@ fun construireGedcom(personnes: List<Personne>): String {
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.8")
+    lignes.add("2 VERS 0.9")
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 GEDC")
     lignes.add("2 VERS 5.5.1")
     lignes.add("2 FORM LINEAGE-LINKED")
     lignes.add("1 DATE " + SimpleDateFormat("d MMM yyyy", Locale.US).format(Date()))
 
+    fun evenement(p: Personne, tag: String, date: String, heure: String, lieu: String) {
+        val d = dateGedcom(date)
+        val l = lieu.trim()
+        val h = heureGedcom(heure)
+        if (d != null || l.isNotEmpty()) {
+            lignes.add("1 " + tag)
+            if (d != null) lignes.add("2 DATE " + d)
+            if (h != null) lignes.add("2 TIME " + h)
+            if (l.isNotEmpty()) lignes.add("2 PLAC " + l)
+        }
+    }
+
     personnes.forEach { p ->
         lignes.add("0 " + xrefIndi(p.id) + " INDI")
         lignes.add("1 NAME " + p.prenoms.trim() + " /" + p.nom.trim() + "/")
         if (p.sexe.isNotEmpty()) lignes.add("1 SEX " + p.sexe)
-        val dn = dateGedcom(p.dateNaissance)
-        val ln = p.lieuNaissance.trim()
-        if (dn != null || ln.isNotEmpty()) {
-            lignes.add("1 BIRT")
-            if (dn != null) lignes.add("2 DATE " + dn)
-            if (ln.isNotEmpty()) lignes.add("2 PLAC " + ln)
-        }
-        val dd = dateGedcom(p.dateDeces)
-        val ld = p.lieuDeces.trim()
-        if (dd != null || ld.isNotEmpty()) {
-            lignes.add("1 DEAT")
-            if (dd != null) lignes.add("2 DATE " + dd)
-            if (ld.isNotEmpty()) lignes.add("2 PLAC " + ld)
-        }
+        evenement(p, "BIRT", p.dateNaissance, p.heureNaissance, p.lieuNaissance)
+        evenement(p, "BAPM", p.dateBapteme, p.heureBapteme, p.lieuBapteme)
+        evenement(p, "MARR", p.dateMariage, p.heureMariage, p.lieuMariage)
+        evenement(p, "DEAT", p.dateDeces, p.heureDeces, p.lieuDeces)
+        evenement(p, "BURI", p.dateSepulture, p.heureSepulture, p.lieuSepulture)
         if (p.profession.trim().isNotEmpty()) lignes.add("1 OCCU " + p.profession.trim())
-        if (p.sosa.trim().isNotEmpty()) lignes.add("1 _SOSA " + p.sosa.trim())
-        if (p.pere != 0L && p.mere != 0L) {
+        if (p.sosa.trim().isNotEmpty()) lignes.add("1 RFN Sosa " + p.sosa.trim())
+        if (p.pere != 0L && p.mere != 0L &&
+            familles.containsKey(cleCouple(p.pere, p.mere))
+        ) {
             lignes.add("1 FAMC " + xrefFam(cleCouple(p.pere, p.mere)))
         }
-        if (p.conjoint != 0L) {
-            lignes.add("1 FAMS " + xrefFam(cleCouple(p.id, p.conjoint)))
+        p.tousConjoints().forEach { co ->
+            if (familles.containsKey(cleCouple(p.id, co))) {
+                lignes.add("1 FAMS " + xrefFam(cleCouple(p.id, co)))
+            }
         }
     }
 
@@ -110,15 +157,229 @@ fun construireGedcom(personnes: List<Personne>): String {
                 (c.dateMariage.trim().isNotEmpty() || c.lieuMariage.trim().isNotEmpty())
         }
         val dm = epoux?.let { dateGedcom(it.dateMariage) }
+        val hm = epoux?.let { heureGedcom(it.heureMariage) }
         val lm = epoux?.lieuMariage?.trim() ?: ""
         if (dm != null || lm.isNotEmpty()) {
             lignes.add("1 MARR")
             if (dm != null) lignes.add("2 DATE " + dm)
+            if (hm != null) lignes.add("2 TIME " + hm)
             if (lm.isNotEmpty()) lignes.add("2 PLAC " + lm)
         }
-        enfants.forEach { e -> lignes.add("1 CHIL " + xrefIndi(e)) }
+        enfants.forEach { e -> if (personnes.any { it.id == e }) lignes.add("1 CHIL " + xrefIndi(e)) }
     }
 
     lignes.add("0 TRLR")
     return lignes.joinToString("\n") + "\n"
+}
+
+// ---------------------------------------------------------------- Import GEDCOM (Heredis, etc.)
+
+// Convertit une date GEDCOM en date lisible :
+// "27 OCT 1890" -> "27/10/1890", "ABT 1890" -> "vers 1890", "1890" -> "1890".
+fun dateFrancaise(s: String): String {
+    val t = s.trim()
+    if (t.isEmpty()) return ""
+    val moisAnglais = mapOf(
+        "JAN" to 1, "FEB" to 2, "MAR" to 3, "APR" to 4, "MAY" to 5, "JUN" to 6,
+        "JUL" to 7, "AUG" to 8, "SEP" to 9, "OCT" to 10, "NOV" to 11, "DEC" to 12
+    )
+    Regex("(\\d{1,2})\\s+([A-Z]{3})\\s+(\\d{4})").find(t)?.let { m ->
+        val mois = moisAnglais[m.groupValues[2]]
+        if (mois != null) return m.groupValues[1] + "/" + mois.toString() + "/" + m.groupValues[3]
+    }
+    Regex("ABT\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
+        return "vers " + m.groupValues[1]
+    }
+    Regex("BEF\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
+        return "avant " + m.groupValues[1]
+    }
+    Regex("AFT\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
+        return "apr\u00e8s " + m.groupValues[1]
+    }
+    Regex("BET\\s+(\\d{4})\\s+AND\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
+        return "entre " + m.groupValues[1] + " et " + m.groupValues[2]
+    }
+    Regex("^(\\d{4})$").find(t)?.let { m ->
+        return m.groupValues[1]
+    }
+    Regex("(\\d{4})").find(t)?.let { m ->
+        return m.groupValues[1]
+    }
+    return t
+}
+
+// Parseur d'un fichier GEDCOM 5.5.1 (Heredis, Geneatique...) :
+// personnes (INDI), familles (FAM), dates N/BAPM/M/D/BURI, heures TIME, conjoints multiples.
+// Retourne au maximum 100 personnes.
+fun importerGedcom(texte: String): List<Personne> {
+    val lignes = texte.split("\n").map { it.trimEnd('\r') }
+
+    class Ind {
+        var nom = ""
+        var prenoms = ""
+        var sexe = ""
+        var occu = ""
+        var nD = ""; var nH = ""; var nL = ""
+        var bD = ""; var bH = ""; var bL = ""
+        var mD = ""; var mH = ""; var mL = ""
+        var dD = ""; var dH = ""; var dL = ""
+        var sD = ""; var sH = ""; var sL = ""
+        val fams = mutableListOf<String>()
+        var famc = ""
+    }
+    class Fam {
+        var husb = ""
+        var wife = ""
+        val chil = mutableListOf<String>()
+        var marrD = ""
+        var marrL = ""
+    }
+
+    val indivs = LinkedHashMap<String, Ind>()
+    val famsMap = LinkedHashMap<String, Fam>()
+    var indCourant: Ind? = null
+    var famCourante: Fam? = null
+    var blocActuel = "" // tag de niveau 1 en cours ("BIRT", "DEAT"...)
+    var dateTampon = ""
+
+    lignes.forEach { ligne ->
+        val m = Regex("^(\\d+)\\s+(.*)$").find(ligne) ?: return@forEach
+        val niveau = m.groupValues[1].toIntOrNull() ?: return@forEach
+        val contenu = m.groupValues[2].trim()
+        if (niveau == 0) {
+            blocActuel = ""
+            if (Regex("^@.*@\\s+INDI$").containsMatchIn(contenu)) {
+                val xref = Regex("^(@.*@)").find(contenu)?.groupValues?.get(1) ?: return@forEach
+                val ind = Ind()
+                indivs[xref] = ind
+                indCourant = ind
+                famCourante = null
+            } else if (Regex("^@.*@\\s+FAM$").containsMatchIn(contenu)) {
+                val xref = Regex("^(@.*@)").find(contenu)?.groupValues?.get(1) ?: return@forEach
+                val fam = Fam()
+                famsMap[xref] = fam
+                famCourante = fam
+                indCourant = null
+            } else {
+                indCourant = null
+                famCourante = null
+            }
+            return@forEach
+        }
+        val ind = indCourant
+        val fam = famCourante
+        if (niveau == 1) {
+            blocActuel = contenu.split(" ").firstOrNull() ?: ""
+            dateTampon = ""
+            if (ind != null) {
+                when (blocActuel) {
+                    "NAME" -> {
+                        val valeur = contenu.removePrefix("NAME").trim()
+                        val nomFamille = Regex("/([^/]*)/").find(valeur)?.groupValues?.get(1) ?: ""
+                        val reste = valeur.replace(Regex("/[^/]*/"), " ").trim()
+                        ind.nom = nomFamille.trim()
+                        ind.prenoms = reste.trim()
+                    }
+                    "SEX" -> ind.sexe = contenu.removePrefix("SEX").trim()
+                    "OCCU" -> ind.occu = contenu.removePrefix("OCCU").trim()
+                    "FAMS" -> ind.fams.add(contenu.removePrefix("FAMS").trim())
+                    "FAMC" -> ind.famc = contenu.removePrefix("FAMC").trim()
+                }
+            } else if (fam != null) {
+                when (blocActuel) {
+                    "HUSB" -> fam.husb = contenu.removePrefix("HUSB").trim()
+                    "WIFE" -> fam.wife = contenu.removePrefix("WIFE").trim()
+                    "CHIL" -> fam.chil.add(contenu.removePrefix("CHIL").trim())
+                }
+            }
+        } else if (niveau == 2) {
+            val tag = contenu.split(" ").firstOrNull() ?: ""
+            val valeur = contenu.removePrefix(tag).trim()
+            if (ind != null) {
+                when (blocActuel) {
+                    "BIRT" -> when (tag) {
+                        "DATE" -> ind.nD = dateFrancaise(valeur)
+                        "TIME" -> ind.nH = valeur
+                        "PLAC" -> ind.nL = valeur
+                    }
+                    "BAPM", "CHR", "BAPT" -> when (tag) {
+                        "DATE" -> ind.bD = dateFrancaise(valeur)
+                        "TIME" -> ind.bH = valeur
+                        "PLAC" -> ind.bL = valeur
+                    }
+                    "MARR" -> when (tag) {
+                        "DATE" -> ind.mD = dateFrancaise(valeur)
+                        "TIME" -> ind.mH = valeur
+                        "PLAC" -> ind.mL = valeur
+                    }
+                    "DEAT" -> when (tag) {
+                        "DATE" -> ind.dD = dateFrancaise(valeur)
+                        "TIME" -> ind.dH = valeur
+                        "PLAC" -> ind.dL = valeur
+                    }
+                    "BURI", "BUR" -> when (tag) {
+                        "DATE" -> ind.sD = dateFrancaise(valeur)
+                        "TIME" -> ind.sH = valeur
+                        "PLAC" -> ind.sL = valeur
+                    }
+                }
+            } else if (fam != null && blocActuel == "MARR") {
+                when (tag) {
+                    "DATE" -> fam.marrD = dateFrancaise(valeur)
+                    "PLAC" -> fam.marrL = valeur
+                }
+            }
+        }
+    }
+
+    // Attribution des identifiants
+    val ids = mutableMapOf<String, Long>()
+    var prochain = 1L
+    indivs.keys.forEach { x -> ids[x] = prochain; prochain += 1L }
+
+    val personnes = mutableListOf<Personne>()
+    indivs.forEach { (x, ind) ->
+        personnes.add(
+            Personne(
+                id = ids[x] ?: 0L,
+                nom = ind.nom,
+                prenoms = ind.prenoms,
+                sexe = ind.sexe,
+                profession = ind.occu,
+                dateNaissance = ind.nD, heureNaissance = ind.nH, lieuNaissance = ind.nL,
+                dateBapteme = ind.bD, heureBapteme = ind.bH, lieuBapteme = ind.bL,
+                dateMariage = ind.mD, heureMariage = ind.mH, lieuMariage = ind.mL,
+                dateDeces = ind.dD, heureDeces = ind.dH, lieuDeces = ind.dL,
+                dateSepulture = ind.sD, heureSepulture = ind.sH, lieuSepulture = ind.sL
+            )
+        )
+    }
+
+    fun idDe(x: String): Long = ids[x] ?: 0L
+
+    // Liens de famille
+    famsMap.values.forEach { fam ->
+        val h = idDe(fam.husb)
+        val w = idDe(fam.wife)
+        val ph = personnes.firstOrNull { it.id == h }
+        val pw = personnes.firstOrNull { it.id == w }
+        if (ph != null && pw != null) {
+            if (ph.conjoint == 0L) ph.conjoint = w else if (!ph.conjointsSupp.contains(w) && ph.conjoint != w) ph.conjointsSupp.add(w)
+            if (pw.conjoint == 0L) pw.conjoint = h else if (!pw.conjointsSupp.contains(h) && pw.conjoint != h) pw.conjointsSupp.add(h)
+            if (ph.dateMariage.isEmpty() && fam.marrD.isNotEmpty()) ph.dateMariage = fam.marrD
+            if (pw.dateMariage.isEmpty() && fam.marrD.isNotEmpty()) pw.dateMariage = fam.marrD
+            if (ph.lieuMariage.isEmpty() && fam.marrL.isNotEmpty()) ph.lieuMariage = fam.marrL
+            if (pw.lieuMariage.isEmpty() && fam.marrL.isNotEmpty()) pw.lieuMariage = fam.marrL
+        }
+        fam.chil.forEach { xc ->
+            val c = idDe(xc)
+            val pc = personnes.firstOrNull { it.id == c } ?: return@forEach
+            if (ph != null && pc.pere == 0L) pc.pere = ph.id
+            if (pw != null && pc.mere == 0L) pc.mere = pw.id
+            if (ph != null && !ph.enfants.contains(pc.id)) ph.enfants.add(pc.id)
+            if (pw != null && !pw.enfants.contains(pc.id)) pw.enfants.add(pc.id)
+        }
+    }
+
+    return personnes.take(100)
 }

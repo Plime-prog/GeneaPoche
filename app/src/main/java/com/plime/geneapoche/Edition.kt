@@ -1,0 +1,184 @@
+package com.plime.geneapoche
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+
+// ---------------------------------------------------------------- Dialogue d'edition d'une personne
+// Sert a la creation et a la modification (appui long sur un bloc de la fiche).
+// Champs date/heure/lieu/departement separes pour chaque acte N/B/M/D/S.
+
+@Composable
+fun DialogueEdition(
+    cible: Personne?,
+    idNouvelle: Long,
+    onValider: (Personne) -> Unit,
+    onAnnuler: () -> Unit
+) {
+    var sosa by remember { mutableStateOf(cible?.sosa ?: "") }
+    var lateral by remember { mutableStateOf(cible?.lateral ?: "") }
+    var nom by remember { mutableStateOf(cible?.nom ?: "") }
+    var prenoms by remember { mutableStateOf(cible?.prenoms ?: "") }
+    var sexe by remember { mutableStateOf(cible?.sexe ?: "") }
+    var profession by remember { mutableStateOf(cible?.profession ?: "") }
+    var dateNaissance by remember { mutableStateOf(cible?.dateNaissance ?: "") }
+    var heureNaissance by remember { mutableStateOf(cible?.heureNaissance ?: "") }
+    var lieuNaissance by remember { mutableStateOf(cible?.lieuNaissance ?: "") }
+    var deptNaissance by remember { mutableStateOf(cible?.deptNaissance ?: "") }
+    var dateBapteme by remember { mutableStateOf(cible?.dateBapteme ?: "") }
+    var heureBapteme by remember { mutableStateOf(cible?.heureBapteme ?: "") }
+    var lieuBapteme by remember { mutableStateOf(cible?.lieuBapteme ?: "") }
+    var deptBapteme by remember { mutableStateOf(cible?.deptBapteme ?: "") }
+    var dateMariage by remember { mutableStateOf(cible?.dateMariage ?: "") }
+    var heureMariage by remember { mutableStateOf(cible?.heureMariage ?: "") }
+    var lieuMariage by remember { mutableStateOf(cible?.lieuMariage ?: "") }
+    var deptMariage by remember { mutableStateOf(cible?.deptMariage ?: "") }
+    var dateDeces by remember { mutableStateOf(cible?.dateDeces ?: "") }
+    var heureDeces by remember { mutableStateOf(cible?.heureDeces ?: "") }
+    var lieuDeces by remember { mutableStateOf(cible?.lieuDeces ?: "") }
+    var deptDeces by remember { mutableStateOf(cible?.deptDeces ?: "") }
+    var dateSepulture by remember { mutableStateOf(cible?.dateSepulture ?: "") }
+    var heureSepulture by remember { mutableStateOf(cible?.heureSepulture ?: "") }
+    var lieuSepulture by remember { mutableStateOf(cible?.lieuSepulture ?: "") }
+    var deptSepulture by remember { mutableStateOf(cible?.deptSepulture ?: "") }
+
+    fun construire(): Personne {
+        val base = cible ?: Personne(id = idNouvelle)
+        base.sosa = sosa.trim()
+        base.lateral = lateral.trim()
+        base.nom = nom.trim()
+        base.prenoms = prenoms.trim()
+        base.sexe = sexe
+        base.profession = profession.trim()
+        base.dateNaissance = dateNaissance.trim()
+        base.heureNaissance = heureNaissance.trim()
+        base.lieuNaissance = lieuNaissance.trim()
+        base.deptNaissance = deptNaissance.trim()
+        base.dateBapteme = dateBapteme.trim()
+        base.heureBapteme = heureBapteme.trim()
+        base.lieuBapteme = lieuBapteme.trim()
+        base.deptBapteme = deptBapteme.trim()
+        base.dateMariage = dateMariage.trim()
+        base.heureMariage = heureMariage.trim()
+        base.lieuMariage = lieuMariage.trim()
+        base.deptMariage = deptMariage.trim()
+        base.dateDeces = dateDeces.trim()
+        base.heureDeces = heureDeces.trim()
+        base.lieuDeces = lieuDeces.trim()
+        base.deptDeces = deptDeces.trim()
+        base.dateSepulture = dateSepulture.trim()
+        base.heureSepulture = heureSepulture.trim()
+        base.lieuSepulture = lieuSepulture.trim()
+        base.deptSepulture = deptSepulture.trim()
+        return base
+    }
+
+    val formulaireValide =
+        (nom.isNotBlank() || prenoms.isNotBlank()) &&
+        sosaValide(sosa) && lateralValide(lateral)
+
+    AlertDialog(
+        onDismissRequest = onAnnuler,
+        title = { Text(if (cible == null) "Ajouter une personne" else "Modifier la personne") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text("Identit\u00E9", fontWeight = FontWeight.Bold)
+                Champ("Sosa (1 = de cujus)", sosa, { sosa = it },
+                    erreur = !sosaValide(sosa), aide = "Laisser vide : calcul\u00E9 automatiquement")
+                Champ("Num\u00E9ro lat\u00E9ral (ex 1.3)", lateral, { lateral = it },
+                    erreur = !lateralValide(lateral), aide = "Descendants hors ligne directe")
+                Champ("Nom", nom, { nom = it })
+                Champ("Pr\u00E9noms", prenoms, { prenoms = it })
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("M") })
+                    FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("F") })
+                    FilterChip(selected = sexe.isEmpty(), onClick = { sexe = "" }, label = { Text("?") })
+                }
+                Champ("Profession", profession, { profession = it })
+
+                Spacer(Modifier.height(10.dp))
+                Text("Naissance", fontWeight = FontWeight.Bold)
+                Champ("Date (JJ/MM/AAAA)", dateNaissance, { dateNaissance = it })
+                Champ("Heure (HH:mm)", heureNaissance, { heureNaissance = it })
+                Champ("Lieu (commune)", lieuNaissance, { lieuNaissance = it })
+                Champ("D\u00E9partement (ex 59)", deptNaissance, { deptNaissance = it })
+
+                Spacer(Modifier.height(10.dp))
+                Text("Bapt\u00EAme", fontWeight = FontWeight.Bold)
+                Champ("Date", dateBapteme, { dateBapteme = it })
+                Champ("Heure", heureBapteme, { heureBapteme = it })
+                Champ("Lieu", lieuBapteme, { lieuBapteme = it })
+                Champ("D\u00E9partement", deptBapteme, { deptBapteme = it })
+
+                Spacer(Modifier.height(10.dp))
+                Text("Mariage", fontWeight = FontWeight.Bold)
+                Champ("Date", dateMariage, { dateMariage = it })
+                Champ("Heure", heureMariage, { heureMariage = it })
+                Champ("Lieu", lieuMariage, { lieuMariage = it })
+                Champ("D\u00E9partement", deptMariage, { deptMariage = it })
+
+                Spacer(Modifier.height(10.dp))
+                Text("D\u00E9c\u00E8s", fontWeight = FontWeight.Bold)
+                Champ("Date", dateDeces, { dateDeces = it })
+                Champ("Heure", heureDeces, { heureDeces = it })
+                Champ("Lieu", lieuDeces, { lieuDeces = it })
+                Champ("D\u00E9partement", deptDeces, { deptDeces = it })
+
+                Spacer(Modifier.height(10.dp))
+                Text("S\u00E9pulture", fontWeight = FontWeight.Bold)
+                Champ("Date", dateSepulture, { dateSepulture = it })
+                Champ("Heure", heureSepulture, { heureSepulture = it })
+                Champ("Lieu", lieuSepulture, { lieuSepulture = it })
+                Champ("D\u00E9partement", deptSepulture, { deptSepulture = it })
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onValider(construire()) },
+                enabled = formulaireValide
+            ) { Text("Enregistrer") }
+        },
+        dismissButton = {
+            TextButton(onClick = onAnnuler) { Text("Annuler") }
+        }
+    )
+}
+
+@Composable
+fun Champ(
+    libelle: String,
+    valeur: String,
+    onChange: (String) -> Unit,
+    erreur: Boolean = false,
+    aide: String = ""
+) {
+    OutlinedTextField(
+        value = valeur,
+        onValueChange = onChange,
+        label = { Text(libelle) },
+        isError = erreur,
+        singleLine = true,
+        supportingText = if (aide.isNotEmpty()) { { Text(aide, style = MaterialTheme.typography.bodySmall) } } else null,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+    )
+}
