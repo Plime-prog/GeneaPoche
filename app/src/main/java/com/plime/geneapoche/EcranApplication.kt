@@ -1,20 +1,14 @@
 package com.plime.geneapoche
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Bundle
-import android.view.WindowManager
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,28 +16,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,45 +40,29 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
-import com.plime.geneapoche.R
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 // ------------------------------------------------------------ Application deverrouillee
+
+private val PlafondPersonnes = 100
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,6 +88,8 @@ fun EcranApplication(
     supprimer: (Personne) -> Unit,
     lier: (String, Long) -> Unit,
     delier: (String, Long) -> Unit,
+    definirCujus: (Personne) -> Unit,
+    renumeroter: (Long) -> Unit,
     dialoguePiste: Boolean,
     onDialoguePiste: (Boolean) -> Unit,
     pistePersonnePre: Long,
@@ -127,11 +102,12 @@ fun EcranApplication(
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
     noterRecherche: (Piste) -> Unit,
-    noterSuggestion: (Personne, Suggestion) -> Unit,
     arbreCentre: Long,
     onArbreCentre: (Long) -> Unit,
-    exporterGedcom: (Uri) -> Unit,
-    ouvrirAd: (Int) -> Unit
+    exporterGedcom: (Uri, Set<Long>?) -> Unit,
+    importerGedcom: (Uri) -> Unit,
+    ouvrirLien: (String) -> Unit,
+    ouvrirEtatCivil: (String, Int?, String, String) -> Unit
 ) {
     BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty() || dialoguePiste) {
         when {
@@ -148,7 +124,24 @@ fun EcranApplication(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("G\u00E9n\u00E9aPoche") },
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_launcher_foreground),
+                                contentDescription = null,
+                                modifier = Modifier.size(42.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column {
+                                Text("G\u00E9n\u00E9aPoche", fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFFD8EBD4)
+                                )
+                            }
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = PaletteGeneaPoche.primary,
                         titleContentColor = Color.White,
@@ -191,10 +184,28 @@ fun EcranApplication(
                 }
             }
         ) { marges ->
+            var exportDialogue by remember { mutableStateOf(false) }
+            var exportBrancheId by remember { mutableStateOf(0L) }
+            var exportTout by remember { mutableStateOf(true) }
+            var pickerBranche by remember { mutableStateOf(false) }
+
             val lanceurGedcom = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
             ) { uri ->
-                if (uri != null) exporterGedcom(uri)
+                if (uri != null) exporterGedcom(uri, null)
+            }
+            val lanceurGedcomBranche = rememberLauncherForActivityResult(
+                ActivityResultContracts.CreateDocument("application/octet-stream")
+            ) { uri ->
+                if (uri != null) {
+                    val sel = exportBrancheId
+                    exporterGedcom(uri, if (sel != 0L) brancheDe(personnes, sel) else null)
+                }
+            }
+            val lanceurImport = rememberLauncherForActivityResult(
+                ActivityResultContracts.OpenDocument()
+            ) { uri ->
+                if (uri != null) importerGedcom(uri)
             }
             if (!charge) {
                 Column(Modifier.fillMaxSize().padding(marges).padding(16.dp)) {
@@ -211,9 +222,21 @@ fun EcranApplication(
                     }
                 } else {
                     val triees = personnes.sortedWith(
-                        compareBy({ it.sosa.trim().toLongOrNull() ?: Long.MAX_VALUE }, { it.titre() })
+                        compareBy(
+                            { it.nom.trim().uppercase() },
+                            { it.prenoms.trim().uppercase() },
+                            { anneeNaissance(it) }
+                        )
                     )
                     LazyColumn(Modifier.fillMaxSize().padding(marges).padding(vertical = 4.dp)) {
+                        item {
+                            Text(
+                                personnes.size.toString() + " / " + PlafondPersonnes.toString() + " personnes",
+                                Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         items(triees) { p ->
                             CartePersonne(
                                 p,
@@ -223,12 +246,21 @@ fun EcranApplication(
                         }
                         item {
                             OutlinedButton(
-                                onClick = { lanceurGedcom.launch("geneapoche.ged") },
+                                onClick = { exportDialogue = true },
                                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)
                             ) {
-                                Text("Exporter la base (GEDCOM 5.5.1, pour Heredis)")
+                                Text("Exporter en GEDCOM (Heredis)")
                             }
                         }
+                        item {
+                            OutlinedButton(
+                                onClick = { lanceurImport.launch(arrayOf("*/*")) },
+                                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                            ) {
+                                Text("Importer un GEDCOM (remplace la base)")
+                            }
+                        }
+                        item { Spacer(Modifier.height(12.dp)) }
                     }
                 }
             } else if (onglet == 2) {
@@ -247,8 +279,80 @@ fun EcranApplication(
                     onSupprimer = { supprimerPiste(it) },
                     onOuvrirPersonne = { onIdOuvert(it) },
                     noterRecherche = { noterRecherche(it) },
-                    noterSuggestion = { personne, sug -> noterSuggestion(personne, sug) },
-                    onNouvellePiste = { onDialoguePiste(true) }
+                    onNouvellePiste = { onDialoguePiste(true) },
+                    ouvrirLien = ouvrirLien,
+                    onSauver = enregistrer
+                )
+            }
+
+            if (exportDialogue) {
+                AlertDialog(
+                    onDismissRequest = { exportDialogue = false },
+                    title = { Text("Exporter en GEDCOM") },
+                    text = {
+                        Column {
+                            Text("Quelles personnes exporter ?")
+                            Spacer(Modifier.height(8.dp))
+                            Row {
+                                FilterChip(
+                                    selected = exportTout,
+                                    onClick = { exportTout = true },
+                                    label = { Text("Toutes (" + personnes.size.toString() + ")") }
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                FilterChip(
+                                    selected = !exportTout,
+                                    onClick = { exportTout = false },
+                                    label = { Text("Une branche") }
+                                )
+                            }
+                            if (!exportTout) {
+                                val c = personneParId(personnes, exportBrancheId)
+                                OutlinedButton(onClick = { pickerBranche = true }, Modifier.padding(top = 8.dp)) {
+                                    Text(if (c == null) "Choisir la personne centrale" else "Branche de " + c.titre())
+                                }
+                            }
+                            Text(
+                                "Le fichier .ged cr\u00E9\u00E9 est importable dans Heredis (GEDCOM 5.5.1).",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            exportDialogue = false
+                            if (exportTout) {
+                                lanceurGedcom.launch("geneapoche.ged")
+                            } else if (exportBrancheId != 0L) {
+                                lanceurGedcomBranche.launch("geneapoche-branche.ged")
+                            } else {
+                                onMessage("Choisissez une personne centrale.")
+                            }
+                        }) { Text("Exporter") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { exportDialogue = false }) { Text("Annuler") }
+                    }
+                )
+            }
+            if (pickerBranche) {
+                AlertDialog(
+                    onDismissRequest = { pickerBranche = false },
+                    title = { Text("Branche de quelle personne ?") },
+                    text = {
+                        Column(Modifier.verticalScroll(rememberScrollState())) {
+                            personnes.sortedBy { it.titre() }.forEach { c ->
+                                TextButton(onClick = {
+                                    exportBrancheId = c.id
+                                    pickerBranche = false
+                                }) { Text(c.titre()) }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { pickerBranche = false }) { Text("Fermer") }
+                    }
                 )
             }
         }
@@ -257,7 +361,9 @@ fun EcranApplication(
         EcranPersonne(
             personnes = personnes,
             pistes = pistes,
+            actes = actes,
             p = p,
+            enregistrer = enregistrer,
             onOuvrir = { onIdOuvert(it) },
             onRetour = { onIdOuvert(0L) },
             onModifier = { onEditionCible(p); onEditionOuverte(true) },
@@ -268,12 +374,13 @@ fun EcranApplication(
                 p.changerEtat(section, valeur)
                 enregistrer()
             },
+            onDefinirCujus = { definirCujus(p) },
             onNouvellePiste = { onPistePersonnePre(p.id); onDialoguePiste(true) },
             onBasculerPiste = { basculerPiste(it) },
-            actes = actes,
-            onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },            onSupprimerActe = { onSupprimerActe(it) },
+            onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },
+            onSupprimerActe = { onSupprimerActe(it) },
             onVoirActe = { onVoirActe(it) },
-            ouvrirAd = ouvrirAd
+            ouvrirEtatCivil = ouvrirEtatCivil
         )
     }
 
@@ -295,7 +402,15 @@ fun EcranApplication(
             idNouvelle = prochainId,
             onValider = { p2 ->
                 if (editionCible == null) {
-                    (personnes as? MutableList<Personne>)?.add(p2)
+                    if (personnes.size >= PlafondPersonnes) {
+                        onMessage("Limite de " + PlafondPersonnes.toString() + " personnes atteinte.")
+                    } else {
+                        (personnes as? MutableList<Personne>)?.add(p2)
+                        if (pickerRole.isNotEmpty()) {
+                            lier(pickerRole, p2.id)
+                            return@DialogueEdition
+                        }
+                    }
                 }
                 enregistrer()
                 onEditionOuverte(false)
@@ -319,10 +434,13 @@ fun EcranApplication(
         val candidats = personnes
             .filter { q ->
                 q.id != p.id && when (role) {
-                    "pere" -> q.id != p.mere
-                    "mere" -> q.id != p.pere
-                    "conjoint" -> q.id != p.conjoint
-                    "enfant" -> q.id != p.pere && q.id != p.mere && !p.enfants.contains(q.id)
+                    "pere" -> q.id != p.mere && q.id != p.conjoint && !p.conjointsSupp.contains(q.id)
+                    "mere" -> q.id != p.pere && q.id != p.conjoint && !p.conjointsSupp.contains(q.id)
+                    "conjoint" -> q.id != p.pere && q.id != p.mere && !p.conjointsSupp.contains(q.id)
+                    "conjointsupp" -> q.id != p.conjoint && !p.conjointsSupp.contains(q.id) &&
+                        q.id != p.pere && q.id != p.mere
+                    "enfant" -> q.id != p.pere && q.id != p.mere && q.id != p.conjoint &&
+                        !p.conjointsSupp.contains(q.id) && !p.enfants.contains(q.id)
                     else -> false
                 }
             }
@@ -331,16 +449,31 @@ fun EcranApplication(
             "pere" -> "Choisir le p\u00E8re"
             "mere" -> "Choisir la m\u00E8re"
             "conjoint" -> "Choisir le conjoint"
+            "conjointsupp" -> "Ajouter un autre conjoint"
             else -> "Ajouter un enfant"
         }
         AlertDialog(
             onDismissRequest = { onPickerRole("") },
             title = { Text(titrePicker) },
             text = {
-                if (candidats.isEmpty()) {
-                    Text("Aucune autre personne disponible. Cr\u00E9ez-la d'abord depuis la liste avec le bouton +.")
-                } else {
-                    Column(Modifier.verticalScroll(rememberScrollState())) {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    if (role == "enfant") {
+                        OutlinedButton(onClick = {
+                            onEditionCible(null)
+                            onEditionOuverte(true)
+                        }) {
+                            Icon(Icons.Filled.Add, contentDescription = null)
+                            Text("  Cr\u00E9er une nouvelle personne")
+                        }
+                        Text(
+                            "Ou choisir une personne existante :",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 6.dp)
+                        )
+                    }
+                    if (candidats.isEmpty()) {
+                        Text("Aucune autre personne disponible. Cr\u00E9ez-la avec le bouton + de la liste.")
+                    } else {
                         candidats.forEach { c ->
                             Row(
                                 Modifier.fillMaxWidth()
@@ -397,9 +530,9 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         ) {
             val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
             val couleurAvatar = when (p.sexe) {
-                "F" -> Color(0xFF9C6B4F)
-                "M" -> Color(0xFF3E6B48)
-                else -> Color(0xFF6D5334)
+                "F" -> Color(0xFF55875F)
+                "M" -> Color(0xFF2E5D3A)
+                else -> Color(0xFF6E7F6E)
             }
             Box(
                 Modifier.size(44.dp).clip(CircleShape).background(couleurAvatar),
@@ -414,10 +547,23 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(p.titre(), style = MaterialTheme.typography.titleMedium)
-                val num = p.numeroAffiche()
-                if (num.isNotEmpty()) {
-                    Text(num, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(p.titre(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
+                    Spacer(Modifier.width(8.dp))
+                    val num = p.numeroAffiche()
+                    if (num.isNotEmpty()) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                num,
+                                Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
                 }
                 val n = p.dateNaissance.trim()
                 val d = p.dateDeces.trim()
@@ -437,4 +583,3 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
-
