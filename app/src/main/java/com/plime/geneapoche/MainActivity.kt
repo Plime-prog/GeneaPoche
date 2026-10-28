@@ -1,19 +1,11 @@
 package com.plime.geneapoche
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,43 +15,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Shapes
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,43 +43,40 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// Couleurs des pastilles
+// Couleurs : blanc, verts pale et fonce, rouge doux pour "a verifier".
 val CouleurVert = Color(0xFF2E7D32)
-val CouleurRouge = Color(0xFFC62828)
+val CouleurVertFonce = Color(0xFF1F4F26)
+val CouleurRouge = Color(0xFFB45046)
+val CouleurVertPale = Color(0xFFE7F0E5)
+val CouleurNeutrePale = Color(0xFFEFF4EE)
 
-// Palette GeneaPoche : vert genealogie, bruns d'archives, fond ivoire.
 val PaletteGeneaPoche = lightColorScheme(
     primary = Color(0xFF2E5D3A),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFB7E4C0),
-    onPrimaryContainer = Color(0xFF0E2E15),
-    secondary = Color(0xFF6D5334),
+    primaryContainer = Color(0xFFD8EBD4),
+    onPrimaryContainer = Color(0xFF10240F),
+    secondary = Color(0xFF4E6B52),
     onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFF6E0C8),
-    onSecondaryContainer = Color(0xFF261903),
-    tertiary = Color(0xFF8A4A2B),
+    secondaryContainer = Color(0xFFE1EDE0),
+    onSecondaryContainer = Color(0xFF152418),
+    tertiary = Color(0xFF3A6B4A),
     onTertiary = Color(0xFFFFFFFF),
-    background = Color(0xFFFDFBF4),
-    onBackground = Color(0xFF1B1C18),
-    surface = Color(0xFFFDFBF4),
-    onSurface = Color(0xFF1B1C18),
-    surfaceVariant = Color(0xFFEEE9DE),
-    onSurfaceVariant = Color(0xFF4A4639),
-    outline = Color(0xFF7C7767)
+    background = Color(0xFFFFFFFF),
+    onBackground = Color(0xFF1A1C19),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF1A1C19),
+    surfaceVariant = Color(0xFFE8F0E7),
+    onSurfaceVariant = Color(0xFF44503F),
+    outline = Color(0xFF798577)
 )
 
 val FormesGeneaPoche = Shapes(
@@ -118,9 +88,13 @@ val FormesGeneaPoche = Shapes(
 )
 
 private val formatJour = SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE)
+private val formatJourHeure = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE)
 
 fun formaterDate(ts: Long): String =
     if (ts > 0L) formatJour.format(Date(ts)) else ""
+
+fun formaterDateHeure(ts: Long): String =
+    if (ts > 0L) formatJourHeure.format(Date(ts)) else ""
 
 // ---------------------------------------------------------------- Aides numerotation
 
@@ -149,6 +123,51 @@ fun lateralValide(s: String): Boolean {
     val t = s.trim()
     if (t.isEmpty()) return true
     return Regex("^[0-9]+(\\.[0-9]+)*$").matches(t)
+}
+
+// Annee de naissance pour le tri (9999 si inconnue).
+fun anneeNaissance(p: Personne): Int =
+    Regex("[0-9]{4}").find(p.dateNaissance)?.value?.toIntOrNull() ?: 9999
+
+// Renum\u00E9rotation complete depuis un de cujus :
+// Sosa (pere = 2n, mere = 2n+1) remontee en largeur, puis d'Aboville en descendant
+// (enfant k du porteur "x" = "x.k"). Les personnes non atteignables perdent leur num\u00E9ro.
+fun renumeroter(personnes: MutableList<Personne>, cujusId: Long) {
+    personnes.forEach { it.sosa = ""; it.lateral = "" }
+    val cujus = personneParId(personnes, cujusId) ?: return
+    cujus.sosa = "1"
+    val attente = ArrayDeque<Long>()
+    attente.addLast(cujus.id)
+    while (attente.isNotEmpty()) {
+        val id = attente.removeFirst()
+        val p = personneParId(personnes, id) ?: continue
+        val s = p.sosa.trim().toLongOrNull() ?: continue
+        val pp = personneParId(personnes, p.pere)
+        if (pp != null && pp.sosa.isEmpty()) {
+            pp.sosa = (2L * s).toString()
+            attente.addLast(pp.id)
+        }
+        val pm = personneParId(personnes, p.mere)
+        if (pm != null && pm.sosa.isEmpty()) {
+            pm.sosa = (2L * s + 1L).toString()
+            attente.addLast(pm.id)
+        }
+    }
+    val descendants = ArrayDeque<Pair<Long, String>>()
+    descendants.addLast(cujus.id to "1")
+    while (descendants.isNotEmpty()) {
+        val (id, pref) = descendants.removeFirst()
+        val p = personneParId(personnes, id) ?: continue
+        var k = 0
+        p.enfants.forEach { idE ->
+            val e = personneParId(personnes, idE) ?: return@forEach
+            if (e.sosa.isEmpty() && e.lateral.isEmpty()) {
+                k += 1
+                e.lateral = pref + "." + k.toString()
+                descendants.addLast(e.id to e.lateral)
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------- Etat de verrouillage
@@ -209,12 +228,70 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var acteVisionne by remember { mutableStateOf<Acte?>(null) }
     var pisteRecherche by remember { mutableStateOf<Piste?>(null) }
     var arbreCentre by remember { mutableStateOf(0L) }
+    var cujusConfirme by remember { mutableStateOf<Personne?>(null) }
+    var importConfirme by remember { mutableStateOf<List<Personne>?>(null) }
+    var cujasOuvert by remember { mutableStateOf(false) }
+
+    // Recopie structurelle des listes : force Compose a rafraichir l'affichage
+    // meme quand une Personne est modifiee en place (correctif mise a jour immediate).
+    fun rafraichirTout() {
+        val cp = personnes.toList()
+        personnes.clear()
+        personnes.addAll(cp)
+        val cq = pistes.toList()
+        pistes.clear()
+        pistes.addAll(cq)
+        val ca = actes.toList()
+        actes.clear()
+        actes.addAll(ca)
+    }
+
+    // Complete le journal : jusqu'a 5 recherches en cours, en faisant tourner les
+    // personnes (celles qui ont le moins de recherches ouvertes d'abord).
+    fun completerJournal() {
+        if (!charge) return
+        var gardeFou = 0
+        while (pistes.count { !it.faite } < 5 && gardeFou < 200) {
+            gardeFou += 1
+            val enCours = pistes.filter { !it.faite }
+            val comptage = personnes.associate { p -> p.id to enCours.count { it.personneId == p.id } }
+            var choisie: Personne? = null
+            var sugChoisie: Suggestion? = null
+            for (p in personnes.sortedWith(compareBy({ comptage[it.id] ?: 0 }, { it.titre() }))) {
+                val deja = enCours.filter { it.personneId == p.id }.map { it.categorie }.toSet()
+                val s = suggestionsPour(p, personnes, actes).firstOrNull { it.categorie !in deja }
+                if (s != null) {
+                    choisie = p
+                    sugChoisie = s
+                    break
+                }
+            }
+            if (choisie == null || sugChoisie == null) break
+            val nouvelId = (pistes.maxOfOrNull { it.id } ?: 0L) + 1L
+            pistes.add(
+                Piste(
+                    id = nouvelId,
+                    texte = sugChoisie.titre,
+                    personneId = choisie.id,
+                    creation = System.currentTimeMillis(),
+                    type = "A",
+                    categorie = sugChoisie.categorie,
+                    lieu = sugChoisie.lieu,
+                    dept = sugChoisie.dept,
+                    debut = sugChoisie.debut,
+                    fin = sugChoisie.fin
+                )
+            )
+        }
+    }
 
     fun enregistrer(): Boolean {
+        completerJournal()
         val ok1 = Stockage.sauver(ctx, personnes)
         val ok2 = Stockage.sauverJournal(ctx, pistes)
         val ok3 = Stockage.sauverActes(ctx, actes)
-        message = if (ok1 && ok2 && ok3) "Enregistr\u00E9." else "Echec de l'enregistrement."
+        rafraichirTout()
+        message = if (ok1 && ok2 && ok3) "" else "Echec de l'enregistrement."
         return ok1 && ok2 && ok3
     }
 
@@ -224,6 +301,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             if (q.pere == p.id) q.pere = 0L
             if (q.mere == p.id) q.mere = 0L
             if (q.conjoint == p.id) q.conjoint = 0L
+            q.conjointsSupp.remove(p.id)
             q.enfants.remove(p.id)
         }
         pistes.forEach { if (it.personneId == p.id) it.personneId = 0L }
@@ -256,6 +334,14 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 p.conjoint = cibleId
                 cible.conjoint = p.id
             }
+            "conjointsupp" -> {
+                if (cibleId != p.conjoint && !p.conjointsSupp.contains(cibleId)) {
+                    p.conjointsSupp.add(cibleId)
+                }
+                if (p.id != cible.conjoint && !cible.conjointsSupp.contains(p.id)) {
+                    cible.conjointsSupp.add(p.id)
+                }
+            }
             "enfant" -> {
                 p.enfants.add(cibleId)
                 if (p.sexe == "F") {
@@ -287,6 +373,10 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 p.conjoint = 0L
                 if (c != null) c.conjoint = 0L
             }
+            "conjointsupp" -> {
+                p.conjointsSupp.remove(enfantId)
+                personneParId(personnes, enfantId)?.conjointsSupp?.remove(p.id)
+            }
             "enfant" -> {
                 p.enfants.remove(enfantId)
                 personneParId(personnes, enfantId)?.let { e ->
@@ -311,32 +401,60 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         enregistrer()
     }
 
-    fun exporterGedcom(uri: Uri) {
+    fun definirCujus(p: Personne) {
+        renumeroter(personnes, p.id)
+        arbreCentre = p.id
+        enregistrer()
+    }
+
+    fun exporterGedcom(uri: Uri, sousEnsemble: Set<Long>?) {
         try {
+            val texte = construireGedcom(personnes, sousEnsemble)
             ctx.contentResolver.openOutputStream(uri)?.use { sortie ->
-                sortie.write(construireGedcom(personnes).toByteArray(Charsets.UTF_8))
+                sortie.write(texte.toByteArray(Charsets.UTF_8))
             }
-            message = "GEDCOM export\u00E9 : importable dans Heredis."
+            val n = if (sousEnsemble == null) personnes.size else texte.split("\n").count { it.endsWith(" INDI") }
+            message = "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis."
         } catch (e: Exception) {
             message = "Echec de l'export GEDCOM."
         }
     }
 
-    fun noterDepuisSuggestion(personne: Personne, s: Suggestion) {
-        val nouvelId = (pistes.maxOfOrNull { it.id } ?: 0L) + 1L
-        val np = Piste(
-            id = nouvelId,
-            texte = s.titre,
-            personneId = personne.id,
-            creation = System.currentTimeMillis(),
-            type = "A",
-            lieu = s.lieu,
-            debut = s.debut,
-            fin = s.fin
-        )
-        pistes.add(np)
+    fun lireGedcom(uri: Uri) {
+        try {
+            val texte = ctx.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+            if (texte.isNullOrBlank()) {
+                message = "Fichier GEDCOM illisible."
+                return
+            }
+            val importees = importerGedcom(texte)
+            if (importees.isEmpty()) {
+                message = "Aucune personne trouv\u00E9e dans ce GEDCOM."
+                return
+            }
+            importConfirme = importees
+        } catch (e: Exception) {
+            message = "Echec de la lecture du GEDCOM."
+        }
+    }
+
+    fun remplacerBase(importees: List<Personne>) {
+        personnes.clear()
+        personnes.addAll(importees)
+        pistes.clear()
+        actes.forEach { Stockage.supprimerImage(ctx, it.id) }
+        actes.clear()
+        val premier = personnes.firstOrNull { it.sosa.trim() == "1" } ?: personnes.firstOrNull()
+        if (premier != null && premier.sosa.isBlank()) {
+            renumeroter(personnes, premier.id)
+        }
+        arbreCentre = premier?.id ?: 0L
         enregistrer()
-        pisteRecherche = np
+        message = if (importees.size >= 100) {
+            "Import limit\u00E9 \u00E0 100 personnes (" + importees.size.toString() + " import\u00E9es)."
+        } else {
+            importees.size.toString() + " personnes import\u00E9es."
+        }
     }
 
     fun ajouterActe(personneId: Long, uri: Uri, type: String, titre: String) {
@@ -361,9 +479,18 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             pistes.addAll(Stockage.chargerJournal(ctx))
             actes.addAll(Stockage.chargerActes(ctx))
             charge = true
+            completerJournal()
         }
     }
     LaunchedEffect(Unit) { aPin = Stockage.aPin(ctx) }
+
+    // Ouverture sur le de cujus (Sosa 1) des le deverrouillage
+    LaunchedEffect(charge, verrou.deverrouille) {
+        if (charge && verrou.deverrouille && !cujasOuvert) {
+            cujasOuvert = true
+            personnes.firstOrNull { it.sosa.trim() == "1" }?.let { idOuvert = it.id }
+        }
+    }
 
     // ------------------------------------------------------------ Porte PIN
 
@@ -407,6 +534,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             supprimer = { supprimer(it) },
             lier = { role, id -> lier(role, id) },
             delier = { role, id -> delier(role, id) },
+            definirCujus = { cujusConfirme = it },
+            renumeroter = { renumeroter(personnes, it) },
             dialoguePiste = dialoguePiste,
             onDialoguePiste = { dialoguePiste = it },
             pistePersonnePre = pistePersonnePre,
@@ -426,7 +555,6 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             },
             onVoirActe = { acteVisionne = it },
             noterRecherche = { pisteRecherche = it },
-            noterSuggestion = { personne, sug -> noterDepuisSuggestion(personne, sug) },
             arbreCentre = if (arbreCentre != 0L) {
                 arbreCentre
             } else {
@@ -435,8 +563,12 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                     ?: 0L
             },
             onArbreCentre = { arbreCentre = it },
-            exporterGedcom = { uri -> exporterGedcom(uri) },
-            ouvrirAd = { n -> ouvrirArchives(ctx, n)?.let { m -> message = m } }
+            exporterGedcom = { uri, sel -> exporterGedcom(uri, sel) },
+            importerGedcom = { uri -> lireGedcom(uri) },
+            ouvrirLien = { url -> ouvrirLien(ctx, url)?.let { m -> message = m } },
+            ouvrirEtatCivil = { commune, dept, type, annee ->
+                ouvrirLien(ctx, lienEtatCivil(commune, dept, type, annee))?.let { m -> message = m }
+            }
         )
     }
 
@@ -452,6 +584,46 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 pisteRecherche = null
             },
             onAnnuler = { pisteRecherche = null }
+        )
+    }
+
+    cujusConfirme?.let { c ->
+        AlertDialog(
+            onDismissRequest = { cujusConfirme = null },
+            title = { Text("Changer le de cujus ?") },
+            text = {
+                Text("D\u00E9finir " + c.titre() + " comme de cujus ? Toute la num\u00E9rotation Sosa et d'Aboville sera recalcul\u00E9e automatiquement \u00E0 partir de cette personne.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    definirCujus(c)
+                    cujusConfirme = null
+                }) { Text("D\u00E9finir") }
+            },
+            dismissButton = {
+                TextButton(onClick = { cujusConfirme = null }) { Text("Annuler") }
+            }
+        )
+    }
+
+    importConfirme?.let { importees ->
+        AlertDialog(
+            onDismissRequest = { importConfirme = null },
+            title = { Text("Importer ce GEDCOM ?") },
+            text = {
+                Text(
+                    "La base actuelle (" + personnes.size.toString() + " personnes, pistes et actes) sera REMPLAC\u00C9E par les " + importees.size.toString() + " personnes du fichier. Pensez \u00E0 exporter la branche actuelle en GEDCOM avant de continuer."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    remplacerBase(importees)
+                    importConfirme = null
+                }) { Text("Remplacer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { importConfirme = null }) { Text("Annuler") }
+            }
         )
     }
 }
@@ -486,7 +658,13 @@ fun DialogueCreationPin(onCree: (String) -> Unit) {
                 label = { Text("Confirmez le code") },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.NumberPassword,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(onDone = {
+                    if (pin1.length >= 4 && pin1 == pin2) onCree(pin1)
+                }),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
             if (erreur.isNotEmpty()) {
@@ -497,7 +675,7 @@ fun DialogueCreationPin(onCree: (String) -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
-            OutlinedButton(
+            Button(
                 onClick = {
                     if (pin1.length < 4) {
                         erreur = "Le code doit contenir au moins 4 chiffres."
@@ -529,6 +707,18 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
         }
     }
 
+    fun essayer() {
+        if (pin.isEmpty() || blocage > 0L) return
+        if (Stockage.verifierPin(ctx, pin)) {
+            onDeverrouille()
+        } else {
+            Stockage.enregistrerEchec(ctx)
+            blocage = Stockage.secondesBlocage(ctx)
+            erreur = "Code incorrect."
+        }
+        pin = ""
+    }
+
     Surface(Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxSize().padding(24.dp),
@@ -537,41 +727,37 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
             Icon(Icons.Filled.Lock, contentDescription = null)
             Text("G\u00E9n\u00E9aPoche est verrouill\u00E9", style = MaterialTheme.typography.titleLarge)
             Text("Entrez votre code PIN.", Modifier.padding(vertical = 8.dp))
-            OutlinedTextField(
-                value = pin,
-                onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) pin = it },
-                label = { Text("Code PIN") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                isError = erreur.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) pin = it },
+                    label = { Text("Code PIN") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.NumberPassword,
+                        imeAction = ImeAction.Go
+                    ),
+                    keyboardActions = KeyboardActions(onGo = { essayer() }),
+                    isError = erreur.isNotEmpty(),
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(Modifier.width(10.dp))
+                Button(
+                    onClick = { essayer() },
+                    enabled = pin.isNotEmpty() && blocage == 0L
+                ) { Text("D\u00E9verrouiller") }
+            }
             if (erreur.isNotEmpty()) {
                 Text(erreur, color = CouleurRouge, modifier = Modifier.padding(vertical = 6.dp))
             }
             if (blocage > 0L) {
                 Text(
-                    "Trop d'essais. R\u00E9essayez dans " + blocage + " s.",
+                    "Trop d'essais. R\u00E9essayez dans " + blocage.toString() + " s.",
                     color = CouleurRouge,
                     modifier = Modifier.padding(vertical = 6.dp)
                 )
             }
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = {
-                    if (Stockage.verifierPin(ctx, pin)) {
-                        onDeverrouille()
-                    } else {
-                        Stockage.enregistrerEchec(ctx)
-                        blocage = Stockage.secondesBlocage(ctx)
-                        erreur = "Code incorrect."
-                    }
-                    pin = ""
-                },
-                enabled = pin.isNotEmpty() && blocage == 0L
-            ) { Text("D\u00E9verrouiller") }
         }
     }
 }
-
