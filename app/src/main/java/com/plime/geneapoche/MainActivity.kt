@@ -311,6 +311,17 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         enregistrer()
     }
 
+    fun exporterGedcom(uri: Uri) {
+        try {
+            ctx.contentResolver.openOutputStream(uri)?.use { sortie ->
+                sortie.write(construireGedcom(personnes).toByteArray(Charsets.UTF_8))
+            }
+            message = "GEDCOM export\u00E9 : importable dans Heredis."
+        } catch (e: Exception) {
+            message = "Echec de l'export GEDCOM."
+        }
+    }
+
     fun noterDepuisSuggestion(personne: Personne, s: Suggestion) {
         val nouvelId = (pistes.maxOfOrNull { it.id } ?: 0L) + 1L
         val np = Piste(
@@ -423,7 +434,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                     ?: personnes.firstOrNull()?.id
                     ?: 0L
             },
-            onArbreCentre = { arbreCentre = it }
+            onArbreCentre = { arbreCentre = it },
+            exporterGedcom = { uri -> exporterGedcom(uri) },
+            ouvrirAd = { n -> ouvrirArchives(ctx, n)?.let { m -> message = m } }
         )
     }
 

@@ -129,7 +129,9 @@ fun EcranApplication(
     noterRecherche: (Piste) -> Unit,
     noterSuggestion: (Personne, Suggestion) -> Unit,
     arbreCentre: Long,
-    onArbreCentre: (Long) -> Unit
+    onArbreCentre: (Long) -> Unit,
+    exporterGedcom: (Uri) -> Unit,
+    ouvrirAd: (Int) -> Unit
 ) {
     BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty() || dialoguePiste) {
         when {
@@ -189,6 +191,11 @@ fun EcranApplication(
                 }
             }
         ) { marges ->
+            val lanceurGedcom = rememberLauncherForActivityResult(
+                ActivityResultContracts.CreateDocument("application/octet-stream")
+            ) { uri ->
+                if (uri != null) exporterGedcom(uri)
+            }
             if (!charge) {
                 Column(Modifier.fillMaxSize().padding(marges).padding(16.dp)) {
                     Text("Chargement...")
@@ -213,6 +220,14 @@ fun EcranApplication(
                                 onOuvrir = { onIdOuvert(p.id) },
                                 onSupprimer = { onConfirmSuppression(p) }
                             )
+                        }
+                        item {
+                            OutlinedButton(
+                                onClick = { lanceurGedcom.launch("geneapoche.ged") },
+                                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)
+                            ) {
+                                Text("Exporter la base (GEDCOM 5.5.1, pour Heredis)")
+                            }
                         }
                     }
                 }
@@ -257,7 +272,8 @@ fun EcranApplication(
             onBasculerPiste = { basculerPiste(it) },
             actes = actes,
             onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },            onSupprimerActe = { onSupprimerActe(it) },
-            onVoirActe = { onVoirActe(it) }
+            onVoirActe = { onVoirActe(it) },
+            ouvrirAd = ouvrirAd
         )
     }
 

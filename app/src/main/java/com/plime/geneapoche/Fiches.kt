@@ -102,7 +102,8 @@ fun EcranPersonne(
     onBasculerPiste: (Piste) -> Unit,
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
-    onVoirActe: (Acte) -> Unit
+    onVoirActe: (Acte) -> Unit,
+    ouvrirAd: (Int) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -185,6 +186,9 @@ fun EcranPersonne(
                     onSupprimerActe = onSupprimerActe,
                     onVoirActe = onVoirActe
                 )
+            }
+            item {
+                CarteArchivesPersonne(p = p, onOuvrirAd = ouvrirAd)
             }
             item { Spacer(Modifier.height(24.dp)) }
         }
@@ -436,6 +440,47 @@ fun compresserVersJpeg(ctx: Context, uri: Uri): ByteArray? {
         sortie.toByteArray()
     } catch (e: Exception) {
         null
+    }
+}
+
+@Composable
+fun CarteArchivesPersonne(
+    p: Personne,
+    onOuvrirAd: (Int) -> Unit
+) {
+    val lieux = listOf(p.lieuNaissance, p.lieuMariage, p.lieuDeces)
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+    val numeros = lieux.mapNotNull { numeroDepartement(it) }.distinct().sorted()
+
+    Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+            Text("Archives d\u00E9partementales", fontWeight = FontWeight.Bold)
+            if (numeros.isEmpty()) {
+                Text(
+                    "Renseignez un lieu au format \u00AB Ville (n\u00B0 du d\u00E9partement) \u00BB (ex : Roubaix (59)) pour ouvrir directement les archives comp\u00E9tentes.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } else {
+                numeros.forEach { n ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "AD " + n + " \u2013 " + (NomsDepartements[n] ?: ""),
+                            Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        TextButton(onClick = { onOuvrirAd(n) }) { Text("Ouvrir") }
+                    }
+                }
+                Text(
+                    "Le navigateur s'ouvre ; G\u00E9n\u00E9aPoche n'a aucune autorisation Internet et n'envoie aucune donn\u00E9e : seule la recherche publique des AD du d\u00E9partement est lanc\u00E9e.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
     }
 }
 
