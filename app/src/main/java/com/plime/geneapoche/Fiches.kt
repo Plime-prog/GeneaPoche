@@ -4,16 +4,14 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Bundle
-import android.view.WindowManager
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,9 +22,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -34,9 +31,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -44,12 +38,9 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -59,28 +50,22 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 // ---------------------------------------------------------------- Fiche personne
 
@@ -91,6 +76,7 @@ fun EcranPersonne(
     pistes: List<Piste>,
     actes: List<Acte>,
     p: Personne,
+    enregistrer: () -> Unit,
     onOuvrir: (Long) -> Unit,
     onRetour: () -> Unit,
     onModifier: () -> Unit,
@@ -98,17 +84,26 @@ fun EcranPersonne(
     onChoisir: (String) -> Unit,
     onRetirer: (String, Long) -> Unit,
     onEtat: (String, String) -> Unit,
+    onDefinirCujus: () -> Unit,
     onNouvellePiste: () -> Unit,
     onBasculerPiste: (Piste) -> Unit,
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
-    ouvrirAd: (Int) -> Unit
+    ouvrirEtatCivil: (String, Int?, String, String) -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(p.titre()) },
+                title = {
+                    Column {
+                        Text(p.titre(), fontSize = 18.sp)
+                        val num = p.numeroAffiche()
+                        if (num.isNotEmpty()) {
+                            Text(num, fontSize = 11.sp, color = Color(0xFFD8EBD4))
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = PaletteGeneaPoche.primary,
                     titleContentColor = Color.White,
@@ -137,28 +132,99 @@ fun EcranPersonne(
             item {
                 CarteIdentite(
                     p,
-                    onEtat = { v -> onEtat("identite", v) }
+                    onEtat = { v -> onEtat("identite", v) },
+                    onModifier = onModifier,
+                    onDefinirCujus = onDefinirCujus
                 )
             }
             item {
                 CarteEvenement(
-                    "Naissance", p.dateNaissance, p.lieuNaissance,
-                    p.etatDe("naissance"),
-                    onEtat = { v -> onEtat("naissance", v) }
+                    titre = "Naissance",
+                    section = "naissance",
+                    typeActe = "N",
+                    date = p.dateNaissance, heure = p.heureNaissance,
+                    lieu = p.lieuNaissance, dept = p.deptNaissance,
+                    etat = p.etatDe("naissance"),
+                    actes = actes.filter { it.personneId == p.id && it.type == "N" },
+                    onEtat = { v -> onEtat("naissance", v) },
+                    onModifier = onModifier,
+                    onAjouterActe = onAjouterActe,
+                    onSupprimerActe = onSupprimerActe,
+                    onVoirActe = onVoirActe,
+                    onEnregistrer = enregistrer,
+                    ouvrirEtatCivil = ouvrirEtatCivil
                 )
             }
             item {
                 CarteEvenement(
-                    "Mariage", p.dateMariage, p.lieuMariage,
-                    p.etatDe("mariage"),
-                    onEtat = { v -> onEtat("mariage", v) }
+                    titre = "Bapt\u00EAme",
+                    section = "bapteme",
+                    typeActe = "B",
+                    date = p.dateBapteme, heure = p.heureBapteme,
+                    lieu = p.lieuBapteme, dept = p.deptBapteme,
+                    etat = p.etatDe("bapteme"),
+                    actes = actes.filter { it.personneId == p.id && it.type == "B" },
+                    onEtat = { v -> onEtat("bapteme", v) },
+                    onModifier = onModifier,
+                    onAjouterActe = onAjouterActe,
+                    onSupprimerActe = onSupprimerActe,
+                    onVoirActe = onVoirActe,
+                    onEnregistrer = enregistrer,
+                    ouvrirEtatCivil = ouvrirEtatCivil
                 )
             }
             item {
                 CarteEvenement(
-                    "D\u00E9c\u00E8s", p.dateDeces, p.lieuDeces,
-                    p.etatDe("deces"),
-                    onEtat = { v -> onEtat("deces", v) }
+                    titre = "Mariage",
+                    section = "mariage",
+                    typeActe = "M",
+                    date = p.dateMariage, heure = p.heureMariage,
+                    lieu = p.lieuMariage, dept = p.deptMariage,
+                    etat = p.etatDe("mariage"),
+                    actes = actes.filter { it.personneId == p.id && it.type == "M" },
+                    onEtat = { v -> onEtat("mariage", v) },
+                    onModifier = onModifier,
+                    onAjouterActe = onAjouterActe,
+                    onSupprimerActe = onSupprimerActe,
+                    onVoirActe = onVoirActe,
+                    onEnregistrer = enregistrer,
+                    ouvrirEtatCivil = ouvrirEtatCivil
+                )
+            }
+            item {
+                CarteEvenement(
+                    titre = "D\u00E9c\u00E8s",
+                    section = "deces",
+                    typeActe = "D",
+                    date = p.dateDeces, heure = p.heureDeces,
+                    lieu = p.lieuDeces, dept = p.deptDeces,
+                    etat = p.etatDe("deces"),
+                    actes = actes.filter { it.personneId == p.id && it.type == "D" },
+                    onEtat = { v -> onEtat("deces", v) },
+                    onModifier = onModifier,
+                    onAjouterActe = onAjouterActe,
+                    onSupprimerActe = onSupprimerActe,
+                    onVoirActe = onVoirActe,
+                    onEnregistrer = enregistrer,
+                    ouvrirEtatCivil = ouvrirEtatCivil
+                )
+            }
+            item {
+                CarteEvenement(
+                    titre = "S\u00E9pulture",
+                    section = "sepulture",
+                    typeActe = "S",
+                    date = p.dateSepulture, heure = p.heureSepulture,
+                    lieu = p.lieuSepulture, dept = p.deptSepulture,
+                    etat = p.etatDe("sepulture"),
+                    actes = actes.filter { it.personneId == p.id && it.type == "S" },
+                    onEtat = { v -> onEtat("sepulture", v) },
+                    onModifier = onModifier,
+                    onAjouterActe = onAjouterActe,
+                    onSupprimerActe = onSupprimerActe,
+                    onVoirActe = onVoirActe,
+                    onEnregistrer = enregistrer,
+                    ouvrirEtatCivil = ouvrirEtatCivil
                 )
             }
             item {
@@ -173,31 +239,33 @@ fun EcranPersonne(
             item {
                 CartePistesPersonne(
                     pistes = pistes,
+                    personnes = personnes,
+                    actes = actes,
                     p = p,
                     onNouvellePiste = onNouvellePiste,
                     onBasculer = onBasculerPiste
                 )
-            }
-            item {
-                CarteActesPersonne(
-                    actes = actes,
-                    p = p,
-                    onAjouterActe = onAjouterActe,
-                    onSupprimerActe = onSupprimerActe,
-                    onVoirActe = onVoirActe
-                )
-            }
-            item {
-                CarteArchivesPersonne(p = p, onOuvrirAd = ouvrirAd)
             }
             item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }
 
+// ---------------------------------------------------------------- Identite
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CarteIdentite(p: Personne, onEtat: (String) -> Unit) {
-    Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+fun CarteIdentite(
+    p: Personne,
+    onEtat: (String) -> Unit,
+    onModifier: () -> Unit,
+    onDefinirCujus: () -> Unit
+) {
+    Card(
+        Modifier.fillMaxWidth()
+            .padding(vertical = 5.dp)
+            .combinedClickable(onClick = {}, onLongClick = { onModifier() })
+    ) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
             EnteteAvecPastilles("Identit\u00E9", p.etatIdentite, onEtat)
             Ligne("Sosa", p.sosa.trim())
@@ -206,29 +274,228 @@ fun CarteIdentite(p: Personne, onEtat: (String) -> Unit) {
             Ligne("Pr\u00E9noms", p.prenoms.trim())
             Ligne("Sexe", when (p.sexe) { "M" -> "Masculin"; "F" -> "F\u00E9minin"; else -> "" })
             Ligne("Profession", p.profession.trim())
+            Text(
+                "Appui long : modifier la fiche",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (p.sosa.trim() != "1") {
+                OutlinedButton(onClick = onDefinirCujus, Modifier.padding(top = 6.dp)) {
+                    Text("D\u00E9finir comme de cujus")
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- Bloc d'evenement (avec actes et lien AD)
+
+fun libelleType(t: String): String = when (t) {
+    "N" -> "Naissance"
+    "B" -> "Bapt\u00EAme"
+    "M" -> "Mariage"
+    "D" -> "D\u00E9c\u00E8s"
+    "S" -> "S\u00E9pulture"
+    else -> "Autre"
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun CarteEvenement(
+    titre: String,
+    section: String,
+    typeActe: String,
+    date: String,
+    heure: String,
+    lieu: String,
+    dept: String,
+    etat: String,
+    actes: List<Acte>,
+    onEtat: (String) -> Unit,
+    onModifier: () -> Unit,
+    onAjouterActe: (Uri, String, String) -> Unit,
+    onSupprimerActe: (Acte) -> Unit,
+    onVoirActe: (Acte) -> Unit,
+    onEnregistrer: () -> Unit,
+    ouvrirEtatCivil: (String, Int?, String, String) -> Unit
+) {
+    val d = date.trim()
+    val l = lieu.trim()
+    val h = heure.trim()
+    val dp = dept.trim()
+    val rien = d.isEmpty() && l.isEmpty() && h.isEmpty() && dp.isEmpty() && etat.isEmpty() && actes.isEmpty()
+
+    Card(
+        Modifier.fillMaxWidth()
+            .padding(vertical = 5.dp)
+            .combinedClickable(onClick = {}, onLongClick = { onModifier() })
+    ) {
+        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+            EnteteAvecPastilles(titre, etat, onEtat)
+            Ligne("Date", d)
+            Ligne("Heure", h)
+            Ligne("Lieu", l)
+            Ligne("D\u00E9partement", dp)
+
+            // Lien direct vers l'etat civil des AD selon la date et le type d'acte
+            val numDept = dp.toIntOrNull() ?: numeroDepartement(l) ?: numeroDepartement(dp)
+            if ((l.isNotEmpty() || numDept != null) && (d.isNotEmpty() || l.isNotEmpty())) {
+                OutlinedButton(
+                    onClick = {
+                        ouvrirEtatCivil(l, numDept, libelleType(typeActe), Regex("[0-9]{4}").find(d)?.value ?: "")
+                    },
+                    Modifier.padding(top = 4.dp)
+                ) {
+                    Text("Rechercher cet acte aux AD")
+                }
+            }
+
+            // Actes stockes pour cet evenement
+            if (actes.isNotEmpty()) {
+                Text(
+                    "Actes stock\u00E9s (" + actes.size.toString() + ")",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+                actes.forEach { acte ->
+                    LigneActe(
+                        acte = acte,
+                        onVoir = { onVoirActe(acte) },
+                        onSupprimer = { onSupprimerActe(acte) },
+                        onEnregistrer = onEnregistrer
+                    )
+                }
+            }
+            AjoutActeBloc(typeActe, onAjouterActe)
         }
     }
 }
 
 @Composable
-fun CarteEvenement(
-    titre: String,
-    date: String,
-    lieu: String,
-    etat: String,
-    onEtat: (String) -> Unit
-) {
-    val d = date.trim()
-    val l = lieu.trim()
-    if (d.isEmpty() && l.isEmpty() && etat.isEmpty()) return
-    Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
-        Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            EnteteAvecPastilles(titre, etat, onEtat)
-            Ligne("Date", d)
-            Ligne("Lieu", l)
-        }
+fun AjoutActeBloc(typeActe: String, onAjouterActe: (Uri, String, String) -> Unit) {
+    var dialogueOuvert by remember { mutableStateOf(false) }
+    val lanceur = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) onAjouterActe(uri, typeActe, "")
+    }
+    OutlinedButton(onClick = { dialogueOuvert = true }, Modifier.padding(top = 4.dp)) {
+        Icon(Icons.Filled.Add, contentDescription = null)
+        Text("  Ajouter un acte")
+    }
+    if (dialogueOuvert) {
+        AlertDialog(
+            onDismissRequest = { dialogueOuvert = false },
+            title = { Text("Ajouter un acte : " + libelleType(typeActe)) },
+            text = {
+                Text(
+                    "L'image reste sur l'appareil, chiffr\u00E9e. Rien n'est transmis.\nChoisissez l'image \u00E0 associer \u00E0 cet \u00E9v\u00E9nement."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    dialogueOuvert = false
+                    lanceur.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }) { Text("Choisir l'image") }
+            },
+            dismissButton = {
+                TextButton(onClick = { dialogueOuvert = false }) { Text("Annuler") }
+            }
+        )
     }
 }
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun LigneActe(
+    acte: Acte,
+    onVoir: () -> Unit,
+    onSupprimer: () -> Unit,
+    onEnregistrer: () -> Unit
+) {
+    var pageOuvert by remember { mutableStateOf(false) }
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            if (acte.titre.trim().isNotEmpty()) acte.titre.trim() else "(sans titre)",
+            Modifier.weight(1f).combinedClickable(onClick = onVoir, onLongClick = { pageOuvert = true }),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        if (acte.numPage.isNotEmpty()) {
+            Text(
+                "p. " + acte.numPage + "/" + acte.totalPage,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = 4.dp)
+            )
+        }
+        TextButton(onClick = { pageOuvert = true }) { Text("Page") }
+        IconButton(onClick = onSupprimer) {
+            Icon(Icons.Filled.Close, contentDescription = "Supprimer")
+        }
+    }
+    if (pageOuvert) {
+        DialoguePageActe(
+            acte = acte,
+            onValider = { num, total ->
+                acte.numPage = num
+                acte.totalPage = total
+                onEnregistrer()
+                pageOuvert = false
+            },
+            onAnnuler = { pageOuvert = false }
+        )
+    }
+}
+
+@Composable
+fun DialoguePageActe(
+    acte: Acte,
+    onValider: (String, String) -> Unit,
+    onAnnuler: () -> Unit
+) {
+    var num by remember { mutableStateOf(acte.numPage) }
+    var total by remember { mutableStateOf(acte.totalPage) }
+    AlertDialog(
+        onDismissRequest = onAnnuler,
+        title = { Text("O\u00F9 en est la consultation ?") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = num,
+                    onValueChange = { num = it },
+                    label = { Text("Num\u00E9ro de la page consult\u00E9e") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = total,
+                    onValueChange = { total = it },
+                    label = { Text("sur un total de ... pages (facultatif)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                )
+                Text(
+                    "Ex : page 230 sur 487. Sert de rappel pour reprendre la recherche.",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onValider(num.trim(), total.trim()) }) { Text("Enregistrer") }
+        },
+        dismissButton = {
+            TextButton(onClick = onAnnuler) { Text("Annuler") }
+        }
+    )
+}
+
+// ---------------------------------------------------------------- Pastilles
 
 @Composable
 fun EnteteAvecPastilles(titre: String, etat: String, onEtat: (String) -> Unit) {
@@ -242,10 +509,10 @@ fun EnteteAvecPastilles(titre: String, etat: String, onEtat: (String) -> Unit) {
             onClick = { onEtat(if (etat == "vert") "" else "vert") },
             label = { Text("V\u00E9rifi\u00E9") },
             colors = FilterChipDefaults.filterChipColors(
-                containerColor = CouleurVert.copy(alpha = 0.15f),
-                labelColor = CouleurVert,
-                selectedContainerColor = CouleurVert,
-                selectedLabelColor = Color.White
+                containerColor = CouleurNeutrePale,
+                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                selectedContainerColor = CouleurVertPale,
+                selectedLabelColor = CouleurVertFonce
             )
         )
         Spacer(Modifier.width(6.dp))
@@ -254,10 +521,10 @@ fun EnteteAvecPastilles(titre: String, etat: String, onEtat: (String) -> Unit) {
             onClick = { onEtat(if (etat == "rouge") "" else "rouge") },
             label = { Text("\u00C0 v\u00E9rifier") },
             colors = FilterChipDefaults.filterChipColors(
-                containerColor = CouleurRouge.copy(alpha = 0.15f),
-                labelColor = CouleurRouge,
-                selectedContainerColor = CouleurRouge,
-                selectedLabelColor = Color.White
+                containerColor = CouleurNeutrePale,
+                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                selectedContainerColor = Color(0xFFF3DDDA),
+                selectedLabelColor = CouleurRouge
             )
         )
     }
@@ -272,6 +539,9 @@ fun Ligne(libelle: String, valeur: String) {
     }
 }
 
+// ---------------------------------------------------------------- Famille
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CarteFamille(
     personnes: List<Personne>,
@@ -309,9 +579,23 @@ fun CarteFamille(
                 onChoisir = { onChoisir("conjoint") },
                 onRetirer = { onRetirer("conjoint", 0L) }
             )
+            p.conjointsSupp.forEach { idC ->
+                LienParent(
+                    libelle = "Autre conjoint(e)",
+                    cible = idC,
+                    personnes = personnes,
+                    onOuvrir = onOuvrir,
+                    onChoisir = { onChoisir("conjointsupp") },
+                    onRetirer = { onRetirer("conjointsupp", idC) }
+                )
+            }
+            OutlinedButton(onClick = { onChoisir("conjointsupp") }, Modifier.padding(top = 4.dp)) {
+                Icon(Icons.Filled.Add, contentDescription = null)
+                Text("  Ajouter un autre conjoint")
+            }
 
             Spacer(Modifier.height(6.dp))
-            Text("Enfants", fontWeight = FontWeight.Bold)
+            Text("Enfants (" + p.enfants.size.toString() + ")", fontWeight = FontWeight.Bold)
             if (p.enfants.isEmpty()) {
                 Text("Aucun enfant renseign\u00E9.", style = MaterialTheme.typography.bodySmall)
             }
@@ -324,7 +608,7 @@ fun CarteFamille(
                 ) {
                     Text(
                         nomEnfant,
-                        Modifier.weight(1f).clickable { if (e != null) onOuvrir(idEnfant) },
+                        Modifier.weight(1f).combinedClickable(onClick = { if (e != null) onOuvrir(idEnfant) }, onLongClick = {}),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     IconButton(onClick = { onRetirer("enfant", idEnfant) }) {
@@ -334,12 +618,13 @@ fun CarteFamille(
             }
             OutlinedButton(onClick = { onChoisir("enfant") }, Modifier.padding(top = 4.dp)) {
                 Icon(Icons.Filled.Add, contentDescription = null)
-                Text("Ajouter un enfant")
+                Text("  Ajouter un enfant")
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LienParent(
     libelle: String,
@@ -360,7 +645,7 @@ fun LienParent(
         } else {
             Text(
                 q.titre(),
-                Modifier.weight(1f).clickable { onOuvrir(cible) },
+                Modifier.weight(1f).combinedClickable(onClick = { onOuvrir(cible) }, onLongClick = {}),
                 style = MaterialTheme.typography.bodyMedium
             )
             IconButton(onClick = onRetirer) {
@@ -370,27 +655,38 @@ fun LienParent(
     }
 }
 
+// ---------------------------------------------------------------- Pistes de la personne
+
 @Composable
 fun CartePistesPersonne(
     pistes: List<Piste>,
+    personnes: List<Personne>,
+    actes: List<Acte>,
     p: Personne,
     onNouvellePiste: () -> Unit,
     onBasculer: (Piste) -> Unit
 ) {
     Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            Text("Pistes de recherche", fontWeight = FontWeight.Bold)
+            Text("Recherches", fontWeight = FontWeight.Bold)
             val deCettePersonne = pistes.filter { it.personneId == p.id }
-            if (deCettePersonne.isEmpty()) {
-                Text("Aucune piste pour cette personne.", style = MaterialTheme.typography.bodySmall)
-            }
-            deCettePersonne.forEach { piste ->
+            val ouvertes = deCettePersonne.filter { !it.faite }
+            val restantes = suggestionsPour(p, personnes, actes).size
+            Text(
+                if (restantes > 0) {
+                    ouvertes.size.toString() + " en cours \u2013 " + restantes.toString() + " information(s) encore \u00E0 trouver pour cette personne."
+                } else {
+                    "Tout est renseign\u00E9 et v\u00E9rifi\u00E9 pour cette personne."
+                },
+                style = MaterialTheme.typography.bodySmall
+            )
+            ouvertes.forEach { piste ->
                 Row(
                     Modifier.fillMaxWidth().padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Checkbox(
-                        checked = piste.faite,
+                        checked = false,
                         onCheckedChange = { onBasculer(piste) },
                         colors = CheckboxDefaults.colors(
                             checkedColor = CouleurVert,
@@ -398,29 +694,25 @@ fun CartePistesPersonne(
                         )
                     )
                     Text(
-                        piste.texte,
+                        if (piste.type == "A" && piste.categorie.isNotEmpty()) {
+                            textePisteActuel(piste, personnes, actes)
+                        } else {
+                            piste.texte
+                        },
                         Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (piste.faite) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
             OutlinedButton(onClick = onNouvellePiste, Modifier.padding(top = 4.dp)) {
                 Icon(Icons.Filled.Add, contentDescription = null)
-                Text("Nouvelle piste pour cette personne")
+                Text("  Nouvelle piste pour cette personne")
             }
         }
     }
 }
 
-// ---------------------------------------------------------------- Actes (images chiffrees)
-
-fun libelleType(t: String): String = when (t) {
-    "N" -> "Naissance"
-    "M" -> "Mariage"
-    "D" -> "D\u00E9c\u00E8s"
-    else -> "Autre"
-}
+// ---------------------------------------------------------------- Actes : image + zoom
 
 // Import d'une image (capture d'ecran ou photo) : redimensionnee puis compressee en JPEG.
 fun compresserVersJpeg(ctx: Context, uri: Uri): ByteArray? {
@@ -443,173 +735,18 @@ fun compresserVersJpeg(ctx: Context, uri: Uri): ByteArray? {
     }
 }
 
-@Composable
-fun CarteArchivesPersonne(
-    p: Personne,
-    onOuvrirAd: (Int) -> Unit
-) {
-    val lieux = listOf(p.lieuNaissance, p.lieuMariage, p.lieuDeces)
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-    val numeros = lieux.mapNotNull { numeroDepartement(it) }.distinct().sorted()
-
-    Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
-        Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            Text("Archives d\u00E9partementales", fontWeight = FontWeight.Bold)
-            if (numeros.isEmpty()) {
-                Text(
-                    "Renseignez un lieu au format \u00AB Ville (n\u00B0 du d\u00E9partement) \u00BB (ex : Roubaix (59)) pour ouvrir directement les archives comp\u00E9tentes.",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            } else {
-                numeros.forEach { n ->
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "AD " + n + " \u2013 " + (NomsDepartements[n] ?: ""),
-                            Modifier.weight(1f),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        TextButton(onClick = { onOuvrirAd(n) }) { Text("Ouvrir") }
-                    }
-                }
-                Text(
-                    "Le navigateur s'ouvre ; G\u00E9n\u00E9aPoche n'a aucune autorisation Internet et n'envoie aucune donn\u00E9e : seule la recherche publique des AD du d\u00E9partement est lanc\u00E9e.",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun CarteActesPersonne(
-    actes: List<Acte>,
-    p: Personne,
-    onAjouterActe: (Uri, String, String) -> Unit,
-    onSupprimerActe: (Acte) -> Unit,
-    onVoirActe: (Acte) -> Unit
-) {
-    var dialogueOuvert by remember { mutableStateOf(false) }
-    var typeEnAttente by remember { mutableStateOf("N") }
-    var titreEnAttente by remember { mutableStateOf("") }
-
-    val lanceur = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) {
-            onAjouterActe(uri, typeEnAttente, titreEnAttente)
-        }
-        typeEnAttente = "N"
-        titreEnAttente = ""
-    }
-
-    Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
-        Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            Text("Actes et images", fontWeight = FontWeight.Bold)
-            val deCettePersonne = actes.filter { it.personneId == p.id }
-            if (deCettePersonne.isEmpty()) {
-                Text(
-                    "Aucun acte stock\u00E9. Importez une capture d'\u00E9cran ou une photo d'acte (elle sera chiffr\u00E9e).",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            deCettePersonne.forEach { acte ->
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        libelleType(acte.type),
-                        Modifier.clickable { onVoirActe(acte) },
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    val t = acte.titre.trim()
-                    Text(
-                        if (t.isNotEmpty()) t else "(sans titre)",
-                        Modifier.weight(1f).clickable { onVoirActe(acte) },
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    IconButton(onClick = { onSupprimerActe(acte) }) {
-                        Icon(Icons.Filled.Close, contentDescription = "Supprimer")
-                    }
-                }
-            }
-            OutlinedButton(onClick = { dialogueOuvert = true }, Modifier.padding(top = 4.dp)) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Text("Ajouter un acte")
-            }
-        }
-    }
-
-    if (dialogueOuvert) {
-        DialogueNouvelActe(
-            onValider = { type, titre ->
-                typeEnAttente = type
-                titreEnAttente = titre
-                dialogueOuvert = false
-                lanceur.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-            },
-            onAnnuler = { dialogueOuvert = false }
-        )
-    }
-}
-
-@Composable
-fun DialogueNouvelActe(
-    onValider: (String, String) -> Unit,
-    onAnnuler: () -> Unit
-) {
-    var type by remember { mutableStateOf("N") }
-    var titre by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onAnnuler,
-        title = { Text("Nouvel acte") },
-        text = {
-            Column {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FilterChip(selected = type == "N", onClick = { type = "N" }, label = { Text("Naissance") })
-                    FilterChip(selected = type == "M", onClick = { type = "M" }, label = { Text("Mariage") })
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FilterChip(selected = type == "D", onClick = { type = "D" }, label = { Text("D\u00E9c\u00E8s") })
-                    FilterChip(selected = type == "A", onClick = { type = "A" }, label = { Text("Autre") })
-                }
-                OutlinedTextField(
-                    value = titre,
-                    onValueChange = { titre = it },
-                    label = { Text("Titre (facultatif)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                )
-                Text(
-                    "L'image reste sur l'appareil, chiffr\u00E9e. Rien n'est transmis.",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 6.dp)
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onValider(type, titre.trim()) }) { Text("Choisir l'image") }
-        },
-        dismissButton = {
-            TextButton(onClick = onAnnuler) { Text("Annuler") }
-        }
-    )
-}
-
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
     val bmp = remember(acte.id) {
         val octets = Stockage.lireImage(ctx, acte.id)
         if (octets != null) BitmapFactory.decodeByteArray(octets, 0, octets.size) else null
+    }
+    var echelle by remember { mutableStateOf(1f) }
+    var decalage by remember { mutableStateOf(Offset.Zero) }
+    val etat = rememberTransformableState { zoom, pan, _ ->
+        echelle = (echelle * zoom).coerceIn(1f, 6f)
+        decalage = if (echelle > 1f) decalage + pan else Offset.Zero
     }
     Dialog(
         onDismissRequest = onFermer,
@@ -634,123 +771,28 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
                 if (bmp == null) {
                     Text("Image illisible.", color = CouleurRouge)
                 } else {
+                    Text(
+                        "Pincez pour zoomer, glissez pour d\u00E9placer.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Image(
                         bitmap = bmp.asImageBitmap(),
                         contentDescription = null,
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxWidth().weight(1f)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .transformable(etat)
+                            .graphicsLayer {
+                                scaleX = echelle
+                                scaleY = echelle
+                                translationX = decalage.x
+                                translationY = decalage.y
+                            }
                     )
                 }
             }
         }
     }
-}
-
-// ---------------------------------------------------------------- Dialogue edition
-
-@Composable
-fun DialogueEdition(
-    cible: Personne?,
-    idNouvelle: Long,
-    onValider: (Personne) -> Unit,
-    onAnnuler: () -> Unit
-) {
-    var sosa by remember { mutableStateOf(cible?.sosa ?: "") }
-    var lateral by remember { mutableStateOf(cible?.lateral ?: "") }
-    var nom by remember { mutableStateOf(cible?.nom ?: "") }
-    var prenoms by remember { mutableStateOf(cible?.prenoms ?: "") }
-    var sexe by remember { mutableStateOf(cible?.sexe ?: "") }
-    var profession by remember { mutableStateOf(cible?.profession ?: "") }
-    var dateNaissance by remember { mutableStateOf(cible?.dateNaissance ?: "") }
-    var lieuNaissance by remember { mutableStateOf(cible?.lieuNaissance ?: "") }
-    var dateMariage by remember { mutableStateOf(cible?.dateMariage ?: "") }
-    var lieuMariage by remember { mutableStateOf(cible?.lieuMariage ?: "") }
-    var dateDeces by remember { mutableStateOf(cible?.dateDeces ?: "") }
-    var lieuDeces by remember { mutableStateOf(cible?.lieuDeces ?: "") }
-
-    fun construire(): Personne {
-        val base = cible ?: Personne(id = idNouvelle)
-        base.sosa = sosa.trim()
-        base.lateral = lateral.trim()
-        base.nom = nom.trim()
-        base.prenoms = prenoms.trim()
-        base.sexe = sexe
-        base.profession = profession.trim()
-        base.dateNaissance = dateNaissance.trim()
-        base.lieuNaissance = lieuNaissance.trim()
-        base.dateMariage = dateMariage.trim()
-        base.lieuMariage = lieuMariage.trim()
-        base.dateDeces = dateDeces.trim()
-        base.lieuDeces = lieuDeces.trim()
-        return base
-    }
-
-    val formulaireValide =
-        (nom.isNotBlank() || prenoms.isNotBlank()) &&
-        sosaValide(sosa) && lateralValide(lateral)
-
-    AlertDialog(
-        onDismissRequest = onAnnuler,
-        title = { Text(if (cible == null) "Ajouter une personne" else "Modifier la personne") },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text("Identit\u00E9", fontWeight = FontWeight.Bold)
-                Champ("Sosa (1 = de cujus)", sosa, { sosa = it },
-                    erreur = !sosaValide(sosa), aide = "Num\u00E9ro de la lign\u00E9e directe")
-                Champ("Num\u00E9ro lat\u00E9ral (ex 1.3)", lateral, { lateral = it },
-                    erreur = !lateralValide(lateral), aide = "Descendants hors lign\u00E9e directe")
-                Champ("Nom", nom, { nom = it })
-                Champ("Pr\u00E9noms", prenoms, { prenoms = it })
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("M") })
-                    FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("F") })
-                    FilterChip(selected = sexe.isEmpty(), onClick = { sexe = "" }, label = { Text("?") })
-                }
-                Champ("Profession", profession, { profession = it })
-
-                Spacer(Modifier.height(10.dp))
-                Text("Naissance", fontWeight = FontWeight.Bold)
-                Champ("Date", dateNaissance, { dateNaissance = it })
-                Champ("Lieu", lieuNaissance, { lieuNaissance = it })
-
-                Spacer(Modifier.height(10.dp))
-                Text("Mariage", fontWeight = FontWeight.Bold)
-                Champ("Date", dateMariage, { dateMariage = it })
-                Champ("Lieu", lieuMariage, { lieuMariage = it })
-
-                Spacer(Modifier.height(10.dp))
-                Text("D\u00E9c\u00E8s", fontWeight = FontWeight.Bold)
-                Champ("Date", dateDeces, { dateDeces = it })
-                Champ("Lieu", lieuDeces, { lieuDeces = it })
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onValider(construire()) },
-                enabled = formulaireValide
-            ) { Text("Enregistrer") }
-        },
-        dismissButton = {
-            TextButton(onClick = onAnnuler) { Text("Annuler") }
-        }
-    )
-}
-
-@Composable
-fun Champ(
-    libelle: String,
-    valeur: String,
-    onChange: (String) -> Unit,
-    erreur: Boolean = false,
-    aide: String = ""
-) {
-    OutlinedTextField(
-        value = valeur,
-        onValueChange = onChange,
-        label = { Text(libelle) },
-        isError = erreur,
-        singleLine = true,
-        supportingText = if (aide.isNotEmpty()) { { Text(aide, style = MaterialTheme.typography.bodySmall) } } else null,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
-    )
 }
