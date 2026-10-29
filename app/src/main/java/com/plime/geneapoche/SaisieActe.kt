@@ -115,18 +115,18 @@ fun SectionTitre(t: String) {
 @Composable
 fun BlocParent(libelle: String, e: ChampsParent, dateActe: String) {
     SectionTitre(libelle)
-    Champ("Nom", e.nom), { e.nom = it }
-    Champ("Pr\u00E9noms", e.prenoms), { e.prenoms = it }
+    Champ("Nom", e.nom, { e.nom = it })
+    Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it })
     val age = ageActe(dateActe, e.ne)
     Champ(
         "N\u00E9(e) le (jj/mm/aaaa)", e.ne, { e.ne = it },
         aide = if (age.isNotEmpty()) "\u00C2ge \u00E0 l'acte : " + age else "\u00C2ge calcul\u00E9 automatiquement"
     )
-    Champ("Lieu de naissance", e.lieu), { e.lieu = it }
-    Champ("D\u00E9partement (ex 59)", e.dept), { e.dept = it }
-    Champ("Profession", e.profession), { e.profession = it }
-    Champ("D\u00E9c\u00E9d\u00E9(e) le", e.deces), { e.deces = it }
-    Champ("Lieu de d\u00E9c\u00E8s", e.lieuDeces), { e.lieuDeces = it }
+    Champ("Lieu de naissance", e.lieu, { e.lieu = it })
+    Champ("D\u00E9partement (ex 59)", e.dept, { e.dept = it })
+    Champ("Profession", e.profession, { e.profession = it })
+    Champ("D\u00E9c\u00E9d\u00E9(e) le", e.deces, { e.deces = it })
+    Champ("Lieu de d\u00E9c\u00E8s", e.lieuDeces, { e.lieuDeces = it })
 }
 
 @Composable
@@ -191,10 +191,10 @@ fun EcranSaisieActe(
             }
         }
 
-        Champ("Commune", commune), { commune = it }
-        Champ("D\u00E9partement (ex 59)", dept), { dept = it }
-        Champ("Date (jj/mm/aaaa)", date), { date = it }
-        Champ("Heure (hh:mm)", heure), { heure = it }
+        Champ("Commune", commune, { commune = it })
+        Champ("D\u00E9partement (ex 59)", dept, { dept = it })
+        Champ("Date (jj/mm/aaaa)", date, { date = it })
+        Champ("Heure (hh:mm)", heure, { heure = it })
 
         SectionTitre("Personne concern\u00E9e")
         if (exPersonne != null) {
@@ -207,13 +207,13 @@ fun EcranSaisieActe(
         OutlinedButton(onClick = { pickerCible = 0; pickerOuvert = true }) {
             Text("Choisir une personne existante")
         }
-        Champ("Nom", nom), { nom = it }
-        Champ("Pr\u00E9noms", prenoms), { prenoms = it }
+        Champ("Nom", nom, { nom = it })
+        Champ("Pr\u00E9noms", prenoms, { prenoms = it })
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("M") })
             FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("F") })
         }
-        Champ("Profession", profession), { profession = it }
+        Champ("Profession", profession, { profession = it })
 
         BlocParent("P\u00E8re", pere, date)
         BlocParent("M\u00E8re", mere, date)
@@ -230,9 +230,9 @@ fun EcranSaisieActe(
             OutlinedButton(onClick = { pickerCible = 1; pickerOuvert = true }) {
                 Text("Choisir la mari\u00E9e parmi les personnes")
             }
-            Champ("Nom", marieeNom), { marieeNom = it }
-            Champ("Pr\u00E9noms", marieePrenoms), { marieePrenoms = it }
-            Champ("Profession", marieeProf), { marieeProf = it }
+            Champ("Nom", marieeNom, { marieeNom = it })
+            Champ("Pr\u00E9noms", marieePrenoms, { marieePrenoms = it })
+            Champ("Profession", marieeProf, { marieeProf = it })
             BlocParent("P\u00E8re de la mari\u00E9e", pereMariee, date)
             BlocParent("M\u00E8re de la mari\u00E9e", mereMariee, date)
         }
@@ -244,9 +244,9 @@ fun EcranSaisieActe(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Champ("Nom du t\u00E9moin", t.nom) { temoins[i] = t.copy(nom = it) }
-                    Champ("Pr\u00E9noms du t\u00E9moin", t.prenoms) { temoins[i] = t.copy(prenoms = it) }
-                    Champ("Profession du t\u00E9moin", t.profession) { temoins[i] = t.copy(profession = it) }
+                    Champ("Nom du t\u00E9moin", t.nom, { temoins[i] = t.copy(nom = it) })
+                    Champ("Pr\u00E9noms du t\u00E9moin", t.prenoms, { temoins[i] = t.copy(prenoms = it) })
+                    Champ("Profession du t\u00E9moin", t.profession, { temoins[i] = t.copy(profession = it) })
                 }
                 IconButton(onClick = {
                     signataires.remove("T\u00E9moin " + (i + 1).toString())
