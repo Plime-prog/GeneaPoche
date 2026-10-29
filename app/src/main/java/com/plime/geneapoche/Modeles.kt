@@ -65,7 +65,7 @@ data class Personne(
         val s = sosa.trim()
         if (s.isNotEmpty()) return "Sosa " + s
         val l = lateral.trim()
-        if (l.isNotEmpty()) return "Latéral " + l
+        if (l.isNotEmpty()) return "LatÃ©ral " + l
         return ""
     }
 
@@ -333,7 +333,9 @@ data class Acte(
     var numPage: String = "",
     var totalPage: String = "",
     // Transcription integrale (saisie par acte) : ages, temoins, signataires.
-    var contenu: String = ""
+    var contenu: String = "",
+    // Reference de l'acte aux Archives departementales (cote, ex "1890-N-123").
+    var reference: String = ""
 ) {
     fun versJson(): JSONObject {
         val o = JSONObject()
@@ -345,6 +347,7 @@ data class Acte(
         o.put("numPage", numPage)
         o.put("totalPage", totalPage)
         o.put("contenu", contenu)
+        o.put("reference", reference)
         return o
     }
 
@@ -357,9 +360,11 @@ data class Acte(
             creation = o.optLong("creation", 0L),
             numPage = o.optString("numPage", ""),
             totalPage = o.optString("totalPage", ""),
-            contenu = o.optString("contenu", "")
+            contenu = o.optString("contenu", ""),
+            reference = o.optString("reference", "")
         )
     }
 }
+
 
 

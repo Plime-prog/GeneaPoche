@@ -471,7 +471,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
 
     fun exporterGedcom(uri: Uri, sousEnsemble: Set<Long>?) {
         try {
-            val texte = construireGedcom(personnes, sousEnsemble)
+            val texte = construireGedcom(personnes, sousEnsemble, actes)
             ctx.contentResolver.openOutputStream(uri)?.use { sortie ->
                 sortie.write(texte.toByteArray(Charsets.UTF_8))
             }
@@ -767,7 +767,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         actes.add(
             Acte(
                 id = idActe, personneId = p.id, type = a.type, titre = entete,
-                creation = System.currentTimeMillis(), contenu = contenu
+                creation = System.currentTimeMillis(), contenu = contenu,
+                reference = a.reference.trim()
             )
         )
         if (mariee != null) {
@@ -775,7 +776,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             actes.add(
                 Acte(
                     id = idActe, personneId = mariee.id, type = a.type, titre = entete,
-                    creation = System.currentTimeMillis(), contenu = contenu
+                    creation = System.currentTimeMillis(), contenu = contenu,
+                    reference = a.reference.trim()
                 )
             )
         }
@@ -1161,6 +1163,7 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
         }
     }
 }
+
 
 
 

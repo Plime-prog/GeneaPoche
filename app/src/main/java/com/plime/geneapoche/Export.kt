@@ -72,11 +72,37 @@ fun brancheDe(personnes: List<Personne>, idCentre: Long): Set<Long> {
     return res
 }
 
-fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null): String {
+// Lieu normalise pour le GEDCOM (format Heredis) : "Roubaix, 59, Nord".
+// Le numero de departement peut venir du champ dept, du lieu lui-meme ("Roubaix (59)"),
+// ou du nom du departement ("Nord" -> 59).
+fun lieuGedcom(commune: String, dept: String): String {
+    val c = commune.trim()
+    val n = dept.trim().toIntOrNull() ?: numeroDepartement(dept) ?: numeroDepartement(c)
+    if (n == null) return c
+    return listOf(c, n.toString(), NomsDepartements[n] ?: "").filter { it.isNotEmpty() }.joinToString(", ")
+}
+
+// Tag GEDCOM d'un type d'acte (SOUR DATA/EVEN).
+fun tagEvenement(type: String): String = when (type) {
+    "N" -> "BIRT"
+    "B" -> "BAPM"
+    "M" -> "MARR"
+    "D" -> "DEAT"
+    "S" -> "BURI"
+    else -> "EVEN"
+}
+
+fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, actes: List<Acte> = listOf()): String {
     val personnes = if (sousEnsemble == null) toutes else toutes.filter { sousEnsemble.contains(it.id) }
     fun cleCouple(a: Long, b: Long): Pair<Long, Long> = if (a < b) a to b else b to a
     fun xrefIndi(id: Long): String = "@I" + id.toString() + "@"
     fun xrefFam(c: Pair<Long, Long>): String = "@F" + c.first.toString() + "_" + c.second.toString() + "@"
+    fun xrefSour(id: Long): String = "@S" + id.toString() + "@"
+
+    // Actes des personnes exportees : chacun devient une SOURCE GEDCOM (Heredis).
+    val actesExportes = actes.filter { a -> personnes.any { it.id == a.personneId } }
+    fun sourcesDe(p: Personne, type: String): List<Acte> =
+        actesExportes.filter { it.personneId == p.id && it.type == type }
 
     // Familles : couples (personne, conjoint) et couples (pere, mere), avec leurs enfants.
     val familles = mutableMapOf<Pair<Long, Long>, MutableList<Long>>()
@@ -106,15 +132,23 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null): S
     lignes.add("2 FORM LINEAGE-LINKED")
     lignes.add("1 DATE " + SimpleDateFormat("d MMM yyyy", Locale.US).format(Date()))
 
-    fun evenement(p: Personne, tag: String, date: String, heure: String, lieu: String) {
+    // Un evenement de la personne, avec ses sources (actes rattaches).
+    fun evenement(p: Personne, tag: String, typeActe: String, date: String, heure: String, lieu: String, dept: String) {
         val d = dateGedcom(date)
-        val l = lieu.trim()
+        val l = lieuGedcom(lieu, dept)
         val h = heureGedcom(heure)
-        if (d != null || l.isNotEmpty()) {
+        val src = sourcesDe(p, typeActe)
+        if (d != null || l.isNotEmpty() || src.isNotEmpty()) {
             lignes.add("1 " + tag)
             if (d != null) lignes.add("2 DATE " + d)
             if (h != null) lignes.add("2 TIME " + h)
             if (l.isNotEmpty()) lignes.add("2 PLAC " + l)
+            src.forEach { a ->
+                lignes.add("2 SOUR " + xrefSour(a.id))
+                if (a.numPage.isNotEmpty()) {
+                    lignes.add("3 PAGE p. " + a.numPage + "/" + a.totalPage)
+                }
+            }
         }
     }
 
@@ -122,11 +156,11 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null): S
         lignes.add("0 " + xrefIndi(p.id) + " INDI")
         lignes.add("1 NAME " + p.prenoms.trim() + " /" + p.nom.trim() + "/")
         if (p.sexe.isNotEmpty()) lignes.add("1 SEX " + p.sexe)
-        evenement(p, "BIRT", p.dateNaissance, p.heureNaissance, p.lieuNaissance)
-        evenement(p, "BAPM", p.dateBapteme, p.heureBapteme, p.lieuBapteme)
-        evenement(p, "MARR", p.dateMariage, p.heureMariage, p.lieuMariage)
-        evenement(p, "DEAT", p.dateDeces, p.heureDeces, p.lieuDeces)
-        evenement(p, "BURI", p.dateSepulture, p.heureSepulture, p.lieuSepulture)
+        evenement(p, "BIRT", "N", p.dateNaissance, p.heureNaissance, p.lieuNaissance, p.deptNaissance)
+        evenement(p, "BAPM", "B", p.dateBapteme, p.heureBapteme, p.lieuBapteme, p.deptBapteme)
+        evenement(p, "MARR", "M", p.dateMariage, p.heureMariage, p.lieuMariage, p.deptMariage)
+        evenement(p, "DEAT", "D", p.dateDeces, p.heureDeces, p.lieuDeces, p.deptDeces)
+        evenement(p, "BURI", "S", p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture)
         if (p.profession.trim().isNotEmpty()) lignes.add("1 OCCU " + p.profession.trim())
         if (p.sosa.trim().isNotEmpty()) lignes.add("1 RFN Sosa " + p.sosa.trim())
         if (p.pere != 0L && p.mere != 0L &&
@@ -158,14 +192,51 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null): S
         }
         val dm = epoux?.let { dateGedcom(it.dateMariage) }
         val hm = epoux?.let { heureGedcom(it.heureMariage) }
-        val lm = epoux?.lieuMariage?.trim() ?: ""
-        if (dm != null || lm.isNotEmpty()) {
+        val lm = epoux?.let { lieuGedcom(it.lieuMariage, it.deptMariage) } ?: ""
+        val srcM = epoux?.let { sourcesDe(it, "M") } ?: listOf()
+        if (dm != null || lm.isNotEmpty() || srcM.isNotEmpty()) {
             lignes.add("1 MARR")
             if (dm != null) lignes.add("2 DATE " + dm)
             if (hm != null) lignes.add("2 TIME " + hm)
             if (lm.isNotEmpty()) lignes.add("2 PLAC " + lm)
+            srcM.forEach { sa ->
+                lignes.add("2 SOUR " + xrefSour(sa.id))
+                if (sa.numPage.isNotEmpty()) {
+                    lignes.add("3 PAGE p. " + sa.numPage + "/" + sa.totalPage)
+                }
+            }
         }
         enfants.forEach { e -> if (personnes.any { it.id == e }) lignes.add("1 CHIL " + xrefIndi(e)) }
+    }
+
+    // Sources : un enregistrement SOUR par acte, facon Heredis
+    // (TITL + REFN cote + DATA/EVEN + DATE + PLAC + NOTE transcription).
+    actesExportes.forEach { a ->
+        val pers = personnes.firstOrNull { it.id == a.personneId }
+        lignes.add("0 " + xrefSour(a.id) + " SOUR")
+        val t = a.titre.trim()
+        lignes.add("1 TITL " + (if (t.isNotEmpty()) t else libelleType(a.type) + (if (pers != null) " de " + pers.titre() else "")))
+        if (a.reference.trim().isNotEmpty()) {
+            lignes.add("1 REFN " + a.reference.trim())
+        }
+        if (pers != null) {
+            val ch = champsEvenement(pers, a.type)
+            val d = dateGedcom(ch.date)
+            val l = lieuGedcom(ch.lieu, ch.dept)
+            if (d != null || l.isNotEmpty()) {
+                lignes.add("1 DATA")
+                lignes.add("2 EVEN " + tagEvenement(a.type))
+                if (d != null) lignes.add("3 DATE " + d)
+                if (l.isNotEmpty()) lignes.add("3 PLAC " + l)
+            }
+        }
+        if (a.contenu.isNotBlank()) {
+            val morceaux = a.contenu.split("\n")
+            lignes.add("1 NOTE " + morceaux.first().trim())
+            morceaux.drop(1).forEach { suite ->
+                lignes.add("2 CONT " + suite.trim())
+            }
+        }
     }
 
     lignes.add("0 TRLR")
@@ -383,4 +454,5 @@ fun importerGedcom(texte: String): List<Personne> {
 
     return personnes.take(50)
 }
+
 

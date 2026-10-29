@@ -70,6 +70,64 @@ fun titreCourt(p: Personne): String {
     return if (t.isEmpty()) "(sans nom)" else t
 }
 
+// ---------------------------------------------------------------- Anomalies
+
+// Incoherence detectee entre les dates d'une personne (comparaisons d'annees).
+data class Anomalie(val texte: String, val personneId: Long)
+
+fun anomaliesPour(personnes: List<Personne>): List<Anomalie> {
+    val l = mutableListOf<Anomalie>()
+    fun nom(id: Long): String = personnes.firstOrNull { it.id == id }?.titre()?.trim() ?: "?"
+    personnes.forEach { p ->
+        val n = dateVersAnnee(p.dateNaissance)
+        val d = dateVersAnnee(p.dateDeces)
+        val m = dateVersAnnee(p.dateMariage)
+        val t = p.titre().trim().ifEmpty { "(sans nom)" }
+        if (n != null && d != null && d < n) {
+            l.add(Anomalie(t + " : d\u00E9c\u00E8s (" + d + ") avant la naissance (" + n + ").", p.id))
+        }
+        if (n != null && m != null && m < n) {
+            l.add(Anomalie(t + " : mariage (" + m + ") avant la naissance (" + n + ").", p.id))
+        }
+        if (n != null && d != null && d - n > 110) {
+            l.add(Anomalie(t + " : " + (d - n) + " ans au d\u00E9c\u00E8s, \u00E0 v\u00E9rifier.", p.id))
+        }
+        if (n != null) {
+            val pere = personnes.firstOrNull { it.id == p.pere }
+            val mere = personnes.firstOrNull { it.id == p.mere }
+            val np = pere?.let { dateVersAnnee(it.dateNaissance) }
+            val dp = pere?.let { dateVersAnnee(it.dateDeces) }
+            val nm = mere?.let { dateVersAnnee(it.dateNaissance) }
+            val dmm = mere?.let { dateVersAnnee(it.dateDeces) }
+            if (np != null && n - np > 80) {
+                l.add(Anomalie(t + " : p\u00E8re \u00E2g\u00E9 de " + (n - np) + " ans \u00E0 la naissance.", p.id))
+            }
+            if (dp != null && dp < n) {
+                l.add(Anomalie(t + " : p\u00E8re " + nom(p.pere) + " d\u00E9c\u00E9d\u00E9 (" + dp + ") avant la naissance de l'enfant (" + n + ").", p.id))
+            }
+            if (nm != null && n - nm < 13) {
+                l.add(Anomalie(t + " : m\u00E8re \u00E2g\u00E9e de " + (n - nm) + " ans \u00E0 la naissance, \u00E0 v\u00E9rifier.", p.id))
+            }
+            if (nm != null && n - nm > 55) {
+                l.add(Anomalie(t + " : m\u00E8re \u00E2g\u00E9e de " + (n - nm) + " ans \u00E0 la naissance, \u00E0 v\u00E9rifier.", p.id))
+            }
+            if (dmm != null && dmm < n) {
+                l.add(Anomalie(t + " : m\u00E8re " + nom(p.mere) + " d\u00E9c\u00E9d\u00E9e (" + dmm + ") avant la naissance de l'enfant (" + n + ").", p.id))
+            }
+        }
+        if (m != null) {
+            p.tousConjoints().forEach { co ->
+                val c = personnes.firstOrNull { it.id == co }
+                val nc = c?.let { dateVersAnnee(it.dateNaissance) }
+                if (nc != null && m < nc) {
+                    l.add(Anomalie(t + " : conjoint " + nom(co) + " n\u00E9 en " + nc + ", mariage en " + m + " avant sa naissance.", p.id))
+                }
+            }
+        }
+    }
+    return l
+}
+
 // Un acte du type avec une IMAGE (les actes transcrits sans image ont un contenu).
 fun aUneImage(actes: List<Acte>, personneId: Long, type: String): Boolean {
     return actes.any { it.personneId == personneId && it.type == type && it.contenu.isBlank() }
@@ -216,6 +274,7 @@ fun EcranJournal(
 ) {
     val ouvertes = pistes.filter { !it.faite }
     val archivees = pistes.filter { it.faite }.sortedByDescending { it.cloture }.take(30)
+    val anomalies = anomaliesPour(personnes)
     val ordrePersonnes = personnes.sortedWith(
         compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
     )
@@ -230,6 +289,39 @@ fun EcranJournal(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+
+        if (anomalies.isNotEmpty()) {
+            item {
+                Card(
+                    Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                    border = BorderStroke(1.dp, Color(0xFFE6A23C))
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                        Text(
+                            "Coh\u00E9rence : " + anomalies.size + " anomalie(s)",
+                            fontWeight = FontWeight.Bold, color = Color(0xFF9C5A00)
+                        )
+                        anomalies.take(5).forEach { an ->
+                            Text(
+                                an.texte,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                        if (anomalies.size > 5) {
+                            Text(
+                                "+ " + (anomalies.size - 5) + " autre(s), dans la suite du journal.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -443,3 +535,4 @@ fun TexteAvecLiens(texte: String, ouvrirLien: (String) -> Unit) {
         }
     )
 }
+

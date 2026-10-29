@@ -398,6 +398,11 @@ fun CarteEvenement(
             LigneG("Heure", heureAffichee(c.heure.trim()))
             LigneG("Lieu", l)
             LigneG("D\u00E9partement", dp)
+            LigneG(
+                "R\u00E9f\u00E9rence",
+                actes.filter { it.personneId == p.id && it.type == typeActe && it.reference.isNotBlank() }
+                    .maxByOrNull { it.creation }?.reference?.trim() ?: ""
+            )
 
             // Peres et meres (naissance et deces) : fiche liee si elle existe,
             // sinon age/deduction depuis la transcription de l'acte.
@@ -520,9 +525,10 @@ fun LigneActe(
     if (pageOuvert) {
         DialoguePageActe(
             acte = acte,
-            onValider = { num, total ->
+            onValider = { num, total, ref ->
                 acte.numPage = num
                 acte.totalPage = total
+                acte.reference = ref
                 onEnregistrer()
                 pageOuvert = false
             },
@@ -534,14 +540,15 @@ fun LigneActe(
 @Composable
 fun DialoguePageActe(
     acte: Acte,
-    onValider: (String, String) -> Unit,
+    onValider: (String, String, String) -> Unit,
     onAnnuler: () -> Unit
 ) {
     var num by remember { mutableStateOf(acte.numPage) }
     var total by remember { mutableStateOf(acte.totalPage) }
+    var ref by remember { mutableStateOf(acte.reference) }
     AlertDialog(
         onDismissRequest = onAnnuler,
-        title = { Text("O\u00F9 en est la consultation ?") },
+        title = { Text("Page et r\u00E9f\u00E9rence de l'acte") },
         text = {
             Column {
                 OutlinedTextField(
@@ -563,10 +570,22 @@ fun DialoguePageActe(
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 6.dp)
                 )
+                OutlinedTextField(
+                    value = ref,
+                    onValueChange = { ref = it },
+                    label = { Text("R\u00E9f\u00E9rence de l'acte (cote AD)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                )
+                Text(
+                    "Cote aux Archives d\u00E9partementales, export\u00E9e vers Heredis (champ Source).",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
             }
         },
         confirmButton = {
-            TextButton(onClick = { onValider(num.trim(), total.trim()) }) { Text("Enregistrer") }
+            TextButton(onClick = { onValider(num.trim(), total.trim(), ref.trim()) }) { Text("Enregistrer") }
         },
         dismissButton = {
             TextButton(onClick = onAnnuler) { Text("Annuler") }
@@ -814,3 +833,4 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+

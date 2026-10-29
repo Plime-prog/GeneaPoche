@@ -51,6 +51,8 @@ data class ActeSaisie(
     val type: String = "N",
     val commune: String = "",
     val dept: String = "",
+    // Reference de l'acte aux Archives departementales (cote)
+    val reference: String = "",
     val date: String = "",
     val heure: String = "",
     // Personne concernee
@@ -137,6 +139,7 @@ fun EcranSaisieActe(
     var type by remember { mutableStateOf("N") }
     var commune by remember { mutableStateOf("") }
     var dept by remember { mutableStateOf("") }
+    var reference by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     var heure by remember { mutableStateOf("") }
     var personneId by remember { mutableStateOf(0L) }
@@ -193,6 +196,7 @@ fun EcranSaisieActe(
 
         Champ("Commune", commune, { commune = it })
         Champ("D\u00E9partement (ex 59)", dept, { dept = it })
+        Champ("R\u00E9f\u00E9rence de l'acte (cote AD)", reference, { reference = it })
         Champ("Date (jj/mm/aaaa)", date, { date = it })
         Champ("Heure (hh:mm)", heure, { heure = it })
 
@@ -291,6 +295,7 @@ fun EcranSaisieActe(
                         type = type,
                         commune = commune.trim(),
                         dept = dept.trim(),
+                        reference = reference.trim(),
                         date = date.trim(),
                         heure = heure.trim(),
                         personneId = personneId,
@@ -361,3 +366,4 @@ fun EcranSaisieActe(
         )
     }
 }
+
