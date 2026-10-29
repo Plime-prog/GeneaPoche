@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -710,7 +711,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         Modifier.fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 3.dp)
             .clickable { onOuvrir() },
-        containerColor = couleurCarte
+        colors = CardDefaults.cardColors(containerColor = couleurCarte)
     ) {
         Row(
             Modifier.fillMaxWidth().padding(8.dp),
