@@ -29,34 +29,33 @@ P\u00E9rim\u00E8tre : 100 personnes max (compteur affich\u00E9), France uniqueme
 - **d'Aboville** pour les lat\u00E9raux (descendants hors ligne directe) : pr\u00E9rempli quand on ajoute un enfant (ex : enfant n\u00B02 du Sosa 1 \u2192 1.2).
 - Badges Sosa / Lat\u00E9ral affich\u00E9s dans la liste alphab\u00E9tique.
 
-## Fiches compl\u00E8tes (v0.9)
+## Fiches (v0.10)
 
-- Blocs **Identit\u00E9, Naissance, Bapt\u00EAme, Mariage, D\u00E9c\u00E8s, S\u00E9pulture** : date, **heure**, lieu (commune), **d\u00E9partement** s\u00E9par\u00E9s, pastilles V\u00E9rifi\u00E9 / \u00C0 v\u00E9rifier (couleurs douces).
+- Blocs **Naissance, Mariage, Décès** toujours présents ; blocs **Baptême et Sépulture créables à la demande** (bouton « + Baptême » / « + Sépulture »).
+- Chaque bloc : date, **heure**, lieu (commune), **département** séparés, et **un seul bouton Vérifié Oui/Non** (Non par défaut, Oui automatiquement dès qu'une date ou une image est renseignée).
+- **Actes (images) dans chaque bloc** : ajout via le séélecteur de photos, chiffrés sur l'appareil, **page x / total** mémorisée, visionneuse avec **zoom pincement et déplacement**.
+- **Lien direct vers l'état civil des AD** depuis chaque acte, selon la commune, le département, le type d'acte et la date.
 - **Appui long sur un bloc** : modification directe de la fiche.
-- **Actes (images) dans chaque bloc** : ajout via le s\u00E9lecteur de photos, chiffr\u00E9s sur l'appareil, **page x / total** m\u00E9moris\u00E9e, visionneuse avec **zoom pincement et d\u00E9placement**.
-- **Lien direct vers l'\u00E9tat civil des AD** depuis chaque acte, selon la commune, le d\u00E9partement, le type d'acte et la date.
-- Famille : p\u00E8re, m\u00E8re, conjoint(e) + **autres conjoints**, tous les enfants ; cr\u00E9ation d'une nouvelle personne possible directement depuis l'ajout d'un enfant.
+- Famille : père, mère, conjoint(e) + **autres conjoints**, tous les enfants ; création d'une nouvelle personne possible directement depuis l'ajout d'un enfant.
 
-## Journal de recherches (v0.9)
+## Journal de recherches (v0.10)
 
-- **Maximum 5 recherches en cours**, num\u00E9rot\u00E9es 1 \u00E0 5, en **tournus entre les personnes** pour varier les plaisirs.
-- Chaque recherche affiche 4 blocs :
-  - **a. Recherche \u00E0 faire** (le texte, recalcul\u00E9 en direct avec les donn\u00E9es actuelles) ;
-  - **b. Rappels horodat\u00E9s** de ce qui a \u00E9t\u00E9 fait (\u00AB rien trouv\u00E9, jusqu'\u00E0 la page 230, TD de Roubaix, reprendre \u00E0 partir de 1887 \u00BB) ;
-  - **c. Recherche en cours** avec bascule vers les rappels (vide le bloc) ;
-  - **d. Reste \u00E0 rechercher** pour la personne concern\u00E9e.
-- **Recherches intelligentes** d\u00E9duites des donn\u00E9es : acte manquant ou non v\u00E9rifi\u00E9, **p\u00E8re n\u00E9 entre n-45 et n-20, m\u00E8re n\u00E9e entre n-40 et n-15**, enfants apr\u00E8s le mariage, grands-parents, avec **lieu g\u00E9ographique pressenti**.
-- Validation d'une recherche **avec confirmation** : elle passe aux rappels et une nouvelle appara\u00E0t. Les **URLs sont cliquables**.
+- **5 recherches automatiques** (dédupliquées, déduites des données saisies) + **5 recherches de libre saisie**, ouverture sur le journal au démarrage.
+- Chaque recherche affiche **3 blocs** :
+  - **a. Rappel de la recherche à faire** (texte recalculé en direct, ex : « Rechercher son père Georges MARTIN entre 1857 et 1897 à Roubaix (59) ») ;
+  - **b. Recherche en cours** avec bouton **Valider l'hypothèse** (horodate le point et le déplace en archives) ;
+  - **c. Recherches archivées** horodatées, URLs cliquables.
+- Validation d'une recherche **avec confirmation** : elle s'efface du journal et une nouvelle apparaît. Les 3 blocs se synchronisent avec la fiche de la personne.
+- Onglet PERSONNES : vignettes **bleu pâle (hommes) / rose pâle (femmes)** affichant le **n° Sosa ou d'Aboville**, **nom de famille en premier**, dates N/M/D, cartes compactes et **index alphabétique** en haut.
 
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
 
-## GEDCOM (v0.9)
+## GEDCOM (v0.10)
 
-- Export **5.5.1** : toutes les personnes ou **une branche compl\u00E8te** au choix (N/BAPM/M/DEAT/BURI + heures TIME).
-- **Import depuis Heredis** (et autres logiciels) avec confirmation, plafond 100 personnes.
-- Compteur de personnes affich\u00E9 en permanence.
+- **Bouton GEDCOM à droite** de la barre de titre : **exporter (tout ou une branche), importer, vider la base**.
+- Export **5.5.1** (N/BAPM/M/DEAT/BURI + heures TIME), import depuis Heredis avec confirmation, plafond 100 personnes, compteur affiché en permanence.
 
 ## Installation
 
@@ -79,4 +78,5 @@ P\u00E9rim\u00E8tre : 100 personnes max (compteur affich\u00E9), France uniqueme
 6. \u2705 Liens directs \u00E9tat civil des Archives d\u00E9partementales depuis chaque acte.
 7. \u2705 Arbre simple.
 8. \u2705 Export GEDCOM 5.5.1 (tout ou branche) + import Heredis.
-9. \u2705 Refonte v0.9 : palette blanc/verts, logo, tri alphab\u00E9tique, de cujus \u00E0 l'ouverture, appui long, conjoints multiples, 5 recherches num\u00E9rot\u00E9es en 4 blocs.
+9. \u2705 Refonte v0.9 (liste) : palette blanc/verts, logo, tri alphab\u00E9tique, de cujus \u00E0 l'ouverture, appui long, conjoints multiples, 5 recherches num\u00E9rot\u00E9es en 4 blocs.
+10. \u2705 Refonte v0.10 : d\u00E9marrage sur le journal, bouton GEDCOM (export/import/vider), vignettes bleu/rose avec n\u00B0 Sosa/d'Aboville, index alphab\u00E9tique, fiche sans bloc Identit\u00E9, blocs B et S \u00E0 la demande, bouton V\u00E9rifi\u00E9 unique par bloc, journal 3 blocs + correctif doublons.
