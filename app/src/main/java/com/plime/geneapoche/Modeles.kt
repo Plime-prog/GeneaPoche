@@ -10,6 +10,9 @@ import org.json.JSONObject
 // Etat : "" (neutre), "vert" (verifie), "rouge" (a verifier) par section de la fiche.
 // Sections : identite, naissance, bapteme, mariage, deces, sepulture.
 
+// Plafond de l'application : une genealogie de poche, 3 generations + lateraux.
+val PlafondPersonnes = 50
+
 data class Personne(
     val id: Long,
     var sosa: String = "",
@@ -328,7 +331,9 @@ data class Acte(
     var titre: String = "",
     var creation: Long = 0L,
     var numPage: String = "",
-    var totalPage: String = ""
+    var totalPage: String = "",
+    // Transcription integrale (saisie par acte) : ages, temoins, signataires.
+    var contenu: String = ""
 ) {
     fun versJson(): JSONObject {
         val o = JSONObject()
@@ -339,6 +344,7 @@ data class Acte(
         o.put("creation", creation)
         o.put("numPage", numPage)
         o.put("totalPage", totalPage)
+        o.put("contenu", contenu)
         return o
     }
 
@@ -350,8 +356,10 @@ data class Acte(
             titre = o.optString("titre", ""),
             creation = o.optLong("creation", 0L),
             numPage = o.optString("numPage", ""),
-            totalPage = o.optString("totalPage", "")
+            totalPage = o.optString("totalPage", ""),
+            contenu = o.optString("contenu", "")
         )
     }
 }
+
 

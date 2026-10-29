@@ -785,7 +785,27 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
                     }
                 }
                 if (bmp == null) {
-                    Text("Image illisible.", color = CouleurRouge)
+                    if (acte.contenu.isNotBlank()) {
+                        // Acte transcrit sans image : la transcription s'affiche ici.
+                        Text(
+                            "Transcription de l'acte",
+                            fontWeight = FontWeight.Bold,
+                            color = CouleurVertFonce
+                        )
+                        Column(
+                            Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())
+                        ) {
+                            acte.contenu.split("\n").forEach { ligne ->
+                                Text(
+                                    ligne,
+                                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    } else {
+                        Text("Image illisible.", color = CouleurRouge)
+                    }
                 } else {
                     Text(
                         "Pincez pour zoomer, glissez pour d\u00E9placer.",
@@ -812,6 +832,7 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 
 

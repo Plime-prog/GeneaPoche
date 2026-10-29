@@ -546,8 +546,211 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         actes.clear()
         idOuvert = 0L
         arbreCentre = 0L
+        Stockage.definirCujus(ctx, 0L, 1L)
+        sosaCujus = 1L
         enregistrer()
         message = "Base vid\u00E9e."
+    }
+
+    // ------------------------------------------------------------ Saisie par acte
+    // Transcription d'un acte N/B/M/D/S : alimente la fiche Personne (dates, lieux,
+    // professions, liens pere/mere/conjoint), cree les personnes absentes, et la
+    // numerotation est recalculee automatiquement par enregistrer().
+    // Les temoins et signataires sont memorises dans le contenu de l'acte.
+    fun enregistrerActe(a: ActeSaisie) {
+        var crees = 0
+        var plafondAtteint = false
+
+        // Trouve une personne existante (par id ou nom+premoms), sinon la cree.
+        fun trouverOuCreer(id: Long, nomSaisi: String, prenomsSaisis: String, sexeDefaut: String): Personne? {
+            personneParId(personnes, id)?.let { return it }
+            val n = nomSaisi.trim()
+            val pr = prenomsSaisis.trim()
+            if (n.isEmpty() && pr.isEmpty()) return null
+            personnes.firstOrNull {
+                it.nom.trim().uppercase() == n.uppercase() &&
+                it.prenoms.trim().uppercase() == pr.uppercase()
+            }?.let { return it }
+            if (personnes.size >= PlafondPersonnes) {
+                plafondAtteint = true
+                return null
+            }
+            val np = Personne(
+                id = (personnes.maxOfOrNull { it.id } ?: 0L) + 1L,
+                nom = n, prenoms = pr, sexe = if (sexeDefaut.isNotEmpty()) sexeDefaut else ""
+            )
+            personnes.add(np)
+            crees += 1
+            return np
+        }
+
+        // Renseigne un champ seulement s'il est encore vide (l'acte complete la fiche).
+        fun renseigner(c: Personne?, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String) {
+            if (c == null) return
+            if (c.dateNaissance.isBlank() && ne.isNotBlank()) c.dateNaissance = ne.trim()
+            if (c.lieuNaissance.isBlank() && lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
+            if (c.deptNaissance.isBlank() && dept.isNotBlank()) c.deptNaissance = dept.trim()
+            if (c.profession.isBlank() && prof.isNotBlank()) c.profession = prof.trim()
+            if (c.dateDeces.isBlank() && dec.isNotBlank()) c.dateDeces = dec.trim()
+            if (c.lieuDeces.isBlank() && lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
+        }
+
+        fun lierParent(enfant: Personne, parent: Personne?, estMere: Boolean) {
+            if (parent == null) return
+            if (estMere) {
+                if (enfant.mere == 0L) enfant.mere = parent.id
+            } else {
+                if (enfant.pere == 0L) enfant.pere = parent.id
+            }
+            if (!parent.enfants.contains(enfant.id)) parent.enfants.add(enfant.id)
+        }
+
+        val p = trouverOuCreer(a.personneId, a.nom, a.prenoms, a.sexe)
+        if (p == null) {
+            message = "Acte non enregistr\u00E9 : personne concern\u00E9e non identifi\u00E9e" +
+                (if (plafondAtteint) " (plafond de " + PlafondPersonnes.toString() + " personnes atteint)" else "") + "."
+            return
+        }
+
+        // Date, heure et lieu de l'acte selon son type (fiche de la personne concernee).
+        when (a.type) {
+            "N" -> {
+                if (p.dateNaissance.isBlank()) p.dateNaissance = a.date
+                if (p.heureNaissance.isBlank()) p.heureNaissance = a.heure
+                if (p.lieuNaissance.isBlank()) p.lieuNaissance = a.commune
+                if (p.deptNaissance.isBlank()) p.deptNaissance = a.dept
+            }
+            "B" -> {
+                if (p.dateBapteme.isBlank()) p.dateBapteme = a.date
+                if (p.heureBapteme.isBlank()) p.heureBapteme = a.heure
+                if (p.lieuBapteme.isBlank()) p.lieuBapteme = a.commune
+                if (p.deptBapteme.isBlank()) p.deptBapteme = a.dept
+            }
+            "M" -> {
+                if (p.dateMariage.isBlank()) p.dateMariage = a.date
+                if (p.heureMariage.isBlank()) p.heureMariage = a.heure
+                if (p.lieuMariage.isBlank()) p.lieuMariage = a.commune
+                if (p.deptMariage.isBlank()) p.deptMariage = a.dept
+            }
+            "D" -> {
+                if (p.dateDeces.isBlank()) p.dateDeces = a.date
+                if (p.heureDeces.isBlank()) p.heureDeces = a.heure
+                if (p.lieuDeces.isBlank()) p.lieuDeces = a.commune
+                if (p.deptDeces.isBlank()) p.deptDeces = a.dept
+            }
+            "S" -> {
+                if (p.dateSepulture.isBlank()) p.dateSepulture = a.date
+                if (p.heureSepulture.isBlank()) p.heureSepulture = a.heure
+                if (p.lieuSepulture.isBlank()) p.lieuSepulture = a.commune
+                if (p.deptSepulture.isBlank()) p.deptSepulture = a.dept
+            }
+        }
+        if (p.profession.isBlank() && a.profession.isNotBlank()) p.profession = a.profession
+
+        // Pere et mere de la personne concernee.
+        val pere = trouverOuCreer(0L, a.pereNom, a.perePrenoms, "M")
+        renseigner(pere, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces)
+        lierParent(p, pere, false)
+        val mere = trouverOuCreer(0L, a.mereNom, a.merePrenoms, "F")
+        renseigner(mere, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces)
+        lierParent(p, mere, true)
+
+        // Mariee et ses parents (mariage uniquement).
+        var mariee: Personne? = null
+        if (a.type == "M") {
+            mariee = trouverOuCreer(a.marieeId, a.marieeNom, a.marieePrenoms, "F")
+            if (mariee != null) {
+                if (mariee.dateMariage.isBlank()) mariee.dateMariage = a.date
+                if (mariee.heureMariage.isBlank()) mariee.heureMariage = a.heure
+                if (mariee.lieuMariage.isBlank()) mariee.lieuMariage = a.commune
+                if (mariee.deptMariage.isBlank()) mariee.deptMariage = a.dept
+                if (mariee.profession.isBlank() && a.marieeProf.isNotBlank()) mariee.profession = a.marieeProf
+                if (p.conjoint == 0L) p.conjoint = mariee.id
+                if (mariee.conjoint == 0L) mariee.conjoint = p.id
+                val pMar = trouverOuCreer(0L, a.pMarieeNom, a.pMarieePrenoms, "M")
+                renseigner(pMar, a.pMarieeNe, a.pMarieeLieu, a.pMarieeDept, a.pMarieeProf, a.pMarieeDeces, a.pMarieeLieuDeces)
+                lierParent(mariee, pMar, false)
+                val mMar = trouverOuCreer(0L, a.mMarieeNom, a.mMarieePrenoms, "F")
+                renseigner(mMar, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
+                lierParent(mariee, mMar, true)
+            }
+        }
+
+        // Contenu memorise dans l'acte : description, ages, temoins, signataires.
+        fun descriptionParent(nomComplet: String, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String): String {
+            if (nomComplet.isBlank()) return ""
+            val m = mutableListOf<String>()
+            m.add(nomComplet.trim())
+            if (ne.isNotBlank()) {
+                val age = ageActe(a.date, ne)
+                m.add("n\u00E9(e) le " + dateAffichee(ne) + (if (age.isNotEmpty()) " (" + age + " \u00E0 l'acte)" else ""))
+            }
+            if (lieu.isNotBlank()) m.add("\u00E0 " + lieu.trim() + (if (dept.isNotBlank()) " (" + dept.trim() + ")" else ""))
+            if (prof.isNotBlank()) m.add(prof.trim())
+            if (dec.isNotBlank()) m.add("d\u00E9c\u00E9d\u00E9(e) le " + dateAffichee(dec) + (if (lieuDec.isNotBlank()) " \u00E0 " + lieuDec.trim() else ""))
+            return m.joinToString(", ")
+        }
+
+        val lignes = mutableListOf<String>()
+        var entete = libelleType(a.type) + " de " + p.titre()
+        if (a.date.isNotBlank()) entete += " le " + dateAffichee(a.date) + (if (a.heure.isNotBlank()) " \u00E0 " + heureAffichee(a.heure) else "")
+        if (a.commune.isNotBlank()) entete += ", \u00E0 " + a.commune + (if (a.dept.isNotBlank()) " (" + a.dept + ")" else "")
+        lignes.add(entete)
+        if (a.profession.isNotBlank()) lignes.add("Profession : " + a.profession)
+        descriptionParent((a.pereNom + " " + a.perePrenoms).trim(), a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces)
+            .takeIf { it.isNotEmpty() }?.let { lignes.add("P\u00E8re : " + it) }
+        descriptionParent((a.mereNom + " " + a.merePrenoms).trim(), a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces)
+            .takeIf { it.isNotEmpty() }?.let { lignes.add("M\u00E8re : " + it) }
+        if (mariee != null) {
+            lignes.add("Mari\u00E9e : " + mariee.titre() + (if (a.marieeProf.isNotBlank()) ", " + a.marieeProf else ""))
+            descriptionParent((a.pMarieeNom + " " + a.pMarieePrenoms).trim(), a.pMarieeNe, a.pMarieeLieu, a.pMarieeDept, a.pMarieeProf, a.pMarieeDeces, a.pMarieeLieuDeces)
+                .takeIf { it.isNotEmpty() }?.let { lignes.add("P\u00E8re de la mari\u00E9e : " + it) }
+            descriptionParent((a.mMarieeNom + " " + a.mMarieePrenoms).trim(), a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
+                .takeIf { it.isNotEmpty() }?.let { lignes.add("M\u00E8re de la mari\u00E9e : " + it) }
+        }
+        val temoinsTexte = a.temoins.filter { it.nom.isNotBlank() }.joinToString(" ; ") { t ->
+            (t.prenoms.trim() + " " + t.nom.trim()).trim() + (if (t.profession.isNotBlank()) " (" + t.profession.trim() + ")" else "")
+        }
+        if (temoinsTexte.isNotEmpty()) lignes.add("T\u00E9moins : " + temoinsTexte)
+        val signatairesNoms = a.signataires.mapNotNull { l ->
+            when {
+                l == "Concerne(e)" -> p.titre()
+                l == "P\u00E8re" -> (a.pereNom + " " + a.perePrenoms).trim().ifEmpty { pere?.titre() }
+                l == "M\u00E8re" -> (a.mereNom + " " + a.merePrenoms).trim().ifEmpty { mere?.titre() }
+                l == "Mari\u00E9e" -> (a.marieeNom + " " + a.marieePrenoms).trim().ifEmpty { mariee?.titre() }
+                l.startsWith("T\u00E9moin ") -> {
+                    val i = l.removePrefix("T\u00E9moin ").toIntOrNull() ?: return@mapNotNull null
+                    val t = a.temoins.getOrNull(i - 1) ?: return@mapNotNull null
+                    (t.prenoms.trim() + " " + t.nom.trim()).trim()
+                }
+                else -> null
+            }
+        }.filter { it.isNotBlank() }
+        if (signatairesNoms.isNotEmpty()) lignes.add("Signataires : " + signatairesNoms.joinToString(", "))
+        val contenu = lignes.joinToString("\n")
+
+        // Acte rattache a la personne concernee (et a la mariee pour un mariage).
+        var idActe = (actes.maxOfOrNull { it.id } ?: 0L) + 1L
+        actes.add(
+            Acte(
+                id = idActe, personneId = p.id, type = a.type, titre = entete,
+                creation = System.currentTimeMillis(), contenu = contenu
+            )
+        )
+        if (mariee != null) {
+            idActe += 1L
+            actes.add(
+                Acte(
+                    id = idActe, personneId = mariee.id, type = a.type, titre = entete,
+                    creation = System.currentTimeMillis(), contenu = contenu
+                )
+            )
+        }
+
+        enregistrer()
+        message = "Acte enregistr\u00E9 : " + libelleType(a.type) +
+            (if (crees > 0) " ; " + crees.toString() + " personne(s) cr\u00E9\u00E9e(s)" else "") +
+            (if (plafondAtteint) " ; plafond de " + PlafondPersonnes.toString() + " personnes atteint" else "")
     }
 
     fun ajouterActe(personneId: Long, uri: Uri, type: String, titre: String) {
@@ -659,6 +862,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             exporterGedcom = { uri, sel -> exporterGedcom(uri, sel) },
             importerGedcom = { uri -> lireGedcom(uri) },
             viderBase = { viderBase() },
+            enregistrerActe = { a -> enregistrerActe(a) },
             ouvrirLien = { url -> ouvrirLien(ctx, url)?.let { m -> message = m } },
             ouvrirEtatCivil = { commune, dept, type, annee ->
                 ouvrirLien(ctx, lienEtatCivil(commune, dept, type, annee))?.let { m -> message = m }
@@ -913,6 +1117,7 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
         }
     }
 }
+
 
 
 

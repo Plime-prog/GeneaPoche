@@ -71,7 +71,6 @@ import androidx.compose.ui.unit.sp
 
 // ------------------------------------------------------------ Application deverrouillee
 
-private val PlafondPersonnes = 50
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,6 +116,7 @@ fun EcranApplication(
     exporterGedcom: (Uri, Set<Long>?) -> Unit,
     importerGedcom: (Uri) -> Unit,
     viderBase: () -> Unit,
+    enregistrerActe: (ActeSaisie) -> Unit,
     ouvrirLien: (String) -> Unit,
     ouvrirEtatCivil: (String, Int?, String, String) -> Unit
 ) {
@@ -187,6 +187,12 @@ fun EcranApplication(
                         onClick = { onOnglet(2) },
                         icon = { Icon(painterResource(R.drawable.ic_arbre), contentDescription = null) },
                         label = { Text("Arbre") }
+                    )
+                    NavigationBarItem(
+                        selected = onglet == 3,
+                        onClick = { onOnglet(3) },
+                        icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                        label = { Text("Saisie") }
                     )
                 }
             },
@@ -370,6 +376,11 @@ fun EcranApplication(
                     idCentre = arbreCentre,
                     onOuvrir = { onIdOuvert(it); onArbreCentre(it) },
                     onCentrerSur = { onArbreCentre(it) }
+                )
+            } else if (onglet == 3) {
+                EcranSaisieActe(
+                    personnes = personnes,
+                    onEnregistrer = enregistrerActe
                 )
             } else {
                 EcranJournal(
@@ -765,6 +776,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 
 
 
