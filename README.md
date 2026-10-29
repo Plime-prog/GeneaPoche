@@ -70,7 +70,7 @@ P\u00E9rim\u00E8tre : 50 personnes max (compteur affich\u00E9), France uniquemen
 
 ## D\u00E9veloppement
 
-- Android Kotlin + Jetpack Compose, Material 3 (th\u00E8me blanc / vert p\u00E2le / vert fonc\u00E9).
+- Android Kotlin + Jetpack Compose, Material 3 (th\u00E8me blanc / vert p\u00E2le / vert fonc\u00E9, palette compl\u00E8te : aucune surface Material3 violette, encadr\u00E9s verts sur fond blanc).
 - AGP 9.2.0, Gradle 9.4.1, Kotlin 2.4.21, compileSdk 37, targetSdk 36.
 - Chaque push compile automatiquement l'APK debug via GitHub Actions.
 
@@ -87,3 +87,4 @@ P\u00E9rim\u00E8tre : 50 personnes max (compteur affich\u00E9), France uniquemen
 9. \u2705 Refonte v0.9 (liste) : palette blanc/verts, logo, tri alphab\u00E9tique, de cujus \u00E0 l'ouverture, appui long, conjoints multiples, 5 recherches num\u00E9rot\u00E9es en 4 blocs.
 10. \u2705 Refonte v0.10 : d\u00E9marrage sur le journal, bouton GEDCOM (export/import/vider), vignettes bleu/rose avec n\u00B0 Sosa/d'Aboville, index alphab\u00E9tique, fiche sans bloc Identit\u00E9, blocs B et S \u00E0 la demande, bouton V\u00E9rifi\u00E9 unique par bloc, journal 3 blocs + correctif doublons.
 11. \u2705 Refonte v0.11 : plafond 50, de cujus au n\u00B0 Sosa libre (tout d\u00E9coule, aucune ressaisie), palette sans violet, menu GEDCOM \u00E0 ic\u00F4nes, alphabet complet grise, encadr\u00E9s rose/bleu, classement par branche.
+12. \u2705 Refonte v0.12 : fin du violet Material3 (surfaces container surcharg\u00E9es : barre d'onglets du bas, dialogues, cartes), encadr\u00E9s verts sur fond blanc pour la fiche, le journal et l'arbre.
