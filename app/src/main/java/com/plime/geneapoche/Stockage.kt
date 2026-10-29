@@ -34,6 +34,8 @@ object Stockage {
     private const val CLE_ERREURS = "pin_erreurs"
     private const val CLE_NIVEAU = "blocage_niveau"
     private const val CLE_JUSQUA = "blocage_jusqua"
+    private const val CLE_ID_CUJUS = "id_cujus"
+    private const val CLE_SOSA_CUJUS = "sosa_cujus"
     private val DUREES_BLOCAGE = longArrayOf(30_000L, 120_000L, 600_000L, 3_600_000L)
     private const val ERREURS_AVANT_PALIER = 5
     private const val ITERATIONS_PIN = 150_000
@@ -41,6 +43,19 @@ object Stockage {
     // ------------------------------------------------------------ Preferences
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    // ------------------------------------------------------------ De cujus (personne de reference et son n Sosa)
+
+    fun lireIdCujus(ctx: Context): Long = prefs(ctx).getLong(CLE_ID_CUJUS, 0L)
+
+    fun lireSosaCujus(ctx: Context): Long = prefs(ctx).getLong(CLE_SOSA_CUJUS, 1L)
+
+    fun definirCujus(ctx: Context, id: Long, sosa: Long) {
+        prefs(ctx).edit()
+            .putLong(CLE_ID_CUJUS, id)
+            .putLong(CLE_SOSA_CUJUS, sosa)
+            .apply()
+    }
 
     // ------------------------------------------------------------ Cle de chiffrement (AndroidKeyStore)
 
@@ -314,3 +329,4 @@ object Stockage {
         }
     }
 }
+

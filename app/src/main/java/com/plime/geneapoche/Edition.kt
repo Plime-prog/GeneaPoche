@@ -35,8 +35,6 @@ fun DialogueEdition(
     onValider: (Personne) -> Unit,
     onAnnuler: () -> Unit
 ) {
-    var sosa by remember { mutableStateOf(cible?.sosa ?: "") }
-    var lateral by remember { mutableStateOf(cible?.lateral ?: "") }
     var nom by remember { mutableStateOf(cible?.nom ?: "") }
     var prenoms by remember { mutableStateOf(cible?.prenoms ?: "") }
     var sexe by remember { mutableStateOf(cible?.sexe ?: "") }
@@ -64,8 +62,7 @@ fun DialogueEdition(
 
     fun construire(): Personne {
         val base = cible ?: Personne(id = idNouvelle)
-        base.sosa = sosa.trim()
-        base.lateral = lateral.trim()
+        // Sosa et lateral ne sont jamais saisis : calcules a partir du de cujus.
         base.nom = nom.trim()
         base.prenoms = prenoms.trim()
         base.sexe = sexe
@@ -94,8 +91,7 @@ fun DialogueEdition(
     }
 
     val formulaireValide =
-        (nom.isNotBlank() || prenoms.isNotBlank()) &&
-        sosaValide(sosa) && lateralValide(lateral)
+        (nom.isNotBlank() || prenoms.isNotBlank())
 
     AlertDialog(
         onDismissRequest = onAnnuler,
@@ -103,10 +99,11 @@ fun DialogueEdition(
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text("Identit\u00E9", fontWeight = FontWeight.Bold)
-                Champ("Sosa (1 = de cujus)", sosa, { sosa = it },
-                    erreur = !sosaValide(sosa), aide = "Laisser vide : calcul\u00E9 automatiquement")
-                Champ("Num\u00E9ro lat\u00E9ral (ex 1.3)", lateral, { lateral = it },
-                    erreur = !lateralValide(lateral), aide = "Descendants hors ligne directe")
+                Text(
+                    "N\u00B0 Sosa et d'Aboville : calcul\u00E9s automatiquement (menu GEDCOM \u2192 D\u00E9finir le de cujus).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Champ("Nom", nom, { nom = it })
                 Champ("Pr\u00E9noms", prenoms, { prenoms = it })
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -182,3 +179,4 @@ fun Champ(
         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
     )
 }
+

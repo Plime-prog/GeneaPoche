@@ -15,6 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -30,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.lightColorScheme
@@ -76,7 +81,16 @@ val PaletteGeneaPoche = lightColorScheme(
     onSurface = Color(0xFF1A1C19),
     surfaceVariant = Color(0xFFE8F0E7),
     onSurfaceVariant = Color(0xFF44503F),
-    outline = Color(0xFF798577)
+    outline = Color(0xFF798577),
+    // Conteneurs thirdaires et d'erreur : verts/rouge doux, AUCUN violet Material3 par defaut.
+    outlineVariant = Color(0xFFC9D2C2),
+    tertiaryContainer = Color(0xFFD8EBD4),
+    onTertiaryContainer = Color(0xFF10240F),
+    error = Color(0xFFB45046),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFF6DDD8),
+    onErrorContainer = Color(0xFF3A1110),
+    surfaceTint = Color(0xFF2E5D3A)
 )
 
 val FormesGeneaPoche = Shapes(
@@ -132,10 +146,12 @@ fun anneeNaissance(p: Personne): Int =
 // Renum\u00E9rotation complete depuis un de cujus :
 // Sosa (pere = 2n, mere = 2n+1) remontee en largeur, puis d'Aboville en descendant
 // (enfant k du porteur "x" = "x.k"). Les personnes non atteignables perdent leur num\u00E9ro.
-fun renumeroter(personnes: MutableList<Personne>, cujusId: Long) {
+// Numerotation complete a partir du de cujus, dont le n Sosa n'est pas forcement 1 :
+// pere = 2n, mere = 2n+1, descendants en d'Aboville (pref = n du cujus).
+fun renumeroter(personnes: MutableList<Personne>, cujusId: Long, sosaDeBase: Long = 1L) {
     personnes.forEach { it.sosa = ""; it.lateral = "" }
     val cujus = personneParId(personnes, cujusId) ?: return
-    cujus.sosa = "1"
+    cujus.sosa = sosaDeBase.toString()
     val attente = ArrayDeque<Long>()
     attente.addLast(cujus.id)
     while (attente.isNotEmpty()) {
@@ -154,7 +170,7 @@ fun renumeroter(personnes: MutableList<Personne>, cujusId: Long) {
         }
     }
     val descendants = ArrayDeque<Pair<Long, String>>()
-    descendants.addLast(cujus.id to "1")
+    descendants.addLast(cujus.id to sosaDeBase.toString())
     while (descendants.isNotEmpty()) {
         val (id, pref) = descendants.removeFirst()
         val p = personneParId(personnes, id) ?: continue
@@ -228,7 +244,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var acteVisionne by remember { mutableStateOf<Acte?>(null) }
     var pisteRecherche by remember { mutableStateOf<Piste?>(null) }
     var arbreCentre by remember { mutableStateOf(0L) }
-    var cujusConfirme by remember { mutableStateOf<Personne?>(null) }
+    var sosaCujus by remember { mutableStateOf(1L) }
+    var cujusDialogue by remember { mutableStateOf(false) }
+    var cujusPreselec by remember { mutableStateOf<Personne?>(null) }
     var importConfirme by remember { mutableStateOf<List<Personne>?>(null) }
     var cujasOuvert by remember { mutableStateOf(false) }
 
@@ -408,10 +426,24 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         enregistrer()
     }
 
-    fun definirCujus(p: Personne) {
-        renumeroter(personnes, p.id)
+    // Definit le de cujus et son n Sosa (pas forcement 1) : toute la numerotation
+    // Sosa et d'Aboville en decoule automatiquement.
+    fun definirCujus(p: Personne, sosa: Long) {
+        val s = if (sosa >= 1L) sosa else 1L
+        renumeroter(personnes, p.id, s)
+        sosaCujus = s
+        Stockage.definirCujus(ctx, p.id, s)
         arbreCentre = p.id
         enregistrer()
+    }
+
+    // Identifiant du de cujus : memorise en preferences, sinon par n Sosa, sinon 1re personne.
+    fun idDuCujus(): Long {
+        val idMemorise = Stockage.lireIdCujus(ctx)
+        if (personnes.any { it.id == idMemorise }) return idMemorise
+        return personnes.firstOrNull { it.sosa.trim() == sosaCujus.toString() }?.id
+            ?: personnes.firstOrNull()?.id
+            ?: 0L
     }
 
     fun exporterGedcom(uri: Uri, sousEnsemble: Set<Long>?) {
@@ -451,14 +483,21 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         pistes.clear()
         actes.forEach { Stockage.supprimerImage(ctx, it.id) }
         actes.clear()
-        val premier = personnes.firstOrNull { it.sosa.trim() == "1" } ?: personnes.firstOrNull()
-        if (premier != null && premier.sosa.isBlank()) {
-            renumeroter(personnes, premier.id)
+        // De cujus apres import : la personne au plus petit n Sosa du fichier, sinon la 1re.
+        val avecSosa = personnes.filter { it.sosa.trim().toLongOrNull() != null }
+        val premier = avecSosa.minByOrNull { it.sosa.trim().toLong() }
+            ?: personnes.firstOrNull()
+        if (premier != null) {
+            if (premier.sosa.isBlank()) {
+                renumeroter(personnes, premier.id, 1L)
+            }
+            sosaCujus = premier.sosa.trim().toLongOrNull() ?: 1L
+            Stockage.definirCujus(ctx, premier.id, sosaCujus)
         }
         arbreCentre = premier?.id ?: 0L
         enregistrer()
-        message = if (importees.size >= 100) {
-            "Import limit\u00E9 \u00E0 100 personnes (" + importees.size.toString() + " import\u00E9es)."
+        message = if (importees.size >= 50) {
+            "Import limit\u00E9 \u00E0 50 personnes (" + importees.size.toString() + " import\u00E9es)."
         } else {
             importees.size.toString() + " personnes import\u00E9es."
         }
@@ -497,17 +536,18 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             personnes.addAll(Stockage.charger(ctx))
             pistes.addAll(Stockage.chargerJournal(ctx))
             actes.addAll(Stockage.chargerActes(ctx))
+            sosaCujus = Stockage.lireSosaCujus(ctx)
             charge = true
             completerJournal()
         }
     }
     LaunchedEffect(Unit) { aPin = Stockage.aPin(ctx) }
 
-    // Ouverture sur le de cujus (Sosa 1) des le deverrouillage
+    // Ouverture sur le de cujus des le deverrouillage
     LaunchedEffect(charge, verrou.deverrouille) {
         if (charge && verrou.deverrouille && !cujasOuvert) {
             cujasOuvert = true
-            personnes.firstOrNull { it.sosa.trim() == "1" }?.let { idOuvert = it.id }
+            idDuCujus().takeIf { it != 0L }?.let { idOuvert = it }
         }
     }
 
@@ -553,8 +593,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             supprimer = { supprimer(it) },
             lier = { role, id -> lier(role, id) },
             delier = { role, id -> delier(role, id) },
-            definirCujus = { cujusConfirme = it },
-            renumeroter = { renumeroter(personnes, it) },
+            definirCujus = { cujusPreselec = it; cujusDialogue = true },
+            choisirCujus = { cujusPreselec = null; cujusDialogue = true },
+            renumeroter = { renumeroter(personnes, it, sosaCujus) },
             dialoguePiste = dialoguePiste,
             onDialoguePiste = { dialoguePiste = it },
             pistePersonnePre = pistePersonnePre,
@@ -577,9 +618,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             arbreCentre = if (arbreCentre != 0L) {
                 arbreCentre
             } else {
-                personnes.firstOrNull { it.sosa.trim() == "1" }?.id
-                    ?: personnes.firstOrNull()?.id
-                    ?: 0L
+                idDuCujus()
             },
             onArbreCentre = { arbreCentre = it },
             exporterGedcom = { uri, sel -> exporterGedcom(uri, sel) },
@@ -607,21 +646,79 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         )
     }
 
-    cujusConfirme?.let { c ->
+    // Dialogue : choix du de cujus et de son n Sosa (pas forcement 1).
+    // Toute la numerotation Sosa / d'Aboville en decoule automatiquement.
+    if (cujusDialogue) {
+        var choixCujus by remember { mutableStateOf(cujusPreselec) }
+        var numCujus by remember {
+            mutableStateOf((choixCujus?.sosa?.trim()?.toLongOrNull() ?: sosaCujus).toString())
+        }
+        val numValide = (numCujus.trim().toLongOrNull() ?: 0L) >= 1L
         AlertDialog(
-            onDismissRequest = { cujusConfirme = null },
-            title = { Text("Changer le de cujus ?") },
+            onDismissRequest = { cujusDialogue = false },
+            title = { Text("De cujus") },
             text = {
-                Text("D\u00E9finir " + c.titre() + " comme de cujus ? Toute la num\u00E9rotation Sosa et d'Aboville sera recalcul\u00E9e automatiquement \u00E0 partir de cette personne.")
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        "Choisissez la personne de r\u00E9f\u00E9rence et son num\u00E9ro Sosa (pas forc\u00E9ment 1). Toute la num\u00E9rotation Sosa et d'Aboville sera recalcul\u00E9e automatiquement \u00E0 partir de l\u00E0 : aucun num\u00E9ro ne se saisit ailleurs.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = numCujus,
+                        onValueChange = { t -> numCujus = t.filter { it.isDigit() } },
+                        label = { Text("N\u00B0 Sosa du de cujus") },
+                        isError = !numValide,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    )
+                    Text(
+                        "Personne : " + (choixCujus?.titre() ?: "\u00E0 choisir"),
+                        Modifier.padding(top = 10.dp),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Column(Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState())) {
+                        personnes.sortedWith(
+                            compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
+                        ).forEach { cand ->
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { choixCujus = cand }
+                                    .background(
+                                        if (choixCujus?.id == cand.id) CouleurVertPale
+                                        else androidx.compose.ui.graphics.Color.Transparent
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Text(cand.titre(), style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                    if (choixCujus != null && choixCujus?.id != idDuCujus()) {
+                        Text(
+                            "Toute la num\u00E9rotation sera recalcul\u00E9e.",
+                            Modifier.padding(top = 6.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = CouleurRouge
+                        )
+                    }
+                }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    definirCujus(c)
-                    cujusConfirme = null
-                }) { Text("D\u00E9finir") }
+                TextButton(
+                    onClick = {
+                        val c = choixCujus
+                        val n = numCujus.trim().toLongOrNull() ?: 1L
+                        if (c != null && n >= 1L) {
+                            definirCujus(c, n)
+                        }
+                        cujusDialogue = false
+                    },
+                    enabled = choixCujus != null && numValide
+                ) { Text("D\u00E9finir") }
             },
             dismissButton = {
-                TextButton(onClick = { cujusConfirme = null }) { Text("Annuler") }
+                TextButton(onClick = { cujusDialogue = false }) { Text("Annuler") }
             }
         )
     }
@@ -781,4 +878,5 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
         }
     }
 }
+
 

@@ -210,7 +210,7 @@ fun dateFrancaise(s: String): String {
 
 // Parseur d'un fichier GEDCOM 5.5.1 (Heredis, Geneatique...) :
 // personnes (INDI), familles (FAM), dates N/BAPM/M/D/BURI, heures TIME, conjoints multiples.
-// Retourne au maximum 100 personnes.
+// Retourne au maximum 50 personnes.
 fun importerGedcom(texte: String): List<Personne> {
     val lignes = texte.split("\n").map { it.trimEnd('\r') }
 
@@ -381,5 +381,6 @@ fun importerGedcom(texte: String): List<Personne> {
         }
     }
 
-    return personnes.take(100)
+    return personnes.take(50)
 }
+

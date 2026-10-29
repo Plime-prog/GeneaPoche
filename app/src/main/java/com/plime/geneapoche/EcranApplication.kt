@@ -32,8 +32,11 @@ import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -67,7 +70,7 @@ import androidx.compose.ui.unit.sp
 
 // ------------------------------------------------------------ Application deverrouillee
 
-private val PlafondPersonnes = 100
+private val PlafondPersonnes = 50
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,6 +97,7 @@ fun EcranApplication(
     lier: (String, Long) -> Unit,
     delier: (String, Long) -> Unit,
     definirCujus: (Personne) -> Unit,
+    choisirCujus: () -> Unit,
     renumeroter: (Long) -> Unit,
     dialoguePiste: Boolean,
     onDialoguePiste: (Boolean) -> Unit,
@@ -234,6 +238,8 @@ fun EcranApplication(
                         Text("Touchez le bouton + pour ajouter la premi\u00E8re personne (de cujus, Sosa 1).")
                     }
                 } else {
+                    // Onglet PERSONNES : compteur, bascule A-Z / Branches, index, cartes.
+                    var triAlpha by remember { mutableStateOf(true) }
                     val triees = personnes.sortedWith(
                         compareBy(
                             { it.nom.trim().uppercase() },
@@ -243,9 +249,31 @@ fun EcranApplication(
                     )
                     val etatListe = rememberLazyListState()
                     val portee = rememberCoroutineScope()
-                    val lettres = triees
+                    val lettresUtilisees = triees
                         .map { it.nom.trim().uppercase().firstOrNull() ?: '?' }
-                        .distinct()
+                        .toSet()
+
+                    // Classement par branche : la racine est l'ancetre le plus haut
+                    // (pere, sinon mere) ; la branche porte le nom de cette racine.
+                    val entrees: List<Any> = if (triAlpha) {
+                        triees.toList()
+                    } else {
+                        val liste = mutableListOf<Any>()
+                        personnes.groupBy { racineBranche(it, personnes).nom.trim().uppercase().ifEmpty { "?" } }
+                            .toSortedMap()
+                            .forEach { (etiquette, membres) ->
+                                liste.add(etiquette)
+                                membres.sortedWith(
+                                    compareBy(
+                                        { it.sosa.trim().toLongOrNull() ?: Long.MAX_VALUE },
+                                        { it.lateral.trim() },
+                                        { it.nom.trim().uppercase() }
+                                    )
+                                ).forEach { liste.add(it) }
+                            }
+                        liste
+                    }
+
                     LazyColumn(
                         Modifier.fillMaxSize().padding(marges).padding(vertical = 4.dp),
                         state = etatListe
@@ -261,31 +289,77 @@ fun EcranApplication(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                FilterChip(
+                                    selected = triAlpha,
+                                    onClick = { triAlpha = true },
+                                    label = { Text("A\u2013Z") }
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                FilterChip(
+                                    selected = !triAlpha,
+                                    onClick = { triAlpha = false },
+                                    label = { Text("Branches") }
+                                )
                             }
                         }
                         item {
                             Row(
                                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp)
                             ) {
-                                lettres.forEach { lettre ->
-                                    TextButton(
-                                        onClick = {
-                                            val pos = triees.indexOfFirst {
-                                                (it.nom.trim().uppercase().firstOrNull() ?: '?') == lettre
-                                            }
-                                            if (pos >= 0) portee.launch { etatListe.scrollToItem(2 + pos) }
-                                        },
-                                        contentPadding = PaddingValues(horizontal = 4.dp)
-                                    ) { Text(lettre.toString(), fontWeight = FontWeight.Bold) }
+                                if (triAlpha) {
+                                    // Alphabet complet : lettres inutilisees grisees.
+                                    ('A'..'Z').forEach { lettre ->
+                                        val utilisee = lettresUtilisees.contains(lettre)
+                                        TextButton(
+                                            onClick = {
+                                                val pos = triees.indexOfFirst {
+                                                    (it.nom.trim().uppercase().firstOrNull() ?: '?') == lettre
+                                                }
+                                                if (pos >= 0) portee.launch { etatListe.scrollToItem(2 + pos) }
+                                            },
+                                            enabled = utilisee,
+                                            contentPadding = PaddingValues(horizontal = 4.dp)
+                                        ) {
+                                            Text(
+                                                lettre.toString(),
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (utilisee) CouleurVertFonce else Color(0xFFB9C2AE)
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    val etiquettes = entrees.filterIsInstance<String>()
+                                    etiquettes.forEach { etiquette ->
+                                        TextButton(
+                                            onClick = {
+                                                val pos = entrees.indexOf(etiquette)
+                                                if (pos >= 0) portee.launch { etatListe.scrollToItem(2 + pos) }
+                                            },
+                                            contentPadding = PaddingValues(horizontal = 6.dp)
+                                        ) { Text(etiquette, fontWeight = FontWeight.Bold) }
+                                    }
                                 }
                             }
                         }
-                        items(triees) { p ->
-                            CartePersonne(
-                                p,
-                                onOuvrir = { onIdOuvert(p.id) },
-                                onSupprimer = { onConfirmSuppression(p) }
-                            )
+                        items(entrees.size) { i ->
+                            val e = entrees[i]
+                            if (e is String) {
+                                Text(
+                                    e,
+                                    Modifier.fillMaxWidth()
+                                        .background(CouleurVertPale)
+                                        .padding(horizontal = 12.dp, vertical = 5.dp),
+                                    fontWeight = FontWeight.Bold,
+                                    color = CouleurVertFonce
+                                )
+                            } else {
+                                val p = e as Personne
+                                CartePersonne(
+                                    p,
+                                    onOuvrir = { onIdOuvert(p.id) },
+                                    onSupprimer = { onConfirmSuppression(p) }
+                                )
+                            }
                         }
                         item { Spacer(Modifier.height(12.dp)) }
                     }
@@ -393,15 +467,35 @@ fun EcranApplication(
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
                                 Modifier.fillMaxWidth()
-                            ) { Text("Exporter (tout ou une branche)") }
+                            ) {
+                                Icon(Icons.Filled.Share, contentDescription = null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Exporter (tout ou une branche)")
+                            }
                             TextButton(
                                 onClick = { menuGedcom = false; lanceurImport.launch(arrayOf("*/*")) },
                                 Modifier.fillMaxWidth()
-                            ) { Text("Importer un GEDCOM (remplace la base)") }
+                            ) {
+                                Icon(Icons.Filled.ExitToApp, contentDescription = null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Importer un GEDCOM (remplace la base)")
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; choisirCujus() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("D\u00E9finir le de cujus et son n\u00B0 Sosa")
+                            }
                             TextButton(
                                 onClick = { menuGedcom = false; confirmeVider = true },
                                 Modifier.fillMaxWidth()
-                            ) { Text("Vider la base", color = CouleurRouge) }
+                            ) {
+                                Icon(Icons.Filled.Delete, contentDescription = null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Vider la base", color = CouleurRouge)
+                            }
                         }
                     },
                     confirmButton = {
@@ -589,26 +683,48 @@ fun EcranApplication(
 
 // ---------------------------------------------------------------- Liste : carte personne
 
+// Racine de branche d'une personne : l'ancetre le plus haut atteignable
+// (pere, sinon mere). La branche porte le nom de famille de cette racine.
+fun racineBranche(p: Personne, personnes: List<Personne>): Personne {
+    var courante = p
+    var gardeFou = 0
+    while (gardeFou < 60) {
+        gardeFou += 1
+        val parentId = if (courante.pere != 0L) courante.pere else courante.mere
+        if (parentId == 0L) return courante
+        val parent = personnes.firstOrNull { it.id == parentId } ?: return courante
+        courante = parent
+    }
+    return courante
+}
+
 @Composable
 fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
+    // Tout l'encadre rose pale (femme) ou bleu pale (homme), neutre sinon.
+    val couleurCarte = when (p.sexe) {
+        "F" -> Color(0xFFF8DDE7) // rose pale
+        "M" -> Color(0xFFDDE9F6) // bleu pale
+        else -> Color(0xFFEFF4EE) // neutre verd\u00E2tre pale
+    }
     Card(
         Modifier.fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 3.dp)
-            .clickable { onOuvrir() }
+            .clickable { onOuvrir() },
+        containerColor = couleurCarte
     ) {
         Row(
             Modifier.fillMaxWidth().padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Vignette : fond bleu pale (homme) ou rose pale (femme),
-            // avec le numero Sosa ou d'Aboville a la place de l'initiale.
+            // Vignette : rond au numero Sosa ou d'Aboville, calcule
+            // automatiquement a partir du de cujus (jamais saisi).
             val num = p.numeroAffiche().replace("Sosa ", "").replace("Lat\u00E9ral ", "")
             val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
             val vignette = num.ifEmpty { initiale.toString() }
             val couleurAvatar = when (p.sexe) {
-                "F" -> Color(0xFFE9C4D2) // rose pale
-                "M" -> Color(0xFFBFD4E8) // bleu pale
-                else -> Color(0xFFD9E4D6) // neutre verd\u00E2tre pale
+                "F" -> Color(0xFFE9C4D2) // rose
+                "M" -> Color(0xFFBFD4E8) // bleu
+                else -> Color(0xFFD9E4D6) // neutre
             }
             Box(
                 Modifier.size(40.dp).clip(CircleShape).background(couleurAvatar),
@@ -641,4 +757,5 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 

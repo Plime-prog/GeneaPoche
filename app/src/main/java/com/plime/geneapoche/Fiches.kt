@@ -527,7 +527,7 @@ fun CarteFamille(
             Ligne("Profession", p.profession.trim())
             if (p.sosa.trim() != "1") {
                 OutlinedButton(onClick = onDefinirCujus, Modifier.padding(top = 4.dp)) {
-                    Text("D\u00E9finir comme de cujus (Sosa 1)")
+                    Text("D\u00E9finir comme de cujus")
                 }
             }
             Spacer(Modifier.height(6.dp))
@@ -800,4 +800,5 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
