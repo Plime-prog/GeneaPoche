@@ -99,18 +99,11 @@ fun EcranApplication(
     definirCujus: (Personne) -> Unit,
     choisirCujus: () -> Unit,
     renumeroter: (Long) -> Unit,
-    dialoguePiste: Boolean,
-    onDialoguePiste: (Boolean) -> Unit,
-    pistePersonnePre: Long,
-    onPistePersonnePre: (Long) -> Unit,
-    ajouterPiste: (String, Long) -> Unit,
-    basculerPiste: (Piste) -> Unit,
     supprimerPiste: (Piste) -> Unit,
     actes: List<Acte>,
     ajouterActe: (Long, Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
-    noterRecherche: (Piste) -> Unit,
     arbreCentre: Long,
     onArbreCentre: (Long) -> Unit,
     exporterGedcom: (Uri, Set<Long>?) -> Unit,
@@ -120,9 +113,8 @@ fun EcranApplication(
     ouvrirLien: (String) -> Unit,
     ouvrirEtatCivil: (String, Int?, String, String) -> Unit
 ) {
-    BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty() || dialoguePiste) {
+    BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty()) {
         when {
-            dialoguePiste -> onDialoguePiste(false)
             pickerRole.isNotEmpty() -> onPickerRole("")
             editionOuverte -> onEditionOuverte(false)
             else -> onIdOuvert(0L)
@@ -200,10 +192,6 @@ fun EcranApplication(
                 if (onglet == 0) {
                     FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
                         Icon(Icons.Filled.Add, contentDescription = "Ajouter")
-                    }
-                } else if (onglet == 1) {
-                    FloatingActionButton(onClick = { onPistePersonnePre(0L); onDialoguePiste(true) }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Nouvelle piste")
                     }
                 }
             }
@@ -387,12 +375,10 @@ fun EcranApplication(
                     pistes = pistes,
                     personnes = personnes,
                     actes = actes,
-                    onBasculer = { basculerPiste(it) },
                     onSupprimer = { supprimerPiste(it) },
                     onOuvrirPersonne = { onIdOuvert(it) },
-                    noterRecherche = { noterRecherche(it) },
-                    onNouvellePiste = { onDialoguePiste(true) },
                     ouvrirLien = ouvrirLien,
+                    ouvrirEtatCivil = ouvrirEtatCivil,
                     onSauver = enregistrer
                 )
             }
@@ -545,7 +531,6 @@ fun EcranApplication(
         val p = ouverte
         EcranPersonne(
             personnes = personnes,
-            pistes = pistes,
             actes = actes,
             p = p,
             enregistrer = enregistrer,
@@ -555,13 +540,7 @@ fun EcranApplication(
             onSupprimer = { onConfirmSuppression(p) },
             onChoisir = { onPickerRole(it) },
             onRetirer = { role, enfantId -> delier(role, enfantId) },
-            onEtat = { section, valeur ->
-                p.changerEtat(section, valeur)
-                enregistrer()
-            },
             onDefinirCujus = { definirCujus(p) },
-            onNouvellePiste = { onPistePersonnePre(p.id); onDialoguePiste(true) },
-            onBasculerPiste = { basculerPiste(it) },
             onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },
             onSupprimerActe = { onSupprimerActe(it) },
             onVoirActe = { onVoirActe(it) },
@@ -601,15 +580,6 @@ fun EcranApplication(
                 onEditionOuverte(false)
             },
             onAnnuler = { onEditionOuverte(false) }
-        )
-    }
-
-    if (dialoguePiste) {
-        DialoguePiste(
-            personnes = personnes,
-            personnePredefinie = pistePersonnePre,
-            onValider = { texte, personneId -> ajouterPiste(texte, personneId) },
-            onAnnuler = { onDialoguePiste(false) }
         )
     }
 
@@ -776,6 +746,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 
 
 

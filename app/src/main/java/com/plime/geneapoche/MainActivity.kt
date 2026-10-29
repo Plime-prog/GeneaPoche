@@ -266,10 +266,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var editionCible by remember { mutableStateOf<Personne?>(null) }
     var pickerRole by remember { mutableStateOf("") }
     var confirmSuppression by remember { mutableStateOf<Personne?>(null) }
-    var dialoguePiste by remember { mutableStateOf(false) }
-    var pistePersonnePre by remember { mutableStateOf(0L) }
     var acteVisionne by remember { mutableStateOf<Acte?>(null) }
-    var pisteRecherche by remember { mutableStateOf<Piste?>(null) }
+    var acteAConfirmer by remember { mutableStateOf<ActeSaisie?>(null) }
     var arbreCentre by remember { mutableStateOf(0L) }
     var sosaCujus by remember { mutableStateOf(1L) }
     var cujusDialogue by remember { mutableStateOf(false) }
@@ -291,44 +289,47 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         actes.addAll(ca)
     }
 
-    // Complete le journal : jusqu'a 5 recherches AUTOMATIQUES en cours (type "A"),
-    // en faisant tourner les personnes (celles qui ont le moins de recherches ouvertes d'abord).
-    // La piste memorise la CLE de la suggestion : le texte est recalculé en direct
-    // et une meme recherche ne peut pas etre proposee deux fois (correctif doublons).
+    // Synchronise le journal avec les donnees manquantes (grisees dans les fiches) :
+    // 1) toute recherche ouverte dont la donnee est maintenant presente (saisie
+    //    ou image) est archivee automatiquement, horodatee ;
+    // 2) chaque donnee manquante sans recherche ouverte en obtient une.
     fun completerJournal() {
         if (!charge) return
-        var gardeFou = 0
-        while (pistes.count { !it.faite && it.type == "A" } < 5 && gardeFou < 200) {
-            gardeFou += 1
-            val enCours = pistes.filter { !it.faite && it.type == "A" }
-            val comptage = personnes.associate { p -> p.id to pistes.count { !it.faite && it.personneId == p.id } }
-            var choisie: Personne? = null
-            var sugChoisie: Suggestion? = null
-            for (p in personnes.sortedWith(compareBy({ comptage[it.id] ?: 0 }, { it.titre() }))) {
-                val deja = pistes.filter { !it.faite && it.personneId == p.id }.map { it.categorie }.toSet()
-                val s = suggestionsPour(p, personnes, actes).firstOrNull { it.cle !in deja }
-                if (s != null) {
-                    choisie = p
-                    sugChoisie = s
-                    break
+        val maintenant = System.currentTimeMillis()
+        pistes.filter { !it.faite }.forEach { ps ->
+            val pers = personneParId(personnes, ps.personneId)
+            val encoreManquante = pers != null &&
+                suggestionsPour(pers, personnes, actes).any { it.cle == ps.categorie }
+            if (pers == null || !encoreManquante) {
+                if (ps.enCours.isNotBlank()) {
+                    ps.historique.add(0, Recherche(date = maintenant, resultat = "X", note = ps.enCours.trim()))
+                }
+                ps.faite = true
+                ps.cloture = maintenant
+                if (pers != null) ps.texte = "Trouv\u00E9 : " + ps.texte
+            }
+        }
+        personnes.forEach { p ->
+            val existantes = pistes.filter { !it.faite && it.personneId == p.id }.map { it.categorie }.toSet()
+            suggestionsPour(p, personnes, actes).forEach { s ->
+                if (s.cle !in existantes) {
+                    val nouvelId = (pistes.maxOfOrNull { it.id } ?: 0L) + 1L
+                    pistes.add(
+                        Piste(
+                            id = nouvelId,
+                            texte = s.titre,
+                            personneId = p.id,
+                            creation = maintenant,
+                            type = "A",
+                            categorie = s.cle,
+                            lieu = s.lieu,
+                            dept = s.dept,
+                            debut = s.debut,
+                            fin = s.fin
+                        )
+                    )
                 }
             }
-            if (choisie == null || sugChoisie == null) break
-            val nouvelId = (pistes.maxOfOrNull { it.id } ?: 0L) + 1L
-            pistes.add(
-                Piste(
-                    id = nouvelId,
-                    texte = sugChoisie.titre,
-                    personneId = choisie.id,
-                    creation = System.currentTimeMillis(),
-                    type = "A",
-                    categorie = sugChoisie.cle,
-                    lieu = sugChoisie.lieu,
-                    dept = sugChoisie.dept,
-                    debut = sugChoisie.debut,
-                    fin = sugChoisie.fin
-                )
-            )
         }
     }
 
@@ -443,21 +444,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         enregistrer()
     }
 
-    fun ajouterPiste(texte: String, personneId: Long) {
-        if (pistes.count { !it.faite && it.type == "P" } >= 5) {
-            message = "5 recherches libres en cours maximum : validez-en une d'abord."
-            dialoguePiste = false
-            return
-        }
-        val nouvelId = (pistes.maxOfOrNull { it.id } ?: 0L) + 1L
-        pistes.add(Piste(nouvelId, texte, personneId, System.currentTimeMillis(), false, 0L))
-        enregistrer()
-        dialoguePiste = false
-    }
-
-    fun basculerPiste(piste: Piste) {
-        piste.faite = !piste.faite
-        piste.cloture = if (piste.faite) System.currentTimeMillis() else 0L
+    fun supprimerPiste(piste: Piste) {
+        pistes.remove(piste)
         enregistrer()
     }
 
@@ -557,7 +545,52 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     // professions, liens pere/mere/conjoint), cree les personnes absentes, et la
     // numerotation est recalculee automatiquement par enregistrer().
     // Les temoins et signataires sont memorises dans le contenu de l'acte.
-    fun enregistrerActe(a: ActeSaisie) {
+
+    // Un nom correspond-il deja a une fiche existante (nom + prenoms, casse ignoree) ?
+    fun nomDejaConnu(nomSaisi: String, prenomsSaisis: String): Boolean {
+        val n = nomSaisi.trim()
+        val pr = prenomsSaisis.trim()
+        if (n.isEmpty() && pr.isEmpty()) return true
+        return personnes.any {
+            it.nom.trim().uppercase() == n.uppercase() &&
+            it.prenoms.trim().uppercase() == pr.uppercase()
+        }
+    }
+
+    // Noms saisis qui ne correspondent a aucune fiche : creation a proposer.
+    fun nomsNouveaux(a: ActeSaisie): List<String> {
+        val res = mutableListOf<String>()
+        if (a.personneId == 0L && !nomDejaConnu(a.nom, a.prenoms) && (a.nom.isNotBlank() || a.prenoms.isNotBlank())) {
+            res.add((a.prenoms.trim() + " " + a.nom.trim()).trim())
+        }
+        if (!nomDejaConnu(a.pereNom, a.perePrenoms)) {
+            res.add("p\u00E8re : " + (a.perePrenoms.trim() + " " + a.pereNom.trim()).trim())
+        }
+        if (!nomDejaConnu(a.mereNom, a.merePrenoms)) {
+            res.add("m\u00E8re : " + (a.merePrenoms.trim() + " " + a.mereNom.trim()).trim())
+        }
+        if (a.type == "M") {
+            if (a.marieeId == 0L && !nomDejaConnu(a.marieeNom, a.marieePrenoms) && (a.marieeNom.isNotBlank() || a.marieePrenoms.isNotBlank())) {
+                res.add("mari\u00E9e : " + (a.marieePrenoms.trim() + " " + a.marieeNom.trim()).trim())
+            }
+            if (!nomDejaConnu(a.pMarieeNom, a.pMarieePrenoms)) {
+                res.add("p\u00E8re de la mari\u00E9e : " + (a.pMarieePrenoms.trim() + " " + a.pMarieeNom.trim()).trim())
+            }
+            if (!nomDejaConnu(a.mMarieeNom, a.mMarieePrenoms)) {
+                res.add("m\u00E8re de la mari\u00E9e : " + (a.mMarieePrenoms.trim() + " " + a.mMarieeNom.trim()).trim())
+            }
+        }
+        return res
+    }
+
+    // Synchronisation avec les fiches existantes, ou proposition de creation.
+    fun enregistrerActe(a: ActeSaisie, confirme: Boolean = false) {
+        val nouveaux = nomsNouveaux(a)
+        if (nouveaux.isNotEmpty() && !confirme) {
+            acteAConfirmer = a
+            return
+        }
+        acteAConfirmer = null
         var crees = 0
         var plafondAtteint = false
 
@@ -834,16 +867,6 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             definirCujus = { cujusPreselec = it; cujusDialogue = true },
             choisirCujus = { cujusPreselec = null; cujusDialogue = true },
             renumeroter = { renumeroter(personnes, it, sosaCujus) },
-            dialoguePiste = dialoguePiste,
-            onDialoguePiste = { dialoguePiste = it },
-            pistePersonnePre = pistePersonnePre,
-            onPistePersonnePre = { pistePersonnePre = it },
-            ajouterPiste = { t, id -> ajouterPiste(t, id) },
-            basculerPiste = { basculerPiste(it) },
-            supprimerPiste = {
-                pistes.remove(it)
-                enregistrer()
-            },
             actes = actes,
             ajouterActe = { personneId, uri, type, titre -> ajouterActe(personneId, uri, type, titre) },
             onSupprimerActe = {
@@ -852,7 +875,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 enregistrer()
             },
             onVoirActe = { acteVisionne = it },
-            noterRecherche = { pisteRecherche = it },
+            supprimerPiste = { supprimerPiste(it) },
             arbreCentre = if (arbreCentre != 0L) {
                 arbreCentre
             } else {
@@ -874,14 +897,35 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         VisionneuseActe(ctx = ctx, acte = a, onFermer = { acteVisionne = null })
     }
 
-    pisteRecherche?.let { pr ->
-        DialogueRecherche(
-            onValider = { r ->
-                pr.historique.add(0, r)
-                enregistrer()
-                pisteRecherche = null
+    // Confirmation : noms saisis inconnus -> creer de nouvelles fiches
+    // (numerotation deduite automatiquement) ou annuler.
+    acteAConfirmer?.let { a ->
+        val nouveaux = nomsNouveaux(a)
+        AlertDialog(
+            onDismissRequest = { acteAConfirmer = null },
+            title = { Text("Noms inconnus") },
+            text = {
+                Column {
+                    Text("Ces noms ne correspondent \u00E0 aucune fiche existante :")
+                    nouveaux.forEach { n ->
+                        Text("\u2022 " + n, fontWeight = FontWeight.Bold)
+                    }
+                    Text(
+                        "Cr\u00E9er de nouvelles fiches (la num\u00E9rotation sera d\u00E9duite automatiquement) ? Pour synchroniser avec une fiche existante, annulez et choisissez-la dans la saisie.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
             },
-            onAnnuler = { pisteRecherche = null }
+            confirmButton = {
+                TextButton(onClick = {
+                    acteAConfirmer = null
+                    enregistrerActe(a, true)
+                }) { Text("Cr\u00E9er les fiches") }
+            },
+            dismissButton = {
+                TextButton(onClick = { acteAConfirmer = null }) { Text("Annuler") }
+            }
         )
     }
 
@@ -1117,6 +1161,7 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
         }
     }
 }
+
 
 
 

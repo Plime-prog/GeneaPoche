@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -32,14 +31,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -70,12 +66,15 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
 // ---------------------------------------------------------------- Fiche personne
+// Blocs modifiables par appui long uniquement. Les informations manquantes
+// sont affichees en gris : elles alimentent le journal de recherches.
+
+val GrisManquant = Color(0xFF9AA099)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EcranPersonne(
     personnes: List<Personne>,
-    pistes: List<Piste>,
     actes: List<Acte>,
     p: Personne,
     enregistrer: () -> Unit,
@@ -85,10 +84,7 @@ fun EcranPersonne(
     onSupprimer: () -> Unit,
     onChoisir: (String) -> Unit,
     onRetirer: (String, Long) -> Unit,
-    onEtat: (String, String) -> Unit,
     onDefinirCujus: () -> Unit,
-    onNouvellePiste: () -> Unit,
-    onBasculerPiste: (Piste) -> Unit,
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
@@ -131,16 +127,14 @@ fun EcranPersonne(
         LazyColumn(
             Modifier.fillMaxSize().padding(marges).padding(horizontal = 12.dp)
         ) {
+            item { CarteIdentite(p = p, onModifier = onModifier) }
             item {
                 CarteEvenement(
                     titre = "Naissance",
-                    section = "naissance",
                     typeActe = "N",
-                    date = p.dateNaissance, heure = p.heureNaissance,
-                    lieu = p.lieuNaissance, dept = p.deptNaissance,
-                    etat = p.etatDe("naissance"),
+                    p = p,
+                    personnes = personnes,
                     actes = actes.filter { it.personneId == p.id && it.type == "N" },
-                    onEtat = { v -> onEtat("naissance", v) },
                     onModifier = onModifier,
                     onAjouterActe = onAjouterActe,
                     onSupprimerActe = onSupprimerActe,
@@ -153,13 +147,10 @@ fun EcranPersonne(
                 item {
                     CarteEvenement(
                         titre = "Bapt\u00EAme",
-                        section = "bapteme",
                         typeActe = "B",
-                        date = p.dateBapteme, heure = p.heureBapteme,
-                        lieu = p.lieuBapteme, dept = p.deptBapteme,
-                        etat = p.etatDe("bapteme"),
+                        p = p,
+                        personnes = personnes,
                         actes = actes.filter { it.personneId == p.id && it.type == "B" },
-                        onEtat = { v -> onEtat("bapteme", v) },
                         onModifier = onModifier,
                         onAjouterActe = onAjouterActe,
                         onSupprimerActe = onSupprimerActe,
@@ -172,13 +163,10 @@ fun EcranPersonne(
             item {
                 CarteEvenement(
                     titre = "Mariage",
-                    section = "mariage",
                     typeActe = "M",
-                    date = p.dateMariage, heure = p.heureMariage,
-                    lieu = p.lieuMariage, dept = p.deptMariage,
-                    etat = p.etatDe("mariage"),
+                    p = p,
+                    personnes = personnes,
                     actes = actes.filter { it.personneId == p.id && it.type == "M" },
-                    onEtat = { v -> onEtat("mariage", v) },
                     onModifier = onModifier,
                     onAjouterActe = onAjouterActe,
                     onSupprimerActe = onSupprimerActe,
@@ -190,13 +178,10 @@ fun EcranPersonne(
             item {
                 CarteEvenement(
                     titre = "D\u00E9c\u00E8s",
-                    section = "deces",
                     typeActe = "D",
-                    date = p.dateDeces, heure = p.heureDeces,
-                    lieu = p.lieuDeces, dept = p.deptDeces,
-                    etat = p.etatDe("deces"),
+                    p = p,
+                    personnes = personnes,
                     actes = actes.filter { it.personneId == p.id && it.type == "D" },
-                    onEtat = { v -> onEtat("deces", v) },
                     onModifier = onModifier,
                     onAjouterActe = onAjouterActe,
                     onSupprimerActe = onSupprimerActe,
@@ -209,13 +194,10 @@ fun EcranPersonne(
                 item {
                     CarteEvenement(
                         titre = "S\u00E9pulture",
-                        section = "sepulture",
                         typeActe = "S",
-                        date = p.dateSepulture, heure = p.heureSepulture,
-                        lieu = p.lieuSepulture, dept = p.deptSepulture,
-                        etat = p.etatDe("sepulture"),
+                        p = p,
+                        personnes = personnes,
                         actes = actes.filter { it.personneId == p.id && it.type == "S" },
-                        onEtat = { v -> onEtat("sepulture", v) },
                         onModifier = onModifier,
                         onAjouterActe = onAjouterActe,
                         onSupprimerActe = onSupprimerActe,
@@ -253,22 +235,43 @@ fun EcranPersonne(
                     onDefinirCujus = onDefinirCujus
                 )
             }
-            item {
-                CartePistesPersonne(
-                    pistes = pistes,
-                    personnes = personnes,
-                    actes = actes,
-                    p = p,
-                    onNouvellePiste = onNouvellePiste,
-                    onBasculer = onBasculerPiste
-                )
-            }
             item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }
 
-// ---------------------------------------------------------------- Bloc d'evenement (avec actes et lien AD)
+// ---------------------------------------------------------------- Carte identite
+// Rappel du nom et prenom, puis profession dessous. Appui long : modifier.
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun CarteIdentite(p: Personne, onModifier: () -> Unit) {
+    Card(
+        Modifier.fillMaxWidth()
+            .padding(vertical = 5.dp)
+            .combinedClickable(onClick = {}, onLongClick = onModifier),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
+    ) {
+        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+            Text(p.titre(), fontSize = 19.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+            val num = p.numeroAffiche()
+            if (num.isNotEmpty()) {
+                Text(num, style = MaterialTheme.typography.bodySmall)
+            }
+            LigneG("Profession", p.profession.trim())
+            if (p.sexe == "M" || p.sexe == "F") {
+                LigneG("Sexe", if (p.sexe == "M") "Masculin" else "F\u00E9minin")
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- Bloc d'evenement
+// Tout ramasse : date, heure, lieu, departement, parents (avec age a l'acte
+// et date de naissance deduite a l'annee), conjoint, temoins.
+// Icones : ajout d'une photo d'acte + recherche Internet aux AD.
+// Les donnees manquantes sont grisees et synchronisees avec le journal.
 
 fun libelleType(t: String): String = when (t) {
     "N" -> "Naissance"
@@ -279,19 +282,81 @@ fun libelleType(t: String): String = when (t) {
     else -> "Autre"
 }
 
+// Champs date/heure/lieu/dept d'un evenement selon son type.
+data class EvChamps(val date: String, val heure: String, val lieu: String, val dept: String)
+
+fun champsEvenement(p: Personne, type: String): EvChamps = when (type) {
+    "N" -> EvChamps(p.dateNaissance, p.heureNaissance, p.lieuNaissance, p.deptNaissance)
+    "B" -> EvChamps(p.dateBapteme, p.heureBapteme, p.lieuBapteme, p.deptBapteme)
+    "M" -> EvChamps(p.dateMariage, p.heureMariage, p.lieuMariage, p.deptMariage)
+    "S" -> EvChamps(p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture)
+    else -> EvChamps(p.dateDeces, p.heureDeces, p.lieuDeces, p.deptDeces)
+}
+
+fun anneeDe(s: String): Int? = Regex("[0-9]{4}").find(s)?.value?.toIntOrNull()
+
+// Extrait une ligne de la transcription du dernier acte du type (ex "T\u00E9moins : ...").
+fun partieContenu(actes: List<Acte>, prefixe: String): String {
+    val a = actes.filter { it.contenu.isNotBlank() }.maxByOrNull { it.creation } ?: return ""
+    val ligne = a.contenu.split("\n").firstOrNull { it.startsWith(prefixe) } ?: return ""
+    return ligne.removePrefix(prefixe).trim()
+}
+
+// Age du parent declare dans la transcription ("... (35 ans \u00E0 l'acte)").
+fun ageDansContenu(actes: List<Acte>, prefixe: String): Int? {
+    val a = actes.filter { it.contenu.isNotBlank() }.maxByOrNull { it.creation } ?: return null
+    val ligne = a.contenu.split("\n").firstOrNull { it.startsWith(prefixe) } ?: return null
+    return Regex("([0-9]{1,3}) ans \u00E0 l'acte").find(ligne)?.groupValues?.get(1)?.toIntOrNull()
+}
+
+// Ligne d'une personne liee (pere, mere, conjoint) : nom, profession, naissance,
+// age a l'acte ou date de naissance deduite a l'annee, deces. Grisee si absente.
+@Composable
+fun LignePersonneG(libelle: String, q: Personne?, anneeActe: Int?, ageActeContenu: Int?) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+        if (q == null) {
+            Text("\u2014", style = MaterialTheme.typography.bodyMedium, color = GrisManquant)
+        } else {
+            val m = mutableListOf<String>()
+            m.add(q.titre())
+            if (q.profession.isNotBlank()) m.add(q.profession.trim())
+            val an = anneeDe(q.dateNaissance)
+            if (an != null) {
+                var s = "n\u00E9(e) le " + dateAffichee(q.dateNaissance)
+                if (anneeActe != null) s = s + " (" + (anneeActe - an).coerceAtLeast(0).toString() + " ans \u00E0 l'acte)"
+                m.add(s)
+            } else if (ageActeContenu != null && anneeActe != null) {
+                m.add("n\u00E9(e) vers " + (anneeActe - ageActeContenu).toString())
+            }
+            if (q.lieuNaissance.isNotBlank()) m.add("\u00E0 " + q.lieuNaissance.trim())
+            if (q.dateDeces.isNotBlank()) m.add("d\u00E9c\u00E9d\u00E9(e) le " + dateAffichee(q.dateDeces))
+            Text(m.joinToString(", "), style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+// Ligne toujours affichee : valeur ou em-dash gris si manquante.
+@Composable
+fun LigneG(libelle: String, valeur: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+        if (valeur.isBlank()) {
+            Text("\u2014", style = MaterialTheme.typography.bodyMedium, color = GrisManquant)
+        } else {
+            Text(valeur, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CarteEvenement(
     titre: String,
-    section: String,
     typeActe: String,
-    date: String,
-    heure: String,
-    lieu: String,
-    dept: String,
-    etat: String,
+    p: Personne,
+    personnes: List<Personne>,
     actes: List<Acte>,
-    onEtat: (String) -> Unit,
     onModifier: () -> Unit,
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
@@ -299,42 +364,72 @@ fun CarteEvenement(
     onEnregistrer: () -> Unit,
     ouvrirEtatCivil: (String, Int?, String, String) -> Unit
 ) {
-    val d = date.trim()
-    val l = lieu.trim()
-    val h = heure.trim()
-    val dp = dept.trim()
-    val rien = d.isEmpty() && l.isEmpty() && h.isEmpty() && dp.isEmpty() && etat.isEmpty() && actes.isEmpty()
+    val c = champsEvenement(p, typeActe)
+    val d = c.date.trim()
+    val l = c.lieu.trim()
+    val dp = c.dept.trim()
+    val anneeActe = anneeDe(d)
 
     Card(
         Modifier.fillMaxWidth()
             .padding(vertical = 5.dp)
-            .combinedClickable(onClick = {}, onLongClick = { onModifier() }),
+            .combinedClickable(onClick = {}, onLongClick = onModifier),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, Color(0xFF9CBF9A))
     ) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            // Verification Oui/Non du bloc : Oui automatiquement si une date ou une image existe.
-            val verifie = etat == "vert" || date.isNotBlank() || actes.isNotEmpty()
-            EnteteVerifie(titre, verifie, onVerifie = { v -> onEtat(if (v) "vert" else "") })
-            Ligne("Date", dateAffichee(d))
-            Ligne("Heure", heureAffichee(h))
-            Ligne("Lieu", l)
-            Ligne("D\u00E9partement", dp)
-
-            // Lien direct vers l'etat civil des AD selon la date et le type d'acte
-            val numDept = dp.toIntOrNull() ?: numeroDepartement(l) ?: numeroDepartement(dp)
-            if ((l.isNotEmpty() || numDept != null) && (d.isNotEmpty() || l.isNotEmpty())) {
-                OutlinedButton(
+            // Entete : titre + icone photo d'acte + icone recherche Internet (AD).
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                AjoutActeIcone(typeActe, onAjouterActe)
+                val numDept = dp.toIntOrNull() ?: numeroDepartement(l) ?: numeroDepartement(dp)
+                IconButton(
                     onClick = {
-                        ouvrirEtatCivil(l, numDept, libelleType(typeActe), Regex("[0-9]{4}").find(d)?.value ?: "")
+                        ouvrirEtatCivil(l, numDept, libelleType(typeActe), anneeActe?.toString() ?: "")
                     },
-                    Modifier.padding(top = 4.dp)
+                    enabled = l.isNotEmpty() || numDept != null
                 ) {
-                    Text("Rechercher cet acte aux AD")
+                    Icon(Icons.Filled.Search, contentDescription = "Rechercher cet acte aux AD")
                 }
             }
 
-            // Actes stockes pour cet evenement
+            LigneG("Date", dateAffichee(d))
+            LigneG("Heure", heureAffichee(c.heure.trim()))
+            LigneG("Lieu", l)
+            LigneG("D\u00E9partement", dp)
+
+            // Peres et meres (naissance et deces) : fiche liee si elle existe,
+            // sinon age/deduction depuis la transcription de l'acte.
+            if (typeActe == "N" || typeActe == "D") {
+                LignePersonneG(
+                    libelle = "P\u00E8re",
+                    q = personneParId(personnes, p.pere),
+                    anneeActe = anneeActe,
+                    ageActeContenu = ageDansContenu(actes, "P\u00E8re : ")
+                )
+                LignePersonneG(
+                    libelle = "M\u00E8re",
+                    q = personneParId(personnes, p.mere),
+                    anneeActe = anneeActe,
+                    ageActeContenu = ageDansContenu(actes, "M\u00E8re : ")
+                )
+            }
+
+            // Conjoint pour le mariage, avec ses renseignements.
+            if (typeActe == "M") {
+                LignePersonneG(
+                    libelle = "Conjoint(e)",
+                    q = personneParId(personnes, p.conjoint),
+                    anneeActe = anneeActe,
+                    ageActeContenu = ageDansContenu(actes, "Mari\u00E9e : ")
+                )
+            }
+
+            // Temoins, depuis la transcription du dernier acte de ce type.
+            LigneG("T\u00E9moins", partieContenu(actes, "T\u00E9moins : "))
+            LigneG("Signataires", partieContenu(actes, "Signataires : "))
+
+            // Actes stockes pour cet evenement (images + transcriptions).
             if (actes.isNotEmpty()) {
                 Text(
                     "Actes stock\u00E9s (" + actes.size.toString() + ")",
@@ -351,22 +446,21 @@ fun CarteEvenement(
                     )
                 }
             }
-            AjoutActeBloc(typeActe, onAjouterActe)
         }
     }
 }
 
+// Icone d'ajout d'une photo d'acte dans un bloc.
 @Composable
-fun AjoutActeBloc(typeActe: String, onAjouterActe: (Uri, String, String) -> Unit) {
+fun AjoutActeIcone(typeActe: String, onAjouterActe: (Uri, String, String) -> Unit) {
     var dialogueOuvert by remember { mutableStateOf(false) }
     val lanceur = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) onAjouterActe(uri, typeActe, "")
     }
-    OutlinedButton(onClick = { dialogueOuvert = true }, Modifier.padding(top = 4.dp)) {
-        Icon(Icons.Filled.Add, contentDescription = null)
-        Text("  Ajouter un acte")
+    IconButton(onClick = { dialogueOuvert = true }) {
+        Icon(Icons.Filled.Add, contentDescription = "Ajouter une photo d'acte")
     }
     if (dialogueOuvert) {
         AlertDialog(
@@ -479,31 +573,7 @@ fun DialoguePageActe(
     )
 }
 
-// ---------------------------------------------------------------- Pastilles
-
-@Composable
-fun EnteteVerifie(titre: String, verifie: Boolean, onVerifie: (Boolean) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold)
-        Text("V\u00E9rifi\u00E9 :", style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.width(4.dp))
-        FilterChip(
-            selected = verifie,
-            onClick = { onVerifie(!verifie) },
-            label = { Text(if (verifie) "Oui" else "Non") },
-            colors = FilterChipDefaults.filterChipColors(
-                containerColor = CouleurNeutrePale,
-                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                selectedContainerColor = CouleurVertPale,
-                selectedLabelColor = CouleurVertFonce
-            )
-        )
-    }
-}
-
+// Ligne masquee si vide (liens de la famille).
 @Composable
 fun Ligne(libelle: String, valeur: String) {
     if (valeur.isEmpty()) return
@@ -532,7 +602,6 @@ fun CarteFamille(
     ) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
             Text("Famille", fontWeight = FontWeight.Bold)
-            Ligne("Profession", p.profession.trim())
             if (p.sosa.trim() != "1") {
                 OutlinedButton(onClick = onDefinirCujus, Modifier.padding(top = 4.dp)) {
                     Text("D\u00E9finir comme de cujus")
@@ -635,94 +704,6 @@ fun LienParent(
             )
             IconButton(onClick = onRetirer) {
                 Icon(Icons.Filled.Close, contentDescription = "Retirer")
-            }
-        }
-    }
-}
-
-// ---------------------------------------------------------------- Pistes de la personne
-// Les 3 blocs du journal (a faire / en cours / archives) synchronises sur la fiche.
-
-@Composable
-fun CartePistesPersonne(
-    pistes: List<Piste>,
-    personnes: List<Personne>,
-    actes: List<Acte>,
-    p: Personne,
-    onNouvellePiste: () -> Unit,
-    onBasculer: (Piste) -> Unit
-) {
-    Card(
-        Modifier.fillMaxWidth().padding(vertical = 5.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
-    ) {
-        Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            Text("Recherches", fontWeight = FontWeight.Bold)
-            val deCettePersonne = pistes.filter { it.personneId == p.id && !it.faite }
-            val restantes = suggestionsPour(p, personnes, actes).size
-            Text(
-                if (restantes > 0) {
-                    deCettePersonne.size.toString() + " en cours \u2013 " + restantes.toString() + " information(s) encore \u00E0 trouver pour cette personne."
-                } else {
-                    "Tout est renseign\u00E9 et v\u00E9rifi\u00E9 pour cette personne."
-                },
-                style = MaterialTheme.typography.bodySmall
-            )
-            deCettePersonne.forEach { piste ->
-                var confirme by remember { mutableStateOf(false) }
-                Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    // a. Rappel de la recherche a faire
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = false,
-                            onCheckedChange = { confirme = true },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = CouleurVert,
-                                checkmarkColor = Color.White
-                            )
-                        )
-                        Text(
-                            textePisteActuel(piste, personnes, actes),
-                            Modifier.weight(1f),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                    // b. Recherche en cours
-                    if (piste.enCours.isNotBlank()) {
-                        Text("b. En cours : " + piste.enCours, style = MaterialTheme.typography.bodySmall)
-                    }
-                    // c. Recherches archivees (horodatees)
-                    if (piste.historique.isNotEmpty()) {
-                        Text("c. Archives :", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                        piste.historique.take(3).forEach { r ->
-                            Text(
-                                "   \u2022 " + formaterDateHeure(r.date) + " \u2013 " + libelleRecherche(r),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
-                if (confirme) {
-                    AlertDialog(
-                        onDismissRequest = { confirme = false },
-                        title = { Text("Valider cette recherche ?") },
-                        text = { Text("Elle sera marqu\u00E9e comme termin\u00E9e. Retrouvez le d\u00E9tail dans le journal.") },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                confirme = false
-                                onBasculer(piste)
-                            }) { Text("Oui, termin\u00E9e") }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { confirme = false }) { Text("Pas encore") }
-                        }
-                    )
-                }
-            }
-            OutlinedButton(onClick = onNouvellePiste, Modifier.padding(top = 4.dp)) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Text("  Nouvelle recherche pour cette personne")
             }
         }
     }
@@ -832,8 +813,3 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
-
-
-
-
-

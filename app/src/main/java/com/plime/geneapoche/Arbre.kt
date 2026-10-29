@@ -191,12 +191,10 @@ fun CarteMiniArbre(
                 if (morceaux.isNotEmpty()) {
                     Text(morceaux.joinToString(" \u2013 "), style = MaterialTheme.typography.bodySmall)
                 }
-                if (p.aVerifier()) {
-                    Text("\u00C0 v\u00E9rifier", color = CouleurRouge, style = MaterialTheme.typography.bodySmall)
-                }
             }
         }
     }
 }
+
 
 
