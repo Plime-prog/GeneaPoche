@@ -48,6 +48,15 @@ P\u00E9rim\u00E8tre : 50 personnes max (compteur affich\u00E9), France uniquemen
 - Validation d'une recherche **avec confirmation** : elle s'efface du journal et une nouvelle apparaît. Les 3 blocs se synchronisent avec la fiche de la personne.
 - Onglet PERSONNES : vignettes **bleu pâle (hommes) / rose pâle (femmes)** affichant le **n° Sosa ou d'Aboville**, **nom de famille en premier**, dates N/M/D, cartes compactes et **index alphabétique** en haut.
 
+## Fiche et journal synchronisés (v0.15)
+
+- **Fiche personne par blocs modifiables au toucher long** : carte identité (nom, prénoms, profession dessous), puis blocs Naissance / Baptême / Mariage / Décès / Sépulture.
+- Chaque bloc **ramasse tout** : date, heure, lieu, département, **père et mère** (profession, naissance, **âge à l'acte** ou date de naissance déduite à l'année), **conjoint** pour le mariage, **témoins et signataires**.
+- **Informations manquantes affichées en gris** (—) : elles sont **synchronisées avec le journal de recherches**.
+- Dans chaque bloc : **icône photo** pour ajouter une photo d'acte et **icône recherche** vers l'état civil des AD.
+- **Nouveau nom saisi** : synchronisation avec la fiche existante, sinon **proposition de création** (numérotation déduite automatiquement).
+- **Journal de recherches refondu, sans notion de validation** : chaque information manquante est une recherche à faire ; dès qu'une donnée est saisie ou une image ajoutée, **la recherche est archivée automatiquement** (horodatée). Chaque recherche garde une **zone de texte libre** (pages, côtes, notes) et l'icône de recherche Internet.
+
 ## Saisie par acte (v0.14)
 
 Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'état civil.
