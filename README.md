@@ -48,6 +48,17 @@ P\u00E9rim\u00E8tre : 50 personnes max (compteur affich\u00E9), France uniquemen
 - Validation d'une recherche **avec confirmation** : elle s'efface du journal et une nouvelle apparaît. Les 3 blocs se synchronisent avec la fiche de la personne.
 - Onglet PERSONNES : vignettes **bleu pâle (hommes) / rose pâle (femmes)** affichant le **n° Sosa ou d'Aboville**, **nom de famille en premier**, dates N/M/D, cartes compactes et **index alphabétique** en haut.
 
+## Saisie par acte (v0.14)
+
+Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'état civil.
+- **Type N/B/M/D/S** en puces, commune + département, date et heure.
+- **Personne concernée** choisie parmi les existantes ou nouvelle (nom, prénoms, sexe, profession).
+- **Père ET mère** : naissance (âge à l'acte calculé automatiquement), lieu et département de naissance, profession, décès (date et lieu).
+- **Mariage : la mariée et ses propres père et mère** avec les mêmes champs.
+- **Jusqu'à 4 témoins** (nom, prénoms, profession) et **puces « Qui signe ? »** (concerné(e), père, mère, mariée, témoins).
+- **Tout alimente la fiche Personne** (dates, heures, lieux, départements, professions, liens parents) et la **numérotation Sosa/d'Aboville est recalculée immédiatement** ; les personnes absentes sont créées automatiquement (plafond 50 respecté).
+- La transcription intégrale (entête, âges, parents, témoins, signataires) est **mémorisée dans l'acte** et affichée dans la visionneuse en l'absence d'image.
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
