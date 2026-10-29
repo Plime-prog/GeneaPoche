@@ -68,6 +68,13 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 - **Tout alimente la fiche Personne** (dates, heures, lieux, départements, professions, liens parents) et la **numérotation Sosa/d'Aboville est recalculée immédiatement** ; les personnes absentes sont créées automatiquement (plafond 50 respecté).
 - La transcription intégrale (entête, âges, parents, témoins, signataires) est **mémorisée dans l'acte** et affichée dans la visionneuse en l'absence d'image.
 
+## Sources Heredis et coh\u00E9rence (v0.17)
+
+- **R\u00E9f\u00E9rence (c\u00F4te) de chaque acte** : champ \u00AB R\u00E9f\u00E9rence de l'acte (c\u00F4te AD) \u00BB dans l'onglet Saisie et dans le dialogue Page de chaque acte, affich\u00E9e sur la fiche dans chaque bloc.
+- **Export GEDCOM fa\u00E7on Heredis** : chaque acte devient un enregistrement **SOUR** (TITL, **REFN c\u00F4te**, DATA/EVEN, DATE, PLAC, NOTE transcription int\u00E9grale) ; les \u00E9v\u00E9nements et mariages y renvoient via `SOUR @S\u2026@` + `PAGE p. x/y`.
+- **Lieux normalis\u00E9s** : `PLAC` au format \u00AB commune, num\u00E9ro, d\u00E9partement \u00BB (ex : Roubaix, 59, Nord), le num\u00E9ro \u00E9tant d\u00E9duit du champ d\u00E9partement, du lieu ou du nom de d\u00E9partement.
+- **Contr\u00F4le de coh\u00E9rence** : encadr\u00E9 orange en t\u00EAte du journal signalant les incoh\u00E9rences d'ann\u00E9es (d\u00E9c\u00E8s ou mariage avant naissance, \u00E2ge au d\u00E9c\u00E8s > 110 ans, p\u00E8re > 80 ans ou d\u00E9c\u00E9d\u00E9 avant la naissance, m\u00E8re < 13 ou > 55 ans, conjoint mari\u00E9 avant sa naissance).
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -112,3 +119,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 14. \u2705 v0.14 : saisie par acte (onglet Saisie) \u2014 type N/B/M/D/S, commune, date/heure, personne, p\u00E8re et m\u00E8re avec \u00E2ge calcul\u00E9, mari\u00E9e + ses parents, 4 t\u00E9moins, signataires ; alimente la fiche et la num\u00E9rotation, transcription m\u00E9moris\u00E9e dans l'acte.
 15. \u2705 v0.15 : fiche par blocs complets (parents, t\u00E9moins, \u00E2ges), infos manquantes gris\u00E9es, ic\u00F4nes photo/AD, journal sans validation (archivage automatique).
 16. \u2705 v0.16 : journal exhaustif \u2014 une recherche par information manquante, regroupement par personne avec compteurs.
+17. \u2705 v0.17 : sources Heredis (c\u00F4te REFN, enregistrements SOUR avec transcription), lieux PLAC normalis\u00E9s \u00AB commune, num\u00E9ro, d\u00E9partement \u00BB, contr\u00F4le de coh\u00E9rence (encadr\u00E9 anomalies dans le journal).
