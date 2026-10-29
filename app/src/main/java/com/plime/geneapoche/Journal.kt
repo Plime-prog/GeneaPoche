@@ -1,5 +1,6 @@
 package com.plime.geneapoche
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -264,7 +266,11 @@ fun CartePiste(
 
     val texte = textePisteActuel(piste, personnes, actes)
 
-    Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    Card(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
+    ) {
         Column(Modifier.fillMaxWidth().padding(10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 // Pastille numerotee
@@ -603,4 +609,5 @@ fun TexteAvecLiens(texte: String, ouvrirLien: (String) -> Unit) {
         }
     )
 }
+
 

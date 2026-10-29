@@ -90,7 +90,16 @@ val PaletteGeneaPoche = lightColorScheme(
     onError = Color(0xFFFFFFFF),
     errorContainer = Color(0xFFF6DDD8),
     onErrorContainer = Color(0xFF3A1110),
-    surfaceTint = Color(0xFF2E5D3A)
+    surfaceTint = Color(0xFF2E5D3A),
+    // Surfaces "container" : blancs verdatres (les defauts Material3 sont VIOLETS :
+    // NavigationBar du bas, dialogues, cartes). Tout est remplace ici.
+    surfaceDim = Color(0xFFDCE2D5),
+    surfaceBright = Color(0xFFFDFEF8),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFAFCF7),
+    surfaceContainer = Color(0xFFF4F8F1),
+    surfaceContainerHigh = Color(0xFFF7FAF4),
+    surfaceContainerHighest = Color(0xFFEFF3E9)
 )
 
 val FormesGeneaPoche = Shapes(
@@ -878,5 +887,6 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
         }
     }
 }
+
 
 

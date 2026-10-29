@@ -148,6 +148,7 @@ fun CarteMiniArbre(
             .width(150.dp)
             .padding(4.dp)
             .clickable { if (p != null) onOuvrir(p.id) },
+        border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0xFF9CBF9A)),
         colors = androidx.compose.material3.CardDefaults.cardColors(
             containerColor = if (centre) MaterialTheme.colorScheme.primaryContainer
             else if (p == null) MaterialTheme.colorScheme.surfaceVariant
@@ -193,3 +194,4 @@ fun CarteMiniArbre(
         }
     }
 }
+

@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -306,7 +308,9 @@ fun CarteEvenement(
     Card(
         Modifier.fillMaxWidth()
             .padding(vertical = 5.dp)
-            .combinedClickable(onClick = {}, onLongClick = { onModifier() })
+            .combinedClickable(onClick = {}, onLongClick = { onModifier() }),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
     ) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
             // Verification Oui/Non du bloc : Oui automatiquement si une date ou une image existe.
@@ -521,7 +525,11 @@ fun CarteFamille(
     onRetirer: (String, Long) -> Unit,
     onDefinirCujus: () -> Unit
 ) {
-    Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+    Card(
+        Modifier.fillMaxWidth().padding(vertical = 5.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
+    ) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
             Text("Famille", fontWeight = FontWeight.Bold)
             Ligne("Profession", p.profession.trim())
@@ -644,7 +652,11 @@ fun CartePistesPersonne(
     onNouvellePiste: () -> Unit,
     onBasculer: (Piste) -> Unit
 ) {
-    Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+    Card(
+        Modifier.fillMaxWidth().padding(vertical = 5.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
+    ) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
             Text("Recherches", fontWeight = FontWeight.Bold)
             val deCettePersonne = pistes.filter { it.personneId == p.id && !it.faite }
@@ -800,5 +812,6 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 
