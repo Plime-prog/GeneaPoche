@@ -12,7 +12,7 @@ Un outil l\u00E9ger pour :
 - suivre ce qui est v\u00E9rifi\u00E9 (pastilles vertes) ou \u00E0 v\u00E9rifier (rouge doux) ;
 - **exporter en GEDCOM 5.5.1** pour alimenter Heredis, et importer depuis Heredis.
 
-P\u00E9rim\u00E8tre : 100 personnes max (compteur affich\u00E9), France uniquement, actes N/B/M/D/S.
+P\u00E9rim\u00E8tre : 50 personnes max (compteur affich\u00E9), France uniquement, actes N/B/M/D/S.
 
 ## S\u00E9curit\u00E9
 
@@ -23,13 +23,13 @@ P\u00E9rim\u00E8tre : 100 personnes max (compteur affich\u00E9), France uniqueme
 - Reverrouillage automatique apr\u00E8s plus de 60 secondes en arri\u00E8re-plan.
 - \u26A0\uFE0F Sans le code PIN, les donn\u00E9es sont ind\u00E9chiffrables : aucune r\u00E9cup\u00E9ration possible.
 
-## Num\u00E9rotation
+## Numérotation (v0.11)
 
-- **Sosa-Stradonitz** : 1 = de cujus (personne de r\u00E9f\u00E9rence), p\u00E8re = 2n, m\u00E8re = 2n+1. Le de cujus s'affiche \u00E0 l'ouverture ; on peut le changer, toute la num\u00E9rotation est recalcul\u00E9e automatiquement.
-- **d'Aboville** pour les lat\u00E9raux (descendants hors ligne directe) : pr\u00E9rempli quand on ajoute un enfant (ex : enfant n\u00B02 du Sosa 1 \u2192 1.2).
-- Badges Sosa / Lat\u00E9ral affich\u00E9s dans la liste alphab\u00E9tique.
+- **Sosa-Stradonitz à partir du de cujus, dont le n° n'est pas forcément 1** : menu GEDCOM → « Définir le de cujus et son n° Sosa » (choix de la personne + numéro). Père = 2n, mère = 2n+1 : **tout en découle automatiquement**.
+- **d'Aboville** pour les latéraux : préfixe = n° du cujus (ex : enfant n° 2 d'un cujus Sosa 7 → 7.2).
+- **Aucun numéro ne se saisit nulle part** : plus de champ Sosa ou d'Aboville dans l'édition, tout est recalculé au fil de l'eau (liens père/mère/enfants inclus).
 
-## Fiches (v0.10)
+## Fiches (v0.11)
 
 - Blocs **Naissance, Mariage, Décès** toujours présents ; blocs **Baptême et Sépulture créables à la demande** (bouton « + Baptême » / « + Sépulture »).
 - Chaque bloc : date, **heure**, lieu (commune), **département** séparés, et **un seul bouton Vérifié Oui/Non** (Non par défaut, Oui automatiquement dès qu'une date ou une image est renseignée).
@@ -52,10 +52,16 @@ P\u00E9rim\u00E8tre : 100 personnes max (compteur affich\u00E9), France uniqueme
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
 
-## GEDCOM (v0.10)
+## GEDCOM (v0.11)
 
-- **Bouton GEDCOM à droite** de la barre de titre : **exporter (tout ou une branche), importer, vider la base**.
-- Export **5.5.1** (N/BAPM/M/DEAT/BURI + heures TIME), import depuis Heredis avec confirmation, plafond 100 personnes, compteur affiché en permanence.
+- **Bouton GEDCOM à droite** de la barre de titre, menu avec **icônes** : Exporter (tout ou une branche), Importer (remplace la base, plafond 50), **Définir le de cujus et son n° Sosa**, Vider la base.
+- Export **5.5.1** (N/BAPM/M/DEAT/BURI + heures TIME), import depuis Heredis avec confirmation, compteur affiché en permanence.
+
+## Personnes (v0.11)
+
+- **Alphabet complet A–Z en haut** : les lettres sans personne sont **grisées** ; un appui fait défiler jusqu'à la lettre.
+- **Classement au choix A–Z ou par branche** (puces de bascule) : chaque **branche** porte le **nom de famille de son ancêtre le plus haut** — les 4 branches des grands-parents, 3 générations, 7 Sosa + les latéraux.
+- **Tout l'encadré rose pâle (femme) ou bleu pâle (homme)**, avec le **rond au n° Sosa ou d'Aboville calculé automatiquement**, nom de famille en premier, dates N./M./D.
 
 ## Installation
 
@@ -80,3 +86,4 @@ P\u00E9rim\u00E8tre : 100 personnes max (compteur affich\u00E9), France uniqueme
 8. \u2705 Export GEDCOM 5.5.1 (tout ou branche) + import Heredis.
 9. \u2705 Refonte v0.9 (liste) : palette blanc/verts, logo, tri alphab\u00E9tique, de cujus \u00E0 l'ouverture, appui long, conjoints multiples, 5 recherches num\u00E9rot\u00E9es en 4 blocs.
 10. \u2705 Refonte v0.10 : d\u00E9marrage sur le journal, bouton GEDCOM (export/import/vider), vignettes bleu/rose avec n\u00B0 Sosa/d'Aboville, index alphab\u00E9tique, fiche sans bloc Identit\u00E9, blocs B et S \u00E0 la demande, bouton V\u00E9rifi\u00E9 unique par bloc, journal 3 blocs + correctif doublons.
+11. \u2705 Refonte v0.11 : plafond 50, de cujus au n\u00B0 Sosa libre (tout d\u00E9coule, aucune ressaisie), palette sans violet, menu GEDCOM \u00E0 ic\u00F4nes, alphabet complet grise, encadr\u00E9s rose/bleu, classement par branche.
