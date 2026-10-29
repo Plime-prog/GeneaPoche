@@ -316,8 +316,8 @@ fun CarteEvenement(
             // Verification Oui/Non du bloc : Oui automatiquement si une date ou une image existe.
             val verifie = etat == "vert" || date.isNotBlank() || actes.isNotEmpty()
             EnteteVerifie(titre, verifie, onVerifie = { v -> onEtat(if (v) "vert" else "") })
-            Ligne("Date", d)
-            Ligne("Heure", h)
+            Ligne("Date", dateAffichee(d))
+            Ligne("Heure", heureAffichee(h))
             Ligne("Lieu", l)
             Ligne("D\u00E9partement", dp)
 
@@ -812,6 +812,7 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 
 

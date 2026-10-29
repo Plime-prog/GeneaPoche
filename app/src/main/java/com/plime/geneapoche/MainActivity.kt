@@ -119,6 +119,24 @@ fun formaterDate(ts: Long): String =
 fun formaterDateHeure(ts: Long): String =
     if (ts > 0L) formatJourHeure.format(Date(ts)) else ""
 
+// Formats d'affichage partout dans l'application :
+// dates "jj/mm/aaaa", heures "14h05" (les valeurs saisies restent libres).
+fun dateAffichee(s: String): String {
+    val t = s.trim()
+    Regex("^(\\d{1,2})[./\\- ](\\d{1,2})[./\\- ](\\d{4})$").find(t)?.let { m ->
+        return m.groupValues[1].padStart(2, '0') + "/" + m.groupValues[2].padStart(2, '0') + "/" + m.groupValues[3]
+    }
+    return t
+}
+
+fun heureAffichee(s: String): String {
+    val t = s.trim()
+    Regex("^(\\d{1,2})[:hH](\\d{2})$").find(t)?.let { m ->
+        return m.groupValues[1].padStart(2, '0') + "h" + m.groupValues[2]
+    }
+    return t
+}
+
 // ---------------------------------------------------------------- Aides numerotation
 
 fun personneParId(liste: List<Personne>, id: Long): Personne? =
@@ -315,6 +333,14 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     }
 
     fun enregistrer(): Boolean {
+        // Numerotation Sosa / d'Aboville recalculee A CHAQUE enregistrement :
+        // creation d'une personne, rattachement (pere/mere/enfant/conjoint),
+        // suppression... tout se met a jour automatiquement.
+        val cujusId = Stockage.lireIdCujus(ctx).takeIf { id -> personnes.any { it.id == id } }
+            ?: personnes.firstOrNull { it.sosa.trim() == sosaCujus.toString() }?.id
+            ?: personnes.firstOrNull()?.id
+            ?: 0L
+        renumeroter(personnes, cujusId, sosaCujus)
         completerJournal()
         val ok1 = Stockage.sauver(ctx, personnes)
         val ok2 = Stockage.sauverJournal(ctx, pistes)
@@ -887,6 +913,7 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
         }
     }
 }
+
 
 
 

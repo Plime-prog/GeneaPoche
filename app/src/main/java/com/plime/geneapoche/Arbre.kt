@@ -152,7 +152,11 @@ fun CarteMiniArbre(
         colors = androidx.compose.material3.CardDefaults.cardColors(
             containerColor = if (centre) MaterialTheme.colorScheme.primaryContainer
             else if (p == null) MaterialTheme.colorScheme.surfaceVariant
-            else MaterialTheme.colorScheme.surface
+            else when (p.sexe) {
+                "F" -> androidx.compose.ui.graphics.Color(0xFFF8DDE7) // rose pale
+                "M" -> androidx.compose.ui.graphics.Color(0xFFDDE9F6) // bleu pale
+                else -> MaterialTheme.colorScheme.surface
+            }
         )
     ) {
         Column(Modifier.fillMaxWidth().padding(10.dp)) {
@@ -179,8 +183,8 @@ fun CarteMiniArbre(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                val n = p.dateNaissance.trim()
-                val d = p.dateDeces.trim()
+                val n = dateAffichee(p.dateNaissance.trim())
+                val d = dateAffichee(p.dateDeces.trim())
                 val morceaux = mutableListOf<String>()
                 if (n.isNotEmpty()) morceaux.add("N. " + n)
                 if (d.isNotEmpty()) morceaux.add("D. " + d)
@@ -194,4 +198,5 @@ fun CarteMiniArbre(
         }
     }
 }
+
 

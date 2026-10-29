@@ -308,25 +308,24 @@ fun EcranApplication(
                                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp)
                             ) {
                                 if (triAlpha) {
-                                    // Alphabet complet : lettres inutilisees grisees.
+                                    // Alphabet complet, resserre pour tenir d'un coup d'oeil :
+                                    // lettres inutilisees grisees.
                                     ('A'..'Z').forEach { lettre ->
                                         val utilisee = lettresUtilisees.contains(lettre)
-                                        TextButton(
-                                            onClick = {
-                                                val pos = triees.indexOfFirst {
-                                                    (it.nom.trim().uppercase().firstOrNull() ?: '?') == lettre
+                                        Text(
+                                            lettre.toString(),
+                                            Modifier
+                                                .clickable(enabled = utilisee) {
+                                                    val pos = triees.indexOfFirst {
+                                                        (it.nom.trim().uppercase().firstOrNull() ?: '?') == lettre
+                                                    }
+                                                    if (pos >= 0) portee.launch { etatListe.scrollToItem(2 + pos) }
                                                 }
-                                                if (pos >= 0) portee.launch { etatListe.scrollToItem(2 + pos) }
-                                            },
-                                            enabled = utilisee,
-                                            contentPadding = PaddingValues(horizontal = 4.dp)
-                                        ) {
-                                            Text(
-                                                lettre.toString(),
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (utilisee) CouleurVertFonce else Color(0xFFB9C2AE)
-                                            )
-                                        }
+                                                .padding(horizontal = 3.dp),
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (utilisee) CouleurVertFonce else Color(0xFFB9C2AE)
+                                        )
                                     }
                                 } else {
                                     val etiquettes = entrees.filterIsInstance<String>()
@@ -469,33 +468,41 @@ fun EcranApplication(
                                 onClick = { menuGedcom = false; exportDialogue = true },
                                 Modifier.fillMaxWidth()
                             ) {
-                                Icon(Icons.Filled.Share, contentDescription = null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Exporter (tout ou une branche)")
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Share, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Exporter (tout ou une branche)")
+                                }
                             }
                             TextButton(
                                 onClick = { menuGedcom = false; lanceurImport.launch(arrayOf("*/*")) },
                                 Modifier.fillMaxWidth()
                             ) {
-                                Icon(Icons.Filled.ExitToApp, contentDescription = null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Importer un GEDCOM (remplace la base)")
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.ExitToApp, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Importer un GEDCOM (remplace la base)")
+                                }
                             }
                             TextButton(
                                 onClick = { menuGedcom = false; choisirCujus() },
                                 Modifier.fillMaxWidth()
                             ) {
-                                Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("D\u00E9finir le de cujus et son n\u00B0 Sosa")
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("D\u00E9finir le de cujus et son n\u00B0 Sosa")
+                                }
                             }
                             TextButton(
                                 onClick = { menuGedcom = false; confirmeVider = true },
                                 Modifier.fillMaxWidth()
                             ) {
-                                Icon(Icons.Filled.Delete, contentDescription = null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Vider la base", color = CouleurRouge)
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Delete, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Vider la base", color = CouleurRouge)
+                                }
                             }
                         }
                     },
@@ -741,9 +748,9 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(p.titre(), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                val n = p.dateNaissance.trim()
-                val m = p.dateMariage.trim()
-                val d = p.dateDeces.trim()
+                val n = dateAffichee(p.dateNaissance.trim())
+                val m = dateAffichee(p.dateMariage.trim())
+                val d = dateAffichee(p.dateDeces.trim())
                 if (n.isNotEmpty() || m.isNotEmpty() || d.isNotEmpty()) {
                     val morceaux = mutableListOf<String>()
                     if (n.isNotEmpty()) morceaux.add("N. " + n)
@@ -758,5 +765,6 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 
 
