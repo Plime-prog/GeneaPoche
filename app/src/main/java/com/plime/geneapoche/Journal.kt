@@ -45,15 +45,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 // ---------------------------------------------------------------- Journal de recherches
-// Les donnees manquantes (grisees dans les fiches) forment les recherches
-// a faire. D\u00E8s qu'une donnee est saisie ou qu'une image est ajoutee,
-// la recherche est archivee automatiquement (horodatee). Aucune validation.
+// EXHAUSTIVITE : toute information manquante (gris\u00E9e dans les fiches) est
+// une recherche \u00E0 faire. D\u00E8s qu'une donn\u00E9e est saisie ou qu'une image est
+// ajout\u00E9e, la recherche est archiv\u00E9e automatiquement (horodat\u00E9e).
+// But : tous les actes N/M/D au minimum pour chacun, avec tous les enfants.
 
-// Une recherche a faire, deduite des donnees manquantes d'une personne.
+// Une recherche a faire, deduite d'une information manquante d'une personne.
 data class Suggestion(
     val cle: String,        // cle technique (stockee dans la piste)
     val titre: String,      // texte complet affichable
-    val type: String,      // code evenement : N B M D S P(pere) ME(mere) C(conjoint) A(autre)
+    val type: String,       // code evenement : N B M D S P(pere) ME(mere) C(conjoint) A(autre)
     val lieu: String = "",
     val dept: String = "",
     val debut: String = "", // debut de la plage d'annees ciblee
@@ -74,8 +75,27 @@ fun aUneImage(actes: List<Acte>, personneId: Long, type: String): Boolean {
     return actes.any { it.personneId == personneId && it.type == type && it.contenu.isBlank() }
 }
 
-// Toutes les donnees manquantes d'une personne : acte absent (ni date ni image),
-// parents, conjoint, enfants.
+// Un acte du type avec une TRANSCRIPTION (saisie par acte).
+fun aUneTranscription(actes: List<Acte>, personneId: Long, type: String): Boolean {
+    return actes.any { it.personneId == personneId && it.type == type && it.contenu.isNotBlank() }
+}
+
+// Libelles grammatiquement corrects pour chaque type d'evenement.
+data class LibellesEv(
+    val acte: String,
+    val heure: String,
+    val lieu: String,
+    val dept: String
+)
+
+val LibellesNaissance = LibellesEv("l'acte de naissance", "l'heure de naissance", "le lieu de naissance", "le d\u00E9partement de naissance")
+val LibellesBapteme = LibellesEv("l'acte de bapt\u00EAme", "l'heure du bapt\u00EAme", "le lieu du bapt\u00EAme", "le d\u00E9partement du bapt\u00EAme")
+val LibellesMariage = LibellesEv("l'acte de mariage", "l'heure du mariage", "le lieu du mariage", "le d\u00E9partement du mariage")
+val LibellesDeces = LibellesEv("l'acte de d\u00E9c\u00E8s", "l'heure du d\u00E9c\u00E8s", "le lieu du d\u00E9c\u00E8s", "le d\u00E9partement du d\u00E9c\u00E8s")
+val LibellesSepulture = LibellesEv("l'acte de s\u00E9pulture", "l'heure de s\u00E9pulture", "le lieu de s\u00E9pulture", "le d\u00E9partement de s\u00E9pulture")
+
+// TOUTES les informations manquantes d'une personne. Naissance, mariage et
+// deces pour tous ; baptismes et sepultures seulement si le bloc est ouvert.
 fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): List<Suggestion> {
     val res = mutableListOf<Suggestion>()
 
@@ -86,48 +106,73 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
         return s
     }
 
-    val anneeN = dateVersAnnee(p.dateNaissance)
-    val lieuN = p.lieuNaissance.trim()
-    val deptN = p.deptNaissance.trim()
+    fun ajouter(cle: String, titre: String, type: String, lieu: String = "", dept: String = "", debut: String = "", fin: String = "") {
+        res.add(Suggestion(cle, titre, type, lieu, dept, debut, fin))
+    }
 
-    // --- Actes de la personne : manquants = pas de date ET pas d'image
-    if (p.dateNaissance.isBlank() && !aUneImage(actes, p.id, "N")) {
-        res.add(Suggestion("naissance", "Rechercher l'acte de naissance de " + titreCourt(p) + (anneeN?.let { " (" + it.toString() + ")" } ?: "") + suffixe(lieuN, deptN), "N", lieuN, deptN))
+    // --- Un evenement : date, heure, lieu, departement, copie de l'acte.
+    fun evenement(cleBase: String, type: String, lib: LibellesEv, ch: EvChamps, ouvert: Boolean) {
+        if (!ouvert) return
+        val img = aUneImage(actes, p.id, type)
+        val trans = aUneTranscription(actes, p.id, type)
+        if (ch.date.isBlank() && !img) {
+            // L'acte lui-meme est a trouver : une seule recherche couvre tout.
+            ajouter(cleBase + "_date", "Rechercher " + lib.acte + " de " + titreCourt(p) + suffixe(ch.lieu.trim(), ch.dept.trim()), type, ch.lieu.trim(), ch.dept.trim())
+            return
+        }
+        // Acte localise : chaque champ manquant est une recherche a part entiere.
+        if (ch.heure.isBlank()) {
+            ajouter(cleBase + "_heure", "Compl\u00E9ter " + lib.heure + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim())
+        }
+        if (ch.lieu.isBlank()) {
+            ajouter(cleBase + "_lieu", "Compl\u00E9ter " + lib.lieu + " de " + titreCourt(p), type)
+        }
+        if (ch.dept.isBlank()) {
+            ajouter(cleBase + "_dept", "Compl\u00E9ter " + lib.dept + " de " + titreCourt(p), type)
+        }
+        if (!img && !trans) {
+            ajouter(cleBase + "_copie", "Photographier ou transcrire " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim())
+        }
     }
-    if ((p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank()) && p.dateBapteme.isBlank() && !aUneImage(actes, p.id, "B")) {
-        res.add(Suggestion("bapteme", "Rechercher le bapt\u00EAme de " + titreCourt(p) + suffixe(p.lieuBapteme.trim(), p.deptBapteme.trim()), "B", p.lieuBapteme.trim(), p.deptBapteme.trim()))
+
+    evenement("naissance", "N", LibellesNaissance, champsEvenement(p, "N"), true)
+    evenement("bapteme", "B", LibellesBapteme, champsEvenement(p, "B"), p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || aUneImage(actes, p.id, "B") || aUneTranscription(actes, p.id, "B"))
+    evenement("mariage", "M", LibellesMariage, champsEvenement(p, "M"), true)
+    evenement("deces", "D", LibellesDeces, champsEvenement(p, "D"), true)
+    evenement("sepulture", "S", LibellesSepulture, champsEvenement(p, "S"), p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || aUneImage(actes, p.id, "S") || aUneTranscription(actes, p.id, "S"))
+
+    // --- Identite
+    if (p.profession.isBlank()) {
+        ajouter("profession", "Rechercher la profession de " + titreCourt(p), "A")
     }
-    if (p.dateMariage.isBlank() && !aUneImage(actes, p.id, "M")) {
-        res.add(Suggestion("mariage", "Rechercher le mariage de " + titreCourt(p) + suffixe(p.lieuMariage.trim(), p.deptMariage.trim()), "M", p.lieuMariage.trim(), p.deptMariage.trim()))
-    }
-    if (p.dateDeces.isBlank() && !aUneImage(actes, p.id, "D")) {
-        res.add(Suggestion("deces", "Rechercher l'acte de d\u00E9c\u00E8s de " + titreCourt(p) + suffixe(p.lieuDeces.trim(), p.deptDeces.trim()), "D", p.lieuDeces.trim(), p.deptDeces.trim()))
-    }
-    if ((p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank()) && p.dateSepulture.isBlank() && !aUneImage(actes, p.id, "S")) {
-        res.add(Suggestion("sepulture", "Rechercher la s\u00E9pulture de " + titreCourt(p) + suffixe(p.lieuSepulture.trim(), p.deptSepulture.trim()), "S", p.lieuSepulture.trim(), p.deptSepulture.trim()))
+    if (p.sexe.isBlank()) {
+        ajouter("sexe", "Pr\u00E9ciser le sexe de " + titreCourt(p), "A")
     }
 
     // --- Parents : plage d'annees deduite de la naissance de l'enfant
+    val anneeN = dateVersAnnee(p.dateNaissance)
+    val lieuN = p.lieuNaissance.trim()
+    val deptN = p.deptNaissance.trim()
     if (p.pere == 0L && p.nom.isNotBlank()) {
         val debut = anneeN?.let { (it - 45).toString() } ?: ""
         val fin = anneeN?.let { (it - 20).toString() } ?: ""
-        res.add(Suggestion("pere", "Rechercher son p\u00E8re : un " + p.nom.trim() + (if (debut.isNotEmpty()) { " n\u00E9 entre " + debut + " et " + fin } else { "" }) + suffixe(lieuN, deptN), "P", lieuN, deptN, debut, fin))
+        ajouter("pere", "Rechercher son p\u00E8re : un " + p.nom.trim() + (if (debut.isNotEmpty()) { " n\u00E9 entre " + debut + " et " + fin } else { "" }) + suffixe(lieuN, deptN), "P", lieuN, deptN, debut, fin)
     }
     if (p.mere == 0L) {
         val debut = anneeN?.let { (it - 40).toString() } ?: ""
         val fin = anneeN?.let { (it - 15).toString() } ?: ""
-        res.add(Suggestion("mere", "Rechercher sa m\u00E8re" + (if (debut.isNotEmpty()) { " : n\u00E9e entre " + debut + " et " + fin } else { "" }) + suffixe(lieuN, deptN), "ME", lieuN, deptN, debut, fin))
+        ajouter("mere", "Rechercher sa m\u00E8re" + (if (debut.isNotEmpty()) { " : n\u00E9e entre " + debut + " et " + fin } else { "" }) + suffixe(lieuN, deptN), "ME", lieuN, deptN, debut, fin)
     }
 
-    // --- Conjoint et enfants
+    // --- Conjoint et enfants : tous les enfants, toujours.
     if (p.conjoint == 0L && p.conjointsSupp.isEmpty()) {
-        res.add(Suggestion("conjoint", "Rechercher le conjoint de " + titreCourt(p), "C"))
+        ajouter("conjoint", "Rechercher le conjoint de " + titreCourt(p), "C")
     }
     if (p.enfants.isEmpty()) {
         val anneeM = dateVersAnnee(p.dateMariage)
         val debut = anneeM?.toString() ?: ""
         val fin = anneeM?.let { (it + 25).toString() } ?: ""
-        res.add(Suggestion("enfants", "Rechercher les enfants de " + titreCourt(p) + (if (debut.isNotEmpty()) { " (apr\u00E8s le mariage de " + debut + ")" } else { "" }), "A", debut = debut, fin = fin))
+        ajouter("enfants", "Rechercher les enfants de " + titreCourt(p) + (if (debut.isNotEmpty()) { " (apr\u00E8s le mariage de " + debut + ")" } else { "" }), "A", debut = debut, fin = fin)
     }
 
     return res
@@ -156,6 +201,7 @@ fun libelleRecherche(r: Recherche): String {
 }
 
 // ---------------------------------------------------------------- Ecran Journal
+// Regroupe les recherches par personne, avec compteurs et acces a la fiche.
 
 @Composable
 fun EcranJournal(
@@ -169,15 +215,18 @@ fun EcranJournal(
     onSauver: () -> Unit
 ) {
     val ouvertes = pistes.filter { !it.faite }
-        .sortedWith(compareBy({ it.personneId }, { it.creation }))
     val archivees = pistes.filter { it.faite }.sortedByDescending { it.cloture }.take(30)
+    val ordrePersonnes = personnes.sortedWith(
+        compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
+    )
+    var numero = 0
 
     LazyColumn(Modifier.fillMaxSize().padding(12.dp)) {
         item {
             Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                 Text("Journal de recherches", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
                 Text(
-                    "Les informations manquantes (en gris dans les fiches) sont list\u00E9es ici. D\u00E8s qu'une donn\u00E9e est saisie ou qu'une image est ajout\u00E9e, la recherche est archiv\u00E9e.",
+                    ouvertes.size.toString() + " information(s) manquante(s), regroup\u00E9es par personne. Toute donn\u00E9e saisie ou image ajout\u00E9e archive automatiquement sa recherche.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -202,19 +251,45 @@ fun EcranJournal(
             }
         }
 
-        ouvertes.forEachIndexed { index, piste ->
-            item(key = "ouverte" + piste.id.toString()) {
-                CarteRecherche(
-                    piste = piste,
-                    numero = index + 1,
-                    personnes = personnes,
-                    actes = actes,
-                    onSupprimer = onSupprimer,
-                    onOuvrirPersonne = onOuvrirPersonne,
-                    ouvrirLien = ouvrirLien,
-                    ouvrirEtatCivil = ouvrirEtatCivil,
-                    onSauver = onSauver
-                )
+        ordrePersonnes.forEach { pers ->
+            val liste = ouvertes.filter { it.personneId == pers.id }.sortedBy { it.categorie }
+            if (liste.isNotEmpty()) {
+                item(key = "entete" + pers.id.toString()) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            titreCourt(pers),
+                            Modifier.weight(1f),
+                            fontWeight = FontWeight.Bold,
+                            color = CouleurVertFonce,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            liste.size.toString() + " recherche(s)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        TextButton(onClick = { onOuvrirPersonne(pers.id) }) { Text("Fiche") }
+                    }
+                }
+                liste.forEach { ps ->
+                    numero += 1
+                    item(key = "ouverte" + ps.id.toString()) {
+                        CarteRecherche(
+                            piste = ps,
+                            numero = numero,
+                            personnes = personnes,
+                            actes = actes,
+                            onSupprimer = onSupprimer,
+                            onOuvrirPersonne = onOuvrirPersonne,
+                            ouvrirLien = ouvrirLien,
+                            ouvrirEtatCivil = ouvrirEtatCivil,
+                            onSauver = onSauver
+                        )
+                    }
+                }
             }
         }
 
@@ -261,9 +336,10 @@ fun CarteRecherche(
     val pers = personneParId(personnes, piste.personneId)
     val texte = textePisteActuel(piste, personnes, actes)
 
-    // Categories qui correspondent a un acte : la recherche AD a un sens.
-    val categorieActe = piste.categorie in listOf("naissance", "bapteme", "mariage", "deces", "sepulture")
-    val libelleActe = when (piste.categorie) {
+    // Categories issues d'un acte : la recherche AD a un sens.
+    val evPrefix = listOf("naissance", "bapteme", "mariage", "deces", "sepulture")
+        .firstOrNull { piste.categorie.startsWith(it + "_") }
+    val libelleActe = when (evPrefix) {
         "naissance" -> "Naissance"
         "bapteme" -> "Bapt\u00EAme"
         "mariage" -> "Mariage"
@@ -273,7 +349,7 @@ fun CarteRecherche(
     }
 
     Card(
-        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        Modifier.fillMaxWidth().padding(vertical = 3.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, Color(0xFF9CBF9A))
     ) {
@@ -293,7 +369,7 @@ fun CarteRecherche(
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
-                if (categorieActe) {
+                if (evPrefix != null) {
                     IconButton(
                         onClick = {
                             ouvrirEtatCivil(
