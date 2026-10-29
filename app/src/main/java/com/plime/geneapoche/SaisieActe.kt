@@ -319,7 +319,7 @@ fun EcranSaisieActe(
                 )
             },
             enabled = personneId != 0L || nom.isNotBlank(),
-            Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         ) { Text("Enregistrer l'acte") }
         Spacer(Modifier.height(24.dp))
     }
