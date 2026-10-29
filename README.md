@@ -33,7 +33,7 @@ P\u00E9rim\u00E8tre : 100 personnes max (compteur affich\u00E9), France uniqueme
 
 - Blocs **Naissance, Mariage, Décès** toujours présents ; blocs **Baptême et Sépulture créables à la demande** (bouton « + Baptême » / « + Sépulture »).
 - Chaque bloc : date, **heure**, lieu (commune), **département** séparés, et **un seul bouton Vérifié Oui/Non** (Non par défaut, Oui automatiquement dès qu'une date ou une image est renseignée).
-- **Actes (images) dans chaque bloc** : ajout via le séélecteur de photos, chiffrés sur l'appareil, **page x / total** mémorisée, visionneuse avec **zoom pincement et déplacement**.
+- **Actes (images) dans chaque bloc** : ajout via le sélecteur de photos, chiffrés sur l'appareil, **page x / total** mémorisée, visionneuse avec **zoom pincement et déplacement**.
 - **Lien direct vers l'état civil des AD** depuis chaque acte, selon la commune, le département, le type d'acte et la date.
 - **Appui long sur un bloc** : modification directe de la fiche.
 - Famille : père, mère, conjoint(e) + **autres conjoints**, tous les enfants ; création d'une nouvelle personne possible directement depuis l'ajout d'un enfant.
