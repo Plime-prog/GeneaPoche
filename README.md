@@ -55,7 +55,7 @@ P\u00E9rim\u00E8tre : 50 personnes max (compteur affich\u00E9), France uniquemen
 - **Informations manquantes affichées en gris** (—) : elles sont **synchronisées avec le journal de recherches**.
 - Dans chaque bloc : **icône photo** pour ajouter une photo d'acte et **icône recherche** vers l'état civil des AD.
 - **Nouveau nom saisi** : synchronisation avec la fiche existante, sinon **proposition de création** (numérotation déduite automatiquement).
-- **Journal de recherches refondu, sans notion de validation** : chaque information manquante est une recherche à faire ; dès qu'une donnée est saisie ou une image ajoutée, **la recherche est archivée automatiquement** (horodatée). Chaque recherche garde une **zone de texte libre** (pages, côtes, notes) et l'icône de recherche Internet.
+- **Journal exhaustif (v0.16)** : **une recherche par information manquante** (date, heure, lieu, département, profession, sexe, père, mère, conjoint, enfants, copie d'acte à photographier), regroupé par personne avec compteurs ; dès qu'une donnée est saisie ou une image ajoutée, **la recherche est archivée automatiquement** (horodatée). Chaque recherche garde une **zone de texte libre** (pages, côtes, notes) et l'icône de recherche Internet.
 
 ## Saisie par acte (v0.14)
 
