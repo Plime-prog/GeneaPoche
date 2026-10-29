@@ -197,9 +197,9 @@ fun EcranJournal(
     onSauver: () -> Unit,
     ouvrirLien: (String) -> Unit
 ) {
-    val ouvertes = pistes.filter { !it.faite }.sortedBy { it.creation }.take(5)
-    val ouvertesManuelles = pistes.filter { !it.faite && !ouvertes.contains(it) }
-    val terminees = pistes.filter { it.faite }.sortedByDescending { it.cloture }
+    val autoOuvertes = pistes.filter { !it.faite && it.type == "A" }.sortedBy { it.creation }.take(5)
+    val manuelles = pistes.filter { !it.faite && it.type == "P" }.sortedBy { it.creation }.take(5)
+    val toutesOuvertes = autoOuvertes + manuelles
 
     LazyColumn(Modifier.fillMaxSize().padding(12.dp)) {
         item {
@@ -210,11 +210,7 @@ fun EcranJournal(
                 Column(Modifier.weight(1f)) {
                     Text("Journal de recherches", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
                     Text(
-                        if (ouvertes.size < 5) {
-                            "Compl\u00E9t\u00E9 automatiquement selon les informations manquantes."
-                        } else {
-                            "5 recherches en cours maximum : validez-en une pour en recevoir une nouvelle."
-                        },
+                        "Jusqu'\u00E0 5 recherches automatiques + 5 de libre saisie. Validez-en une : elle s'efface et une autre appara\u00EEt.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -225,8 +221,8 @@ fun EcranJournal(
             }
         }
 
-        // --- Recherches ouvertes, numerotees 1 a 5
-        ouvertes.forEachIndexed { index, piste ->
+        // --- Recherches ouvertes, numerotees
+        toutesOuvertes.forEachIndexed { index, piste ->
             item(key = "ouverte" + piste.id.toString()) {
                 CartePiste(
                     piste = piste,
@@ -240,43 +236,6 @@ fun EcranJournal(
                     ouvrirLien = ouvrirLien,
                     onSauver = onSauver
                 )
-            }
-        }
-
-        // --- Pistes ouvertes au-dela du quota de 5 (en attente)
-        if (ouvertesManuelles.isNotEmpty()) {
-            item {
-                Text(
-                    "En attente de place (validez une recherche ci-dessus) :",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-            ouvertesManuelles.take(3).forEach { piste ->
-                item(key = "attente" + piste.id.toString()) {
-                    Text(
-                        "  \u2022 " + textePisteActuel(piste, personnes, actes),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-        }
-
-        // --- Recherches terminees (rappels compacts)
-        if (terminees.isNotEmpty()) {
-            item {
-                Text(
-                    "Recherches termin\u00E9es (" + terminees.size.toString() + ") \u2013 rappels",
-                    fontWeight = FontWeight.Bold,
-                    color = CouleurVertFonce,
-                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
-                )
-            }
-            terminees.take(15).forEach { piste ->
-                item(key = "finie" + piste.id.toString()) {
-                    TermineeCompacte(piste, personnes, actes, onOuvrirPersonne)
-                }
             }
         }
         item { Spacer(Modifier.height(24.dp)) }
@@ -335,7 +294,7 @@ fun CartePiste(
             }
 
             // --- Bloc a. Recherche a faire
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = false,
                     onCheckedChange = { demandeConfirmation = true },
@@ -346,60 +305,58 @@ fun CartePiste(
                 )
                 Text(
                     "a. Recherche \u00E0 faire",
+                    Modifier.weight(1f),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = { noterRecherche(piste) }) {
-                    Text("Noter un r\u00E9sultat")
-                }
-                TextButton(onClick = { enCoursOuvert = true }) {
-                    Text("En cours")
-                }
             }
 
-            // --- Bloc b. Rappels horodates de ce qui a ete fait
-            if (piste.historique.isNotEmpty()) {
-                Text(
-                    "b. Rappels :",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                piste.historique.take(5).forEach { r ->
-                    TexteAvecLiens(
-                        "  \u2022 " + formaterDateHeure(r.date) + " \u2013 " + libelleRecherche(r),
-                        ouvrirLien
-                    )
-                }
-            }
-
-            // --- Bloc c. Recherche en cours
+            // --- Bloc b. Recherche en cours (avec validation d'hypothese horodatee)
+            Text(
+                "b. Recherche en cours",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
             if (piste.enCours.isNotBlank()) {
-                Text(
-                    "c. Recherche en cours :",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                TexteAvecLiens("  \u2022 " + piste.enCours, ouvrirLien)
-                OutlinedButton(onClick = { enCoursOuvert = true }, Modifier.padding(start = 24.dp)) {
-                    Icon(Icons.Filled.Create, contentDescription = null, Modifier.size(14.dp))
-                    Text("  Basculer vers les rappels et vider")
+                TexteAvecLiens("   \u2022 " + piste.enCours, ouvrirLien)
+            }
+            Row {
+                TextButton(onClick = { enCoursOuvert = true }) {
+                    Text(if (piste.enCours.isBlank()) "D\u00E9crire ce qui est en cours" else "Modifier")
+                }
+                if (piste.enCours.isNotBlank()) {
+                    TextButton(onClick = {
+                        piste.historique.add(
+                            0,
+                            Recherche(date = System.currentTimeMillis(), resultat = "X", note = piste.enCours.trim())
+                        )
+                        piste.enCours = ""
+                        onSauver()
+                    }) { Text("Valider l'hypoth\u00E8se") }
                 }
             }
 
-            // --- Bloc d. Reste a rechercher pour cette personne
-            if (pers != null) {
-                val manquantes = suggestionsPour(pers, personnes, actes)
-                if (manquantes.isNotEmpty()) {
-                    Text(
-                        "d. Reste \u00E0 rechercher pour " + titreCourt(pers) + " :",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    manquantes.take(6).forEach { s ->
-                        Text("  \u2022 " + s.titre, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
+            // --- Bloc c. Recherches archivees (horodatees)
+            Text(
+                "c. Recherches archiv\u00E9es",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+            if (piste.historique.isEmpty()) {
+                Text(
+                    "   (aucune pour le moment)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            piste.historique.take(5).forEach { r ->
+                TexteAvecLiens(
+                    "   \u2022 " + formaterDateHeure(r.date) + " \u2013 " + libelleRecherche(r),
+                    ouvrirLien
+                )
+            }
+            TextButton(onClick = { noterRecherche(piste) }) {
+                Text("Noter un r\u00E9sultat")
             }
         }
     }
@@ -430,35 +387,6 @@ fun CartePiste(
             onSauver = onSauver,
             onFermer = { enCoursOuvert = false }
         )
-    }
-}
-
-// ---------------------------------------------------------------- Recherche terminee, compacte
-
-@Composable
-fun TermineeCompacte(
-    piste: Piste,
-    personnes: List<Personne>,
-    actes: List<Acte>,
-    onOuvrirPersonne: (Long) -> Unit
-) {
-    val pers = personneParId(personnes, piste.personneId)
-    val texte = textePisteActuel(piste, personnes, actes)
-    Card(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-        Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                texte,
-                Modifier.weight(1f),
-                style = MaterialTheme.typography.bodySmall,
-                textDecoration = TextDecoration.LineThrough,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (pers != null) {
-                TextButton(onClick = { onOuvrirPersonne(piste.personneId) }) {
-                    Text("Fiche", style = MaterialTheme.typography.labelSmall)
-                }
-            }
-        }
     }
 }
 
@@ -499,7 +427,7 @@ fun DialogueEnCours(
                     piste.enCours = ""
                     onSauver()
                     onFermer()
-                }) { Text("Basculer aux rappels") }
+                }) { Text("Valider et archiver") }
                 TextButton(onClick = {
                     piste.enCours = texte
                     onSauver()
@@ -675,3 +603,4 @@ fun TexteAvecLiens(texte: String, ouvrirLien: (String) -> Unit) {
         }
     )
 }
+

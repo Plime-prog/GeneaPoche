@@ -48,10 +48,12 @@ data class Personne(
     var mere: Long = 0L,
     var conjoint: Long = 0L,
     var conjointsSupp: MutableList<Long> = mutableListOf(),
-    var enfants: MutableList<Long> = mutableListOf()
+    var enfants: MutableList<Long> = mutableListOf(),
+    // Blocs facultatifs crees par l'utilisateur : "bapteme", "sepulture"
+    var blocsOuverts: MutableList<String> = mutableListOf()
 ) {
     fun titre(): String {
-        return listOf(prenoms.trim(), nom.trim())
+        return listOf(nom.trim(), prenoms.trim())
             .filter { it.isNotEmpty() }
             .joinToString(" ")
     }
@@ -141,6 +143,9 @@ data class Personne(
         val tableau = JSONArray()
         enfants.forEach { tableau.put(it) }
         o.put("enfants", tableau)
+        val blocs = JSONArray()
+        blocsOuverts.forEach { blocs.put(it) }
+        o.put("blocsOuverts", blocs)
         return o
     }
 
@@ -199,6 +204,14 @@ data class Personne(
                     if (tableau != null) {
                         for (i in 0 until tableau.length()) {
                             add(tableau.optLong(i, 0L))
+                        }
+                    }
+                },
+                blocsOuverts = mutableListOf<String>().apply {
+                    val blocs = o.optJSONArray("blocsOuverts")
+                    if (blocs != null) {
+                        for (i in 0 until blocs.length()) {
+                            add(blocs.optString(i, ""))
                         }
                     }
                 }
@@ -341,3 +354,4 @@ data class Acte(
         )
     }
 }
+

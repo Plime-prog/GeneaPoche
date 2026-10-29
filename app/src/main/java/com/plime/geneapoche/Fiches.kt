@@ -130,14 +130,6 @@ fun EcranPersonne(
             Modifier.fillMaxSize().padding(marges).padding(horizontal = 12.dp)
         ) {
             item {
-                CarteIdentite(
-                    p,
-                    onEtat = { v -> onEtat("identite", v) },
-                    onModifier = onModifier,
-                    onDefinirCujus = onDefinirCujus
-                )
-            }
-            item {
                 CarteEvenement(
                     titre = "Naissance",
                     section = "naissance",
@@ -155,23 +147,25 @@ fun EcranPersonne(
                     ouvrirEtatCivil = ouvrirEtatCivil
                 )
             }
-            item {
-                CarteEvenement(
-                    titre = "Bapt\u00EAme",
-                    section = "bapteme",
-                    typeActe = "B",
-                    date = p.dateBapteme, heure = p.heureBapteme,
-                    lieu = p.lieuBapteme, dept = p.deptBapteme,
-                    etat = p.etatDe("bapteme"),
-                    actes = actes.filter { it.personneId == p.id && it.type == "B" },
-                    onEtat = { v -> onEtat("bapteme", v) },
-                    onModifier = onModifier,
-                    onAjouterActe = onAjouterActe,
-                    onSupprimerActe = onSupprimerActe,
-                    onVoirActe = onVoirActe,
-                    onEnregistrer = enregistrer,
-                    ouvrirEtatCivil = ouvrirEtatCivil
-                )
+            if (p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || actes.any { it.personneId == p.id && it.type == "B" }) {
+                item {
+                    CarteEvenement(
+                        titre = "Bapt\u00EAme",
+                        section = "bapteme",
+                        typeActe = "B",
+                        date = p.dateBapteme, heure = p.heureBapteme,
+                        lieu = p.lieuBapteme, dept = p.deptBapteme,
+                        etat = p.etatDe("bapteme"),
+                        actes = actes.filter { it.personneId == p.id && it.type == "B" },
+                        onEtat = { v -> onEtat("bapteme", v) },
+                        onModifier = onModifier,
+                        onAjouterActe = onAjouterActe,
+                        onSupprimerActe = onSupprimerActe,
+                        onVoirActe = onVoirActe,
+                        onEnregistrer = enregistrer,
+                        ouvrirEtatCivil = ouvrirEtatCivil
+                    )
+                }
             }
             item {
                 CarteEvenement(
@@ -209,23 +203,43 @@ fun EcranPersonne(
                     ouvrirEtatCivil = ouvrirEtatCivil
                 )
             }
-            item {
-                CarteEvenement(
-                    titre = "S\u00E9pulture",
-                    section = "sepulture",
-                    typeActe = "S",
-                    date = p.dateSepulture, heure = p.heureSepulture,
-                    lieu = p.lieuSepulture, dept = p.deptSepulture,
-                    etat = p.etatDe("sepulture"),
-                    actes = actes.filter { it.personneId == p.id && it.type == "S" },
-                    onEtat = { v -> onEtat("sepulture", v) },
-                    onModifier = onModifier,
-                    onAjouterActe = onAjouterActe,
-                    onSupprimerActe = onSupprimerActe,
-                    onVoirActe = onVoirActe,
-                    onEnregistrer = enregistrer,
-                    ouvrirEtatCivil = ouvrirEtatCivil
-                )
+            if (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || actes.any { it.personneId == p.id && it.type == "S" }) {
+                item {
+                    CarteEvenement(
+                        titre = "S\u00E9pulture",
+                        section = "sepulture",
+                        typeActe = "S",
+                        date = p.dateSepulture, heure = p.heureSepulture,
+                        lieu = p.lieuSepulture, dept = p.deptSepulture,
+                        etat = p.etatDe("sepulture"),
+                        actes = actes.filter { it.personneId == p.id && it.type == "S" },
+                        onEtat = { v -> onEtat("sepulture", v) },
+                        onModifier = onModifier,
+                        onAjouterActe = onAjouterActe,
+                        onSupprimerActe = onSupprimerActe,
+                        onVoirActe = onVoirActe,
+                        onEnregistrer = enregistrer,
+                        ouvrirEtatCivil = ouvrirEtatCivil
+                    )
+                }
+            }
+            if (!p.blocsOuverts.contains("bapteme") || !p.blocsOuverts.contains("sepulture")) {
+                item {
+                    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                        if (!p.blocsOuverts.contains("bapteme")) {
+                            OutlinedButton(onClick = { p.blocsOuverts.add("bapteme"); enregistrer() }, Modifier.weight(1f)) {
+                                Icon(Icons.Filled.Add, contentDescription = null)
+                                Text("  Bapt\u00EAme")
+                            }
+                        }
+                        if (!p.blocsOuverts.contains("sepulture")) {
+                            OutlinedButton(onClick = { p.blocsOuverts.add("sepulture"); enregistrer() }, Modifier.weight(1f)) {
+                                Icon(Icons.Filled.Add, contentDescription = null)
+                                Text("  S\u00E9pulture")
+                            }
+                        }
+                    }
+                }
             }
             item {
                 CarteFamille(
@@ -233,7 +247,8 @@ fun EcranPersonne(
                     p = p,
                     onOuvrir = onOuvrir,
                     onChoisir = onChoisir,
-                    onRetirer = onRetirer
+                    onRetirer = onRetirer,
+                    onDefinirCujus = onDefinirCujus
                 )
             }
             item {
@@ -247,43 +262,6 @@ fun EcranPersonne(
                 )
             }
             item { Spacer(Modifier.height(24.dp)) }
-        }
-    }
-}
-
-// ---------------------------------------------------------------- Identite
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun CarteIdentite(
-    p: Personne,
-    onEtat: (String) -> Unit,
-    onModifier: () -> Unit,
-    onDefinirCujus: () -> Unit
-) {
-    Card(
-        Modifier.fillMaxWidth()
-            .padding(vertical = 5.dp)
-            .combinedClickable(onClick = {}, onLongClick = { onModifier() })
-    ) {
-        Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            EnteteAvecPastilles("Identit\u00E9", p.etatIdentite, onEtat)
-            Ligne("Sosa", p.sosa.trim())
-            Ligne("Num\u00E9ro lat\u00E9ral (d'Aboville)", p.lateral.trim())
-            Ligne("Nom", p.nom.trim())
-            Ligne("Pr\u00E9noms", p.prenoms.trim())
-            Ligne("Sexe", when (p.sexe) { "M" -> "Masculin"; "F" -> "F\u00E9minin"; else -> "" })
-            Ligne("Profession", p.profession.trim())
-            Text(
-                "Appui long : modifier la fiche",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (p.sosa.trim() != "1") {
-                OutlinedButton(onClick = onDefinirCujus, Modifier.padding(top = 6.dp)) {
-                    Text("D\u00E9finir comme de cujus")
-                }
-            }
         }
     }
 }
@@ -331,7 +309,9 @@ fun CarteEvenement(
             .combinedClickable(onClick = {}, onLongClick = { onModifier() })
     ) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            EnteteAvecPastilles(titre, etat, onEtat)
+            // Verification Oui/Non du bloc : Oui automatiquement si une date ou une image existe.
+            val verifie = etat == "vert" || date.isNotBlank() || actes.isNotEmpty()
+            EnteteVerifie(titre, verifie, onVerifie = { v -> onEtat(if (v) "vert" else "") })
             Ligne("Date", d)
             Ligne("Heure", h)
             Ligne("Lieu", l)
@@ -498,33 +478,23 @@ fun DialoguePageActe(
 // ---------------------------------------------------------------- Pastilles
 
 @Composable
-fun EnteteAvecPastilles(titre: String, etat: String, onEtat: (String) -> Unit) {
+fun EnteteVerifie(titre: String, verifie: Boolean, onVerifie: (Boolean) -> Unit) {
     Row(
         Modifier.fillMaxWidth().padding(bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold)
+        Text("V\u00E9rifi\u00E9 :", style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.width(4.dp))
         FilterChip(
-            selected = etat == "vert",
-            onClick = { onEtat(if (etat == "vert") "" else "vert") },
-            label = { Text("V\u00E9rifi\u00E9") },
+            selected = verifie,
+            onClick = { onVerifie(!verifie) },
+            label = { Text(if (verifie) "Oui" else "Non") },
             colors = FilterChipDefaults.filterChipColors(
                 containerColor = CouleurNeutrePale,
                 labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 selectedContainerColor = CouleurVertPale,
                 selectedLabelColor = CouleurVertFonce
-            )
-        )
-        Spacer(Modifier.width(6.dp))
-        FilterChip(
-            selected = etat == "rouge",
-            onClick = { onEtat(if (etat == "rouge") "" else "rouge") },
-            label = { Text("\u00C0 v\u00E9rifier") },
-            colors = FilterChipDefaults.filterChipColors(
-                containerColor = CouleurNeutrePale,
-                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                selectedContainerColor = Color(0xFFF3DDDA),
-                selectedLabelColor = CouleurRouge
             )
         )
     }
@@ -548,11 +518,18 @@ fun CarteFamille(
     p: Personne,
     onOuvrir: (Long) -> Unit,
     onChoisir: (String) -> Unit,
-    onRetirer: (String, Long) -> Unit
+    onRetirer: (String, Long) -> Unit,
+    onDefinirCujus: () -> Unit
 ) {
     Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
             Text("Famille", fontWeight = FontWeight.Bold)
+            Ligne("Profession", p.profession.trim())
+            if (p.sosa.trim() != "1") {
+                OutlinedButton(onClick = onDefinirCujus, Modifier.padding(top = 4.dp)) {
+                    Text("D\u00E9finir comme de cujus (Sosa 1)")
+                }
+            }
             Spacer(Modifier.height(6.dp))
 
             LienParent(
@@ -656,6 +633,7 @@ fun LienParent(
 }
 
 // ---------------------------------------------------------------- Pistes de la personne
+// Les 3 blocs du journal (a faire / en cours / archives) synchronises sur la fiche.
 
 @Composable
 fun CartePistesPersonne(
@@ -669,44 +647,70 @@ fun CartePistesPersonne(
     Card(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
             Text("Recherches", fontWeight = FontWeight.Bold)
-            val deCettePersonne = pistes.filter { it.personneId == p.id }
-            val ouvertes = deCettePersonne.filter { !it.faite }
+            val deCettePersonne = pistes.filter { it.personneId == p.id && !it.faite }
             val restantes = suggestionsPour(p, personnes, actes).size
             Text(
                 if (restantes > 0) {
-                    ouvertes.size.toString() + " en cours \u2013 " + restantes.toString() + " information(s) encore \u00E0 trouver pour cette personne."
+                    deCettePersonne.size.toString() + " en cours \u2013 " + restantes.toString() + " information(s) encore \u00E0 trouver pour cette personne."
                 } else {
                     "Tout est renseign\u00E9 et v\u00E9rifi\u00E9 pour cette personne."
                 },
                 style = MaterialTheme.typography.bodySmall
             )
-            ouvertes.forEach { piste ->
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = false,
-                        onCheckedChange = { onBasculer(piste) },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = CouleurVert,
-                            checkmarkColor = Color.White
+            deCettePersonne.forEach { piste ->
+                var confirme by remember { mutableStateOf(false) }
+                Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    // a. Rappel de la recherche a faire
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = false,
+                            onCheckedChange = { confirme = true },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = CouleurVert,
+                                checkmarkColor = Color.White
+                            )
                         )
-                    )
-                    Text(
-                        if (piste.type == "A" && piste.categorie.isNotEmpty()) {
-                            textePisteActuel(piste, personnes, actes)
-                        } else {
-                            piste.texte
+                        Text(
+                            textePisteActuel(piste, personnes, actes),
+                            Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    // b. Recherche en cours
+                    if (piste.enCours.isNotBlank()) {
+                        Text("b. En cours : " + piste.enCours, style = MaterialTheme.typography.bodySmall)
+                    }
+                    // c. Recherches archivees (horodatees)
+                    if (piste.historique.isNotEmpty()) {
+                        Text("c. Archives :", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                        piste.historique.take(3).forEach { r ->
+                            Text(
+                                "   \u2022 " + formaterDateHeure(r.date) + " \u2013 " + libelleRecherche(r),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+                if (confirme) {
+                    AlertDialog(
+                        onDismissRequest = { confirme = false },
+                        title = { Text("Valider cette recherche ?") },
+                        text = { Text("Elle sera marqu\u00E9e comme termin\u00E9e. Retrouvez le d\u00E9tail dans le journal.") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                confirme = false
+                                onBasculer(piste)
+                            }) { Text("Oui, termin\u00E9e") }
                         },
-                        Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium
+                        dismissButton = {
+                            TextButton(onClick = { confirme = false }) { Text("Pas encore") }
+                        }
                     )
                 }
             }
             OutlinedButton(onClick = onNouvellePiste, Modifier.padding(top = 4.dp)) {
                 Icon(Icons.Filled.Add, contentDescription = null)
-                Text("  Nouvelle piste pour cette personne")
+                Text("  Nouvelle recherche pour cette personne")
             }
         }
     }
@@ -796,3 +800,4 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+

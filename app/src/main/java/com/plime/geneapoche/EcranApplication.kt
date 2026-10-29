@@ -20,10 +20,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -106,6 +111,7 @@ fun EcranApplication(
     onArbreCentre: (Long) -> Unit,
     exporterGedcom: (Uri, Set<Long>?) -> Unit,
     importerGedcom: (Uri) -> Unit,
+    viderBase: () -> Unit,
     ouvrirLien: (String) -> Unit,
     ouvrirEtatCivil: (String, Int?, String, String) -> Unit
 ) {
@@ -119,6 +125,8 @@ fun EcranApplication(
     }
 
     val ouverte = personneParId(personnes, idOuvert)
+    var menuGedcom by remember { mutableStateOf(false) }
+    var confirmeVider by remember { mutableStateOf(false) }
 
     if (ouverte == null) {
         Scaffold(
@@ -136,10 +144,15 @@ fun EcranApplication(
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 19.sp, fontWeight = FontWeight.Bold)
                                 Text(
                                     "Ma g\u00E9n\u00E9alogie dans ma poche",
-                                    fontSize = 11.sp,
-                                    color = Color(0xFFD8EBD4)
+                                    fontSize = 14.sp,
+                                    color = Color(0xFFE3F1DF)
                                 )
                             }
+                        }
+                    },
+                    actions = {
+                        TextButton(onClick = { menuGedcom = true }) {
+                            Text("GEDCOM", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -228,14 +241,44 @@ fun EcranApplication(
                             { anneeNaissance(it) }
                         )
                     )
-                    LazyColumn(Modifier.fillMaxSize().padding(marges).padding(vertical = 4.dp)) {
+                    val etatListe = rememberLazyListState()
+                    val portee = rememberCoroutineScope()
+                    val lettres = triees
+                        .map { it.nom.trim().uppercase().firstOrNull() ?: '?' }
+                        .distinct()
+                    LazyColumn(
+                        Modifier.fillMaxSize().padding(marges).padding(vertical = 4.dp),
+                        state = etatListe
+                    ) {
                         item {
-                            Text(
-                                personnes.size.toString() + " / " + PlafondPersonnes.toString() + " personnes",
-                                Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Row(
+                                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    personnes.size.toString() + " / " + PlafondPersonnes.toString() + " personnes",
+                                    Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        item {
+                            Row(
+                                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp)
+                            ) {
+                                lettres.forEach { lettre ->
+                                    TextButton(
+                                        onClick = {
+                                            val pos = triees.indexOfFirst {
+                                                (it.nom.trim().uppercase().firstOrNull() ?: '?') == lettre
+                                            }
+                                            if (pos >= 0) portee.launch { etatListe.scrollToItem(2 + pos) }
+                                        },
+                                        contentPadding = PaddingValues(horizontal = 4.dp)
+                                    ) { Text(lettre.toString(), fontWeight = FontWeight.Bold) }
+                                }
+                            }
                         }
                         items(triees) { p ->
                             CartePersonne(
@@ -243,22 +286,6 @@ fun EcranApplication(
                                 onOuvrir = { onIdOuvert(p.id) },
                                 onSupprimer = { onConfirmSuppression(p) }
                             )
-                        }
-                        item {
-                            OutlinedButton(
-                                onClick = { exportDialogue = true },
-                                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)
-                            ) {
-                                Text("Exporter en GEDCOM (Heredis)")
-                            }
-                        }
-                        item {
-                            OutlinedButton(
-                                onClick = { lanceurImport.launch(arrayOf("*/*")) },
-                                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
-                            ) {
-                                Text("Importer un GEDCOM (remplace la base)")
-                            }
                         }
                         item { Spacer(Modifier.height(12.dp)) }
                     }
@@ -352,6 +379,51 @@ fun EcranApplication(
                     },
                     confirmButton = {
                         TextButton(onClick = { pickerBranche = false }) { Text("Fermer") }
+                    }
+                )
+            }
+            if (menuGedcom) {
+                AlertDialog(
+                    onDismissRequest = { menuGedcom = false },
+                    title = { Text("GEDCOM (Heredis)") },
+                    text = {
+                        Column {
+                            Text(personnes.size.toString() + " / " + PlafondPersonnes.toString() + " personnes", fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(8.dp))
+                            TextButton(
+                                onClick = { menuGedcom = false; exportDialogue = true },
+                                Modifier.fillMaxWidth()
+                            ) { Text("Exporter (tout ou une branche)") }
+                            TextButton(
+                                onClick = { menuGedcom = false; lanceurImport.launch(arrayOf("*/*")) },
+                                Modifier.fillMaxWidth()
+                            ) { Text("Importer un GEDCOM (remplace la base)") }
+                            TextButton(
+                                onClick = { menuGedcom = false; confirmeVider = true },
+                                Modifier.fillMaxWidth()
+                            ) { Text("Vider la base", color = CouleurRouge) }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { menuGedcom = false }) { Text("Fermer") }
+                    }
+                )
+            }
+            if (confirmeVider) {
+                AlertDialog(
+                    onDismissRequest = { confirmeVider = false },
+                    title = { Text("Vider toute la base ?") },
+                    text = {
+                        Text("Toutes les personnes, le journal, les actes et leurs images seront d\u00E9finitivement supprim\u00E9s. Confirmez seulement si vous avez export\u00E9 une sauvegarde GEDCOM.")
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            confirmeVider = false
+                            viderBase()
+                        }) { Text("Oui, tout vider", color = CouleurRouge) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { confirmeVider = false }) { Text("Annuler") }
                     }
                 )
             }
@@ -521,65 +593,52 @@ fun EcranApplication(
 fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
     Card(
         Modifier.fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 5.dp)
+            .padding(horizontal = 12.dp, vertical = 3.dp)
             .clickable { onOuvrir() }
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(12.dp),
+            Modifier.fillMaxWidth().padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Vignette : fond bleu pale (homme) ou rose pale (femme),
+            // avec le numero Sosa ou d'Aboville a la place de l'initiale.
+            val num = p.numeroAffiche().replace("Sosa ", "").replace("Lat\u00E9ral ", "")
             val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
+            val vignette = num.ifEmpty { initiale.toString() }
             val couleurAvatar = when (p.sexe) {
-                "F" -> Color(0xFF55875F)
-                "M" -> Color(0xFF2E5D3A)
-                else -> Color(0xFF6E7F6E)
+                "F" -> Color(0xFFE9C4D2) // rose pale
+                "M" -> Color(0xFFBFD4E8) // bleu pale
+                else -> Color(0xFFD9E4D6) // neutre verd\u00E2tre pale
             }
             Box(
-                Modifier.size(44.dp).clip(CircleShape).background(couleurAvatar),
+                Modifier.size(40.dp).clip(CircleShape).background(couleurAvatar),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    initiale.toString(),
-                    color = Color.White,
+                    vignette,
+                    color = CouleurVertFonce,
                     fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleSmall
                 )
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(p.titre(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
-                    Spacer(Modifier.width(8.dp))
-                    val num = p.numeroAffiche()
-                    if (num.isNotEmpty()) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                num,
-                                Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                }
+                Text(p.titre(), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 val n = p.dateNaissance.trim()
+                val m = p.dateMariage.trim()
                 val d = p.dateDeces.trim()
-                if (n.isNotEmpty() || d.isNotEmpty()) {
+                if (n.isNotEmpty() || m.isNotEmpty() || d.isNotEmpty()) {
                     val morceaux = mutableListOf<String>()
                     if (n.isNotEmpty()) morceaux.add("N. " + n)
+                    if (m.isNotEmpty()) morceaux.add("M. " + m)
                     if (d.isNotEmpty()) morceaux.add("D. " + d)
                     Text(morceaux.joinToString("  \u2013  "), style = MaterialTheme.typography.bodySmall)
                 }
-                if (p.aVerifier()) {
-                    Text("\u00C0 v\u00E9rifier", color = CouleurRouge, style = MaterialTheme.typography.bodySmall)
-                }
             }
-            IconButton(onClick = onSupprimer) {
-                Icon(Icons.Filled.Close, contentDescription = "Supprimer")
+            IconButton(onClick = onSupprimer, Modifier.size(30.dp)) {
+                Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(16.dp))
             }
         }
     }
 }
+

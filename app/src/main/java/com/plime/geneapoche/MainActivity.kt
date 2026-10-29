@@ -218,7 +218,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var aPin by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
     var idOuvert by remember { mutableStateOf(0L) }
-    var onglet by remember { mutableStateOf(0) }
+    var onglet by remember { mutableStateOf(1) }
     var editionOuverte by remember { mutableStateOf(false) }
     var editionCible by remember { mutableStateOf<Personne?>(null) }
     var pickerRole by remember { mutableStateOf("") }
@@ -246,20 +246,22 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         actes.addAll(ca)
     }
 
-    // Complete le journal : jusqu'a 5 recherches en cours, en faisant tourner les
-    // personnes (celles qui ont le moins de recherches ouvertes d'abord).
+    // Complete le journal : jusqu'a 5 recherches AUTOMATIQUES en cours (type "A"),
+    // en faisant tourner les personnes (celles qui ont le moins de recherches ouvertes d'abord).
+    // La piste memorise la CLE de la suggestion : le texte est recalculé en direct
+    // et une meme recherche ne peut pas etre proposee deux fois (correctif doublons).
     fun completerJournal() {
         if (!charge) return
         var gardeFou = 0
-        while (pistes.count { !it.faite } < 5 && gardeFou < 200) {
+        while (pistes.count { !it.faite && it.type == "A" } < 5 && gardeFou < 200) {
             gardeFou += 1
-            val enCours = pistes.filter { !it.faite }
-            val comptage = personnes.associate { p -> p.id to enCours.count { it.personneId == p.id } }
+            val enCours = pistes.filter { !it.faite && it.type == "A" }
+            val comptage = personnes.associate { p -> p.id to pistes.count { !it.faite && it.personneId == p.id } }
             var choisie: Personne? = null
             var sugChoisie: Suggestion? = null
             for (p in personnes.sortedWith(compareBy({ comptage[it.id] ?: 0 }, { it.titre() }))) {
-                val deja = enCours.filter { it.personneId == p.id }.map { it.categorie }.toSet()
-                val s = suggestionsPour(p, personnes, actes).firstOrNull { it.categorie !in deja }
+                val deja = pistes.filter { !it.faite && it.personneId == p.id }.map { it.categorie }.toSet()
+                val s = suggestionsPour(p, personnes, actes).firstOrNull { it.cle !in deja }
                 if (s != null) {
                     choisie = p
                     sugChoisie = s
@@ -275,7 +277,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                     personneId = choisie.id,
                     creation = System.currentTimeMillis(),
                     type = "A",
-                    categorie = sugChoisie.categorie,
+                    categorie = sugChoisie.cle,
                     lieu = sugChoisie.lieu,
                     dept = sugChoisie.dept,
                     debut = sugChoisie.debut,
@@ -389,6 +391,11 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     }
 
     fun ajouterPiste(texte: String, personneId: Long) {
+        if (pistes.count { !it.faite && it.type == "P" } >= 5) {
+            message = "5 recherches libres en cours maximum : validez-en une d'abord."
+            dialoguePiste = false
+            return
+        }
         val nouvelId = (pistes.maxOfOrNull { it.id } ?: 0L) + 1L
         pistes.add(Piste(nouvelId, texte, personneId, System.currentTimeMillis(), false, 0L))
         enregistrer()
@@ -455,6 +462,18 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         } else {
             importees.size.toString() + " personnes import\u00E9es."
         }
+    }
+
+    // Vide entierement la base (personnes, journal, actes et images), apres confirmation.
+    fun viderBase() {
+        personnes.clear()
+        pistes.clear()
+        actes.forEach { Stockage.supprimerImage(ctx, it.id) }
+        actes.clear()
+        idOuvert = 0L
+        arbreCentre = 0L
+        enregistrer()
+        message = "Base vid\u00E9e."
     }
 
     fun ajouterActe(personneId: Long, uri: Uri, type: String, titre: String) {
@@ -565,6 +584,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             onArbreCentre = { arbreCentre = it },
             exporterGedcom = { uri, sel -> exporterGedcom(uri, sel) },
             importerGedcom = { uri -> lireGedcom(uri) },
+            viderBase = { viderBase() },
             ouvrirLien = { url -> ouvrirLien(ctx, url)?.let { m -> message = m } },
             ouvrirEtatCivil = { commune, dept, type, annee ->
                 ouvrirLien(ctx, lienEtatCivil(commune, dept, type, annee))?.let { m -> message = m }
@@ -761,3 +781,4 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
         }
     }
 }
+
