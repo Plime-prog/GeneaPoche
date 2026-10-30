@@ -1439,3 +1439,49 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
     Surface(Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(Icons.Filled.Lock, contentDescription = null)
+            Text("G\u00E9n\u00E9aPoche est verrouill\u00E9", style = MaterialTheme.typography.titleLarge)
+            Text("Entrez votre code PIN.", Modifier.padding(vertical = 8.dp))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) pin = it },
+                    label = { Text("Code PIN") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.NumberPassword,
+                        imeAction = ImeAction.Go
+                    ),
+                    keyboardActions = KeyboardActions(onGo = { essayer() }),
+                    isError = erreur.isNotEmpty(),
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(Modifier.width(10.dp))
+                Button(
+                    onClick = { essayer() },
+                    enabled = pin.isNotEmpty() && blocage == 0L
+                ) { Text("D\u00E9verrouiller") }
+            }
+            if (erreur.isNotEmpty()) {
+                Text(erreur, color = CouleurRouge, modifier = Modifier.padding(vertical = 6.dp))
+            }
+            if (blocage > 0L) {
+                Text(
+                    "Trop d'essais. R\u00E9essayez dans " + blocage.toString() + " s.",
+                    color = CouleurRouge,
+                    modifier = Modifier.padding(vertical = 6.dp)
+                )
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
