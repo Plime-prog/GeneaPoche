@@ -100,6 +100,15 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 - **Témoins** : aucun par défaut ; on saisit le nom, les **fiches existantes correspondantes sont proposées d'abord**, la création n'est proposée que si personne ne correspond ; **coche de signature** derrière chaque témoin.
 - **Chaque validation resynchronise tout** : numéros Sosa/d'Aboville, contrôle de cohérence, journal de recherches.
 
+## Frise légère et fiches enfants (v0.21)
+
+- **« Définir comme de cujus » retiré du cartouche** : la fiche reste épurée de haut en bas (cartouche identité → frise).
+- **Frise sans titre** : dans l'encadré, **une seule ligne par événement avec l'essentiel** — « N. 12/03/1857 à Roubaix (59) », « D. … » (gris « — » si absent). **Toucher la ligne ouvre/ferme le bloc** correspondant ; **crayon en bout de ligne** = dialogue d'édition (date, heure, commune, département, côte AD).
+- **Boutons à police réduite** (Baptême / Mariage / Sépulture / enfants).
+- **Boutons Enfant ajoutés à la frise** : « Choisir un enfant » (fiche existante, sans doublon) et « Saisir un enfant » ; la gestion des enfants quitte le bloc Mariage.
+- **Un bloc par enfant = la fiche résumée de l'enfant** : pastille au numéro, nom, « N. … à commune (département) », « D. … » ; toucher ouvre sa fiche, croix pour le détacher.
+- Chaque validation conserve **numéro, synchronisation, cohérence et anti-doublon**.
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -148,3 +157,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 18. \u2705 v0.18 : num\u00E9rotation imm\u00E9diate (d'Aboville pour tous les enfants non-Sosa), pastille corrig\u00E9e, suppression de l'\u00E9tiquette \u00AB Lat\u00E9ral \u00BB, encodage UTF-8 v\u00E9rifi\u00E9 sur toute l'application.
 19. \u2705 v0.19 : fiche refondue \u2014 pastille et titre comme la liste, blocs N/D par d\u00E9faut + bouton BMS, naissance avec parents et d\u00E9c\u00E8s sans, saisie mariage/enfant anti-doublon avec synchronisation, boutons Supprimer/Annuler/Enregistrer.
 20. ✅ v0.20 : fiche personne v2 — cartouche identité avec parents (N./D.), frise chronologique (N/D par défaut, BMS), édition par bloc avec dialogue dédié, témoins choisis/créés sans doublon avec coche de signature, date+heure sur une ligne, commune avec département accolé.
+21. ✅ v0.21 : frise légère (essentiel N/D par ligne, crayon d'édition par ligne), cartouche sans cujus, polices de boutons réduites, boutons Enfant dans la frise, bloc-fiche par enfant.
