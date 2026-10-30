@@ -209,7 +209,6 @@ fun EcranPersonne(
                     personnes = personnes,
                     onModifier = onModifier,
                     onOuvrir = onOuvrir,
-                    onDefinirCujus = onDefinirCujus
                 )
             }
             // Frise chronologique : chaque evenement ouvre son bloc au toucher.
@@ -220,9 +219,12 @@ fun EcranPersonne(
                     border = BorderStroke(1.dp, Color(0xFF9CBF9A))
                 ) {
                     Column(Modifier.fillMaxWidth().padding(8.dp)) {
-                        Text("Frise chronologique", fontWeight = FontWeight.Bold)
                         ordreTypes.forEach { t ->
-                            val ev = frise.first { it.first == t }
+                            val cEv = champsEvenement(p, t)
+                            val dEv = cEv.date.trim()
+                            val lEv = cEv.lieu.trim()
+                            val dpEv = cEv.dept.trim()
+                            val numDept = dpEv.toIntOrNull() ?: numeroDepartement(dpEv) ?: numeroDepartement(lEv)
                             Row(
                                 Modifier.fillMaxWidth()
                                     .padding(vertical = 2.dp)
@@ -234,11 +236,19 @@ fun EcranPersonne(
                                         .background(couleurPastille(p.sexe))
                                 )
                                 Spacer(Modifier.width(8.dp))
+                                val morceaux = mutableListOf<String>()
+                                if (dEv.isNotEmpty()) morceaux.add(dateAffichee(dEv))
+                                if (lEv.isNotEmpty()) morceaux.add(lEv + (if (numDept != null) " (" + numDept.toString() + ")" else ""))
                                 Text(
-                                    (ev.second?.toString() ?: "\u2014") + "  \u00B7  " + libelleType(t),
+                                    t + ". " + if (morceaux.isEmpty()) "\u2014" else morceaux.joinToString(" \u00E0 "),
+                                    Modifier.weight(1f),
                                     style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (morceaux.isEmpty()) GrisManquant else Color.Unspecified
                                 )
+                                IconButton(onClick = { blocEdite = t }, Modifier.size(28.dp)) {
+                                    Icon(Icons.Filled.Create, contentDescription = "Modifier", Modifier.size(14.dp))
+                                }
                             }
                             if (ouverts.contains(t)) {
                                 CarteEvenement(
@@ -252,7 +262,6 @@ fun EcranPersonne(
                                     onChoisir = onChoisir,
                                     onRetirer = onRetirer,
                                     onOuvrirMariage = { mariageOuvert = true },
-                                    onOuvrirEnfant = { enfantOuvert = true },
                                     onOuvrirParent = { parentRole = it },
                                     onOuvrirTemoin = { temoinType = t },
                                     onRetirerTemoin = onRetirerTemoin,
@@ -266,25 +275,87 @@ fun EcranPersonne(
                                 )
                             }
                         }
-                        // Bouton BMS : ouvre les blocs Bapt\u00eame, Mariage, S\u00e9pulture.
+                        // Boutons BMS : ouvrent les blocs Bapt\u00EAme, Mariage, S\u00E9pulture.
                         if (!p.blocsOuverts.contains("bapteme") || !p.blocsOuverts.contains("mariage") || !p.blocsOuverts.contains("sepulture")) {
                             Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
                                 if (!p.blocsOuverts.contains("bapteme")) {
                                     OutlinedButton(onClick = { p.blocsOuverts.add("bapteme"); enregistrer() }, Modifier.weight(1f)) {
-                                        Icon(Icons.Filled.Add, contentDescription = null)
-                                        Text("  Bapt\u00EAme")
+                                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
+                                        Text("  Bapt\u00EAme", fontSize = 10.sp)
                                     }
                                 }
                                 if (!p.blocsOuverts.contains("mariage")) {
                                     OutlinedButton(onClick = { p.blocsOuverts.add("mariage"); enregistrer() }, Modifier.weight(1f)) {
-                                        Icon(Icons.Filled.Add, contentDescription = null)
-                                        Text("  Mariage")
+                                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
+                                        Text("  Mariage", fontSize = 10.sp)
                                     }
                                 }
                                 if (!p.blocsOuverts.contains("sepulture")) {
                                     OutlinedButton(onClick = { p.blocsOuverts.add("sepulture"); enregistrer() }, Modifier.weight(1f)) {
-                                        Icon(Icons.Filled.Add, contentDescription = null)
-                                        Text("  S\u00E9pulture")
+                                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
+                                        Text("  S\u00E9pulture", fontSize = 10.sp)
+                                    }
+                                }
+                            }
+                        }
+                        // Enfants : bouton manquant en v0.20, present ici.
+                        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                            OutlinedButton(onClick = { onChoisir("enfant") }, Modifier.weight(1f)) {
+                                Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
+                                Text("  Choisir un enfant", fontSize = 10.sp)
+                            }
+                            OutlinedButton(onClick = { enfantOuvert = true }, Modifier.weight(1f)) {
+                                Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
+                                Text("  Saisir un enfant", fontSize = 10.sp)
+                            }
+                        }
+                        // Un bloc par enfant : en r\u00E9alit\u00E9 la fiche r\u00E9sum\u00E9e de l'enfant
+                        // (pastille au num\u00E9ro, N. et D. avec commune et d\u00E9partement).
+                        p.enfants.forEach { idE ->
+                            val e = personneParId(personnes, idE)
+                            Card(
+                                Modifier.fillMaxWidth().padding(top = 4.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                border = BorderStroke(1.dp, if (e != null) couleurPastille(e.sexe) else GrisManquant)
+                            ) {
+                                Column(
+                                    Modifier.fillMaxWidth().padding(8.dp).clickable { onOuvrir(idE) }
+                                ) {
+                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                        if (e != null) {
+                                            PastilleNumero(p = e, diametre = 28)
+                                            Spacer(Modifier.width(8.dp))
+                                        }
+                                        Text(
+                                            e?.titre() ?: "(fiche supprim\u00E9e)",
+                                            Modifier.weight(1f),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        IconButton(onClick = { onRetirer("enfant", idE) }, Modifier.size(28.dp)) {
+                                            Icon(Icons.Filled.Close, contentDescription = "Retirer cet enfant", Modifier.size(14.dp))
+                                        }
+                                    }
+                                    if (e != null) {
+                                        listOf(
+                                            "N" to Triple(e.dateNaissance, e.lieuNaissance, e.deptNaissance),
+                                            "D" to Triple(e.dateDeces, e.lieuDeces, e.deptDeces)
+                                        ).forEach { paire ->
+                                            val tEnf = paire.first
+                                            val dEnf = paire.second.first.trim()
+                                            val lEnf = paire.second.second.trim()
+                                            val dpEnf = paire.second.third.trim()
+                                            val numEnf = dpEnf.toIntOrNull() ?: numeroDepartement(dpEnf) ?: numeroDepartement(lEnf)
+                                            val morceauxEnf = mutableListOf<String>()
+                                            if (dEnf.isNotEmpty()) morceauxEnf.add(dateAffichee(dEnf))
+                                            if (lEnf.isNotEmpty()) morceauxEnf.add(lEnf + (if (numEnf != null) " (" + numEnf.toString() + ")" else ""))
+                                            if (morceauxEnf.isNotEmpty()) {
+                                                Text(
+                                                    tEnf + ". " + morceauxEnf.joinToString(" \u00E0 "),
+                                                    style = MaterialTheme.typography.bodySmall
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -375,7 +446,6 @@ fun CarteIdentite(
     personnes: List<Personne>,
     onModifier: () -> Unit,
     onOuvrir: (Long) -> Unit,
-    onDefinirCujus: () -> Unit
 ) {
     Card(
         Modifier.fillMaxWidth()
@@ -420,11 +490,6 @@ fun CarteIdentite(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
-                }
-            }
-            if (p.sosa.trim() != "1") {
-                TextButton(onClick = onDefinirCujus, Modifier.padding(top = 2.dp)) {
-                    Text("D\u00E9finir comme de cujus", fontSize = 11.sp)
                 }
             }
         }
@@ -533,7 +598,6 @@ fun CarteEvenement(
     onChoisir: (String) -> Unit,
     onRetirer: (String, Long) -> Unit,
     onOuvrirMariage: () -> Unit,
-    onOuvrirEnfant: () -> Unit,
     onOuvrirParent: (String) -> Unit,
     onOuvrirTemoin: () -> Unit,
     onRetirerTemoin: (String, Long) -> Unit,
@@ -616,10 +680,10 @@ fun CarteEvenement(
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (p.pere == 0L) {
                     OutlinedButton(onClick = { onChoisir("pere") }, Modifier.height(32.dp)) {
-                        Text("Choisir", fontSize = 11.sp)
+                        Text("Choisir", fontSize = 10.sp)
                     }
                     TextButton(onClick = { onOuvrirParent("pere") }) {
-                        Text("Cr\u00E9er", fontSize = 11.sp)
+                        Text("Cr\u00E9er", fontSize = 10.sp)
                     }
                 } else {
                     Checkbox(
@@ -630,7 +694,7 @@ fun CarteEvenement(
                     Text("Signe", style = MaterialTheme.typography.bodySmall)
                     if (personneParId(personnes, p.pere) != null) {
                         TextButton(onClick = { onOuvrir(p.pere) }) {
-                            Text("Fiche", fontSize = 11.sp)
+                            Text("Fiche", fontSize = 10.sp)
                         }
                     }
                     IconButton(onClick = { onRetirer("pere", 0L) }, Modifier.size(28.dp)) {
@@ -647,15 +711,15 @@ fun CarteEvenement(
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (p.mere == 0L) {
                     OutlinedButton(onClick = { onChoisir("mere") }, Modifier.height(32.dp)) {
-                        Text("Choisir", fontSize = 11.sp)
+                        Text("Choisir", fontSize = 10.sp)
                     }
                     TextButton(onClick = { onOuvrirParent("mere") }) {
-                        Text("Cr\u00E9er", fontSize = 11.sp)
+                        Text("Cr\u00E9er", fontSize = 10.sp)
                     }
                 } else {
                     if (personneParId(personnes, p.mere) != null) {
                         TextButton(onClick = { onOuvrir(p.mere) }) {
-                            Text("Fiche", fontSize = 11.sp)
+                            Text("Fiche", fontSize = 10.sp)
                         }
                     }
                     IconButton(onClick = { onRetirer("mere", 0L) }, Modifier.size(28.dp)) {
@@ -678,15 +742,15 @@ fun CarteEvenement(
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (p.conjoint == 0L) {
                     OutlinedButton(onClick = { onChoisir("conjoint") }, Modifier.height(32.dp)) {
-                        Text("Choisir", fontSize = 11.sp)
+                        Text("Choisir", fontSize = 10.sp)
                     }
                     TextButton(onClick = onOuvrirMariage) {
-                        Text("Saisir", fontSize = 11.sp)
+                        Text("Saisir", fontSize = 10.sp)
                     }
                 } else {
                     if (personneParId(personnes, p.conjoint) != null) {
                         TextButton(onClick = { onOuvrir(p.conjoint) }) {
-                            Text("Fiche", fontSize = 11.sp)
+                            Text("Fiche", fontSize = 10.sp)
                         }
                     }
                     IconButton(onClick = { onRetirer("conjoint", 0L) }, Modifier.size(28.dp)) {
@@ -704,7 +768,7 @@ fun CarteEvenement(
                 Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (personneParId(personnes, idC) != null) {
                         TextButton(onClick = { onOuvrir(idC) }) {
-                            Text("Fiche", fontSize = 11.sp)
+                            Text("Fiche", fontSize = 10.sp)
                         }
                     }
                     IconButton(onClick = { onRetirer("conjointsupp", idC) }, Modifier.size(28.dp)) {
@@ -714,41 +778,14 @@ fun CarteEvenement(
             }
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
                 OutlinedButton(onClick = { onChoisir("conjointsupp") }, Modifier.weight(1f)) {
-                    Text("Autre conjoint", fontSize = 11.sp)
+                    Text("Autre conjoint", fontSize = 10.sp)
                 }
                 OutlinedButton(onClick = onOuvrirMariage, Modifier.weight(1f)) {
-                    Text("Saisir un mariage", fontSize = 11.sp)
+                    Text("Saisir un mariage", fontSize = 10.sp)
                 }
             }
-            Text(
-                "Enfants (" + p.enfants.size.toString() + ")",
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-            p.enfants.forEach { idE ->
-                val e = personneParId(personnes, idE)
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        e?.titre() ?: "(fiche supprim\u00E9e)",
-                        Modifier.weight(1f).clickable { onOuvrir(idE) },
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    IconButton(onClick = { onRetirer("enfant", idE) }, Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer cet enfant", Modifier.size(14.dp))
-                    }
-                }
-            }
-            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
-                OutlinedButton(onClick = { onChoisir("enfant") }, Modifier.weight(1f)) {
-                    Text("Choisir un enfant", fontSize = 11.sp)
-                }
-                OutlinedButton(onClick = onOuvrirEnfant, Modifier.weight(1f)) {
-                    Text("Saisir un enfant", fontSize = 11.sp)
-                }
-            }
-        }
 
+        }
         // Temoins : aucun par defaut, choisis parmi les fiches existantes ou
         // crees ; coche de signature devant chaque temoin.
         val temoins = p.temoinsDe(typeActe)
