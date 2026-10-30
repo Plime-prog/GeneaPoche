@@ -137,7 +137,9 @@ fun heureAffichee(s: String): String {
     return t
 }
 
-// Format unique impose : jj/mm/aaaa (ou, a defaut, l'annee seule aaaa).
+// Format unique impose : jj/mm/aaaa (ou, a defaut, l'annee seule aaaa),
+// ou une date du calendrier republicain (ex "22 Germinal An II"),
+// convertie en gregorien a l'enregistrement.
 fun dateValide(s: String): Boolean {
     val t = s.trim()
     if (t.isEmpty()) return true
@@ -146,7 +148,8 @@ fun dateValide(s: String): Boolean {
         val mois = m.groupValues[2].toInt()
         return j in 1..31 && mois in 1..12
     }
-    return Regex("^\\d{4}$").matches(t)
+    if (Regex("^\\d{4}$").matches(t)) return true
+    return repubAGregorien(t) != null
 }
 
 // Heure au format unique hh:mm (00 a 23, 00 a 59).
@@ -190,6 +193,29 @@ fun lateralValide(s: String): Boolean {
 fun anneeNaissance(p: Personne): Int =
     Regex("[0-9]{4}").find(p.dateNaissance)?.value?.toIntOrNull() ?: 9999
 
+// Cle de tri par numero croissant (Sosa ou d'Aboville) : le numero est
+// decoupe en segments compares un a un ("1.3" < "1.10" < "2"), les
+// personnes sans numero passent en fin de liste.
+fun cleNumero(p: Personne): List<Int> {
+    val t = p.numeroBrut().trim()
+    if (t.isEmpty()) return listOf(Int.MAX_VALUE)
+    return t.split(".").map { seg -> seg.toIntOrNull() ?: Int.MAX_VALUE }
+}
+
+// Comparateur de numeros : segments une a une ("1.2" avant "1.10"),
+// le plus court d'abord en cas de prefixe identique ("7" avant "7.2").
+val ComparateurAboville = Comparator<Personne> { a, b ->
+    val ka = cleNumero(a)
+    val kb = cleNumero(b)
+    val n = minOf(ka.size, kb.size)
+    var r = 0
+    for (i in 0 until n) {
+        r = ka[i].compareTo(kb[i])
+        if (r != 0) return@Comparator r
+    }
+    ka.size.compareTo(kb.size)
+}
+
 // Renum\u00E9rotation complete depuis un de cujus :
 // Sosa (pere = 2n, mere = 2n+1) remontee en largeur, puis d'Aboville en descendant
 // (enfant k du porteur "x" = "x.k"). Les personnes non atteignables perdent leur num\u00E9ro.
@@ -223,16 +249,25 @@ fun renumeroter(personnes: MutableList<Personne>, cujusId: Long, sosaDeBase: Lon
     // son Sosa (il occupe son rang dans la fratrie). Ainsi TOUT
     // rattachement (pere, mere, enfant) met les numeros a jour immediatement
     // via enregistrer() -> renumeroter(), sans affectation manuelle.
+    // Correctifs : 1) les parents numerotes sont traites par n Sosa
+    // croissant (le pere 2n l'emporte sur la mere 2n+1 pour prefixer un
+    // enfant doublement rattache) ; 2) le rang dans la fratrie suit
+    // l'annee de naissance, pas l'ordre de saisie.
     val fileLat = ArrayDeque<Pair<Long, String>>()
-    personnes.filter { it.sosa.isNotEmpty() }.forEach { fileLat.addLast(it.id to it.sosa.trim()) }
+    personnes.filter { it.sosa.isNotEmpty() }
+        .sortedBy { it.sosa.trim().toLongOrNull() ?: Long.MAX_VALUE }
+        .forEach { fileLat.addLast(it.id to it.sosa.trim()) }
     personnes.filter { it.lateral.isNotEmpty() }.forEach { fileLat.addLast(it.id to it.lateral.trim()) }
     while (fileLat.isNotEmpty()) {
         val (id, pref) = fileLat.removeFirst()
         val p = personneParId(personnes, id) ?: continue
-        p.enfants.forEach { idE ->
-            val e = personneParId(personnes, idE) ?: return@forEach
+        val tries = p.enfants.withIndex()
+            .sortedWith(compareBy({ anneeNaissance(personneParId(personnes, it.value) ?: Personne(id = 0L)) }, { it.index }))
+            .map { it.value }
+        tries.forEachIndexed { rang, idE ->
+            val e = personneParId(personnes, idE) ?: return@forEachIndexed
             if (e.sosa.isEmpty() && e.lateral.isEmpty()) {
-                e.lateral = pref + "." + (p.enfants.indexOf(idE) + 1).toString()
+                e.lateral = pref + "." + (rang + 1).toString()
                 fileLat.addLast(e.id to e.lateral)
             }
         }
@@ -439,7 +474,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     fun ajouterMariage(nom: String, prenoms: String, date: String, commune: String, dept: String) {
         val p = personneParId(personnes, idOuvert) ?: return
         if (!p.blocsOuverts.contains("mariage")) p.blocsOuverts.add("mariage")
-        if (p.dateMariage.isBlank() && date.isNotBlank()) p.dateMariage = date
+        if (p.dateMariage.isBlank() && date.isNotBlank()) p.dateMariage = dateGreg(date)
         if (p.lieuMariage.isBlank() && commune.isNotBlank()) p.lieuMariage = commune
         if (p.deptMariage.isBlank() && dept.isNotBlank()) p.deptMariage = dept
         val n = nom.trim()
@@ -530,7 +565,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             if (enfant.pere == 0L) enfant.pere = p.id
             if (enfant.mere == 0L && p.conjoint != 0L) enfant.mere = p.conjoint
         }
-        if (enfant.dateNaissance.isBlank() && dateNaissance.isNotBlank()) enfant.dateNaissance = dateNaissance
+        if (enfant.dateNaissance.isBlank() && dateNaissance.isNotBlank()) enfant.dateNaissance = dateGreg(dateNaissance)
         // L'autre parent (conjoint connu) voit aussi l'enfant dans sa fiche.
         val autre = personneParId(personnes, if (p.sexe == "F") enfant.pere else enfant.mere)
         if (autre != null && autre.id != p.id && !autre.enfants.contains(enfant.id)) {
@@ -667,11 +702,11 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     fun majEvenement(type: String, date: String, heure: String, commune: String, dept: String, ref: String) {
         val p = personneParId(personnes, idOuvert) ?: return
         when (type) {
-            "N" -> { p.dateNaissance = date; p.heureNaissance = heure; p.lieuNaissance = commune; p.deptNaissance = dept }
-            "B" -> { p.dateBapteme = date; p.heureBapteme = heure; p.lieuBapteme = commune; p.deptBapteme = dept }
-            "M" -> { p.dateMariage = date; p.heureMariage = heure; p.lieuMariage = commune; p.deptMariage = dept }
-            "D" -> { p.dateDeces = date; p.heureDeces = heure; p.lieuDeces = commune; p.deptDeces = dept }
-            "S" -> { p.dateSepulture = date; p.heureSepulture = heure; p.lieuSepulture = commune; p.deptSepulture = dept }
+            "N" -> { p.dateNaissance = dateGreg(date); p.heureNaissance = heure; p.lieuNaissance = commune; p.deptNaissance = dept }
+            "B" -> { p.dateBapteme = dateGreg(date); p.heureBapteme = heure; p.lieuBapteme = commune; p.deptBapteme = dept }
+            "M" -> { p.dateMariage = dateGreg(date); p.heureMariage = heure; p.lieuMariage = commune; p.deptMariage = dept }
+            "D" -> { p.dateDeces = dateGreg(date); p.heureDeces = heure; p.lieuDeces = commune; p.deptDeces = dept }
+            "S" -> { p.dateSepulture = dateGreg(date); p.heureSepulture = heure; p.lieuSepulture = commune; p.deptSepulture = dept }
         }
         if (ref.isNotBlank()) {
             val acte = actes.filter { it.personneId == p.id && it.type == type }
@@ -857,11 +892,11 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         // Renseigne un champ seulement s'il est encore vide (l'acte complete la fiche).
         fun renseigner(c: Personne?, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String) {
             if (c == null) return
-            if (c.dateNaissance.isBlank() && ne.isNotBlank()) c.dateNaissance = ne.trim()
+            if (c.dateNaissance.isBlank() && ne.isNotBlank()) c.dateNaissance = dateGreg(ne)
             if (c.lieuNaissance.isBlank() && lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
             if (c.deptNaissance.isBlank() && dept.isNotBlank()) c.deptNaissance = dept.trim()
             if (c.profession.isBlank() && prof.isNotBlank()) c.profession = prof.trim()
-            if (c.dateDeces.isBlank() && dec.isNotBlank()) c.dateDeces = dec.trim()
+            if (c.dateDeces.isBlank() && dec.isNotBlank()) c.dateDeces = dateGreg(dec)
             if (c.lieuDeces.isBlank() && lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
         }
 
@@ -885,31 +920,31 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         // Date, heure et lieu de l'acte selon son type (fiche de la personne concernee).
         when (a.type) {
             "N" -> {
-                if (p.dateNaissance.isBlank()) p.dateNaissance = a.date
+                if (p.dateNaissance.isBlank()) p.dateNaissance = dateGreg(a.date)
                 if (p.heureNaissance.isBlank()) p.heureNaissance = a.heure
                 if (p.lieuNaissance.isBlank()) p.lieuNaissance = a.commune
                 if (p.deptNaissance.isBlank()) p.deptNaissance = a.dept
             }
             "B" -> {
-                if (p.dateBapteme.isBlank()) p.dateBapteme = a.date
+                if (p.dateBapteme.isBlank()) p.dateBapteme = dateGreg(a.date)
                 if (p.heureBapteme.isBlank()) p.heureBapteme = a.heure
                 if (p.lieuBapteme.isBlank()) p.lieuBapteme = a.commune
                 if (p.deptBapteme.isBlank()) p.deptBapteme = a.dept
             }
             "M" -> {
-                if (p.dateMariage.isBlank()) p.dateMariage = a.date
+                if (p.dateMariage.isBlank()) p.dateMariage = dateGreg(a.date)
                 if (p.heureMariage.isBlank()) p.heureMariage = a.heure
                 if (p.lieuMariage.isBlank()) p.lieuMariage = a.commune
                 if (p.deptMariage.isBlank()) p.deptMariage = a.dept
             }
             "D" -> {
-                if (p.dateDeces.isBlank()) p.dateDeces = a.date
+                if (p.dateDeces.isBlank()) p.dateDeces = dateGreg(a.date)
                 if (p.heureDeces.isBlank()) p.heureDeces = a.heure
                 if (p.lieuDeces.isBlank()) p.lieuDeces = a.commune
                 if (p.deptDeces.isBlank()) p.deptDeces = a.dept
             }
             "S" -> {
-                if (p.dateSepulture.isBlank()) p.dateSepulture = a.date
+                if (p.dateSepulture.isBlank()) p.dateSepulture = dateGreg(a.date)
                 if (p.heureSepulture.isBlank()) p.heureSepulture = a.heure
                 if (p.lieuSepulture.isBlank()) p.lieuSepulture = a.commune
                 if (p.deptSepulture.isBlank()) p.deptSepulture = a.dept
@@ -930,7 +965,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         if (a.type == "M") {
             mariee = trouverOuCreer(a.marieeId, a.marieeNom, a.marieePrenoms, "F")
             if (mariee != null) {
-                if (mariee.dateMariage.isBlank()) mariee.dateMariage = a.date
+                if (mariee.dateMariage.isBlank()) mariee.dateMariage = dateGreg(a.date)
                 if (mariee.heureMariage.isBlank()) mariee.heureMariage = a.heure
                 if (mariee.lieuMariage.isBlank()) mariee.lieuMariage = a.commune
                 if (mariee.deptMariage.isBlank()) mariee.deptMariage = a.dept
@@ -1240,11 +1275,17 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         val numSaisi = numCujus.trim().toLongOrNull() ?: 0L
         val numValide = numSaisi >= 1L
         LaunchedEffect(cible.id, numSaisi) {
-            if (numSaisi >= 1L) renumeroter(personnes, cible.id, numSaisi)
+            if (numSaisi >= 1L) {
+                renumeroter(personnes, cible.id, numSaisi)
+                // sosa/lateral sont des champs simples : la recopie des
+                // listes force l'affichage a suivre la numerotation en direct.
+                rafraichirTout()
+            }
         }
         fun annulerCujus() {
             val idOrigine = idDuCujus()
             if (idOrigine != 0L) renumeroter(personnes, idOrigine, sosaCujus)
+            rafraichirTout()
             cujusEdite = null
         }
         AlertDialog(
@@ -1398,49 +1439,3 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
     Surface(Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxSize().padding(24.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(Icons.Filled.Lock, contentDescription = null)
-            Text("G\u00E9n\u00E9aPoche est verrouill\u00E9", style = MaterialTheme.typography.titleLarge)
-            Text("Entrez votre code PIN.", Modifier.padding(vertical = 8.dp))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = pin,
-                    onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) pin = it },
-                    label = { Text("Code PIN") },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.NumberPassword,
-                        imeAction = ImeAction.Go
-                    ),
-                    keyboardActions = KeyboardActions(onGo = { essayer() }),
-                    isError = erreur.isNotEmpty(),
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(Modifier.width(10.dp))
-                Button(
-                    onClick = { essayer() },
-                    enabled = pin.isNotEmpty() && blocage == 0L
-                ) { Text("D\u00E9verrouiller") }
-            }
-            if (erreur.isNotEmpty()) {
-                Text(erreur, color = CouleurRouge, modifier = Modifier.padding(vertical = 6.dp))
-            }
-            if (blocage > 0L) {
-                Text(
-                    "Trop d'essais. R\u00E9essayez dans " + blocage.toString() + " s.",
-                    color = CouleurRouge,
-                    modifier = Modifier.padding(vertical = 6.dp)
-                )
-            }
-        }
-    }
-}
-
-
-
-
-
-
-

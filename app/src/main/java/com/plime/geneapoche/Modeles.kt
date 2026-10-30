@@ -13,6 +13,105 @@ import org.json.JSONObject
 // Plafond de l'application : une genealogie de poche, 3 generations + lateraux.
 val PlafondPersonnes = 50
 
+// ---------------------------------------------------- Noms et prenoms systematiques
+// Nom de famille : TOUJOURS en majuscules ("dupont" -> "DUPONT").
+// Prenoms : seule l'initiale de chaque element en majuscule, y compris
+// apres un tiret ou une apostrophe ("marie-anne" -> "Marie-Anne",
+// "JEAN BAPTISTE" -> "Jean Baptiste").
+fun normaliserNom(s: String): String = s.trim().uppercase()
+
+fun normaliserPrenoms(s: String): String {
+    val t = StringBuilder()
+    var majuscule = true
+    for (c in s.trim()) {
+        if (c == ' ' || c == '-' || c == '\'') {
+            t.append(c)
+            majuscule = true
+        } else {
+            t.append(if (majuscule) c.uppercaseChar() else c.lowercaseChar())
+            majuscule = false
+        }
+    }
+    return t.toString()
+}
+
+// ---------------------------------------------------- Calendrier republicain
+// Convertisseur calendrier republicain -> gregorien (annees I a XIV,
+// du 22/09/1792 au 31/12/1805, bornes reelles observees a Paris).
+// Mois : Vendemiaire, Brumaire, Frimaire, Nivose, Pluviose, Ventose,
+// Germinal, Floreal, Prairial, Messidor, Thermidor, Fructidor, puis
+// jours complementaires (1 a 6 selon l'an). Saisie acceptee :
+// "22 Germinal An II", "22 germinal 2", "3 complementaire an III"...
+// Renvoie "jj/mm/aaaa" gregorien, ou null si non convertible.
+val MoisRepubli = listOf(
+    "vendemiaire", "brumaire", "frimaire", "nivose", "pluviose", "ventose",
+    "germinal", "floreal", "prairial", "messidor", "thermidor", "fructidor"
+)
+val RomainsRepubli = listOf(
+    "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+    "XI", "XII", "XIII", "XIV"
+)
+// Debut gregorien (jour, mois, annee) de chaque annee republicaine :
+// l'an debute a l'equinoxe d'automne observe a Paris (donnee historique).
+val DebutAnRepubli = listOf(
+    Triple(22, 9, 1792), Triple(22, 9, 1793), Triple(22, 9, 1794), Triple(23, 9, 1795),
+    Triple(22, 9, 1796), Triple(22, 9, 1797), Triple(22, 9, 1798), Triple(23, 9, 1799),
+    Triple(23, 9, 1800), Triple(23, 9, 1801), Triple(23, 9, 1802), Triple(23, 9, 1803),
+    Triple(22, 9, 1804), Triple(23, 9, 1805)
+)
+
+fun anneeRepubli(s: String): Int? {
+    val t = s.trim().uppercase()
+    if (t.isEmpty()) return null
+    RomainsRepubli.forEachIndexed { i, r -> if (t == r) return i + 1 }
+    val n = t.toIntOrNull() ?: return null
+    if (n in 1..14) return n
+    // Saisie de l'annee gregorienne equivalente (1792 -> an I).
+    if (n in 1792..1805) return n - 1791
+    return null
+}
+
+fun moisRepubli(s: String): Int? {
+    val t = s.trim().lowercase().replace("[^a-z]".toRegex(), "")
+    if (t.length < 3) return null
+    MoisRepubli.forEachIndexed { i, m -> if (m.startsWith(t)) return i + 1 }
+    // Jours complementaires (sansculottides) : "complementaire", "sansculottide".
+    if (t.startsWith("com") || t.startsWith("san") || t.startsWith("jou")) return 13
+    return null
+}
+
+fun repubAGregorien(s: String): String? {
+    val t = s.trim()
+    if (t.isEmpty()) return null
+    // "22 germinal an II" : jour, mois (lettres), puis "an" facultatif,
+    // numero d'an en chiffres arabes ou romains.
+    val m = Regex("^(\\d{1,2})\\s+(\\p{L}+)\\s+(?:an\\s+)?(\\p{L}+|\\d{1,4})$").find(t) ?: return null
+    val jour = m.groupValues[1].toIntOrNull() ?: return null
+    val mois = moisRepubli(m.groupValues[2]) ?: return null
+    val an = anneeRepubli(m.groupValues[3]) ?: return null
+    if (jour < 1 || jour > 30) return null
+    if (mois == 13 && jour > 6) return null
+    val debut = DebutAnRepubli[an - 1]
+    val base = java.time.LocalDate.of(debut.third, debut.second, debut.first)
+    val res = base.plusDays(((mois - 1) * 30 + jour - 1).toLong())
+    // Bornes : la date doit rester DANS l'an (le 6e jour complementaire
+    // n'existe que les ans sextiles III, VII, XI ; l'an XIV s'arrete
+    // au 31/12/1805, fin historique du calendrier).
+    val fin = if (an < 14) {
+        val d = DebutAnRepubli[an]
+        java.time.LocalDate.of(d.third, d.second, d.first).minusDays(1)
+    } else {
+        java.time.LocalDate.of(1805, 12, 31)
+    }
+    if (res.isBefore(base) || res.isAfter(fin)) return null
+    return res.dayOfMonth.toString().padStart(2, '0') + "/" +
+        res.monthValue.toString().padStart(2, '0') + "/" + res.year.toString()
+}
+
+// Date systematique : une saisie republicaine est convertie en gregorien,
+// toute autre valeur est conservee telle quelle (jj/mm/aaaa ou aaaa).
+fun dateGreg(s: String): String = repubAGregorien(s) ?: s.trim()
+
 data class Personne(
     val id: Long,
     var sosa: String = "",
@@ -67,6 +166,19 @@ data class Personne(
     var signatairesD: MutableList<Long> = mutableListOf(),
     var signatairesS: MutableList<Long> = mutableListOf()
 ) {
+    // Normalisation systematique a TOUTE construction (chargement, import,
+    // creation) : nom en majuscules, prenoms a l'initiale pres, dates
+    // republicaines converties en gregoriennes.
+    init {
+        nom = normaliserNom(nom)
+        prenoms = normaliserPrenoms(prenoms)
+        dateNaissance = dateGreg(dateNaissance)
+        dateBapteme = dateGreg(dateBapteme)
+        dateMariage = dateGreg(dateMariage)
+        dateDeces = dateGreg(dateDeces)
+        dateSepulture = dateGreg(dateSepulture)
+    }
+
     fun titre(): String {
         return listOf(nom.trim(), prenoms.trim())
             .filter { it.isNotEmpty() }

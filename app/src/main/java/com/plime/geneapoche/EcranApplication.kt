@@ -71,6 +71,37 @@ import androidx.compose.ui.unit.sp
 
 // ------------------------------------------------------------ Application deverrouillee
 
+// Barre d'onglets de l'application : TOUJOURS visible en bas, fiche ouverte
+// ou non (dans ce cas, choisir un onglet ferme aussi la fiche).
+@Composable
+fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
+    NavigationBar {
+        NavigationBarItem(
+            selected = onglet == 0,
+            onClick = { onChoisir(0) },
+            icon = { Icon(Icons.Filled.Person, contentDescription = null) },
+            label = { Text("Personnes") }
+        )
+        NavigationBarItem(
+            selected = onglet == 1,
+            onClick = { onChoisir(1) },
+            icon = { Icon(Icons.Filled.List, contentDescription = null) },
+            label = { Text("Journal") }
+        )
+        NavigationBarItem(
+            selected = onglet == 2,
+            onClick = { onChoisir(2) },
+            icon = { Icon(painterResource(R.drawable.ic_arbre), contentDescription = null) },
+            label = { Text("Arbre") }
+        )
+        NavigationBarItem(
+            selected = onglet == 3,
+            onClick = { onChoisir(3) },
+            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+            label = { Text("Saisie") }
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -167,34 +198,7 @@ fun EcranApplication(
                     )
                 )
             },
-            bottomBar = {
-                NavigationBar {
-                    NavigationBarItem(
-                        selected = onglet == 0,
-                        onClick = { onOnglet(0) },
-                        icon = { Icon(Icons.Filled.Person, contentDescription = null) },
-                        label = { Text("Personnes") }
-                    )
-                    NavigationBarItem(
-                        selected = onglet == 1,
-                        onClick = { onOnglet(1) },
-                        icon = { Icon(Icons.Filled.List, contentDescription = null) },
-                        label = { Text("Journal") }
-                    )
-                    NavigationBarItem(
-                        selected = onglet == 2,
-                        onClick = { onOnglet(2) },
-                        icon = { Icon(painterResource(R.drawable.ic_arbre), contentDescription = null) },
-                        label = { Text("Arbre") }
-                    )
-                    NavigationBarItem(
-                        selected = onglet == 3,
-                        onClick = { onOnglet(3) },
-                        icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                        label = { Text("Saisie") }
-                    )
-                }
-            },
+            bottomBar = { BarreOnglets(onglet, onOnglet) },
             floatingActionButton = {
                 if (onglet == 0) {
                     FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
@@ -240,8 +244,9 @@ fun EcranApplication(
                         Text("Touchez le bouton + pour ajouter la premi\u00E8re personne (de cujus, Sosa 1).")
                     }
                 } else {
-                    // Onglet PERSONNES : compteur, bascule A-Z / Branches, index, cartes.
-                    var triAlpha by remember { mutableStateOf(true) }
+                    // Onglet PERSONNES : compteur, tri A-Z / Aboville / Branches, index, cartes.
+                    // triPersonnes : 0 = A-Z, 1 = Aboville (n croissant), 2 = Branches.
+                    var triPersonnes by remember { mutableStateOf(0) }
                     val triees = personnes.sortedWith(
                         compareBy(
                             { it.nom.trim().uppercase() },
@@ -257,8 +262,18 @@ fun EcranApplication(
 
                     // Classement par branche : la racine est l'ancetre le plus haut
                     // (pere, sinon mere) ; la branche porte le nom de cette racine.
-                    val entrees: List<Any> = if (triAlpha) {
+                    // Classement Aboville : numeros (Sosa ou d'Aboville) croissants,
+                    // segments compares un a un, non numeros en fin de liste.
+                    val entrees: List<Any> = if (triPersonnes == 0) {
                         triees.toList()
+                    } else if (triPersonnes == 1) {
+                        personnes.sortedWith(
+                            compareBy(
+                                ComparateurAboville,
+                                { it.nom.trim().uppercase() },
+                                { it.prenoms.trim().uppercase() }
+                            )
+                        ).toList()
                     } else {
                         val liste = mutableListOf<Any>()
                         personnes.groupBy { racineBranche(it, personnes).nom.trim().uppercase().ifEmpty { "?" } }
@@ -292,14 +307,20 @@ fun EcranApplication(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 FilterChip(
-                                    selected = triAlpha,
-                                    onClick = { triAlpha = true },
+                                    selected = triPersonnes == 0,
+                                    onClick = { triPersonnes = 0 },
                                     label = { Text("A\u2013Z") }
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 FilterChip(
-                                    selected = !triAlpha,
-                                    onClick = { triAlpha = false },
+                                    selected = triPersonnes == 1,
+                                    onClick = { triPersonnes = 1 },
+                                    label = { Text("Aboville") }
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                FilterChip(
+                                    selected = triPersonnes == 2,
+                                    onClick = { triPersonnes = 2 },
                                     label = { Text("Branches") }
                                 )
                             }
@@ -308,7 +329,7 @@ fun EcranApplication(
                             Row(
                                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp)
                             ) {
-                                if (triAlpha) {
+                                if (triPersonnes == 0) {
                                     // Alphabet complet, resserre pour tenir d'un coup d'oeil :
                                     // lettres inutilisees grisees.
                                     ('A'..'Z').forEach { lettre ->
@@ -328,7 +349,7 @@ fun EcranApplication(
                                             color = if (utilisee) CouleurVertFonce else Color(0xFFB9C2AE)
                                         )
                                     }
-                                } else {
+                                } else if (triPersonnes == 2) {
                                     val etiquettes = entrees.filterIsInstance<String>()
                                     etiquettes.forEach { etiquette ->
                                         TextButton(
@@ -536,7 +557,9 @@ fun EcranApplication(
         }
     } else {
         val p = ouverte
-        EcranPersonne(
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f)) {
+                EcranPersonne(
             personnes = personnes,
             actes = actes,
             p = p,
@@ -564,6 +587,11 @@ fun EcranApplication(
             onVoirActe = { onVoirActe(it) },
             ouvrirEtatCivil = ouvrirEtatCivil
         )
+            }
+            // Menus de l'application TOUJOURS visibles en bas, meme fiche ouverte.
+            // Choisir un onglet ferme la fiche et affiche l'onglet demande.
+            BarreOnglets(onglet) { o -> onOnglet(o); onIdOuvert(0L) }
+        }
     }
 
     if (message.isNotEmpty()) {

@@ -18,6 +18,7 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,12 +37,18 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -152,24 +159,23 @@ fun EcranPersonne(
     var mariageOuvert by remember { mutableStateOf(false) }
     var enfantOuvert by remember { mutableStateOf(false) }
     var menuEnfant by remember { mutableStateOf(false) }
+    var menuEvenement by remember { mutableStateOf(false) }
     var parentRole by remember { mutableStateOf("") }
     var temoinType by remember { mutableStateOf("") }
 
-    // Evenements de la frise chronologique, tries par annee.
-    val frise = mutableListOf<Pair<String, Int?>>()
-    frise.add("N" to anneeDe(p.dateNaissance))
+    // Evenements de la frise : ordre FIXE N en haut, puis B, M, S s'ils
+    // existent, puis D en dernier, meme si N ou D n'ont pas d'information.
+    val ordreTypes = mutableListOf("N")
     if (p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || actes.any { it.personneId == p.id && it.type == "B" }) {
-        frise.add("B" to anneeDe(p.dateBapteme))
+        ordreTypes.add("B")
     }
     if (p.blocsOuverts.contains("mariage") || p.dateMariage.isNotBlank() || p.heureMariage.isNotBlank() || p.lieuMariage.isNotBlank() || p.conjoint != 0L || p.conjointsSupp.isNotEmpty() || p.enfants.isNotEmpty() || actes.any { it.personneId == p.id && it.type == "M" }) {
-        frise.add("M" to anneeDe(p.dateMariage))
+        ordreTypes.add("M")
     }
-    frise.add("D" to anneeDe(p.dateDeces))
     if (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || actes.any { it.personneId == p.id && it.type == "S" }) {
-        frise.add("S" to anneeDe(p.dateSepulture))
+        ordreTypes.add("S")
     }
-    val ordre = frise.sortedWith(compareBy({ it.second ?: 9999 }, { it.first }))
-    val ordreTypes = ordre.map { it.first }
+    ordreTypes.add("D")
 
     Scaffold(
         topBar = {
@@ -201,8 +207,67 @@ fun EcranPersonne(
                         Icon(Icons.Filled.Delete, contentDescription = "Supprimer")
                     }
                 }
-            )
-        }
+            },
+            // Cinq boutons d'action FIXES en bas de la fiche, toujours
+            // visibles, texte sur une seule ligne, icone pour chacun.
+            bottomBar = {
+                Surface(shadowElevation = 8.dp, color = Color.White) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FilledTonalButton(
+                                onClick = { p.blocsOuverts.add("bapteme"); enregistrer() },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                            ) {
+                                Icon(Icons.Filled.Face, contentDescription = null, Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Bapt\u00EAme", fontSize = 12.sp, maxLines = 1)
+                            }
+                            FilledTonalButton(
+                                onClick = { p.blocsOuverts.add("mariage"); enregistrer() },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                            ) {
+                                Icon(Icons.Filled.Favorite, contentDescription = null, Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Mariage", fontSize = 12.sp, maxLines = 1)
+                            }
+                            FilledTonalButton(
+                                onClick = { p.blocsOuverts.add("sepulture"); enregistrer() },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                            ) {
+                                Icon(Icons.Filled.Place, contentDescription = null, Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("S\u00E9pulture", fontSize = 12.sp, maxLines = 1)
+                            }
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FilledTonalButton(
+                                onClick = { menuEnfant = true },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                            ) {
+                                Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Enfant", fontSize = 12.sp, maxLines = 1)
+                            }
+                            FilledTonalButton(
+                                onClick = { menuEvenement = true },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                            ) {
+                                Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("\u00C9v\u00E9nement", fontSize = 12.sp, maxLines = 1)
+                            }
+                        }
+                    }
+                }
+            }
     ) { marges ->
         LazyColumn(
             Modifier.fillMaxSize().padding(marges).padding(horizontal = 12.dp)
@@ -328,27 +393,10 @@ fun EcranPersonne(
                         }
                     }
                 }
-                // Quatre boutons toujours visibles sous la frise : B, M, S, enfant.
-                Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    OutlinedButton(onClick = { p.blocsOuverts.add("bapteme"); enregistrer() }, Modifier.weight(1f)) {
-                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
-                        Text("Bapt\u00EAme", fontSize = 10.sp)
-                    }
-                    OutlinedButton(onClick = { p.blocsOuverts.add("mariage"); enregistrer() }, Modifier.weight(1f)) {
-                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
-                        Text("Mariage", fontSize = 10.sp)
-                    }
-                    OutlinedButton(onClick = { p.blocsOuverts.add("sepulture"); enregistrer() }, Modifier.weight(1f)) {
-                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
-                        Text("S\u00E9pulture", fontSize = 10.sp)
-                    }
-                    OutlinedButton(onClick = { menuEnfant = true }, Modifier.weight(1f)) {
-                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
-                        Text("Enfant", fontSize = 10.sp)
-                    }
-                }
+                // Les boutons d'action (B, M, S, Enfant, Evenement) sont
+                // FIXES en bas de la fiche (bottomBar du Scaffold).
             }
-            item { Spacer(Modifier.height(24.dp)) }
+            item { Spacer(Modifier.height(12.dp)) }
         }
     }
 
@@ -442,6 +490,46 @@ fun EcranPersonne(
             },
             confirmButton = {
                 TextButton(onClick = { menuEnfant = false }) { Text("Fermer") }
+            }
+        )
+    }
+
+    // Bouton Evenement : choisit l'evenement a ouvrir et corriger.
+    // N et D sont toujours dans la frise ; B, M et S y sont ajoutes.
+    if (menuEvenement) {
+        AlertDialog(
+            onDismissRequest = { menuEvenement = false },
+            title = { Text("\u00C9v\u00E9nement \u00E0 ouvrir") },
+            text = {
+                Column {
+                    Text(
+                        "Touchez un \u00E9v\u00E9nement : son bloc s'ouvre et son dialogue de correction s'affiche.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    listOf(
+                        "N" to "Naissance",
+                        "B" to "Bapt\u00EAme",
+                        "M" to "Mariage",
+                        "S" to "S\u00E9pulture",
+                        "D" to "D\u00E9c\u00E8s"
+                    ).forEach { paire ->
+                        OutlinedButton(
+                            onClick = {
+                                val t = paire.first
+                                if (t == "B" || t == "M" || t == "S") {
+                                    if (!p.blocsOuverts.contains(t)) p.blocsOuverts.add(t)
+                                    enregistrer()
+                                }
+                                blocEdite = t
+                                menuEvenement = false
+                            },
+                            Modifier.fillMaxWidth().padding(top = 6.dp)
+                        ) { Text(paire.second) }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { menuEvenement = false }) { Text("Fermer") }
             }
         )
     }

@@ -197,7 +197,7 @@ fun EcranSaisieActe(
         Champ("Commune", commune, { commune = it })
         Champ("D\u00E9partement (ex 59)", dept, { dept = it })
         Champ("R\u00E9f\u00E9rence de l'acte (cote AD)", reference, { reference = it })
-        Champ("Date (jj/mm/aaaa)", date, { date = it })
+        Champ("Date (jj/mm/aaaa ou republicain)", date, { date = it })
         Champ("Heure (hh:mm)", heure, { heure = it })
 
         SectionTitre("Personne concern\u00E9e")

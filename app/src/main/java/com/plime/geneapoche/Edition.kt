@@ -66,27 +66,27 @@ fun DialogueEdition(
     fun construire(): Personne {
         val base = cible ?: Personne(id = idNouvelle)
         // Sosa et lateral ne sont jamais saisis : calcules a partir du de cujus.
-        base.nom = nom.trim()
-        base.prenoms = prenoms.trim()
+        base.nom = normaliserNom(nom)
+        base.prenoms = normaliserPrenoms(prenoms)
         base.sexe = sexe
         base.profession = profession.trim()
-        base.dateNaissance = dateNaissance.trim()
+        base.dateNaissance = dateGreg(dateNaissance)
         base.heureNaissance = heureNaissance.trim()
         base.lieuNaissance = lieuNaissance.trim()
         base.deptNaissance = deptNaissance.trim()
-        base.dateBapteme = dateBapteme.trim()
+        base.dateBapteme = dateGreg(dateBapteme)
         base.heureBapteme = heureBapteme.trim()
         base.lieuBapteme = lieuBapteme.trim()
         base.deptBapteme = deptBapteme.trim()
-        base.dateMariage = dateMariage.trim()
+        base.dateMariage = dateGreg(dateMariage)
         base.heureMariage = heureMariage.trim()
         base.lieuMariage = lieuMariage.trim()
         base.deptMariage = deptMariage.trim()
-        base.dateDeces = dateDeces.trim()
+        base.dateDeces = dateGreg(dateDeces)
         base.heureDeces = heureDeces.trim()
         base.lieuDeces = lieuDeces.trim()
         base.deptDeces = deptDeces.trim()
-        base.dateSepulture = dateSepulture.trim()
+        base.dateSepulture = dateGreg(dateSepulture)
         base.heureSepulture = heureSepulture.trim()
         base.lieuSepulture = lieuSepulture.trim()
         base.deptSepulture = deptSepulture.trim()
@@ -199,7 +199,7 @@ fun DialogueNouveauMariage(
                 )
                 Champ("Nom du conjoint", nom, { nom = it })
                 Champ("Pr\u00E9noms du conjoint", prenoms, { prenoms = it })
-                Champ("Date du mariage (jj/mm/aaaa ou aaaa)", date, { date = it }, !dateValide(date), "jj/mm/aaaa ou aaaa")
+                Champ("Date du mariage (jj/mm/aaaa, aaaa ou 22 Germinal An II)", date, { date = it }, !dateValide(date), "jj/mm/aaaa, aaaa ou 22 Germinal An II")
                 Champ("Commune", commune, { commune = it })
                 Champ("D\u00E9partement (ex 59)", dept, { dept = it })
             }
@@ -249,7 +249,7 @@ fun DialogueNouvelEnfant(
                     FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("Fille") })
                     FilterChip(selected = sexe.isEmpty(), onClick = { sexe = "" }, label = { Text("?") })
                 }
-                Champ("Naissance (jj/mm/aaaa ou aaaa)", date, { date = it }, !dateValide(date), "jj/mm/aaaa ou aaaa")
+                Champ("Naissance (jj/mm/aaaa, aaaa ou 22 Germinal An II)", date, { date = it }, !dateValide(date), "jj/mm/aaaa, aaaa ou 22 Germinal An II")
             }
         },
         confirmButton = {
@@ -315,10 +315,10 @@ fun DialogueEditionBloc(
                     OutlinedTextField(
                         value = date,
                         onValueChange = { date = it },
-                        label = { Text("Date (jj/mm/aaaa ou aaaa)") },
+                        label = { Text("Date (jj/mm/aaaa, aaaa ou 22 Germinal An II)") },
                         isError = !dateValide(date),
                         singleLine = true,
-                        supportingText = { Text("jj/mm/aaaa ou aaaa", style = MaterialTheme.typography.bodySmall) },
+                        supportingText = { Text("jj/mm/aaaa, aaaa ou 22 Germinal An II", style = MaterialTheme.typography.bodySmall) },
                         modifier = Modifier.weight(1f)
                     )
                     OutlinedTextField(
