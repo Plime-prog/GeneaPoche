@@ -207,7 +207,8 @@ fun EcranPersonne(
                         Icon(Icons.Filled.Delete, contentDescription = "Supprimer")
                     }
                 }
-            },
+            )
+        },
             // Cinq boutons d'action FIXES en bas de la fiche, toujours
             // visibles, texte sur une seule ligne, icone pour chacun.
             bottomBar = {

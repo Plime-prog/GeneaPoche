@@ -268,11 +268,8 @@ fun EcranApplication(
                         triees.toList()
                     } else if (triPersonnes == 1) {
                         personnes.sortedWith(
-                            compareBy(
-                                ComparateurAboville,
-                                { it.nom.trim().uppercase() },
-                                { it.prenoms.trim().uppercase() }
-                            )
+                            compareBy(ComparateurAboville, { it.nom.trim().uppercase() })
+                                .thenBy { it.prenoms.trim().uppercase() }
                         ).toList()
                     } else {
                         val liste = mutableListOf<Any>()
