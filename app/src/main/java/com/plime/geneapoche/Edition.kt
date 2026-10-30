@@ -33,7 +33,8 @@ fun DialogueEdition(
     cible: Personne?,
     idNouvelle: Long,
     onValider: (Personne) -> Unit,
-    onAnnuler: () -> Unit
+    onAnnuler: () -> Unit,
+    onSupprimer: (() -> Unit)? = null
 ) {
     var nom by remember { mutableStateOf(cible?.nom ?: "") }
     var prenoms by remember { mutableStateOf(cible?.prenoms ?: "") }
@@ -153,6 +154,106 @@ fun DialogueEdition(
             TextButton(
                 onClick = { onValider(construire()) },
                 enabled = formulaireValide
+            ) { Text("Enregistrer") }
+        },
+        dismissButton = {
+            Row {
+                if (cible != null && onSupprimer != null) {
+                    TextButton(onClick = onSupprimer) {
+                        Text("Supprimer", color = androidx.compose.ui.graphics.Color(0xFFB23A2E))
+                    }
+                }
+                TextButton(onClick = onAnnuler) { Text("Annuler") }
+            }
+        }
+    )
+}
+
+// ---------------------------------------------------------------- Saisie d'un nouveau mariage
+// Depuis la fiche : cree le bloc Mariage et le conjoint. La verification
+// anti-doublon (nom + prenoms) et la synchronisation avec la fiche existante
+// sont faites par l'appelant (MainActivity.ajouterMariage).
+
+@Composable
+fun DialogueNouveauMariage(
+    onValider: (String, String, String, String, String) -> Unit,
+    onAnnuler: () -> Unit
+) {
+    var nom by remember { mutableStateOf("") }
+    var prenoms by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf("") }
+    var commune by remember { mutableStateOf("") }
+    var dept by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onAnnuler,
+        title = { Text("Saisir un mariage") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    "Si le conjoint existe d\u00E9j\u00E0 dans la base, sa fiche sera synchronis\u00E9e : aucun doublon ne sera cr\u00E9\u00E9.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Champ("Nom du conjoint", nom, { nom = it })
+                Champ("Pr\u00E9noms du conjoint", prenoms, { prenoms = it })
+                Champ("Date du mariage (JJ/MM/AAAA)", date, { date = it })
+                Champ("Commune", commune, { commune = it })
+                Champ("D\u00E9partement (ex 59)", dept, { dept = it })
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onValider(nom.trim(), prenoms.trim(), date.trim(), commune.trim(), dept.trim())
+                },
+                enabled = date.isNotBlank() || commune.isNotBlank() || nom.isNotBlank() || prenoms.isNotBlank()
+            ) { Text("Enregistrer") }
+        },
+        dismissButton = {
+            TextButton(onClick = onAnnuler) { Text("Annuler") }
+        }
+    )
+}
+
+// ---------------------------------------------------------------- Saisie d'un nouvel enfant
+// Depuis la fiche : cree l'enfant et le rattache. Verification anti-doublon
+// et synchronisation par l'appelant (MainActivity.ajouterEnfant).
+
+@Composable
+fun DialogueNouvelEnfant(
+    onValider: (String, String, String, String) -> Unit,
+    onAnnuler: () -> Unit
+) {
+    var nom by remember { mutableStateOf("") }
+    var prenoms by remember { mutableStateOf("") }
+    var sexe by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onAnnuler,
+        title = { Text("Saisir un enfant") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    "Si cet enfant existe d\u00E9j\u00E0 dans la base, sa fiche sera synchronis\u00E9e : aucun doublon ne sera cr\u00E9\u00E9.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Champ("Nom", nom, { nom = it })
+                Champ("Pr\u00E9noms", prenoms, { prenoms = it })
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("Gar\u00E7on") })
+                    FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("Fille") })
+                    FilterChip(selected = sexe.isEmpty(), onClick = { sexe = "" }, label = { Text("?") })
+                }
+                Champ("Naissance (JJ/MM/AAAA ou ann\u00E9e)", date, { date = it })
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onValider(nom.trim(), prenoms.trim(), sexe, date.trim()) },
+                enabled = nom.isNotBlank() || prenoms.isNotBlank()
             ) { Text("Enregistrer") }
         },
         dismissButton = {

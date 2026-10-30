@@ -410,6 +410,114 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         pickerRole = ""
     }
 
+    // Saisie d'un nouveau mariage depuis la fiche : cree/ouvre le bloc
+    // Mariage, renseigne date et lieu, puis rattache le conjoint.
+    // CONTROLE ANTI-DOUBLON : si le nom + pr\u00E9noms matchent une fiche
+    // existante (insensible \u00E0 la casse), elle est synchronis\u00E9e, jamais
+    // recr\u00E9\u00E9e ; si le conjoint est d\u00E9j\u00E0 li\u00E9, rien ne se duplique.
+    fun ajouterMariage(nom: String, prenoms: String, date: String, commune: String, dept: String) {
+        val p = personneParId(personnes, idOuvert) ?: return
+        if (!p.blocsOuverts.contains("mariage")) p.blocsOuverts.add("mariage")
+        if (p.dateMariage.isBlank() && date.isNotBlank()) p.dateMariage = date
+        if (p.lieuMariage.isBlank() && commune.isNotBlank()) p.lieuMariage = commune
+        if (p.deptMariage.isBlank() && dept.isNotBlank()) p.deptMariage = dept
+        val n = nom.trim()
+        val pr = prenoms.trim()
+        if (n.isEmpty() && pr.isEmpty()) {
+            enregistrer()
+            return
+        }
+        val existante = personnes.firstOrNull { q ->
+            q.id != p.id &&
+            q.nom.trim().uppercase() == n.uppercase() &&
+            q.prenoms.trim().uppercase() == pr.uppercase()
+        }
+        val cible: Personne
+        if (existante != null) {
+            if (existante.id == p.conjoint || p.conjointsSupp.contains(existante.id)) {
+                message = "Ce conjoint est d\u00E9j\u00E0 li\u00E9 \u00E0 " + p.titre() + " : fiche synchronis\u00E9e, aucun doublon cr\u00E9\u00E9."
+                enregistrer()
+                return
+            }
+            cible = existante
+        } else {
+            if (personnes.size >= PlafondPersonnes) {
+                message = "Limite de " + PlafondPersonnes.toString() + " personnes atteinte."
+                enregistrer()
+                return
+            }
+            val nouvelle = Personne(
+                id = (personnes.maxOfOrNull { it.id } ?: 0L) + 1L,
+                nom = n,
+                prenoms = pr,
+                sexe = if (p.sexe == "M") "F" else if (p.sexe == "F") "M" else ""
+            )
+            personnes.add(nouvelle)
+            cible = nouvelle
+        }
+        if (p.conjoint == 0L) {
+            p.conjoint = cible.id
+            cible.conjoint = p.id
+        } else {
+            if (!p.conjointsSupp.contains(cible.id)) p.conjointsSupp.add(cible.id)
+            if (!cible.conjointsSupp.contains(p.id)) cible.conjointsSupp.add(p.id)
+        }
+        if (cible.dateMariage.isBlank() && p.dateMariage.isNotBlank()) cible.dateMariage = p.dateMariage
+        if (cible.lieuMariage.isBlank() && p.lieuMariage.isNotBlank()) cible.lieuMariage = p.lieuMariage
+        if (cible.deptMariage.isBlank() && p.deptMariage.isNotBlank()) cible.deptMariage = p.deptMariage
+        enregistrer()
+    }
+
+    // Saisie d'un nouvel enfant depuis la fiche : CONTROLE ANTI-DOUBLON
+    // (nom + pr\u00E9noms, insensible \u00E0 la casse) et synchronisation avec la
+    // fiche existante, sinon cr\u00E9ation et rattachement p\u00E8re/m\u00E8re.
+    fun ajouterEnfant(nom: String, prenoms: String, sexe: String, dateNaissance: String) {
+        val p = personneParId(personnes, idOuvert) ?: return
+        val n = nom.trim()
+        val pr = prenoms.trim()
+        if (n.isEmpty() && pr.isEmpty()) return
+        val existant = personnes.firstOrNull { q ->
+            q.id != p.id &&
+            q.nom.trim().uppercase() == n.uppercase() &&
+            q.prenoms.trim().uppercase() == pr.uppercase()
+        }
+        val enfant: Personne
+        if (existant != null) {
+            if (p.enfants.contains(existant.id)) {
+                message = "Cet enfant est d\u00E9j\u00E0 li\u00E9 \u00E0 " + p.titre() + " : fiche synchronis\u00E9e, aucun doublon cr\u00E9\u00E9."
+                return
+            }
+            enfant = existant
+        } else {
+            if (personnes.size >= PlafondPersonnes) {
+                message = "Limite de " + PlafondPersonnes.toString() + " personnes atteinte."
+                return
+            }
+            enfant = Personne(
+                id = (personnes.maxOfOrNull { it.id } ?: 0L) + 1L,
+                nom = n,
+                prenoms = pr,
+                sexe = sexe
+            )
+            personnes.add(enfant)
+        }
+        if (!p.enfants.contains(enfant.id)) p.enfants.add(enfant.id)
+        if (p.sexe == "F") {
+            if (enfant.mere == 0L) enfant.mere = p.id
+            if (enfant.pere == 0L && p.conjoint != 0L) enfant.pere = p.conjoint
+        } else {
+            if (enfant.pere == 0L) enfant.pere = p.id
+            if (enfant.mere == 0L && p.conjoint != 0L) enfant.mere = p.conjoint
+        }
+        if (enfant.dateNaissance.isBlank() && dateNaissance.isNotBlank()) enfant.dateNaissance = dateNaissance
+        // L'autre parent (conjoint connu) voit aussi l'enfant dans sa fiche.
+        val autre = personneParId(personnes, if (p.sexe == "F") enfant.pere else enfant.mere)
+        if (autre != null && autre.id != p.id && !autre.enfants.contains(enfant.id)) {
+            autre.enfants.add(enfant.id)
+        }
+        enregistrer()
+    }
+
     fun delier(role: String, enfantId: Long) {
         val p = personneParId(personnes, idOuvert) ?: return
         when (role) {
@@ -857,6 +965,12 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             supprimer = { supprimer(it) },
             lier = { role, id -> lier(role, id) },
             delier = { role, id -> delier(role, id) },
+            ajouterMariage = { nom, prenoms, date, commune, dept ->
+                ajouterMariage(nom, prenoms, date, commune, dept)
+            },
+            ajouterEnfant = { nom, prenoms, sexe, date ->
+                ajouterEnfant(nom, prenoms, sexe, date)
+            },
             definirCujus = { cujusPreselec = it; cujusDialogue = true },
             choisirCujus = { cujusPreselec = null; cujusDialogue = true },
             renumeroter = { renumeroter(personnes, it, sosaCujus) },

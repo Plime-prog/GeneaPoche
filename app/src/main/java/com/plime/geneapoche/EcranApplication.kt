@@ -96,6 +96,8 @@ fun EcranApplication(
     supprimer: (Personne) -> Unit,
     lier: (String, Long) -> Unit,
     delier: (String, Long) -> Unit,
+    ajouterMariage: (String, String, String, String, String) -> Unit,
+    ajouterEnfant: (String, String, String, String) -> Unit,
     definirCujus: (Personne) -> Unit,
     choisirCujus: () -> Unit,
     renumeroter: (Long) -> Unit,
@@ -541,6 +543,12 @@ fun EcranApplication(
             onChoisir = { onPickerRole(it) },
             onRetirer = { role, enfantId -> delier(role, enfantId) },
             onDefinirCujus = { definirCujus(p) },
+            onNouveauMariage = { nom, prenoms, date, commune, dept ->
+                ajouterMariage(nom, prenoms, date, commune, dept)
+            },
+            onNouvelEnfant = { nom, prenoms, sexe, date ->
+                ajouterEnfant(nom, prenoms, sexe, date)
+            },
             onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },
             onSupprimerActe = { onSupprimerActe(it) },
             onVoirActe = { onVoirActe(it) },
@@ -566,6 +574,19 @@ fun EcranApplication(
             idNouvelle = prochainId,
             onValider = { p2 ->
                 if (editionCible == null) {
+                    // Contr\u00F4le anti-doublon : une fiche portant d\u00E9j\u00E0 le m\u00EAme
+                    // couple nom + pr\u00E9noms n'est JAMAIS recr\u00E9\u00E9e (insensible \u00E0 la casse).
+                    val doublon = personnes.firstOrNull { q ->
+                        q.nom.trim().uppercase() == p2.nom.trim().uppercase() &&
+                        q.prenoms.trim().uppercase() == p2.prenoms.trim().uppercase()
+                    }
+                    if (doublon != null) {
+                        onMessage(
+                            "Cette personne existe d\u00E9j\u00E0 : " + doublon.titre() +
+                            ". Ouvrez sa fiche pour la compl\u00E9ter (aucun doublon dans la base)."
+                        )
+                        return@DialogueEdition
+                    }
                     if (personnes.size >= PlafondPersonnes) {
                         onMessage("Limite de " + PlafondPersonnes.toString() + " personnes atteinte.")
                     } else {
@@ -579,7 +600,11 @@ fun EcranApplication(
                 enregistrer()
                 onEditionOuverte(false)
             },
-            onAnnuler = { onEditionOuverte(false) }
+            onAnnuler = { onEditionOuverte(false) },
+            onSupprimer = {
+                editionCible?.let { onConfirmSuppression(it) }
+                onEditionOuverte(false)
+            }
         )
     }
 

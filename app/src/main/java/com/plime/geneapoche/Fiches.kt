@@ -10,10 +10,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,9 +23,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -55,6 +59,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -72,6 +77,38 @@ import androidx.compose.ui.window.DialogProperties
 
 val GrisManquant = Color(0xFF9AA099)
 
+// Couleur de la pastille : rose (F), bleu (M), vert p\u00E2le si sexe absent.
+fun couleurPastille(sexe: String): Color = when (sexe) {
+    "F" -> Color(0xFFE9C4D2)
+    "M" -> Color(0xFFBFD4E8)
+    else -> Color(0xFFD9E4D6)
+}
+
+// Pastille ronde au num\u00E9ro (ou initiale), identique \u00E0 la liste Personnes :
+// taille de police adapt\u00E9e aux num\u00E9ros d'Aboville longs.
+@Composable
+fun PastilleNumero(p: Personne, diametre: Int) {
+    val num = p.numeroBrut()
+    val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
+    val vignette = num.ifEmpty { initiale.toString() }
+    Box(
+        Modifier.size(diametre.dp).clip(CircleShape).background(couleurPastille(p.sexe)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            vignette,
+            color = CouleurVertFonce,
+            fontWeight = FontWeight.Bold,
+            fontSize = when {
+                vignette.length <= 3 -> (diametre * 15 / 40).sp
+                vignette.length <= 5 -> (diametre * 12 / 40).sp
+                else -> (diametre * 9 / 40).sp
+            },
+            maxLines = 1
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EcranPersonne(
@@ -86,6 +123,8 @@ fun EcranPersonne(
     onChoisir: (String) -> Unit,
     onRetirer: (String, Long) -> Unit,
     onDefinirCujus: () -> Unit,
+    onNouveauMariage: (String, String, String, String, String) -> Unit,
+    onNouvelEnfant: (String, String, String, String) -> Unit,
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
@@ -95,11 +134,17 @@ fun EcranPersonne(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(p.titre(), fontSize = 18.sp)
-                        val num = p.numeroAffiche()
-                        if (num.isNotEmpty()) {
-                            Text(num, fontSize = 11.sp, color = Color(0xFFD8EBD4))
+                    // M\u00EAme pr\u00E9sentation que la liste : pastille au num\u00E9ro,
+                    // couleur bleu ou rose (vert si sexe absent), nom et pr\u00E9noms.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        PastilleNumero(p = p, diametre = 36)
+                        Spacer(Modifier.width(8.dp))
+                        Column {
+                            Text(p.titre(), fontSize = 17.sp)
+                            val num = p.numeroAffiche()
+                            if (num.isNotEmpty()) {
+                                Text(num, fontSize = 10.sp, color = Color(0xFFD8EBD4))
+                            }
                         }
                     }
                 },
@@ -161,13 +206,16 @@ fun EcranPersonne(
                     )
                 }
             }
-            item {
-                CarteEvenement(
-                    titre = "Mariage",
-                    typeActe = "M",
-                    p = p,
-                    personnes = personnes,
-                    actes = actes.filter { it.personneId == p.id && it.type == "M" },
+            // Par d\u00E9faut : blocs Naissance et D\u00e9c\u00e8s seulement.
+            // Bapt\u00eame, Mariage et S\u00e9pulture s'ajoutent via le bouton BMS.
+            if (p.blocsOuverts.contains("mariage") || p.dateMariage.isNotBlank() || p.heureMariage.isNotBlank() || p.lieuMariage.isNotBlank() || p.conjoint != 0L || p.conjointsSupp.isNotEmpty() || actes.any { it.personneId == p.id && it.type == "M" }) {
+                item {
+                    CarteEvenement(
+                        titre = "Mariage",
+                        typeActe = "M",
+                        p = p,
+                        personnes = personnes,
+                        actes = actes.filter { it.personneId == p.id && it.type == "M" },
                     onModifier = onModifier,
                     onAjouterActe = onAjouterActe,
                     onSupprimerActe = onSupprimerActe,
@@ -175,6 +223,7 @@ fun EcranPersonne(
                     onEnregistrer = enregistrer,
                     ouvrirEtatCivil = ouvrirEtatCivil
                 )
+                }
             }
             item {
                 CarteEvenement(
@@ -208,13 +257,21 @@ fun EcranPersonne(
                     )
                 }
             }
-            if (!p.blocsOuverts.contains("bapteme") || !p.blocsOuverts.contains("sepulture")) {
+            // Bouton BMS : ajoute \u00E0 la demande les blocs Bapt\u00eame, Mariage,
+            // S\u00e9pulture (Naissance et D\u00e9c\u00e8s sont toujours pr\u00e9sents).
+            if (!p.blocsOuverts.contains("bapteme") || !p.blocsOuverts.contains("mariage") || !p.blocsOuverts.contains("sepulture")) {
                 item {
                     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
                         if (!p.blocsOuverts.contains("bapteme")) {
                             OutlinedButton(onClick = { p.blocsOuverts.add("bapteme"); enregistrer() }, Modifier.weight(1f)) {
                                 Icon(Icons.Filled.Add, contentDescription = null)
                                 Text("  Bapt\u00EAme")
+                            }
+                        }
+                        if (!p.blocsOuverts.contains("mariage")) {
+                            OutlinedButton(onClick = { p.blocsOuverts.add("mariage"); enregistrer() }, Modifier.weight(1f)) {
+                                Icon(Icons.Filled.Add, contentDescription = null)
+                                Text("  Mariage")
                             }
                         }
                         if (!p.blocsOuverts.contains("sepulture")) {
@@ -233,7 +290,9 @@ fun EcranPersonne(
                     onOuvrir = onOuvrir,
                     onChoisir = onChoisir,
                     onRetirer = onRetirer,
-                    onDefinirCujus = onDefinirCujus
+                    onDefinirCujus = onDefinirCujus,
+                    onNouveauMariage = onNouveauMariage,
+                    onNouvelEnfant = onNouvelEnfant
                 )
             }
             item { Spacer(Modifier.height(24.dp)) }
@@ -249,20 +308,26 @@ fun EcranPersonne(
 fun CarteIdentite(p: Personne, onModifier: () -> Unit) {
     Card(
         Modifier.fillMaxWidth()
-            .padding(vertical = 5.dp)
+            .padding(vertical = 3.dp)
             .combinedClickable(onClick = {}, onLongClick = onModifier),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, Color(0xFF9CBF9A))
     ) {
-        Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            Text(p.titre(), fontSize = 19.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
-            val num = p.numeroAffiche()
-            if (num.isNotEmpty()) {
-                Text(num, style = MaterialTheme.typography.bodySmall)
-            }
-            LigneG("Profession", p.profession.trim())
-            if (p.sexe == "M" || p.sexe == "F") {
-                LigneG("Sexe", if (p.sexe == "M") "Masculin" else "F\u00E9minin")
+        Row(
+            Modifier.fillMaxWidth().padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            PastilleNumero(p = p, diametre = 40)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(p.titre(), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+                val num = p.numeroAffiche()
+                if (num.isNotEmpty()) {
+                    Text(num, style = MaterialTheme.typography.bodySmall)
+                }
+                if (p.profession.trim().isNotEmpty()) {
+                    Text(p.profession.trim(), style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
     }
@@ -314,10 +379,10 @@ fun ageDansContenu(actes: List<Acte>, prefixe: String): Int? {
 // age a l'acte ou date de naissance deduite a l'annee, deces. Grisee si absente.
 @Composable
 fun LignePersonneG(libelle: String, q: Personne?, anneeActe: Int?, ageActeContenu: Int?) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+    Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
         if (q == null) {
-            Text("\u2014", style = MaterialTheme.typography.bodyMedium, color = GrisManquant)
+            Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
         } else {
             val m = mutableListOf<String>()
             m.add(q.titre())
@@ -332,7 +397,7 @@ fun LignePersonneG(libelle: String, q: Personne?, anneeActe: Int?, ageActeConten
             }
             if (q.lieuNaissance.isNotBlank()) m.add("\u00E0 " + q.lieuNaissance.trim())
             if (q.dateDeces.isNotBlank()) m.add("d\u00E9c\u00E9d\u00E9(e) le " + dateAffichee(q.dateDeces))
-            Text(m.joinToString(", "), style = MaterialTheme.typography.bodyMedium)
+            Text(m.joinToString(", "), style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -340,12 +405,12 @@ fun LignePersonneG(libelle: String, q: Personne?, anneeActe: Int?, ageActeConten
 // Ligne toujours affichee : valeur ou em-dash gris si manquante.
 @Composable
 fun LigneG(libelle: String, valeur: String) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+    Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
         if (valeur.isBlank()) {
-            Text("\u2014", style = MaterialTheme.typography.bodyMedium, color = GrisManquant)
+            Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
         } else {
-            Text(valeur, style = MaterialTheme.typography.bodyMedium)
+            Text(valeur, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -373,15 +438,15 @@ fun CarteEvenement(
 
     Card(
         Modifier.fillMaxWidth()
-            .padding(vertical = 5.dp)
+            .padding(vertical = 3.dp)
             .combinedClickable(onClick = {}, onLongClick = onModifier),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, Color(0xFF9CBF9A))
     ) {
-        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+        Column(Modifier.fillMaxWidth().padding(8.dp)) {
             // Entete : titre + icone photo d'acte + icone recherche Internet (AD).
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 AjoutActeIcone(typeActe, onAjouterActe)
                 val numDept = dp.toIntOrNull() ?: numeroDepartement(l) ?: numeroDepartement(dp)
                 IconButton(
@@ -404,9 +469,9 @@ fun CarteEvenement(
                     .maxByOrNull { it.creation }?.reference?.trim() ?: ""
             )
 
-            // Peres et meres (naissance et deces) : fiche liee si elle existe,
+            // Peres et meres (naissance uniquement) : fiche liee si elle existe,
             // sinon age/deduction depuis la transcription de l'acte.
-            if (typeActe == "N" || typeActe == "D") {
+            if (typeActe == "N") {
                 LignePersonneG(
                     libelle = "P\u00E8re",
                     q = personneParId(personnes, p.pere),
@@ -613,21 +678,25 @@ fun CarteFamille(
     onOuvrir: (Long) -> Unit,
     onChoisir: (String) -> Unit,
     onRetirer: (String, Long) -> Unit,
-    onDefinirCujus: () -> Unit
+    onDefinirCujus: () -> Unit,
+    onNouveauMariage: (String, String, String, String, String) -> Unit,
+    onNouvelEnfant: (String, String, String, String) -> Unit
 ) {
+    var mariageOuvert by remember { mutableStateOf(false) }
+    var enfantOuvert by remember { mutableStateOf(false) }
+
     Card(
-        Modifier.fillMaxWidth().padding(vertical = 5.dp),
+        Modifier.fillMaxWidth().padding(vertical = 3.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, Color(0xFF9CBF9A))
     ) {
-        Column(Modifier.fillMaxWidth().padding(12.dp)) {
+        Column(Modifier.fillMaxWidth().padding(8.dp)) {
             Text("Famille", fontWeight = FontWeight.Bold)
             if (p.sosa.trim() != "1") {
-                OutlinedButton(onClick = onDefinirCujus, Modifier.padding(top = 4.dp)) {
+                OutlinedButton(onClick = onDefinirCujus, Modifier.padding(top = 2.dp)) {
                     Text("D\u00E9finir comme de cujus")
                 }
             }
-            Spacer(Modifier.height(6.dp))
 
             LienParent(
                 libelle = "P\u00E8re",
@@ -663,12 +732,18 @@ fun CarteFamille(
                     onRetirer = { onRetirer("conjointsupp", idC) }
                 )
             }
-            OutlinedButton(onClick = { onChoisir("conjointsupp") }, Modifier.padding(top = 4.dp)) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Text("  Ajouter un autre conjoint")
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                OutlinedButton(onClick = { onChoisir("conjointsupp") }, Modifier.weight(1f)) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Text("  Choisir un conjoint")
+                }
+                OutlinedButton(onClick = { mariageOuvert = true }, Modifier.weight(1f)) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Text("  Saisir un mariage")
+                }
             }
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             Text("Enfants (" + p.enfants.size.toString() + ")", fontWeight = FontWeight.Bold)
             if (p.enfants.isEmpty()) {
                 Text("Aucun enfant renseign\u00E9.", style = MaterialTheme.typography.bodySmall)
@@ -677,24 +752,54 @@ fun CarteFamille(
                 val e = personneParId(personnes, idEnfant)
                 val nomEnfant = e?.titre() ?: "(fiche supprim\u00E9e)"
                 Row(
-                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    Modifier.fillMaxWidth().padding(vertical = 1.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         nomEnfant,
                         Modifier.weight(1f).combinedClickable(onClick = { if (e != null) onOuvrir(idEnfant) }, onLongClick = {}),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodySmall
                     )
-                    IconButton(onClick = { onRetirer("enfant", idEnfant) }) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer")
+                    IconButton(onClick = { onRetirer("enfant", idEnfant) }, Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.Close, contentDescription = "Retirer", Modifier.size(14.dp))
                     }
                 }
             }
-            OutlinedButton(onClick = { onChoisir("enfant") }, Modifier.padding(top = 4.dp)) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Text("  Ajouter un enfant")
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                OutlinedButton(onClick = { onChoisir("enfant") }, Modifier.weight(1f)) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Text("  Choisir un enfant")
+                }
+                OutlinedButton(onClick = { enfantOuvert = true }, Modifier.weight(1f)) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Text("  Saisir un enfant")
+                }
             }
         }
+    }
+
+    // Saisie d'un nouveau mariage : cr\u00e9e le bloc, v\u00e9rifie que le conjoint
+    // n'existe pas d\u00e9j\u00e0, synchronise avec sa fiche (aucun doublon).
+    if (mariageOuvert) {
+        DialogueNouveauMariage(
+            onValider = { nom, prenoms, date, commune, dept ->
+                onNouveauMariage(nom, prenoms, date, commune, dept)
+                mariageOuvert = false
+            },
+            onAnnuler = { mariageOuvert = false }
+        )
+    }
+
+    // Saisie d'un nouvel enfant : m\u00eame principe, v\u00e9rification anti-doublon
+    // et synchronisation avec la fiche existante.
+    if (enfantOuvert) {
+        DialogueNouvelEnfant(
+            onValider = { nom, prenoms, sexe, date ->
+                onNouvelEnfant(nom, prenoms, sexe, date)
+                enfantOuvert = false
+            },
+            onAnnuler = { enfantOuvert = false }
+        )
     }
 }
 
@@ -710,20 +815,20 @@ fun LienParent(
 ) {
     val q = personneParId(personnes, cible)
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        Modifier.fillMaxWidth().padding(vertical = 1.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
         if (q == null) {
             OutlinedButton(onClick = onChoisir) { Text("Choisir") }
         } else {
             Text(
                 q.titre(),
                 Modifier.weight(1f).combinedClickable(onClick = { onOuvrir(cible) }, onLongClick = {}),
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodySmall
             )
-            IconButton(onClick = onRetirer) {
-                Icon(Icons.Filled.Close, contentDescription = "Retirer")
+            IconButton(onClick = onRetirer, Modifier.size(28.dp)) {
+                Icon(Icons.Filled.Close, contentDescription = "Retirer", Modifier.size(14.dp))
             }
         }
     }
