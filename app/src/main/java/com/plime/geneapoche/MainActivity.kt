@@ -1166,8 +1166,21 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             mutableStateOf((choixCujus?.sosa?.trim()?.toLongOrNull() ?: sosaCujus).toString())
         }
         val numValide = (numCujus.trim().toLongOrNull() ?: 0L) >= 1L
+        // Synchronisation instantanee : des la saisie du numero ou le choix
+        // de la personne, toute la numerotation est recalculee en direct ;
+        // Annuler restaure la numerotation precedente.
+        val numSaisi = numCujus.trim().toLongOrNull() ?: 0L
+        LaunchedEffect(choixCujus?.id, numSaisi) {
+            val c = choixCujus
+            if (c != null && numSaisi >= 1L) renumeroter(personnes, c.id, numSaisi)
+        }
+        fun annulerCujus() {
+            val idOrigine = idDuCujus()
+            if (idOrigine != 0L) renumeroter(personnes, idOrigine, sosaCujus)
+            cujusDialogue = false
+        }
         AlertDialog(
-            onDismissRequest = { cujusDialogue = false },
+            onDismissRequest = { annulerCujus() },
             title = { Text("De cujus") },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
@@ -1202,7 +1215,10 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                                     )
                                     .padding(horizontal = 8.dp, vertical = 6.dp)
                             ) {
-                                Text(cand.titre(), style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    cand.titre() + (if (cand.numeroBrut().isNotEmpty()) "  \u00B7  " + cand.numeroBrut() else ""),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
                             }
                         }
                     }
@@ -1230,7 +1246,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 ) { Text("D\u00E9finir") }
             },
             dismissButton = {
-                TextButton(onClick = { cujusDialogue = false }) { Text("Annuler") }
+                TextButton(onClick = { annulerCujus() }) { Text("Annuler") }
             }
         )
     }

@@ -271,7 +271,7 @@ fun EcranPersonne(
                                     onVoirActe = onVoirActe,
                                     onEnregistrer = enregistrer,
                                     ouvrirEtatCivil = ouvrirEtatCivil,
-                                    modifier = Modifier.padding(start = 10.dp)
+                                    modifier = Modifier
                                 )
                             }
                         }
@@ -617,7 +617,12 @@ fun CarteEvenement(
     val anneeActe = anneeDe(d)
     val numDept = dp.toIntOrNull() ?: numeroDepartement(dp) ?: numeroDepartement(l)
 
-    Column(modifier.fillMaxWidth().padding(top = 2.dp, bottom = 6.dp)) {
+    Card(
+        modifier.fillMaxWidth().padding(top = 2.dp, bottom = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
+    ) {
+    Column(Modifier.fillMaxWidth().padding(8.dp)) {
         // Entete : titre + edition du bloc + photo d'acte + recherche AD.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -839,6 +844,7 @@ fun CarteEvenement(
                 )
             }
         }
+    }
     }
 }
 
