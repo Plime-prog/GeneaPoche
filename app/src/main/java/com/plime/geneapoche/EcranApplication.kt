@@ -707,7 +707,9 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         ) {
             // Vignette : rond au numero Sosa ou d'Aboville, calcule
             // automatiquement a partir du de cujus (jamais saisi).
-            val num = p.numeroAffiche().replace("Sosa ", "").replace("Lat\u00E9ral ", "")
+            // Numero brut (plus d'etiquette "Lat\u00E9ral"), taille adaptee
+            // aux numeros d'Aboville longs pour ne jamais deborder du rond.
+            val num = p.numeroBrut()
             val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
             val vignette = num.ifEmpty { initiale.toString() }
             val couleurAvatar = when (p.sexe) {
@@ -723,7 +725,12 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
                     vignette,
                     color = CouleurVertFonce,
                     fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleSmall
+                    fontSize = when {
+                        vignette.length <= 3 -> 15.sp
+                        vignette.length <= 5 -> 12.sp
+                        else -> 9.sp
+                    },
+                    maxLines = 1
                 )
             }
             Spacer(Modifier.width(10.dp))

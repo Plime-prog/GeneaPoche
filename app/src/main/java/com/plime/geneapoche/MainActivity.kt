@@ -174,7 +174,8 @@ fun anneeNaissance(p: Personne): Int =
 // Sosa (pere = 2n, mere = 2n+1) remontee en largeur, puis d'Aboville en descendant
 // (enfant k du porteur "x" = "x.k"). Les personnes non atteignables perdent leur num\u00E9ro.
 // Numerotation complete a partir du de cujus, dont le n Sosa n'est pas forcement 1 :
-// pere = 2n, mere = 2n+1, descendants en d'Aboville (pref = n du cujus).
+// pere = 2n, mere = 2n+1 (Sosa-Stradonitz), puis d'Aboville pour TOUS les
+// enfants non Sosa de toute personne numerotee (prefixe du parent + .rang).
 fun renumeroter(personnes: MutableList<Personne>, cujusId: Long, sosaDeBase: Long = 1L) {
     personnes.forEach { it.sosa = ""; it.lateral = "" }
     val cujus = personneParId(personnes, cujusId) ?: return
@@ -196,18 +197,23 @@ fun renumeroter(personnes: MutableList<Personne>, cujusId: Long, sosaDeBase: Lon
             attente.addLast(pm.id)
         }
     }
-    val descendants = ArrayDeque<Pair<Long, String>>()
-    descendants.addLast(cujus.id to sosaDeBase.toString())
-    while (descendants.isNotEmpty()) {
-        val (id, pref) = descendants.removeFirst()
+    // Enfants lateraux de TOUTE personne numerotee (Sosa ou d'Aboville) :
+    // freres, soeurs, oncles, tantes, cousins... d'Aboville :
+    // "prefixe du parent + .rang de naissance" ; un enfant deja Sosa garde
+    // son Sosa (il occupe son rang dans la fratrie). Ainsi TOUT
+    // rattachement (pere, mere, enfant) met les numeros a jour immediatement
+    // via enregistrer() -> renumeroter(), sans affectation manuelle.
+    val fileLat = ArrayDeque<Pair<Long, String>>()
+    personnes.filter { it.sosa.isNotEmpty() }.forEach { fileLat.addLast(it.id to it.sosa.trim()) }
+    personnes.filter { it.lateral.isNotEmpty() }.forEach { fileLat.addLast(it.id to it.lateral.trim()) }
+    while (fileLat.isNotEmpty()) {
+        val (id, pref) = fileLat.removeFirst()
         val p = personneParId(personnes, id) ?: continue
-        var k = 0
         p.enfants.forEach { idE ->
             val e = personneParId(personnes, idE) ?: return@forEach
             if (e.sosa.isEmpty() && e.lateral.isEmpty()) {
-                k += 1
-                e.lateral = pref + "." + k.toString()
-                descendants.addLast(e.id to e.lateral)
+                e.lateral = pref + "." + (p.enfants.indexOf(idE) + 1).toString()
+                fileLat.addLast(e.id to e.lateral)
             }
         }
     }
@@ -372,20 +378,11 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         val p = personneParId(personnes, idOuvert) ?: return
         val cible = personneParId(personnes, cibleId) ?: return
         when (role) {
-            "pere" -> {
-                p.pere = cibleId
-                if (cible.sosa.isBlank() && cible.lateral.isBlank()) {
-                    val s = sosaParent(p, false)
-                    if (s.isNotEmpty()) cible.sosa = s
-                }
-            }
-            "mere" -> {
-                p.mere = cibleId
-                if (cible.sosa.isBlank() && cible.lateral.isBlank()) {
-                    val s = sosaParent(p, true)
-                    if (s.isNotEmpty()) cible.sosa = s
-                }
-            }
+            // Aucun numero n'est affecte a la main ici : la numerotation
+            // Sosa / d'Aboville est recalculee en entier par enregistrer()
+            // -> renumeroter() (sources uniques, mise a jour immediate).
+            "pere" -> p.pere = cibleId
+            "mere" -> p.mere = cibleId
             "conjoint" -> {
                 p.conjoint = cibleId
                 cible.conjoint = p.id
@@ -406,12 +403,6 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 } else {
                     if (cible.pere == 0L) cible.pere = p.id
                     if (cible.mere == 0L && p.conjoint != 0L) cible.mere = p.conjoint
-                }
-                if (cible.sosa.isBlank() && cible.lateral.isBlank()) {
-                    val pref = prefixeLateral(p)
-                    if (pref.isNotEmpty()) {
-                        cible.lateral = pref + "." + p.enfants.size.toString()
-                    }
                 }
             }
         }

@@ -61,14 +61,19 @@ data class Personne(
             .joinToString(" ")
     }
 
+    // Numero affichable : "Sosa 12" ou d'Aboville brut ("7.2"), sans etiquette.
+    // Aucun accent ici : sequence d'echappement ou ASCII seul, pour un UTF-8 fiable.
     fun numeroAffiche(): String {
         val s = sosa.trim()
         if (s.isNotEmpty()) return "Sosa " + s
-        val l = lateral.trim()
-        if (l.isNotEmpty()) return "LatÃ©ral " + l
-        return ""
+        return lateral.trim()
     }
 
+    fun numeroBrut(): String {
+        val s = sosa.trim()
+        if (s.isNotEmpty()) return s
+        return lateral.trim()
+    }
     fun aVerifier(): Boolean {
         return etatIdentite == "rouge" || etatNaissance == "rouge" ||
             etatBapteme == "rouge" || etatMariage == "rouge" ||
