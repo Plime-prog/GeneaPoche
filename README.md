@@ -109,6 +109,11 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 - **Un bloc par enfant = la fiche résumée de l'enfant** : pastille au numéro, nom, « N. … à commune (département) », « D. … » ; toucher ouvre sa fiche, croix pour le détacher.
 - Chaque validation conserve **numéro, synchronisation, cohérence et anti-doublon**.
 
+## Cujus instantané et blocs dédiés (v0.22)
+
+- **De cujus à synchronisation instantanée** : dans le dialogue GEDCOM → « Définir le de cujus », **le numéro Sosa de chaque personne se recalcule en direct** pendant la saisie du numéro ou le choix de la personne ; Annuler restaure la numérotation précédente ; le numéro actuel de chaque personne est affiché dans la liste de choix.
+- **Un encadré par événement ouvert** : dans la frise, toucher une ligne (N., B., M., D., S.) fait apparaître **son propre encadré dédié** — père, mère, conjoint, référence (côte AD), témoins et signataires, photo de l'acte et lien vers les archives départementales n'y apparaissent **que dans ce bloc**, jamais ailleurs sur la fiche. Refermé, il ne reste que la ligne essentielle.
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -158,3 +163,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 19. \u2705 v0.19 : fiche refondue \u2014 pastille et titre comme la liste, blocs N/D par d\u00E9faut + bouton BMS, naissance avec parents et d\u00E9c\u00E8s sans, saisie mariage/enfant anti-doublon avec synchronisation, boutons Supprimer/Annuler/Enregistrer.
 20. ✅ v0.20 : fiche personne v2 — cartouche identité avec parents (N./D.), frise chronologique (N/D par défaut, BMS), édition par bloc avec dialogue dédié, témoins choisis/créés sans doublon avec coche de signature, date+heure sur une ligne, commune avec département accolé.
 21. ✅ v0.21 : frise légère (essentiel N/D par ligne, crayon d'édition par ligne), cartouche sans cujus, polices de boutons réduites, boutons Enfant dans la frise, bloc-fiche par enfant.
+22. ✅ v0.22 : de cujus à numérotation recalculée en direct (avec restauration sur Annuler), numéro affiché dans la liste de choix, chaque événement ouvert dans son propre encadré dédié.
