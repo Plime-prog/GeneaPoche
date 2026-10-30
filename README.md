@@ -89,6 +89,17 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 - **Saisir un mariage / Saisir un enfant** depuis la carte Famille : contr\u00F4le **anti-doublon** (nom + pr\u00E9noms, insensible \u00E0 la casse), **synchronisation avec la fiche existante** au lieu d'une cr\u00E9ation, autres mariages et enfants illimit\u00E9s ; idem pour la cr\u00E9ation d'une personne.
 - **Boutons Supprimer, Annuler, Enregistrer** dans le dialogue d'\u00E9dition.
 
+## Fiche personne v2 (v0.20)
+
+- **Cartouche identité** : pastille au numéro (bleu/rose, vert si sexe absent), nom et prénoms, profession ; **rappel du père et de la mère avec leurs dates N. et D.** (cliquables) ; plus de « Sosa x » redondant ; « Définir comme de cujus » si besoin.
+- **Frise chronologique de haut en bas** : tous les événements triés par année, **N et D par défaut** ; toucher un événement ouvre/ferme son bloc ; bouton **BMS** pour Baptême, Mariage, Sépulture.
+- **Édition par bloc uniquement** (plus de crayon global) : icône crayon dans chaque bloc → date, heure, commune, département, référence (côte AD) ; boutons Enregistrer / Annuler.
+- **Date et heure sur la même ligne**, « Commune » avec le **numéro de département accolé** (ex : Roubaix (59)).
+- **Naissance : parents choisis** parmi les fiches existantes ou créés (anti-doublon, synchronisation) ; **coche « Signe »** derrière le père.
+- **Mariage** : conjoint + autres conjoints + enfants, chacun **choisi dans la base ou créé** (aucun doublon).
+- **Témoins** : aucun par défaut ; on saisit le nom, les **fiches existantes correspondantes sont proposées d'abord**, la création n'est proposée que si personne ne correspond ; **coche de signature** derrière chaque témoin.
+- **Chaque validation resynchronise tout** : numéros Sosa/d'Aboville, contrôle de cohérence, journal de recherches.
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -136,3 +147,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 17. \u2705 v0.17 : sources Heredis (c\u00F4te REFN, enregistrements SOUR avec transcription), lieux PLAC normalis\u00E9s \u00AB commune, num\u00E9ro, d\u00E9partement \u00BB, contr\u00F4le de coh\u00E9rence (encadr\u00E9 anomalies dans le journal).
 18. \u2705 v0.18 : num\u00E9rotation imm\u00E9diate (d'Aboville pour tous les enfants non-Sosa), pastille corrig\u00E9e, suppression de l'\u00E9tiquette \u00AB Lat\u00E9ral \u00BB, encodage UTF-8 v\u00E9rifi\u00E9 sur toute l'application.
 19. \u2705 v0.19 : fiche refondue \u2014 pastille et titre comme la liste, blocs N/D par d\u00E9faut + bouton BMS, naissance avec parents et d\u00E9c\u00E8s sans, saisie mariage/enfant anti-doublon avec synchronisation, boutons Supprimer/Annuler/Enregistrer.
+20. ✅ v0.20 : fiche personne v2 — cartouche identité avec parents (N./D.), frise chronologique (N/D par défaut, BMS), édition par bloc avec dialogue dédié, témoins choisis/créés sans doublon avec coche de signature, date+heure sur une ligne, commune avec département accolé.
