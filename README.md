@@ -132,6 +132,14 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 - **Numérotation corrigée** : le recalcul Sosa/d'Aboville suit désormais à coup sûr chaque changement de de cujus (graines latérales par n° Sosa croissant, rang de fratrie par année de naissance), avec rafraîchissement en direct dans le dialogue.
 - **Fiche : 5 boutons fixes en bas** avec icônes (Baptême, Mariage, Sépulture / Enfant, Événement), toujours visibles, texte sur une seule ligne — plus jamais de libellé replié ou trop petit.
 
+## Règle des 100 ans, journal priorisé et coches de validation (v0.25)
+
+- **Règle des 100 ans** : la notion de décès ou de sépulture ne s'affiche nulle part (frise, boutons, blocs, fiche des enfants, liste, arbre, journal) tant que la personne ne peut pas avoir plus de 100 ans à la date du jour — sauf si son décès est déjà renseigné (date, lieu ou acte).
+- **Journal priorisé, règle des 75 ans** : seules les recherches dont l'événement visé est survenu **il y a plus de 75 ans** (actes librement communicables) sont affichées, **de la plus récente à la plus ancienne**, **10 au maximum** ; les événements sans estimation d'année restent visibles en fin de liste.
+- **Numéro d'Aboville partout dans le journal** : la pastille de chaque recherche porte le n° d'Aboville (ou Sosa) de la personne concernée, rappelé également sur le lien vers sa fiche — fini la numérotation interne.
+- **Arbre relié et centré façon généalogique** : grands-parents (4 cases), parents, couple central uni par une barre de mariage, enfants centrés sous le couple — le tout **relié par des lignes de parenté** et centré sur la personne choisie.
+- **Coche « validé » sur chaque acte et information** : dans chaque bloc d'événement et sur l'identité, une coche permet de valider ou non les données ; **une coche négative crée automatiquement une recherche dans le journal**, une coche positive l'archive.
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -184,3 +192,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 22. ✅ v0.22 : de cujus à numérotation recalculée en direct (avec restauration sur Annuler), numéro affiché dans la liste de choix, chaque événement ouvert dans son propre encadré dédié.
 23. ✅ v0.23 : formats uniques jj/mm/aaaa + hh:mm (ou année aaaa) contrôlés partout, dialogue d'édition du de cujus, cartouche réduit sans édition, frise repliée à l'ouverture sans crayons de ligne, 4 boutons B/M/S/Enfant + menu ajouter un enfant.
 24. ✅ v0.24 : menus de navigation toujours visibles, tri Aboville croissant dans Personnes, frise à ordre fixe N/M/D, convertisseur calendrier républicain→grégorien, noms en majuscules et prénoms normalisés, numérotation qui suit le de cujus, 5 boutons fixes à icônes en bas de fiche.
+25. ✅ v0.25 : règle des 100 ans (décès/sépulture masqués si la personne peut avoir moins de 100 ans), journal limité aux événements de plus de 75 ans (10 max, du plus récent au plus ancien) avec n° d'Aboville en pastille, arbre relié par des lignes et centré façon généalogique, coche de validation par acte/information reportée au journal.
