@@ -75,6 +75,12 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'Ã
 - **Lieux normalis\u00E9s** : `PLAC` au format \u00AB commune, num\u00E9ro, d\u00E9partement \u00BB (ex : Roubaix, 59, Nord), le num\u00E9ro \u00E9tant d\u00E9duit du champ d\u00E9partement, du lieu ou du nom de d\u00E9partement.
 - **Contr\u00F4le de coh\u00E9rence** : encadr\u00E9 orange en t\u00EAte du journal signalant les incoh\u00E9rences d'ann\u00E9es (d\u00E9c\u00E8s ou mariage avant naissance, \u00E2ge au d\u00E9c\u00E8s > 110 ans, p\u00E8re > 80 ans ou d\u00E9c\u00E9d\u00E9 avant la naissance, m\u00E8re < 13 ou > 55 ans, conjoint mari\u00E9 avant sa naissance).
 
+## Num\u00E9rotation et affichage (v0.18)
+
+- **Num\u00E9rotation imm\u00E9diate et compl\u00E8te** : plus aucun num\u00E9ro n'est affect\u00E9 \u00E0 la main ; Sosa-Stradonitz (p\u00E8re = 2n, m\u00E8re = 2n+1) puis d'Aboville pour **tous les enfants non-Sosa de toute personne num\u00E9rot\u00E9e** (fr\u00E8res, s\u0153urs, oncles, tantes, cousins : pr\u00E9fixe du parent + .rang de naissance). Tout rattachement (p\u00E8re, m\u00E8re, enfant) met tous les num\u00E9ros \u00E0 jour imm\u00E9diatement.
+- **Pastille corrig\u00E9e** : le rond affiche le num\u00E9ro brut (plus d'\u00E9tiquette \u00AB Lat\u00E9ral \u00BB), avec une taille de police adapt\u00E9e aux num\u00E9ros d'Aboville longs.
+- **Encodage UTF-8 robuste** : tout le code est ASCII pur (accents en s\u00E9quences d'\u00E9chappement \u00E9chap\u00E9es) \u2014 plus aucun \u00E9 mojibake possible.
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -120,3 +126,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'Ã
 15. \u2705 v0.15 : fiche par blocs complets (parents, t\u00E9moins, \u00E2ges), infos manquantes gris\u00E9es, ic\u00F4nes photo/AD, journal sans validation (archivage automatique).
 16. \u2705 v0.16 : journal exhaustif \u2014 une recherche par information manquante, regroupement par personne avec compteurs.
 17. \u2705 v0.17 : sources Heredis (c\u00F4te REFN, enregistrements SOUR avec transcription), lieux PLAC normalis\u00E9s \u00AB commune, num\u00E9ro, d\u00E9partement \u00BB, contr\u00F4le de coh\u00E9rence (encadr\u00E9 anomalies dans le journal).
+18. \u2705 v0.18 : num\u00E9rotation imm\u00E9diate (d'Aboville pour tous les enfants non-Sosa), pastille corrig\u00E9e, suppression de l'\u00E9tiquette \u00AB Lat\u00E9ral \u00BB, encodage UTF-8 v\u00E9rifi\u00E9 sur toute l'application.
