@@ -199,7 +199,7 @@ fun DialogueNouveauMariage(
                 )
                 Champ("Nom du conjoint", nom, { nom = it })
                 Champ("Pr\u00E9noms du conjoint", prenoms, { prenoms = it })
-                Champ("Date du mariage (JJ/MM/AAAA)", date, { date = it })
+                Champ("Date du mariage (jj/mm/aaaa ou aaaa)", date, { date = it }, !dateValide(date), "jj/mm/aaaa ou aaaa")
                 Champ("Commune", commune, { commune = it })
                 Champ("D\u00E9partement (ex 59)", dept, { dept = it })
             }
@@ -209,7 +209,7 @@ fun DialogueNouveauMariage(
                 onClick = {
                     onValider(nom.trim(), prenoms.trim(), date.trim(), commune.trim(), dept.trim())
                 },
-                enabled = date.isNotBlank() || commune.isNotBlank() || nom.isNotBlank() || prenoms.isNotBlank()
+                enabled = (date.isNotBlank() || commune.isNotBlank() || nom.isNotBlank() || prenoms.isNotBlank()) && dateValide(date)
             ) { Text("Enregistrer") }
         },
         dismissButton = {
@@ -249,13 +249,13 @@ fun DialogueNouvelEnfant(
                     FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("Fille") })
                     FilterChip(selected = sexe.isEmpty(), onClick = { sexe = "" }, label = { Text("?") })
                 }
-                Champ("Naissance (JJ/MM/AAAA ou ann\u00E9e)", date, { date = it })
+                Champ("Naissance (jj/mm/aaaa ou aaaa)", date, { date = it }, !dateValide(date), "jj/mm/aaaa ou aaaa")
             }
         },
         confirmButton = {
             TextButton(
                 onClick = { onValider(nom.trim(), prenoms.trim(), sexe, date.trim()) },
-                enabled = nom.isNotBlank() || prenoms.isNotBlank()
+                enabled = (nom.isNotBlank() || prenoms.isNotBlank()) && dateValide(date)
             ) { Text("Enregistrer") }
         },
         dismissButton = {
@@ -315,15 +315,19 @@ fun DialogueEditionBloc(
                     OutlinedTextField(
                         value = date,
                         onValueChange = { date = it },
-                        label = { Text("Date (jj/mm/aaaa)") },
+                        label = { Text("Date (jj/mm/aaaa ou aaaa)") },
+                        isError = !dateValide(date),
                         singleLine = true,
+                        supportingText = { Text("jj/mm/aaaa ou aaaa", style = MaterialTheme.typography.bodySmall) },
                         modifier = Modifier.weight(1f)
                     )
                     OutlinedTextField(
                         value = heure,
                         onValueChange = { heure = it },
                         label = { Text("Heure (hh:mm)") },
+                        isError = !heureValide(heure),
                         singleLine = true,
+                        supportingText = { Text("hh:mm", style = MaterialTheme.typography.bodySmall) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -336,7 +340,8 @@ fun DialogueEditionBloc(
             TextButton(
                 onClick = {
                     onValider(date.trim(), heure.trim(), commune.trim(), dept.trim(), ref.trim())
-                }
+                },
+                enabled = dateValide(date) && heureValide(heure)
             ) { Text("Enregistrer") }
         },
         dismissButton = {

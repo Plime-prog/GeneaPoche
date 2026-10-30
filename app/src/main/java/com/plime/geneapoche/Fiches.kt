@@ -146,11 +146,12 @@ fun EcranPersonne(
     ouvrirEtatCivil: (String, Int?, String, String) -> Unit
 ) {
     // Blocs ouverts sur la frise : N et D par defaut.
-    var ouverts by remember { mutableStateOf(setOf("N", "D")) }
+    var ouverts by remember { mutableStateOf(setOf<String>()) }
     // Dialogues : edition d'un bloc, mariage, enfant, parent, temoin.
     var blocEdite by remember { mutableStateOf<String?>(null) }
     var mariageOuvert by remember { mutableStateOf(false) }
     var enfantOuvert by remember { mutableStateOf(false) }
+    var menuEnfant by remember { mutableStateOf(false) }
     var parentRole by remember { mutableStateOf("") }
     var temoinType by remember { mutableStateOf("") }
 
@@ -193,6 +194,9 @@ fun EcranPersonne(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onModifier) {
+                        Icon(Icons.Filled.Create, contentDescription = "Modifier")
+                    }
                     IconButton(onClick = onSupprimer) {
                         Icon(Icons.Filled.Delete, contentDescription = "Supprimer")
                     }
@@ -207,7 +211,6 @@ fun EcranPersonne(
                 CarteIdentite(
                     p = p,
                     personnes = personnes,
-                    onModifier = onModifier,
                     onOuvrir = onOuvrir,
                 )
             }
@@ -246,9 +249,6 @@ fun EcranPersonne(
                                     fontWeight = FontWeight.Medium,
                                     color = if (morceaux.isEmpty()) GrisManquant else Color.Unspecified
                                 )
-                                IconButton(onClick = { blocEdite = t }, Modifier.size(28.dp)) {
-                                    Icon(Icons.Filled.Create, contentDescription = "Modifier", Modifier.size(14.dp))
-                                }
                             }
                             if (ouverts.contains(t)) {
                                 CarteEvenement(
@@ -273,40 +273,6 @@ fun EcranPersonne(
                                     ouvrirEtatCivil = ouvrirEtatCivil,
                                     modifier = Modifier
                                 )
-                            }
-                        }
-                        // Boutons BMS : ouvrent les blocs Bapt\u00EAme, Mariage, S\u00E9pulture.
-                        if (!p.blocsOuverts.contains("bapteme") || !p.blocsOuverts.contains("mariage") || !p.blocsOuverts.contains("sepulture")) {
-                            Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
-                                if (!p.blocsOuverts.contains("bapteme")) {
-                                    OutlinedButton(onClick = { p.blocsOuverts.add("bapteme"); enregistrer() }, Modifier.weight(1f)) {
-                                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
-                                        Text("  Bapt\u00EAme", fontSize = 10.sp)
-                                    }
-                                }
-                                if (!p.blocsOuverts.contains("mariage")) {
-                                    OutlinedButton(onClick = { p.blocsOuverts.add("mariage"); enregistrer() }, Modifier.weight(1f)) {
-                                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
-                                        Text("  Mariage", fontSize = 10.sp)
-                                    }
-                                }
-                                if (!p.blocsOuverts.contains("sepulture")) {
-                                    OutlinedButton(onClick = { p.blocsOuverts.add("sepulture"); enregistrer() }, Modifier.weight(1f)) {
-                                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
-                                        Text("  S\u00E9pulture", fontSize = 10.sp)
-                                    }
-                                }
-                            }
-                        }
-                        // Enfants : bouton manquant en v0.20, present ici.
-                        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                            OutlinedButton(onClick = { onChoisir("enfant") }, Modifier.weight(1f)) {
-                                Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
-                                Text("  Choisir un enfant", fontSize = 10.sp)
-                            }
-                            OutlinedButton(onClick = { enfantOuvert = true }, Modifier.weight(1f)) {
-                                Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
-                                Text("  Saisir un enfant", fontSize = 10.sp)
                             }
                         }
                         // Un bloc par enfant : en r\u00E9alit\u00E9 la fiche r\u00E9sum\u00E9e de l'enfant
@@ -360,6 +326,25 @@ fun EcranPersonne(
                                 }
                             }
                         }
+                    }
+                }
+                // Quatre boutons toujours visibles sous la frise : B, M, S, enfant.
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    OutlinedButton(onClick = { p.blocsOuverts.add("bapteme"); enregistrer() }, Modifier.weight(1f)) {
+                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
+                        Text("Bapt\u00EAme", fontSize = 10.sp)
+                    }
+                    OutlinedButton(onClick = { p.blocsOuverts.add("mariage"); enregistrer() }, Modifier.weight(1f)) {
+                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
+                        Text("Mariage", fontSize = 10.sp)
+                    }
+                    OutlinedButton(onClick = { p.blocsOuverts.add("sepulture"); enregistrer() }, Modifier.weight(1f)) {
+                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
+                        Text("S\u00E9pulture", fontSize = 10.sp)
+                    }
+                    OutlinedButton(onClick = { menuEnfant = true }, Modifier.weight(1f)) {
+                        Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(14.dp))
+                        Text("Enfant", fontSize = 10.sp)
                     }
                 }
             }
@@ -433,6 +418,33 @@ fun EcranPersonne(
             onAnnuler = { temoinType = "" }
         )
     }
+
+    // Menu d'ajout d'un enfant : choisir une fiche existante ou saisir.
+    if (menuEnfant) {
+        AlertDialog(
+            onDismissRequest = { menuEnfant = false },
+            title = { Text("Ajouter un enfant") },
+            text = {
+                Column {
+                    Text(
+                        "Choisir une fiche existante ou saisir un nouvel enfant : aucun doublon ne sera cr\u00E9\u00E9.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedButton(
+                        onClick = { menuEnfant = false; onChoisir("enfant") },
+                        Modifier.fillMaxWidth().padding(top = 6.dp)
+                    ) { Text("Choisir un enfant") }
+                    OutlinedButton(
+                        onClick = { menuEnfant = false; enfantOuvert = true },
+                        Modifier.fillMaxWidth().padding(top = 4.dp)
+                    ) { Text("Saisir un enfant") }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { menuEnfant = false }) { Text("Fermer") }
+            }
+        )
+    }
 }
 
 // ---------------------------------------------------------------- Cartouche identite
@@ -444,29 +456,18 @@ fun EcranPersonne(
 fun CarteIdentite(
     p: Personne,
     personnes: List<Personne>,
-    onModifier: () -> Unit,
-    onOuvrir: (Long) -> Unit,
+    onOuvrir: (Long) -> Unit
 ) {
     Card(
-        Modifier.fillMaxWidth()
-            .padding(vertical = 3.dp)
-            .combinedClickable(onClick = {}, onLongClick = onModifier),
+        Modifier.fillMaxWidth().padding(vertical = 3.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, couleurPastille(p.sexe))
     ) {
         Column(Modifier.fillMaxWidth().padding(8.dp)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                PastilleNumero(p = p, diametre = 40)
-                Spacer(Modifier.width(10.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(p.titre(), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
-                    if (p.profession.trim().isNotEmpty()) {
-                        Text(p.profession.trim(), style = MaterialTheme.typography.bodySmall)
-                    }
-                }
+            // Nom et numero deja affiches dans le titre : il ne reste ici que
+            // la profession et le rappel du pere et de la mere. Pas d'edition.
+            if (p.profession.trim().isNotEmpty()) {
+                Text(p.profession.trim(), style = MaterialTheme.typography.bodySmall)
             }
             // Rappel des parents, avec leurs dates N. et D.
             listOf("P\u00E8re" to p.pere, "M\u00E8re" to p.mere).forEach { paire ->

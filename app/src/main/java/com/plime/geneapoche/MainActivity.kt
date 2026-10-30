@@ -132,9 +132,29 @@ fun dateAffichee(s: String): String {
 fun heureAffichee(s: String): String {
     val t = s.trim()
     Regex("^(\\d{1,2})[:hH](\\d{2})$").find(t)?.let { m ->
-        return m.groupValues[1].padStart(2, '0') + "h" + m.groupValues[2]
+        return m.groupValues[1].padStart(2, '0') + ":" + m.groupValues[2]
     }
     return t
+}
+
+// Format unique impose : jj/mm/aaaa (ou, a defaut, l'annee seule aaaa).
+fun dateValide(s: String): Boolean {
+    val t = s.trim()
+    if (t.isEmpty()) return true
+    Regex("^(\\d{2})/(\\d{2})/(\\d{4})$").find(t)?.let { m ->
+        val j = m.groupValues[1].toInt()
+        val mois = m.groupValues[2].toInt()
+        return j in 1..31 && mois in 1..12
+    }
+    return Regex("^\\d{4}$").matches(t)
+}
+
+// Heure au format unique hh:mm (00 a 23, 00 a 59).
+fun heureValide(s: String): Boolean {
+    val t = s.trim()
+    if (t.isEmpty()) return true
+    val m = Regex("^(\\d{1,2}):(\\d{2})$").find(t) ?: return false
+    return m.groupValues[1].toInt() in 0..23 && m.groupValues[2].toInt() in 0..59
 }
 
 // ---------------------------------------------------------------- Aides numerotation
@@ -279,6 +299,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var cujusDialogue by remember { mutableStateOf(false) }
     var cujusPreselec by remember { mutableStateOf<Personne?>(null) }
     var importConfirme by remember { mutableStateOf<List<Personne>?>(null) }
+    var cujusEdite by remember { mutableStateOf<Personne?>(null) }
     var cujasOuvert by remember { mutableStateOf(false) }
 
     // Recopie structurelle des listes : force Compose a rafraichir l'affichage
@@ -1160,57 +1181,35 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
 
     // Dialogue : choix du de cujus et de son n Sosa (pas forcement 1).
     // Toute la numerotation Sosa / d'Aboville en decoule automatiquement.
+    // Dialogue : choix du de cujus (liste des personnes avec leur numero).
+    // Toucher une personne ouvre le dialogue d'edition de son n Sosa.
     if (cujusDialogue) {
-        var choixCujus by remember { mutableStateOf(cujusPreselec) }
-        var numCujus by remember {
-            mutableStateOf((choixCujus?.sosa?.trim()?.toLongOrNull() ?: sosaCujus).toString())
-        }
-        val numValide = (numCujus.trim().toLongOrNull() ?: 0L) >= 1L
-        // Synchronisation instantanee : des la saisie du numero ou le choix
-        // de la personne, toute la numerotation est recalculee en direct ;
-        // Annuler restaure la numerotation precedente.
-        val numSaisi = numCujus.trim().toLongOrNull() ?: 0L
-        LaunchedEffect(choixCujus?.id, numSaisi) {
-            val c = choixCujus
-            if (c != null && numSaisi >= 1L) renumeroter(personnes, c.id, numSaisi)
-        }
-        fun annulerCujus() {
-            val idOrigine = idDuCujus()
-            if (idOrigine != 0L) renumeroter(personnes, idOrigine, sosaCujus)
-            cujusDialogue = false
+        LaunchedEffect(cujusDialogue) {
+            val pre = cujusPreselec
+            if (cujusDialogue && pre != null) {
+                cujusEdite = pre
+                cujusPreselec = null
+            }
         }
         AlertDialog(
-            onDismissRequest = { annulerCujus() },
+            onDismissRequest = { cujusDialogue = false },
             title = { Text("De cujus") },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     Text(
-                        "Choisissez la personne de r\u00E9f\u00E9rence et son num\u00E9ro Sosa (pas forc\u00E9ment 1). Toute la num\u00E9rotation Sosa et d'Aboville sera recalcul\u00E9e automatiquement \u00E0 partir de l\u00E0 : aucun num\u00E9ro ne se saisit ailleurs.",
+                        "Touchez la personne de r\u00E9f\u00E9rence : son n\u00B0 Sosa (pas forc\u00E9ment 1) sera demand\u00E9, puis toute la num\u00E9rotation Sosa et d'Aboville sera recalcul\u00E9e.",
                         style = MaterialTheme.typography.bodySmall
                     )
-                    OutlinedTextField(
-                        value = numCujus,
-                        onValueChange = { t -> numCujus = t.filter { it.isDigit() } },
-                        label = { Text("N\u00B0 Sosa du de cujus") },
-                        isError = !numValide,
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    )
-                    Text(
-                        "Personne : " + (choixCujus?.titre() ?: "\u00E0 choisir"),
-                        Modifier.padding(top = 10.dp),
-                        fontWeight = FontWeight.Bold
-                    )
-                    Column(Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState())) {
+                    Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
                         personnes.sortedWith(
                             compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
                         ).forEach { cand ->
                             Row(
                                 Modifier
                                     .fillMaxWidth()
-                                    .clickable { choixCujus = cand }
+                                    .clickable { cujusEdite = cand }
                                     .background(
-                                        if (choixCujus?.id == cand.id) CouleurVertPale
+                                        if (idDuCujus() == cand.id) CouleurVertPale
                                         else androidx.compose.ui.graphics.Color.Transparent
                                     )
                                     .padding(horizontal = 8.dp, vertical = 6.dp)
@@ -1222,28 +1221,60 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                             }
                         }
                     }
-                    if (choixCujus != null && choixCujus?.id != idDuCujus()) {
-                        Text(
-                            "Toute la num\u00E9rotation sera recalcul\u00E9e.",
-                            Modifier.padding(top = 6.dp),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = CouleurRouge
-                        )
-                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { cujusDialogue = false }) { Text("Fermer") }
+            }
+        )
+    }
+
+    // Dialogue d'edition du n Sosa du de cujus choisi : synchronisation
+    // instantanee de tous les numeros pendant la saisie, restauration si
+    // Annuler, controles + journal a l'enregistrement.
+    if (cujusEdite != null) {
+        val cible = cujusEdite!!
+        var numCujus by remember(cible.id) {
+            mutableStateOf((cible.sosa.trim().toLongOrNull() ?: sosaCujus).toString())
+        }
+        val numSaisi = numCujus.trim().toLongOrNull() ?: 0L
+        val numValide = numSaisi >= 1L
+        LaunchedEffect(cible.id, numSaisi) {
+            if (numSaisi >= 1L) renumeroter(personnes, cible.id, numSaisi)
+        }
+        fun annulerCujus() {
+            val idOrigine = idDuCujus()
+            if (idOrigine != 0L) renumeroter(personnes, idOrigine, sosaCujus)
+            cujusEdite = null
+        }
+        AlertDialog(
+            onDismissRequest = { annulerCujus() },
+            title = { Text("De cujus : " + cible.titre()) },
+            text = {
+                Column {
+                    Text(
+                        "N\u00B0 Sosa du de cujus : toute la num\u00E9rotation se recalcule en direct pendant la saisie.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = numCujus,
+                        onValueChange = { t -> numCujus = t.filter { it.isDigit() } },
+                        label = { Text("N\u00B0 Sosa (chiffres)") },
+                        isError = !numValide,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    )
                 }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val c = choixCujus
-                        val n = numCujus.trim().toLongOrNull() ?: 1L
-                        if (c != null && n >= 1L) {
-                            definirCujus(c, n)
-                        }
+                        definirCujus(cible, numSaisi)
+                        cujusEdite = null
                         cujusDialogue = false
                     },
-                    enabled = choixCujus != null && numValide
-                ) { Text("D\u00E9finir") }
+                    enabled = numValide
+                ) { Text("Enregistrer") }
             },
             dismissButton = {
                 TextButton(onClick = { annulerCujus() }) { Text("Annuler") }
