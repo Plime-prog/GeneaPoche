@@ -122,6 +122,16 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 - **Frise repliée à l'ouverture** : tous les blocs sont réduits par défaut ; seules les lignes essentielles N. et D. apparaissent (B/M/S dès ouverture) ; **plus de crayon sur les lignes** — la correction se fait dans le bloc ouvert.
 - **Quatre boutons toujours visibles sous la frise** (icônes, police réduite) : **Baptême, Mariage, Sépulture, Enfant** ; « Enfant » ouvre le menu **Ajouter un enfant** (choisir dans la base ou saisir).
 
+## Menus fixes, Aboville et calendrier républicain (v0.24)
+
+- **Menus de navigation toujours visibles en bas**, même fiche ouverte : l'utilisateur garde l'accès aux onglets (Journal, Personnes, Arbre…) en permanence, choisir un onglet referme la fiche.
+- **Tri par d'Aboville croissant** dans l'onglet Personnes, en plus du tri A–Z et du classement par branches : trois puces de bascule, l'index alphabétique restant réservé au tri A–Z.
+- **Frise à ordre fixe** : Naissance tout en haut, puis Mariage, puis Décès — même sans information (lignes grises) ; Baptême et Sépulture s'intercalent dès leur création.
+- **Calendrier républicain** : saisie possible au format républicain (ex : 22 Germinal An II, même en chiffres romains), **converti automatiquement en grégorien** à l'enregistrement ; débuts d'année historiques et sextiles respectés (22/9/1792 → 31/12/1805).
+- **Noms normalisés** : nom de famille systématiquement en MAJUSCULES, prénoms avec initiale majuscule seulement — y compris composés (Marie-Anne, Jean-Baptiste) ; appliqué à toute saisie, import ou création.
+- **Numérotation corrigée** : le recalcul Sosa/d'Aboville suit désormais à coup sûr chaque changement de de cujus (graines latérales par n° Sosa croissant, rang de fratrie par année de naissance), avec rafraîchissement en direct dans le dialogue.
+- **Fiche : 5 boutons fixes en bas** avec icônes (Baptême, Mariage, Sépulture / Enfant, Événement), toujours visibles, texte sur une seule ligne — plus jamais de libellé replié ou trop petit.
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -173,3 +183,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 21. ✅ v0.21 : frise légère (essentiel N/D par ligne, crayon d'édition par ligne), cartouche sans cujus, polices de boutons réduites, boutons Enfant dans la frise, bloc-fiche par enfant.
 22. ✅ v0.22 : de cujus à numérotation recalculée en direct (avec restauration sur Annuler), numéro affiché dans la liste de choix, chaque événement ouvert dans son propre encadré dédié.
 23. ✅ v0.23 : formats uniques jj/mm/aaaa + hh:mm (ou année aaaa) contrôlés partout, dialogue d'édition du de cujus, cartouche réduit sans édition, frise repliée à l'ouverture sans crayons de ligne, 4 boutons B/M/S/Enfant + menu ajouter un enfant.
+24. ✅ v0.24 : menus de navigation toujours visibles, tri Aboville croissant dans Personnes, frise à ordre fixe N/M/D, convertisseur calendrier républicain→grégorien, noms en majuscules et prénoms normalisés, numérotation qui suit le de cujus, 5 boutons fixes à icônes en bas de fiche.
