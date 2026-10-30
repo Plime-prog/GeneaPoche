@@ -432,7 +432,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             q.nom.trim().uppercase() == n.uppercase() &&
             q.prenoms.trim().uppercase() == pr.uppercase()
         }
-        val cible: Personne
+        var cible: Personne
         if (existante != null) {
             if (existante.id == p.conjoint || p.conjointsSupp.contains(existante.id)) {
                 message = "Ce conjoint est d\u00E9j\u00E0 li\u00E9 \u00E0 " + p.titre() + " : fiche synchronis\u00E9e, aucun doublon cr\u00E9\u00E9."
@@ -556,7 +556,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             q.nom.trim().uppercase() == n.uppercase() &&
             q.prenoms.trim().uppercase() == pr.uppercase()
         }
-        val cible: Personne
+        var cible: Personne
         if (existante != null) {
             cible = existante
         } else {
@@ -590,7 +590,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         val p = personneParId(personnes, idOuvert) ?: return
         val n = nom.trim()
         val pr = prenoms.trim()
-        val cible: Personne?
+        var cible: Personne?
         if (id != 0L) {
             cible = personneParId(personnes, id)
         } else if (n.isEmpty() && pr.isEmpty()) {
