@@ -65,6 +65,45 @@ fun dateVersAnnee(date: String): Int? {
     return Regex("[0-9]{4}").find(date)?.value?.toIntOrNull()
 }
 
+// Annee en cours (regle des 75 ans et des 100 ans, a la date du jour).
+fun anneeCourante(): Int = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+
+// La notion de deces ou de sepulture ne s'affiche (fiche, frise, boutons,
+// journal, arbre) que si la personne peut avoir PLUS de 100 ans a la date du
+// jour, ou si son deces est deja connu (date, lieu ou acte rattache).
+fun decesAffichable(p: Personne, actes: List<Acte> = emptyList()): Boolean {
+    if (p.dateDeces.isNotBlank() || p.heureDeces.isNotBlank() || p.lieuDeces.isNotBlank()) return true
+    if (p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank()) return true
+    if (actes.any { it.personneId == p.id && (it.type == "D" || it.type == "S") }) return true
+    val n = dateVersAnnee(p.dateNaissance) ?: return true
+    return anneeCourante() - n >= 100
+}
+
+// Section d'etat (vert/rouge) correspondant a un type d'evenement.
+fun sectionDe(type: String): String = when (type) {
+    "N" -> "naissance"
+    "B" -> "bapteme"
+    "M" -> "mariage"
+    "S" -> "sepulture"
+    else -> "deces"
+}
+
+// Libelle d'une section pour une recherche du journal.
+fun libelleSection(s: String): String = when (s) {
+    "identite" -> "l'identit\u00E9 de"
+    "naissance" -> "l'acte de naissance de"
+    "bapteme" -> "l'acte de bapt\u00EAme de"
+    "mariage" -> "l'acte de mariage de"
+    "sepulture" -> "l'acte de s\u00E9pulture de"
+    else -> "l'acte de d\u00E9c\u00E8s de"
+}
+
+// Annee visee par une recherche : fin de la plage estimee, sinon debut.
+// Sert a appliquer la regle des 75 ans et a trier les recherches.
+fun anneeCiblePiste(piste: Piste): Int? {
+    return piste.fin.toIntOrNull() ?: piste.debut.toIntOrNull()
+}
+
 fun titreCourt(p: Personne): String {
     val t = p.titre().trim()
     return if (t.isEmpty()) "(sans nom)" else t
@@ -169,46 +208,58 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
     }
 
     // --- Un evenement : date, heure, lieu, departement, copie de l'acte.
-    fun evenement(cleBase: String, type: String, lib: LibellesEv, ch: EvChamps, ouvert: Boolean) {
+    // debut/fin : plage d'annees visee (regle des 75 ans et tri du journal).
+    fun evenement(cleBase: String, type: String, lib: LibellesEv, ch: EvChamps, ouvert: Boolean, debut: String = "", fin: String = "") {
         if (!ouvert) return
         val img = aUneImage(actes, p.id, type)
         val trans = aUneTranscription(actes, p.id, type)
         if (ch.date.isBlank() && !img) {
             // L'acte lui-meme est a trouver : une seule recherche couvre tout.
-            ajouter(cleBase + "_date", "Rechercher " + lib.acte + " de " + titreCourt(p) + suffixe(ch.lieu.trim(), ch.dept.trim()), type, ch.lieu.trim(), ch.dept.trim())
+            ajouter(cleBase + "_date", "Rechercher " + lib.acte + " de " + titreCourt(p) + suffixe(ch.lieu.trim(), ch.dept.trim()), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
             return
         }
         // Acte localise : chaque champ manquant est une recherche a part entiere.
         if (ch.heure.isBlank()) {
-            ajouter(cleBase + "_heure", "Compl\u00E9ter " + lib.heure + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim())
+            ajouter(cleBase + "_heure", "Compl\u00E9ter " + lib.heure + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
         }
         if (ch.lieu.isBlank()) {
-            ajouter(cleBase + "_lieu", "Compl\u00E9ter " + lib.lieu + " de " + titreCourt(p), type)
+            ajouter(cleBase + "_lieu", "Compl\u00E9ter " + lib.lieu + " de " + titreCourt(p), type, "", "", debut, fin)
         }
         if (ch.dept.isBlank()) {
-            ajouter(cleBase + "_dept", "Compl\u00E9ter " + lib.dept + " de " + titreCourt(p), type)
+            ajouter(cleBase + "_dept", "Compl\u00E9ter " + lib.dept + " de " + titreCourt(p), type, "", "", debut, fin)
         }
         if (!img && !trans) {
-            ajouter(cleBase + "_copie", "Photographier ou transcrire " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim())
+            ajouter(cleBase + "_copie", "Photographier ou transcrire " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
         }
     }
 
-    evenement("naissance", "N", LibellesNaissance, champsEvenement(p, "N"), true)
-    evenement("bapteme", "B", LibellesBapteme, champsEvenement(p, "B"), p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || aUneImage(actes, p.id, "B") || aUneTranscription(actes, p.id, "B"))
-    evenement("mariage", "M", LibellesMariage, champsEvenement(p, "M"), true)
-    evenement("deces", "D", LibellesDeces, champsEvenement(p, "D"), true)
-    evenement("sepulture", "S", LibellesSepulture, champsEvenement(p, "S"), p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || aUneImage(actes, p.id, "S") || aUneTranscription(actes, p.id, "S"))
+    // Plages d'annees visees par chaque evenement (pour la regle des 75 ans).
+    val anneeN = dateVersAnnee(p.dateNaissance)
+    val strN = anneeN?.toString() ?: ""
+    val anneeM = dateVersAnnee(p.dateMariage)
+    val mDebut = anneeM?.toString() ?: (if (anneeN != null) (anneeN + 20).toString() else "")
+    val mFin = anneeM?.toString() ?: (if (anneeN != null) (anneeN + 45).toString() else "")
+    val anneeD = dateVersAnnee(p.dateDeces)
+    val dDebut = anneeD?.toString() ?: (if (anneeN != null) (anneeN + 50).toString() else "")
+    val dFin = anneeD?.toString() ?: (if (anneeN != null) (anneeN + 95).toString() else "")
+    val decesPossible = decesAffichable(p, actes)
+
+    evenement("naissance", "N", LibellesNaissance, champsEvenement(p, "N"), true, strN, strN)
+    evenement("bapteme", "B", LibellesBapteme, champsEvenement(p, "B"), p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || aUneImage(actes, p.id, "B") || aUneTranscription(actes, p.id, "B"), strN, strN)
+    evenement("mariage", "M", LibellesMariage, champsEvenement(p, "M"), true, mDebut, mFin)
+    // Deces et sepulture : uniquement si la personne peut avoir plus de 100 ans.
+    evenement("deces", "D", LibellesDeces, champsEvenement(p, "D"), decesPossible, dDebut, dFin)
+    evenement("sepulture", "S", LibellesSepulture, champsEvenement(p, "S"), decesPossible && (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || aUneImage(actes, p.id, "S") || aUneTranscription(actes, p.id, "S")), dDebut, dFin)
 
     // --- Identite
     if (p.profession.isBlank()) {
-        ajouter("profession", "Rechercher la profession de " + titreCourt(p), "A")
+        ajouter("profession", "Rechercher la profession de " + titreCourt(p), "A", "", "", (if (anneeN != null) (anneeN + 30).toString() else ""), (if (anneeN != null) (anneeN + 50).toString() else ""))
     }
     if (p.sexe.isBlank()) {
         ajouter("sexe", "Pr\u00E9ciser le sexe de " + titreCourt(p), "A")
     }
 
     // --- Parents : plage d'annees deduite de la naissance de l'enfant
-    val anneeN = dateVersAnnee(p.dateNaissance)
     val lieuN = p.lieuNaissance.trim()
     val deptN = p.deptNaissance.trim()
     if (p.pere == 0L && p.nom.isNotBlank()) {
@@ -224,7 +275,7 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
 
     // --- Conjoint et enfants : tous les enfants, toujours.
     if (p.conjoint == 0L && p.conjointsSupp.isEmpty()) {
-        ajouter("conjoint", "Rechercher le conjoint de " + titreCourt(p), "C")
+        ajouter("conjoint", "Rechercher le conjoint de " + titreCourt(p), "C", "", "", mDebut, mFin)
     }
     if (p.enfants.isEmpty()) {
         val anneeM = dateVersAnnee(p.dateMariage)
@@ -273,19 +324,25 @@ fun EcranJournal(
     onSauver: () -> Unit
 ) {
     val ouvertes = pistes.filter { !it.faite }
+    // REGLE DES 75 ANS : seules les recherches dont l'\u00E9v\u00E9nement vis\u00E9 est
+    // survenu il y a PLUS de 75 ans \u00E0 la date du jour sont affich\u00E9es (actes
+    // librement communicables). Tri : l'\u00E9v\u00E9nement le plus proche de nous
+    // d'abord. Plafond : 10 recherches au total. Chaque carte rappelle le
+    // num\u00E9ro d'Aboville de la personne concern\u00E9e.
+    val limite = anneeCourante() - 75
+    val prioritaires = ouvertes
+        .filter { ps -> val a = anneeCiblePiste(ps); a == null || a <= limite }
+        .sortedByDescending { ps -> anneeCiblePiste(ps) ?: 0 }
+        .take(10)
     val archivees = pistes.filter { it.faite }.sortedByDescending { it.cloture }.take(30)
     val anomalies = anomaliesPour(personnes)
-    val ordrePersonnes = personnes.sortedWith(
-        compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
-    )
-    var numero = 0
 
     LazyColumn(Modifier.fillMaxSize().padding(12.dp)) {
         item {
             Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                 Text("Journal de recherches", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
                 Text(
-                    ouvertes.size.toString() + " information(s) manquante(s), regroup\u00E9es par personne. Toute donn\u00E9e saisie ou image ajout\u00E9e archive automatiquement sa recherche.",
+                    prioritaires.size.toString() + " recherche(s) prioritaire(s) : \u00E9v\u00E9nements survenus il y a plus de 75 ans, du plus r\u00E9cent au plus ancien, 10 au maximum. La pastille porte le num\u00E9ro d'Aboville de la personne.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -325,7 +382,7 @@ fun EcranJournal(
             }
         }
 
-        if (ouvertes.isEmpty()) {
+        if (prioritaires.isEmpty()) {
             item {
                 Card(
                     Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -335,7 +392,7 @@ fun EcranJournal(
                     Column(Modifier.fillMaxWidth().padding(12.dp)) {
                         Text("Tout est renseign\u00E9 !", fontWeight = FontWeight.Bold)
                         Text(
-                            "Aucune information manquante pour le moment.",
+                            "Aucune recherche prioritaire : aucun \u00E9v\u00E9nement de plus de 75 ans \u00E0 chercher pour le moment.",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -343,45 +400,19 @@ fun EcranJournal(
             }
         }
 
-        ordrePersonnes.forEach { pers ->
-            val liste = ouvertes.filter { it.personneId == pers.id }.sortedBy { it.categorie }
-            if (liste.isNotEmpty()) {
-                item(key = "entete" + pers.id.toString()) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            titreCourt(pers),
-                            Modifier.weight(1f),
-                            fontWeight = FontWeight.Bold,
-                            color = CouleurVertFonce,
-                            fontSize = 16.sp
-                        )
-                        Text(
-                            liste.size.toString() + " recherche(s)",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        TextButton(onClick = { onOuvrirPersonne(pers.id) }) { Text("Fiche") }
-                    }
-                }
-                liste.forEach { ps ->
-                    numero += 1
-                    item(key = "ouverte" + ps.id.toString()) {
-                        CarteRecherche(
-                            piste = ps,
-                            numero = numero,
-                            personnes = personnes,
-                            actes = actes,
-                            onSupprimer = onSupprimer,
-                            onOuvrirPersonne = onOuvrirPersonne,
-                            ouvrirLien = ouvrirLien,
-                            ouvrirEtatCivil = ouvrirEtatCivil,
-                            onSauver = onSauver
-                        )
-                    }
-                }
+        // Liste plate, tri\u00E9e par \u00E9v\u00E9nement le plus proche de nous.
+        prioritaires.forEach { ps ->
+            item(key = "ouverte" + ps.id.toString()) {
+                CarteRecherche(
+                    piste = ps,
+                    personnes = personnes,
+                    actes = actes,
+                    onSupprimer = onSupprimer,
+                    onOuvrirPersonne = onOuvrirPersonne,
+                    ouvrirLien = ouvrirLien,
+                    ouvrirEtatCivil = ouvrirEtatCivil,
+                    onSauver = onSauver
+                )
             }
         }
 
@@ -416,7 +447,6 @@ fun EcranJournal(
 @Composable
 fun CarteRecherche(
     piste: Piste,
-    numero: Int,
     personnes: List<Personne>,
     actes: List<Acte>,
     onSupprimer: (Piste) -> Unit,
@@ -427,6 +457,8 @@ fun CarteRecherche(
 ) {
     val pers = personneParId(personnes, piste.personneId)
     val texte = textePisteActuel(piste, personnes, actes)
+    // Num\u00E9ro d'Aboville de la personne (ou Sosa) : rappel\u00E9 sur la pastille.
+    val numeroAboville = pers?.numeroAffiche()?.ifEmpty { "?" } ?: "?"
 
     // Categories issues d'un acte : la recherche AD a un sens.
     val evPrefix = listOf("naissance", "bapteme", "mariage", "deces", "sepulture")
@@ -447,12 +479,18 @@ fun CarteRecherche(
     ) {
         Column(Modifier.fillMaxWidth().padding(10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                // Pastille numerotee
+                // Pastille au num\u00E9ro d'Aboville de la personne
                 Box(
-                    Modifier.size(28.dp).background(CouleurVert, CircleShape),
+                    Modifier.size(32.dp).background(CouleurVert, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(numero.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(
+                        numeroAboville,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = if (numeroAboville.length <= 3) 12.sp else 9.sp,
+                        maxLines = 1
+                    )
                 }
                 Spacer(Modifier.width(10.dp))
                 Text(
@@ -481,10 +519,13 @@ fun CarteRecherche(
                 }
             }
 
-            // Personne concernee
+            // Personne concernee, avec rappel du numero d'Aboville
             if (pers != null) {
                 TextButton(onClick = { onOuvrirPersonne(piste.personneId) }) {
-                    Text("Fiche de " + titreCourt(pers), style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "Fiche de " + titreCourt(pers) + " \u2013 n\u00B0 d'Aboville " + pers.numeroAffiche(),
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
             }
 

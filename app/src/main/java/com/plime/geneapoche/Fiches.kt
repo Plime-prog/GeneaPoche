@@ -150,7 +150,10 @@ fun EcranPersonne(
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
-    ouvrirEtatCivil: (String, Int?, String, String) -> Unit
+    ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
+    // Coche de validation d'une information : (section, valide).
+    // Une coche negative cree automatiquement une recherche dans le journal.
+    onValider: (String, Boolean) -> Unit
 ) {
     // Blocs ouverts sur la frise : N et D par defaut.
     var ouverts by remember { mutableStateOf(setOf<String>()) }
@@ -172,10 +175,16 @@ fun EcranPersonne(
     if (p.blocsOuverts.contains("mariage") || p.dateMariage.isNotBlank() || p.heureMariage.isNotBlank() || p.lieuMariage.isNotBlank() || p.conjoint != 0L || p.conjointsSupp.isNotEmpty() || p.enfants.isNotEmpty() || actes.any { it.personneId == p.id && it.type == "M" }) {
         ordreTypes.add("M")
     }
-    if (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || actes.any { it.personneId == p.id && it.type == "S" }) {
-        ordreTypes.add("S")
+    // R\u00E8gle des 100 ans : la notion de d\u00E9c\u00E8s ou de s\u00E9pulture ne s'affiche
+    // que si la personne peut avoir plus de 100 ans \u00E0 la date du jour (ou si
+    // son d\u00E9c\u00E8s est d\u00E9j\u00E0 connu).
+    val decesAffiche = decesAffichable(p, actes)
+    if (decesAffiche) {
+        if (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || actes.any { it.personneId == p.id && it.type == "S" }) {
+            ordreTypes.add("S")
+        }
+        ordreTypes.add("D")
     }
-    ordreTypes.add("D")
 
     Scaffold(
         topBar = {
@@ -236,14 +245,16 @@ fun EcranPersonne(
                                 Spacer(Modifier.width(4.dp))
                                 Text("Mariage", fontSize = 12.sp, maxLines = 1)
                             }
-                            FilledTonalButton(
-                                onClick = { p.blocsOuverts.add("sepulture"); enregistrer() },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Filled.Place, contentDescription = null, Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("S\u00E9pulture", fontSize = 12.sp, maxLines = 1)
+                            if (decesAffiche) {
+                                FilledTonalButton(
+                                    onClick = { p.blocsOuverts.add("sepulture"); enregistrer() },
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                                ) {
+                                    Icon(Icons.Filled.Place, contentDescription = null, Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("S\u00E9pulture", fontSize = 12.sp, maxLines = 1)
+                                }
                             }
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -278,6 +289,7 @@ fun EcranPersonne(
                     p = p,
                     personnes = personnes,
                     onOuvrir = onOuvrir,
+                    onValider = { v -> onValider("identite", v) }
                 )
             }
             // Frise chronologique : chaque evenement ouvre son bloc au toucher.
@@ -337,6 +349,7 @@ fun EcranPersonne(
                                     onVoirActe = onVoirActe,
                                     onEnregistrer = enregistrer,
                                     ouvrirEtatCivil = ouvrirEtatCivil,
+                                    onValider = { v -> onValider(sectionDe(t), v) },
                                     modifier = Modifier
                                 )
                             }
@@ -369,10 +382,15 @@ fun EcranPersonne(
                                         }
                                     }
                                     if (e != null) {
-                                        listOf(
-                                            "N" to Triple(e.dateNaissance, e.lieuNaissance, e.deptNaissance),
+                                        // R\u00E8gle des 100 ans : le d\u00E9c\u00E8s d'un enfant
+                                        // ne s'affiche que s'il est connu ou possible.
+                                        val lignesEnfant = mutableListOf(
+                                            "N" to Triple(e.dateNaissance, e.lieuNaissance, e.deptNaissance)
+                                        )
+                                        if (decesAffichable(e)) lignesEnfant.add(
                                             "D" to Triple(e.dateDeces, e.lieuDeces, e.deptDeces)
-                                        ).forEach { paire ->
+                                        )
+                                        lignesEnfant.forEach { paire ->
                                             val tEnf = paire.first
                                             val dEnf = paire.second.first.trim()
                                             val lEnf = paire.second.second.trim()
@@ -513,7 +531,8 @@ fun EcranPersonne(
                         "M" to "Mariage",
                         "S" to "S\u00E9pulture",
                         "D" to "D\u00E9c\u00E8s"
-                    ).forEach { paire ->
+                    ).filter { paire -> (paire.first != "S" && paire.first != "D") || decesAffichable(p, actes) }
+                        .forEach { paire ->
                         OutlinedButton(
                             onClick = {
                                 val t = paire.first
@@ -545,7 +564,8 @@ fun EcranPersonne(
 fun CarteIdentite(
     p: Personne,
     personnes: List<Personne>,
-    onOuvrir: (Long) -> Unit
+    onOuvrir: (Long) -> Unit,
+    onValider: (Boolean) -> Unit
 ) {
     Card(
         Modifier.fillMaxWidth().padding(vertical = 3.dp),
@@ -553,6 +573,19 @@ fun CarteIdentite(
         border = BorderStroke(1.dp, couleurPastille(p.sexe))
     ) {
         Column(Modifier.fillMaxWidth().padding(8.dp)) {
+            // Coche de validation de l'identite : une coche negative cree
+            // automatiquement une recherche dans le journal.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = p.etatDe("identite") == "vert",
+                    onCheckedChange = { onValider(it) }
+                )
+                Text(
+                    if (p.etatDe("identite") == "vert") "Identit\u00E9 valid\u00E9e" else if (p.etatDe("identite") == "rouge") "Identit\u00E9 \u00E0 v\u00E9rifier" else "Valider l'identit\u00E9",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (p.etatDe("identite") == "rouge") CouleurRouge else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             // Nom et numero deja affiches dans le titre : il ne reste ici que
             // la profession et le rappel du pere et de la mere. Pas d'edition.
             if (p.profession.trim().isNotEmpty()) {
@@ -697,6 +730,8 @@ fun CarteEvenement(
     onVoirActe: (Acte) -> Unit,
     onEnregistrer: () -> Unit,
     ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
+    // Coche de validation de l'acte : negative => recherche dans le journal.
+    onValider: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val c = champsEvenement(p, typeActe)
@@ -706,6 +741,7 @@ fun CarteEvenement(
     val dp = c.dept.trim()
     val anneeActe = anneeDe(d)
     val numDept = dp.toIntOrNull() ?: numeroDepartement(dp) ?: numeroDepartement(l)
+    val etatActe = p.etatDe(sectionDe(typeActe))
 
     Card(
         modifier.fillMaxWidth().padding(top = 2.dp, bottom = 6.dp),
@@ -716,6 +752,11 @@ fun CarteEvenement(
         // Entete : titre + edition du bloc + photo d'acte + recherche AD.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Checkbox(
+                checked = etatActe == "vert",
+                onCheckedChange = { onValider(it) },
+                modifier = Modifier.size(32.dp)
+            )
             IconButton(onClick = onEditer) {
                 Icon(Icons.Filled.Create, contentDescription = "Modifier ce bloc")
             }

@@ -149,7 +149,9 @@ fun EcranApplication(
     viderBase: () -> Unit,
     enregistrerActe: (ActeSaisie) -> Unit,
     ouvrirLien: (String) -> Unit,
-    ouvrirEtatCivil: (String, Int?, String, String) -> Unit
+    ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
+    // Coche de validation d'une information : (personne, section, valide).
+    validerInfo: (Personne, String, Boolean) -> Unit
 ) {
     BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty()) {
         when {
@@ -583,7 +585,8 @@ fun EcranApplication(
             onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },
             onSupprimerActe = { onSupprimerActe(it) },
             onVoirActe = { onVoirActe(it) },
-            ouvrirEtatCivil = ouvrirEtatCivil
+            ouvrirEtatCivil = ouvrirEtatCivil,
+            onValider = { section, valide -> validerInfo(p, section, valide) }
         )
             }
             // Menus de l'application TOUJOURS visibles en bas, meme fiche ouverte.
@@ -804,7 +807,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
                     val morceaux = mutableListOf<String>()
                     if (n.isNotEmpty()) morceaux.add("N. " + n)
                     if (m.isNotEmpty()) morceaux.add("M. " + m)
-                    if (d.isNotEmpty()) morceaux.add("D. " + d)
+                    if (d.isNotEmpty() && decesAffichable(p)) morceaux.add("D. " + d)
                     Text(morceaux.joinToString("  \u2013  "), style = MaterialTheme.typography.bodySmall)
                 }
             }

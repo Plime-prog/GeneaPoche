@@ -360,6 +360,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         val maintenant = System.currentTimeMillis()
         pistes.filter { !it.faite }.forEach { ps ->
             val pers = personneParId(personnes, ps.personneId)
+            // Les pistes de validation (coche negative d'une information)
+            // restent ouvertes jusqu'a re-validation manuelle.
+            if (ps.categorie.startsWith("verif_") && pers != null) return@forEach
             val encoreManquante = pers != null &&
                 suggestionsPour(pers, personnes, actes).any { it.cle == ps.categorie }
             if (pers == null || !encoreManquante) {
@@ -718,6 +721,37 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
 
     fun supprimerPiste(piste: Piste) {
         pistes.remove(piste)
+        enregistrer()
+    }
+
+    // Coche de validation d'une information (identite ou acte) : une coche
+    // NEGATIVE cree automatiquement une recherche dans le journal ; une coche
+    // positive l'archive.
+    fun validerInfo(p: Personne, section: String, valide: Boolean) {
+        p.changerEtat(section, if (valide) "vert" else "rouge")
+        val cle = "verif_" + section
+        val maintenant = System.currentTimeMillis()
+        if (!valide) {
+            val existe = pistes.any { !it.faite && it.personneId == p.id && it.categorie == cle }
+            if (!existe) {
+                pistes.add(
+                    Piste(
+                        id = (pistes.maxOfOrNull { it.id } ?: 0L) + 1L,
+                        texte = "V\u00E9rifier " + libelleSection(section) + " " + titreCourt(p),
+                        personneId = p.id,
+                        creation = maintenant,
+                        type = "P",
+                        categorie = cle
+                    )
+                )
+            }
+        } else {
+            pistes.filter { !it.faite && it.personneId == p.id && it.categorie == cle }.forEach { ps ->
+                ps.faite = true
+                ps.cloture = maintenant
+                ps.texte = "V\u00E9rifi\u00E9 : " + ps.texte
+            }
+        }
         enregistrer()
     }
 
@@ -1174,7 +1208,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             ouvrirLien = { url -> ouvrirLien(ctx, url)?.let { m -> message = m } },
             ouvrirEtatCivil = { commune, dept, type, annee ->
                 ouvrirLien(ctx, lienEtatCivil(commune, dept, type, annee))?.let { m -> message = m }
-            }
+            },
+            validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) }
         )
     }
 
