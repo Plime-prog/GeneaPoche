@@ -12,6 +12,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -55,6 +57,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -109,6 +112,13 @@ fun PastilleNumero(p: Personne, diametre: Int) {
     }
 }
 
+// ---------------------------------------------------------------- Ecran fiche
+// Plus de crayon d'edition globale : seules les informations de chaque bloc
+// sont editables, via le dialogue d'edition du bloc. Cartouche identite
+// (pastille + parents avec dates N/D), puis frise chronologique des
+// evenements : N et D par defaut, B/M/S via le bouton BMS ; toucher un
+// evenement ouvre son bloc.
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EcranPersonne(
@@ -125,27 +135,50 @@ fun EcranPersonne(
     onDefinirCujus: () -> Unit,
     onNouveauMariage: (String, String, String, String, String) -> Unit,
     onNouvelEnfant: (String, String, String, String) -> Unit,
+    onNouveauParent: (String, String, String) -> Unit,
+    onNouveauTemoin: (String, Long, String, String) -> Unit,
+    onRetirerTemoin: (String, Long) -> Unit,
+    onBasculerSignature: (String, Long) -> Unit,
+    onModifierBloc: (String, String, String, String, String, String) -> Unit,
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
     ouvrirEtatCivil: (String, Int?, String, String) -> Unit
 ) {
+    // Blocs ouverts sur la frise : N et D par defaut.
+    var ouverts by remember { mutableStateOf(setOf("N", "D")) }
+    // Dialogues : edition d'un bloc, mariage, enfant, parent, temoin.
+    var blocEdite by remember { mutableStateOf<String?>(null) }
+    var mariageOuvert by remember { mutableStateOf(false) }
+    var enfantOuvert by remember { mutableStateOf(false) }
+    var parentRole by remember { mutableStateOf("") }
+    var temoinType by remember { mutableStateOf("") }
+
+    // Evenements de la frise chronologique, tries par annee.
+    val frise = mutableListOf<Pair<String, Int?>>()
+    frise.add("N" to anneeDe(p.dateNaissance))
+    if (p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || actes.any { it.personneId == p.id && it.type == "B" }) {
+        frise.add("B" to anneeDe(p.dateBapteme))
+    }
+    if (p.blocsOuverts.contains("mariage") || p.dateMariage.isNotBlank() || p.heureMariage.isNotBlank() || p.lieuMariage.isNotBlank() || p.conjoint != 0L || p.conjointsSupp.isNotEmpty() || p.enfants.isNotEmpty() || actes.any { it.personneId == p.id && it.type == "M" }) {
+        frise.add("M" to anneeDe(p.dateMariage))
+    }
+    frise.add("D" to anneeDe(p.dateDeces))
+    if (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || actes.any { it.personneId == p.id && it.type == "S" }) {
+        frise.add("S" to anneeDe(p.dateSepulture))
+    }
+    val ordre = frise.sortedWith(compareBy({ it.second ?: 9999 }, { it.first }))
+    val ordreTypes = ordre.map { it.first }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    // M\u00EAme pr\u00E9sentation que la liste : pastille au num\u00E9ro,
-                    // couleur bleu ou rose (vert si sexe absent), nom et pr\u00E9noms.
+                    // Pastille au numero + nom et prenoms, comme la liste.
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         PastilleNumero(p = p, diametre = 36)
                         Spacer(Modifier.width(8.dp))
-                        Column {
-                            Text(p.titre(), fontSize = 17.sp)
-                            val num = p.numeroAffiche()
-                            if (num.isNotEmpty()) {
-                                Text(num, fontSize = 10.sp, color = Color(0xFFD8EBD4))
-                            }
-                        }
+                        Text(p.titre(), fontSize = 17.sp)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -160,9 +193,6 @@ fun EcranPersonne(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onModifier) {
-                        Icon(Icons.Filled.Create, contentDescription = "Modifier")
-                    }
                     IconButton(onClick = onSupprimer) {
                         Icon(Icons.Filled.Delete, contentDescription = "Supprimer")
                     }
@@ -173,160 +203,228 @@ fun EcranPersonne(
         LazyColumn(
             Modifier.fillMaxSize().padding(marges).padding(horizontal = 12.dp)
         ) {
-            item { CarteIdentite(p = p, onModifier = onModifier) }
             item {
-                CarteEvenement(
-                    titre = "Naissance",
-                    typeActe = "N",
+                CarteIdentite(
                     p = p,
                     personnes = personnes,
-                    actes = actes.filter { it.personneId == p.id && it.type == "N" },
                     onModifier = onModifier,
-                    onAjouterActe = onAjouterActe,
-                    onSupprimerActe = onSupprimerActe,
-                    onVoirActe = onVoirActe,
-                    onEnregistrer = enregistrer,
-                    ouvrirEtatCivil = ouvrirEtatCivil
+                    onOuvrir = onOuvrir,
+                    onDefinirCujus = onDefinirCujus
                 )
             }
-            if (p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || actes.any { it.personneId == p.id && it.type == "B" }) {
-                item {
-                    CarteEvenement(
-                        titre = "Bapt\u00EAme",
-                        typeActe = "B",
-                        p = p,
-                        personnes = personnes,
-                        actes = actes.filter { it.personneId == p.id && it.type == "B" },
-                        onModifier = onModifier,
-                        onAjouterActe = onAjouterActe,
-                        onSupprimerActe = onSupprimerActe,
-                        onVoirActe = onVoirActe,
-                        onEnregistrer = enregistrer,
-                        ouvrirEtatCivil = ouvrirEtatCivil
-                    )
-                }
-            }
-            // Par d\u00E9faut : blocs Naissance et D\u00e9c\u00e8s seulement.
-            // Bapt\u00eame, Mariage et S\u00e9pulture s'ajoutent via le bouton BMS.
-            if (p.blocsOuverts.contains("mariage") || p.dateMariage.isNotBlank() || p.heureMariage.isNotBlank() || p.lieuMariage.isNotBlank() || p.conjoint != 0L || p.conjointsSupp.isNotEmpty() || actes.any { it.personneId == p.id && it.type == "M" }) {
-                item {
-                    CarteEvenement(
-                        titre = "Mariage",
-                        typeActe = "M",
-                        p = p,
-                        personnes = personnes,
-                        actes = actes.filter { it.personneId == p.id && it.type == "M" },
-                    onModifier = onModifier,
-                    onAjouterActe = onAjouterActe,
-                    onSupprimerActe = onSupprimerActe,
-                    onVoirActe = onVoirActe,
-                    onEnregistrer = enregistrer,
-                    ouvrirEtatCivil = ouvrirEtatCivil
-                )
-                }
-            }
+            // Frise chronologique : chaque evenement ouvre son bloc au toucher.
             item {
-                CarteEvenement(
-                    titre = "D\u00E9c\u00E8s",
-                    typeActe = "D",
-                    p = p,
-                    personnes = personnes,
-                    actes = actes.filter { it.personneId == p.id && it.type == "D" },
-                    onModifier = onModifier,
-                    onAjouterActe = onAjouterActe,
-                    onSupprimerActe = onSupprimerActe,
-                    onVoirActe = onVoirActe,
-                    onEnregistrer = enregistrer,
-                    ouvrirEtatCivil = ouvrirEtatCivil
-                )
-            }
-            if (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || actes.any { it.personneId == p.id && it.type == "S" }) {
-                item {
-                    CarteEvenement(
-                        titre = "S\u00E9pulture",
-                        typeActe = "S",
-                        p = p,
-                        personnes = personnes,
-                        actes = actes.filter { it.personneId == p.id && it.type == "S" },
-                        onModifier = onModifier,
-                        onAjouterActe = onAjouterActe,
-                        onSupprimerActe = onSupprimerActe,
-                        onVoirActe = onVoirActe,
-                        onEnregistrer = enregistrer,
-                        ouvrirEtatCivil = ouvrirEtatCivil
-                    )
-                }
-            }
-            // Bouton BMS : ajoute \u00E0 la demande les blocs Bapt\u00eame, Mariage,
-            // S\u00e9pulture (Naissance et D\u00e9c\u00e8s sont toujours pr\u00e9sents).
-            if (!p.blocsOuverts.contains("bapteme") || !p.blocsOuverts.contains("mariage") || !p.blocsOuverts.contains("sepulture")) {
-                item {
-                    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                        if (!p.blocsOuverts.contains("bapteme")) {
-                            OutlinedButton(onClick = { p.blocsOuverts.add("bapteme"); enregistrer() }, Modifier.weight(1f)) {
-                                Icon(Icons.Filled.Add, contentDescription = null)
-                                Text("  Bapt\u00EAme")
+                Card(
+                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0xFF9CBF9A))
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(8.dp)) {
+                        Text("Frise chronologique", fontWeight = FontWeight.Bold)
+                        ordreTypes.forEach { t ->
+                            val ev = frise.first { it.first == t }
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .padding(vertical = 2.dp)
+                                    .clickable { ouverts = if (ouverts.contains(t)) ouverts - t else ouverts + t },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    Modifier.size(10.dp).clip(CircleShape)
+                                        .background(couleurPastille(p.sexe))
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    (ev.second?.toString() ?: "\u2014") + "  \u00B7  " + libelleType(t),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            if (ouverts.contains(t)) {
+                                CarteEvenement(
+                                    titre = libelleType(t),
+                                    typeActe = t,
+                                    p = p,
+                                    personnes = personnes,
+                                    actes = actes.filter { it.personneId == p.id && it.type == t },
+                                    onEditer = { blocEdite = t },
+                                    onOuvrir = onOuvrir,
+                                    onChoisir = onChoisir,
+                                    onRetirer = onRetirer,
+                                    onOuvrirMariage = { mariageOuvert = true },
+                                    onOuvrirEnfant = { enfantOuvert = true },
+                                    onOuvrirParent = { parentRole = it },
+                                    onOuvrirTemoin = { temoinType = t },
+                                    onRetirerTemoin = onRetirerTemoin,
+                                    onBasculerSignature = onBasculerSignature,
+                                    onAjouterActe = onAjouterActe,
+                                    onSupprimerActe = onSupprimerActe,
+                                    onVoirActe = onVoirActe,
+                                    onEnregistrer = enregistrer,
+                                    ouvrirEtatCivil = ouvrirEtatCivil,
+                                    modifier = Modifier.padding(start = 10.dp)
+                                )
                             }
                         }
-                        if (!p.blocsOuverts.contains("mariage")) {
-                            OutlinedButton(onClick = { p.blocsOuverts.add("mariage"); enregistrer() }, Modifier.weight(1f)) {
-                                Icon(Icons.Filled.Add, contentDescription = null)
-                                Text("  Mariage")
-                            }
-                        }
-                        if (!p.blocsOuverts.contains("sepulture")) {
-                            OutlinedButton(onClick = { p.blocsOuverts.add("sepulture"); enregistrer() }, Modifier.weight(1f)) {
-                                Icon(Icons.Filled.Add, contentDescription = null)
-                                Text("  S\u00E9pulture")
+                        // Bouton BMS : ouvre les blocs Bapt\u00eame, Mariage, S\u00e9pulture.
+                        if (!p.blocsOuverts.contains("bapteme") || !p.blocsOuverts.contains("mariage") || !p.blocsOuverts.contains("sepulture")) {
+                            Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                                if (!p.blocsOuverts.contains("bapteme")) {
+                                    OutlinedButton(onClick = { p.blocsOuverts.add("bapteme"); enregistrer() }, Modifier.weight(1f)) {
+                                        Icon(Icons.Filled.Add, contentDescription = null)
+                                        Text("  Bapt\u00EAme")
+                                    }
+                                }
+                                if (!p.blocsOuverts.contains("mariage")) {
+                                    OutlinedButton(onClick = { p.blocsOuverts.add("mariage"); enregistrer() }, Modifier.weight(1f)) {
+                                        Icon(Icons.Filled.Add, contentDescription = null)
+                                        Text("  Mariage")
+                                    }
+                                }
+                                if (!p.blocsOuverts.contains("sepulture")) {
+                                    OutlinedButton(onClick = { p.blocsOuverts.add("sepulture"); enregistrer() }, Modifier.weight(1f)) {
+                                        Icon(Icons.Filled.Add, contentDescription = null)
+                                        Text("  S\u00E9pulture")
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
-            item {
-                CarteFamille(
-                    personnes = personnes,
-                    p = p,
-                    onOuvrir = onOuvrir,
-                    onChoisir = onChoisir,
-                    onRetirer = onRetirer,
-                    onDefinirCujus = onDefinirCujus,
-                    onNouveauMariage = onNouveauMariage,
-                    onNouvelEnfant = onNouvelEnfant
-                )
-            }
             item { Spacer(Modifier.height(24.dp)) }
         }
     }
+
+    // Dialogue d'edition du bloc : date, heure, commune, d\u00E9partement,
+    // r\u00E9f\u00E9rence. Validation = contr\u00F4le de coh\u00E9rence + synchronisation.
+    blocEdite?.let { t ->
+        val c = champsEvenement(p, t)
+        val ref = actes.filter { it.personneId == p.id && it.type == t && it.reference.isNotBlank() }
+            .maxByOrNull { it.creation }?.reference?.trim() ?: ""
+        DialogueEditionBloc(
+            titre = libelleType(t),
+            dateInit = c.date.trim(),
+            heureInit = c.heure.trim(),
+            communeInit = c.lieu.trim(),
+            deptInit = c.dept.trim(),
+            refInit = ref,
+            onValider = { d, h, co, de, rf ->
+                onModifierBloc(t, d, h, co, de, rf)
+                blocEdite = null
+            },
+            onAnnuler = { blocEdite = null }
+        )
+    }
+
+    if (mariageOuvert) {
+        DialogueNouveauMariage(
+            onValider = { nom, prenoms, date, commune, dept ->
+                onNouveauMariage(nom, prenoms, date, commune, dept)
+                mariageOuvert = false
+            },
+            onAnnuler = { mariageOuvert = false }
+        )
+    }
+
+    if (enfantOuvert) {
+        DialogueNouvelEnfant(
+            onValider = { nom, prenoms, sexe, date ->
+                onNouvelEnfant(nom, prenoms, sexe, date)
+                enfantOuvert = false
+            },
+            onAnnuler = { enfantOuvert = false }
+        )
+    }
+
+    if (parentRole.isNotEmpty()) {
+        DialogueNouveauParent(
+            role = parentRole,
+            onValider = { nom, prenoms ->
+                onNouveauParent(parentRole, nom, prenoms)
+                parentRole = ""
+            },
+            onAnnuler = { parentRole = "" }
+        )
+    }
+
+    if (temoinType.isNotEmpty()) {
+        DialogueNouveauTemoin(
+            personnes = personnes,
+            onChoisir = { id ->
+                onNouveauTemoin(temoinType, id, "", "")
+                temoinType = ""
+            },
+            onCreer = { nom, prenoms ->
+                onNouveauTemoin(temoinType, 0L, nom, prenoms)
+                temoinType = ""
+            },
+            onAnnuler = { temoinType = "" }
+        )
+    }
 }
 
-// ---------------------------------------------------------------- Carte identite
-// Rappel du nom et prenom, puis profession dessous. Appui long : modifier.
+// ---------------------------------------------------------------- Cartouche identite
+// Pastille au numero + nom, profession, rappel des parents avec dates
+// N. et D. Cartouche teinte selon le sexe. Appui long : edition.
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CarteIdentite(p: Personne, onModifier: () -> Unit) {
+fun CarteIdentite(
+    p: Personne,
+    personnes: List<Personne>,
+    onModifier: () -> Unit,
+    onOuvrir: (Long) -> Unit,
+    onDefinirCujus: () -> Unit
+) {
     Card(
         Modifier.fillMaxWidth()
             .padding(vertical = 3.dp)
             .combinedClickable(onClick = {}, onLongClick = onModifier),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
+        border = BorderStroke(1.dp, couleurPastille(p.sexe))
     ) {
-        Row(
-            Modifier.fillMaxWidth().padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            PastilleNumero(p = p, diametre = 40)
-            Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f)) {
-                Text(p.titre(), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
-                val num = p.numeroAffiche()
-                if (num.isNotEmpty()) {
-                    Text(num, style = MaterialTheme.typography.bodySmall)
+        Column(Modifier.fillMaxWidth().padding(8.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PastilleNumero(p = p, diametre = 40)
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(p.titre(), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+                    if (p.profession.trim().isNotEmpty()) {
+                        Text(p.profession.trim(), style = MaterialTheme.typography.bodySmall)
+                    }
                 }
-                if (p.profession.trim().isNotEmpty()) {
-                    Text(p.profession.trim(), style = MaterialTheme.typography.bodySmall)
+            }
+            // Rappel des parents, avec leurs dates N. et D.
+            listOf("P\u00E8re" to p.pere, "M\u00E8re" to p.mere).forEach { paire ->
+                val libelle = paire.first
+                val idParent = paire.second
+                val q = personneParId(personnes, idParent)
+                Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                    if (q == null) {
+                        Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
+                    } else {
+                        val nd = mutableListOf<String>()
+                        val n = dateAffichee(q.dateNaissance.trim())
+                        val d = dateAffichee(q.dateDeces.trim())
+                        if (n.isNotEmpty()) nd.add("N. " + n)
+                        if (d.isNotEmpty()) nd.add("D. " + d)
+                        val parenthese = if (nd.isNotEmpty()) " (" + nd.joinToString(" \u2013 ") + ")" else ""
+                        Text(
+                            q.titre() + parenthese,
+                            Modifier.weight(1f).clickable { onOuvrir(idParent) },
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+            if (p.sosa.trim() != "1") {
+                TextButton(onClick = onDefinirCujus, Modifier.padding(top = 2.dp)) {
+                    Text("D\u00E9finir comme de cujus", fontSize = 11.sp)
                 }
             }
         }
@@ -415,6 +513,13 @@ fun LigneG(libelle: String, valeur: String) {
     }
 }
 
+
+// ---------------------------------------------------------------- Bloc d'evenement
+// Affiche un evenement de la frise : entete avec edition, date et heure sur
+// la meme ligne, commune + numero de departement accole, parents choisis ou
+// crees (naissance), conjoints et enfants (mariage), temoins avec coche de
+// signature. Aucun temoin par defaut ; les doublons sont evites en amont.
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CarteEvenement(
@@ -423,99 +528,278 @@ fun CarteEvenement(
     p: Personne,
     personnes: List<Personne>,
     actes: List<Acte>,
-    onModifier: () -> Unit,
+    onEditer: () -> Unit,
+    onOuvrir: (Long) -> Unit,
+    onChoisir: (String) -> Unit,
+    onRetirer: (String, Long) -> Unit,
+    onOuvrirMariage: () -> Unit,
+    onOuvrirEnfant: () -> Unit,
+    onOuvrirParent: (String) -> Unit,
+    onOuvrirTemoin: () -> Unit,
+    onRetirerTemoin: (String, Long) -> Unit,
+    onBasculerSignature: (String, Long) -> Unit,
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
     onEnregistrer: () -> Unit,
-    ouvrirEtatCivil: (String, Int?, String, String) -> Unit
+    ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val c = champsEvenement(p, typeActe)
     val d = c.date.trim()
+    val h = c.heure.trim()
     val l = c.lieu.trim()
     val dp = c.dept.trim()
     val anneeActe = anneeDe(d)
+    val numDept = dp.toIntOrNull() ?: numeroDepartement(dp) ?: numeroDepartement(l)
 
-    Card(
-        Modifier.fillMaxWidth()
-            .padding(vertical = 3.dp)
-            .combinedClickable(onClick = {}, onLongClick = onModifier),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
-    ) {
-        Column(Modifier.fillMaxWidth().padding(8.dp)) {
-            // Entete : titre + icone photo d'acte + icone recherche Internet (AD).
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                AjoutActeIcone(typeActe, onAjouterActe)
-                val numDept = dp.toIntOrNull() ?: numeroDepartement(l) ?: numeroDepartement(dp)
-                IconButton(
-                    onClick = {
-                        ouvrirEtatCivil(l, numDept, libelleType(typeActe), anneeActe?.toString() ?: "")
-                    },
-                    enabled = l.isNotEmpty() || numDept != null
-                ) {
-                    Icon(Icons.Filled.Search, contentDescription = "Rechercher cet acte aux AD")
-                }
+    Column(modifier.fillMaxWidth().padding(top = 2.dp, bottom = 6.dp)) {
+        // Entete : titre + edition du bloc + photo d'acte + recherche AD.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            IconButton(onClick = onEditer) {
+                Icon(Icons.Filled.Create, contentDescription = "Modifier ce bloc")
             }
-
-            LigneG("Date", dateAffichee(d))
-            LigneG("Heure", heureAffichee(c.heure.trim()))
-            LigneG("Lieu", l)
-            LigneG("D\u00E9partement", dp)
-            LigneG(
-                "R\u00E9f\u00E9rence",
-                actes.filter { it.personneId == p.id && it.type == typeActe && it.reference.isNotBlank() }
-                    .maxByOrNull { it.creation }?.reference?.trim() ?: ""
-            )
-
-            // Peres et meres (naissance uniquement) : fiche liee si elle existe,
-            // sinon age/deduction depuis la transcription de l'acte.
-            if (typeActe == "N") {
-                LignePersonneG(
-                    libelle = "P\u00E8re",
-                    q = personneParId(personnes, p.pere),
-                    anneeActe = anneeActe,
-                    ageActeContenu = ageDansContenu(actes, "P\u00E8re : ")
-                )
-                LignePersonneG(
-                    libelle = "M\u00E8re",
-                    q = personneParId(personnes, p.mere),
-                    anneeActe = anneeActe,
-                    ageActeContenu = ageDansContenu(actes, "M\u00E8re : ")
-                )
+            AjoutActeIcone(typeActe, onAjouterActe)
+            IconButton(
+                onClick = {
+                    ouvrirEtatCivil(l, numDept, libelleType(typeActe), anneeActe?.toString() ?: "")
+                },
+                enabled = l.isNotEmpty() || numDept != null
+            ) {
+                Icon(Icons.Filled.Search, contentDescription = "Rechercher cet acte aux AD")
             }
+        }
 
-            // Conjoint pour le mariage, avec ses renseignements.
-            if (typeActe == "M") {
-                LignePersonneG(
-                    libelle = "Conjoint(e)",
-                    q = personneParId(personnes, p.conjoint),
-                    anneeActe = anneeActe,
-                    ageActeContenu = ageDansContenu(actes, "Mari\u00E9e : ")
-                )
+        // Date et heure sur la meme ligne.
+        Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Date : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+            if (d.isEmpty() && h.isEmpty()) {
+                Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
+            } else {
+                val s = mutableListOf<String>()
+                if (d.isNotEmpty()) s.add(dateAffichee(d))
+                if (h.isNotEmpty()) s.add("\u00E0 " + heureAffichee(h))
+                Text(s.joinToString(" "), style = MaterialTheme.typography.bodySmall)
             }
+        }
 
-            // Temoins, depuis la transcription du dernier acte de ce type.
-            LigneG("T\u00E9moins", partieContenu(actes, "T\u00E9moins : "))
-            LigneG("Signataires", partieContenu(actes, "Signataires : "))
-
-            // Actes stockes pour cet evenement (images + transcriptions).
-            if (actes.isNotEmpty()) {
+        // Commune avec numero de departement accole, ex. Roubaix (59).
+        Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Commune : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+            if (l.isEmpty()) {
+                Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
+            } else {
                 Text(
-                    "Actes stock\u00E9s (" + actes.size.toString() + ")",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 6.dp)
+                    l + (if (numDept != null) " (" + numDept.toString() + ")" else ""),
+                    style = MaterialTheme.typography.bodySmall
                 )
-                actes.forEach { acte ->
-                    LigneActe(
-                        acte = acte,
-                        onVoir = { onVoirActe(acte) },
-                        onSupprimer = { onSupprimerActe(acte) },
-                        onEnregistrer = onEnregistrer
+            }
+        }
+
+        LigneG(
+            "R\u00E9f\u00E9rence",
+            actes.filter { it.personneId == p.id && it.type == typeActe && it.reference.isNotBlank() }
+                .maxByOrNull { it.creation }?.reference?.trim() ?: ""
+        )
+
+        // Naissance : pere (avec coche de signature) et mere, choisies parmi
+        // les fiches existantes ou creees ; la synchronisation a lieu a la
+        // validation dans MainActivity.
+        if (typeActe == "N") {
+            LignePersonneG(
+                libelle = "P\u00E8re",
+                q = personneParId(personnes, p.pere),
+                anneeActe = anneeActe,
+                ageActeContenu = ageDansContenu(actes, "P\u00E8re : ")
+            )
+            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (p.pere == 0L) {
+                    OutlinedButton(onClick = { onChoisir("pere") }, Modifier.height(32.dp)) {
+                        Text("Choisir", fontSize = 11.sp)
+                    }
+                    TextButton(onClick = { onOuvrirParent("pere") }) {
+                        Text("Cr\u00E9er", fontSize = 11.sp)
+                    }
+                } else {
+                    Checkbox(
+                        checked = p.signatairesDe(typeActe).contains(0L),
+                        onCheckedChange = { onBasculerSignature(typeActe, 0L) },
+                        modifier = Modifier.size(28.dp)
                     )
+                    Text("Signe", style = MaterialTheme.typography.bodySmall)
+                    if (personneParId(personnes, p.pere) != null) {
+                        TextButton(onClick = { onOuvrir(p.pere) }) {
+                            Text("Fiche", fontSize = 11.sp)
+                        }
+                    }
+                    IconButton(onClick = { onRetirer("pere", 0L) }, Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.Close, contentDescription = "Retirer le p\u00E8re", Modifier.size(14.dp))
+                    }
                 }
+            }
+            LignePersonneG(
+                libelle = "M\u00E8re",
+                q = personneParId(personnes, p.mere),
+                anneeActe = anneeActe,
+                ageActeContenu = ageDansContenu(actes, "M\u00E8re : ")
+            )
+            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (p.mere == 0L) {
+                    OutlinedButton(onClick = { onChoisir("mere") }, Modifier.height(32.dp)) {
+                        Text("Choisir", fontSize = 11.sp)
+                    }
+                    TextButton(onClick = { onOuvrirParent("mere") }) {
+                        Text("Cr\u00E9er", fontSize = 11.sp)
+                    }
+                } else {
+                    if (personneParId(personnes, p.mere) != null) {
+                        TextButton(onClick = { onOuvrir(p.mere) }) {
+                            Text("Fiche", fontSize = 11.sp)
+                        }
+                    }
+                    IconButton(onClick = { onRetirer("mere", 0L) }, Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.Close, contentDescription = "Retirer la m\u00E8re", Modifier.size(14.dp))
+                    }
+                }
+            }
+        }
+
+        // Mariage : conjoint et autres conjoints, puis les enfants. Chaque
+        // personne est choisie parmi les fiches existantes (sans doublon) ou
+        // saisie directement.
+        if (typeActe == "M") {
+            LignePersonneG(
+                libelle = "Conjoint(e)",
+                q = personneParId(personnes, p.conjoint),
+                anneeActe = anneeActe,
+                ageActeContenu = ageDansContenu(actes, "Mari\u00E9e : ")
+            )
+            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (p.conjoint == 0L) {
+                    OutlinedButton(onClick = { onChoisir("conjoint") }, Modifier.height(32.dp)) {
+                        Text("Choisir", fontSize = 11.sp)
+                    }
+                    TextButton(onClick = onOuvrirMariage) {
+                        Text("Saisir", fontSize = 11.sp)
+                    }
+                } else {
+                    if (personneParId(personnes, p.conjoint) != null) {
+                        TextButton(onClick = { onOuvrir(p.conjoint) }) {
+                            Text("Fiche", fontSize = 11.sp)
+                        }
+                    }
+                    IconButton(onClick = { onRetirer("conjoint", 0L) }, Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.Close, contentDescription = "Retirer le conjoint", Modifier.size(14.dp))
+                    }
+                }
+            }
+            p.conjointsSupp.forEach { idC ->
+                LignePersonneG(
+                    libelle = "Autre conjoint(e)",
+                    q = personneParId(personnes, idC),
+                    anneeActe = anneeActe,
+                    ageActeContenu = null
+                )
+                Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (personneParId(personnes, idC) != null) {
+                        TextButton(onClick = { onOuvrir(idC) }) {
+                            Text("Fiche", fontSize = 11.sp)
+                        }
+                    }
+                    IconButton(onClick = { onRetirer("conjointsupp", idC) }, Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.Close, contentDescription = "Retirer ce conjoint", Modifier.size(14.dp))
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+                OutlinedButton(onClick = { onChoisir("conjointsupp") }, Modifier.weight(1f)) {
+                    Text("Autre conjoint", fontSize = 11.sp)
+                }
+                OutlinedButton(onClick = onOuvrirMariage, Modifier.weight(1f)) {
+                    Text("Saisir un mariage", fontSize = 11.sp)
+                }
+            }
+            Text(
+                "Enfants (" + p.enfants.size.toString() + ")",
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            p.enfants.forEach { idE ->
+                val e = personneParId(personnes, idE)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        e?.titre() ?: "(fiche supprim\u00E9e)",
+                        Modifier.weight(1f).clickable { onOuvrir(idE) },
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    IconButton(onClick = { onRetirer("enfant", idE) }, Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.Close, contentDescription = "Retirer cet enfant", Modifier.size(14.dp))
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+                OutlinedButton(onClick = { onChoisir("enfant") }, Modifier.weight(1f)) {
+                    Text("Choisir un enfant", fontSize = 11.sp)
+                }
+                OutlinedButton(onClick = onOuvrirEnfant, Modifier.weight(1f)) {
+                    Text("Saisir un enfant", fontSize = 11.sp)
+                }
+            }
+        }
+
+        // Temoins : aucun par defaut, choisis parmi les fiches existantes ou
+        // crees ; coche de signature devant chaque temoin.
+        val temoins = p.temoinsDe(typeActe)
+        if (temoins.isNotEmpty()) {
+            Text(
+                "T\u00E9moins (" + temoins.size.toString() + ")",
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            temoins.forEach { idT ->
+                val t = personneParId(personnes, idT)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        t?.titre() ?: "(fiche supprim\u00E9e)",
+                        Modifier.weight(1f).clickable { onOuvrir(idT) },
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Checkbox(
+                        checked = p.signatairesDe(typeActe).contains(idT),
+                        onCheckedChange = { onBasculerSignature(typeActe, idT) },
+                        modifier = Modifier.size(28.dp)
+                    )
+                    IconButton(onClick = { onRetirerTemoin(typeActe, idT) }, Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.Close, contentDescription = "Retirer ce t\u00E9moin", Modifier.size(14.dp))
+                    }
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+            OutlinedButton(onClick = onOuvrirTemoin) {
+                Icon(Icons.Filled.Add, contentDescription = null)
+                Text("  Ajouter un t\u00E9moin")
+            }
+        }
+
+        // Actes stockes pour cet evenement (images + transcriptions).
+        if (actes.isNotEmpty()) {
+            Text(
+                "Actes stock\u00E9s (" + actes.size.toString() + ")",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+            actes.forEach { acte ->
+                LigneActe(
+                    acte = acte,
+                    onVoir = { onVoirActe(acte) },
+                    onSupprimer = { onSupprimerActe(acte) },
+                    onEnregistrer = onEnregistrer
+                )
             }
         }
     }
@@ -668,171 +952,6 @@ fun Ligne(libelle: String, valeur: String) {
     }
 }
 
-// ---------------------------------------------------------------- Famille
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun CarteFamille(
-    personnes: List<Personne>,
-    p: Personne,
-    onOuvrir: (Long) -> Unit,
-    onChoisir: (String) -> Unit,
-    onRetirer: (String, Long) -> Unit,
-    onDefinirCujus: () -> Unit,
-    onNouveauMariage: (String, String, String, String, String) -> Unit,
-    onNouvelEnfant: (String, String, String, String) -> Unit
-) {
-    var mariageOuvert by remember { mutableStateOf(false) }
-    var enfantOuvert by remember { mutableStateOf(false) }
-
-    Card(
-        Modifier.fillMaxWidth().padding(vertical = 3.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
-    ) {
-        Column(Modifier.fillMaxWidth().padding(8.dp)) {
-            Text("Famille", fontWeight = FontWeight.Bold)
-            if (p.sosa.trim() != "1") {
-                OutlinedButton(onClick = onDefinirCujus, Modifier.padding(top = 2.dp)) {
-                    Text("D\u00E9finir comme de cujus")
-                }
-            }
-
-            LienParent(
-                libelle = "P\u00E8re",
-                cible = p.pere,
-                personnes = personnes,
-                onOuvrir = onOuvrir,
-                onChoisir = { onChoisir("pere") },
-                onRetirer = { onRetirer("pere", 0L) }
-            )
-            LienParent(
-                libelle = "M\u00E8re",
-                cible = p.mere,
-                personnes = personnes,
-                onOuvrir = onOuvrir,
-                onChoisir = { onChoisir("mere") },
-                onRetirer = { onRetirer("mere", 0L) }
-            )
-            LienParent(
-                libelle = "Conjoint(e)",
-                cible = p.conjoint,
-                personnes = personnes,
-                onOuvrir = onOuvrir,
-                onChoisir = { onChoisir("conjoint") },
-                onRetirer = { onRetirer("conjoint", 0L) }
-            )
-            p.conjointsSupp.forEach { idC ->
-                LienParent(
-                    libelle = "Autre conjoint(e)",
-                    cible = idC,
-                    personnes = personnes,
-                    onOuvrir = onOuvrir,
-                    onChoisir = { onChoisir("conjointsupp") },
-                    onRetirer = { onRetirer("conjointsupp", idC) }
-                )
-            }
-            Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
-                OutlinedButton(onClick = { onChoisir("conjointsupp") }, Modifier.weight(1f)) {
-                    Icon(Icons.Filled.Add, contentDescription = null)
-                    Text("  Choisir un conjoint")
-                }
-                OutlinedButton(onClick = { mariageOuvert = true }, Modifier.weight(1f)) {
-                    Icon(Icons.Filled.Add, contentDescription = null)
-                    Text("  Saisir un mariage")
-                }
-            }
-
-            Spacer(Modifier.height(4.dp))
-            Text("Enfants (" + p.enfants.size.toString() + ")", fontWeight = FontWeight.Bold)
-            if (p.enfants.isEmpty()) {
-                Text("Aucun enfant renseign\u00E9.", style = MaterialTheme.typography.bodySmall)
-            }
-            p.enfants.forEach { idEnfant ->
-                val e = personneParId(personnes, idEnfant)
-                val nomEnfant = e?.titre() ?: "(fiche supprim\u00E9e)"
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 1.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        nomEnfant,
-                        Modifier.weight(1f).combinedClickable(onClick = { if (e != null) onOuvrir(idEnfant) }, onLongClick = {}),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    IconButton(onClick = { onRetirer("enfant", idEnfant) }, Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer", Modifier.size(14.dp))
-                    }
-                }
-            }
-            Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
-                OutlinedButton(onClick = { onChoisir("enfant") }, Modifier.weight(1f)) {
-                    Icon(Icons.Filled.Add, contentDescription = null)
-                    Text("  Choisir un enfant")
-                }
-                OutlinedButton(onClick = { enfantOuvert = true }, Modifier.weight(1f)) {
-                    Icon(Icons.Filled.Add, contentDescription = null)
-                    Text("  Saisir un enfant")
-                }
-            }
-        }
-    }
-
-    // Saisie d'un nouveau mariage : cr\u00e9e le bloc, v\u00e9rifie que le conjoint
-    // n'existe pas d\u00e9j\u00e0, synchronise avec sa fiche (aucun doublon).
-    if (mariageOuvert) {
-        DialogueNouveauMariage(
-            onValider = { nom, prenoms, date, commune, dept ->
-                onNouveauMariage(nom, prenoms, date, commune, dept)
-                mariageOuvert = false
-            },
-            onAnnuler = { mariageOuvert = false }
-        )
-    }
-
-    // Saisie d'un nouvel enfant : m\u00eame principe, v\u00e9rification anti-doublon
-    // et synchronisation avec la fiche existante.
-    if (enfantOuvert) {
-        DialogueNouvelEnfant(
-            onValider = { nom, prenoms, sexe, date ->
-                onNouvelEnfant(nom, prenoms, sexe, date)
-                enfantOuvert = false
-            },
-            onAnnuler = { enfantOuvert = false }
-        )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun LienParent(
-    libelle: String,
-    cible: Long,
-    personnes: List<Personne>,
-    onOuvrir: (Long) -> Unit,
-    onChoisir: () -> Unit,
-    onRetirer: () -> Unit
-) {
-    val q = personneParId(personnes, cible)
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 1.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
-        if (q == null) {
-            OutlinedButton(onClick = onChoisir) { Text("Choisir") }
-        } else {
-            Text(
-                q.titre(),
-                Modifier.weight(1f).combinedClickable(onClick = { onOuvrir(cible) }, onLongClick = {}),
-                style = MaterialTheme.typography.bodySmall
-            )
-            IconButton(onClick = onRetirer, Modifier.size(28.dp)) {
-                Icon(Icons.Filled.Close, contentDescription = "Retirer", Modifier.size(14.dp))
-            }
-        }
-    }
-}
 
 // ---------------------------------------------------------------- Actes : image + zoom
 

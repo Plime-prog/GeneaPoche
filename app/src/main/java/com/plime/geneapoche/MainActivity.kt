@@ -543,6 +543,123 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         enregistrer()
     }
 
+    // Saisie d'un parent depuis le bloc Naissance : anti-doublon strict sur
+    // nom + prenoms (insensible a la casse) ; si la fiche existe, on la lie,
+    // sinon on la cree. L'enfant est ajoute a la liste des enfants du parent,
+    // puis tout est resynchronise (numeros, journal) par enregistrer().
+    fun nouveauParent(role: String, nom: String, prenoms: String) {
+        val p = personneParId(personnes, idOuvert) ?: return
+        val n = nom.trim()
+        val pr = prenoms.trim()
+        if (n.isEmpty() && pr.isEmpty()) return
+        val existante = personnes.firstOrNull { q ->
+            q.nom.trim().uppercase() == n.uppercase() &&
+            q.prenoms.trim().uppercase() == pr.uppercase()
+        }
+        val cible: Personne
+        if (existante != null) {
+            cible = existante
+        } else {
+            if (personnes.size >= PlafondPersonnes) {
+                message = "Limite de " + PlafondPersonnes.toString() + " personnes atteinte."
+                enregistrer()
+                return
+            }
+            val nouvelle = Personne(
+                id = (personnes.maxOfOrNull { it.id } ?: 0L) + 1L,
+                nom = n,
+                prenoms = pr,
+                sexe = if (role == "pere") "M" else "F"
+            )
+            personnes.add(nouvelle)
+            cible = nouvelle
+        }
+        if (cible.id == p.id) {
+            message = "La fiche ne peut pas \u00EAtre son propre parent."
+            enregistrer()
+            return
+        }
+        if (role == "pere") p.pere = cible.id else p.mere = cible.id
+        if (!cible.enfants.contains(p.id)) cible.enfants.add(p.id)
+        enregistrer()
+    }
+
+    // Ajout d'un temoin a un bloc d'evenement : id != 0 = fiche choisie dans
+    // la liste ; sinon recherche anti-doublon puis creation si necessaire.
+    fun nouveauTemoin(type: String, id: Long, nom: String, prenoms: String) {
+        val p = personneParId(personnes, idOuvert) ?: return
+        val n = nom.trim()
+        val pr = prenoms.trim()
+        val cible: Personne?
+        if (id != 0L) {
+            cible = personneParId(personnes, id)
+        } else if (n.isEmpty() && pr.isEmpty()) {
+            return
+        } else {
+            cible = personnes.firstOrNull { q ->
+                q.nom.trim().uppercase() == n.uppercase() &&
+                q.prenoms.trim().uppercase() == pr.uppercase()
+            }
+        }
+        if (cible == null) {
+            if (personnes.size >= PlafondPersonnes) {
+                message = "Limite de " + PlafondPersonnes.toString() + " personnes atteinte."
+                enregistrer()
+                return
+            }
+            val nouvelle = Personne(
+                id = (personnes.maxOfOrNull { it.id } ?: 0L) + 1L,
+                nom = n,
+                prenoms = pr
+            )
+            personnes.add(nouvelle)
+            cible = nouvelle
+        }
+        if (cible.id == p.id) {
+            message = "Une personne ne peut pas \u00EAtre t\u00E9moin de son propre acte."
+            enregistrer()
+            return
+        }
+        if (!p.temoinsDe(type).contains(cible.id)) p.temoinsDe(type).add(cible.id)
+        enregistrer()
+    }
+
+    // Retire un temoin (et sa coche de signature) d'un bloc d'evenement.
+    fun retirerTemoin(type: String, id: Long) {
+        val p = personneParId(personnes, idOuvert) ?: return
+        p.temoinsDe(type).remove(id)
+        p.signatairesDe(type).remove(id)
+        enregistrer()
+    }
+
+    // Coche/decoche la signature d'une personne sur un acte (0L = le pere).
+    fun basculerSignature(type: String, id: Long) {
+        val p = personneParId(personnes, idOuvert) ?: return
+        val liste = p.signatairesDe(type)
+        if (liste.contains(id)) liste.remove(id) else liste.add(id)
+        enregistrer()
+    }
+
+    // Modification d'un bloc d'evenement depuis son dialogue d'edition :
+    // date, heure, commune, departement et reference de la cote AD.
+    // Tout est resynchronise (numeros, coherence, journal) par enregistrer().
+    fun majEvenement(type: String, date: String, heure: String, commune: String, dept: String, ref: String) {
+        val p = personneParId(personnes, idOuvert) ?: return
+        when (type) {
+            "N" -> { p.dateNaissance = date; p.heureNaissance = heure; p.lieuNaissance = commune; p.deptNaissance = dept }
+            "B" -> { p.dateBapteme = date; p.heureBapteme = heure; p.lieuBapteme = commune; p.deptBapteme = dept }
+            "M" -> { p.dateMariage = date; p.heureMariage = heure; p.lieuMariage = commune; p.deptMariage = dept }
+            "D" -> { p.dateDeces = date; p.heureDeces = heure; p.lieuDeces = commune; p.deptDeces = dept }
+            "S" -> { p.dateSepulture = date; p.heureSepulture = heure; p.lieuSepulture = commune; p.deptSepulture = dept }
+        }
+        if (ref.isNotBlank()) {
+            val acte = actes.filter { it.personneId == p.id && it.type == type }
+                .maxByOrNull { it.creation }
+            if (acte != null) acte.reference = ref
+        }
+        enregistrer()
+    }
+
     fun supprimerPiste(piste: Piste) {
         pistes.remove(piste)
         enregistrer()
@@ -968,6 +1085,11 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             ajouterMariage = { nom, prenoms, date, commune, dept ->
                 ajouterMariage(nom, prenoms, date, commune, dept)
             },
+            nouveauParent = { role, nom, prenoms -> nouveauParent(role, nom, prenoms) },
+            nouveauTemoin = { type, id, nom, prenoms -> nouveauTemoin(type, id, nom, prenoms) },
+            retirerTemoin = { type, id -> retirerTemoin(type, id) },
+            basculerSignature = { type, id -> basculerSignature(type, id) },
+            majEvenement = { type, d, h, co, de, rf -> majEvenement(type, d, h, co, de, rf) },
             ajouterEnfant = { nom, prenoms, sexe, date ->
                 ajouterEnfant(nom, prenoms, sexe, date)
             },

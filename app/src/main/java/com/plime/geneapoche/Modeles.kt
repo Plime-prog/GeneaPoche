@@ -53,7 +53,19 @@ data class Personne(
     var conjointsSupp: MutableList<Long> = mutableListOf(),
     var enfants: MutableList<Long> = mutableListOf(),
     // Blocs facultatifs crees par l'utilisateur : "bapteme", "sepulture"
-    var blocsOuverts: MutableList<String> = mutableListOf()
+    var blocsOuverts: MutableList<String> = mutableListOf(),
+    // Temoins de chaque acte (ids de fiches). Aucun par defaut.
+    var temoinsN: MutableList<Long> = mutableListOf(),
+    var temoinsB: MutableList<Long> = mutableListOf(),
+    var temoinsM: MutableList<Long> = mutableListOf(),
+    var temoinsD: MutableList<Long> = mutableListOf(),
+    var temoinsS: MutableList<Long> = mutableListOf(),
+    // Signataires de l'acte : 0L = le pere, sinon l'id d'un temoin.
+    var signatairesN: MutableList<Long> = mutableListOf(),
+    var signatairesB: MutableList<Long> = mutableListOf(),
+    var signatairesM: MutableList<Long> = mutableListOf(),
+    var signatairesD: MutableList<Long> = mutableListOf(),
+    var signatairesS: MutableList<Long> = mutableListOf()
 ) {
     fun titre(): String {
         return listOf(nom.trim(), prenoms.trim())
@@ -73,6 +85,23 @@ data class Personne(
         val s = sosa.trim()
         if (s.isNotEmpty()) return s
         return lateral.trim()
+    }
+
+    // Temoins et signataires selon le type d'acte (N/B/M/D/S).
+    fun temoinsDe(type: String): MutableList<Long> = when (type) {
+        "N" -> temoinsN
+        "B" -> temoinsB
+        "M" -> temoinsM
+        "S" -> temoinsS
+        else -> temoinsD
+    }
+
+    fun signatairesDe(type: String): MutableList<Long> = when (type) {
+        "N" -> signatairesN
+        "B" -> signatairesB
+        "M" -> signatairesM
+        "S" -> signatairesS
+        else -> signatairesD
     }
     fun aVerifier(): Boolean {
         return etatIdentite == "rouge" || etatNaissance == "rouge" ||
@@ -154,10 +183,35 @@ data class Personne(
         val blocs = JSONArray()
         blocsOuverts.forEach { blocs.put(it) }
         o.put("blocsOuverts", blocs)
+        fun ecrire(nom: String, liste: List<Long>) {
+            val t = JSONArray()
+            liste.forEach { t.put(it) }
+            o.put(nom, t)
+        }
+        ecrire("temoinsN", temoinsN)
+        ecrire("temoinsB", temoinsB)
+        ecrire("temoinsM", temoinsM)
+        ecrire("temoinsD", temoinsD)
+        ecrire("temoinsS", temoinsS)
+        ecrire("signatairesN", signatairesN)
+        ecrire("signatairesB", signatairesB)
+        ecrire("signatairesM", signatairesM)
+        ecrire("signatairesD", signatairesD)
+        ecrire("signatairesS", signatairesS)
         return o
     }
 
     companion object {
+        // Lit un tableau JSON de nombres (temoins, signataires).
+        fun lireLongs(o: JSONObject, cle: String): MutableList<Long> {
+            val t = o.optJSONArray(cle) ?: return mutableListOf()
+            val r = mutableListOf<Long>()
+            for (i in 0 until t.length()) {
+                r.add(t.optLong(i, 0L))
+            }
+            return r
+        }
+
         fun depuisJson(o: JSONObject): Personne {
             val ancienneNaissance = o.optString("naissance", "")
             val ancienDeces = o.optString("deces", "")
@@ -222,7 +276,17 @@ data class Personne(
                             add(blocs.optString(i, ""))
                         }
                     }
-                }
+                },
+                temoinsN = lireLongs(o, "temoinsN"),
+                temoinsB = lireLongs(o, "temoinsB"),
+                temoinsM = lireLongs(o, "temoinsM"),
+                temoinsD = lireLongs(o, "temoinsD"),
+                temoinsS = lireLongs(o, "temoinsS"),
+                signatairesN = lireLongs(o, "signatairesN"),
+                signatairesB = lireLongs(o, "signatairesB"),
+                signatairesM = lireLongs(o, "signatairesM"),
+                signatairesD = lireLongs(o, "signatairesD"),
+                signatairesS = lireLongs(o, "signatairesS")
             )
         }
     }

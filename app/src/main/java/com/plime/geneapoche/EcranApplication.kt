@@ -97,6 +97,11 @@ fun EcranApplication(
     lier: (String, Long) -> Unit,
     delier: (String, Long) -> Unit,
     ajouterMariage: (String, String, String, String, String) -> Unit,
+    nouveauParent: (String, String, String) -> Unit,
+    nouveauTemoin: (String, Long, String, String) -> Unit,
+    retirerTemoin: (String, Long) -> Unit,
+    basculerSignature: (String, Long) -> Unit,
+    majEvenement: (String, String, String, String, String, String) -> Unit,
     ajouterEnfant: (String, String, String, String) -> Unit,
     definirCujus: (Personne) -> Unit,
     choisirCujus: () -> Unit,
@@ -546,6 +551,11 @@ fun EcranApplication(
             onNouveauMariage = { nom, prenoms, date, commune, dept ->
                 ajouterMariage(nom, prenoms, date, commune, dept)
             },
+            onNouveauParent = { role, nom, prenoms -> nouveauParent(role, nom, prenoms) },
+            onNouveauTemoin = { type, id, nom, prenoms -> nouveauTemoin(type, id, nom, prenoms) },
+            onRetirerTemoin = { type, id -> retirerTemoin(type, id) },
+            onBasculerSignature = { type, id -> basculerSignature(type, id) },
+            onModifierBloc = { type, d, h, co, de, rf -> majEvenement(type, d, h, co, de, rf) },
             onNouvelEnfant = { nom, prenoms, sexe, date ->
                 ajouterEnfant(nom, prenoms, sexe, date)
             },

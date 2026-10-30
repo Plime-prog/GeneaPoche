@@ -1,5 +1,6 @@
 package com.plime.geneapoche
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -281,3 +283,174 @@ fun Champ(
     )
 }
 
+
+// ---------------------------------------------------------------- Edition d'un bloc d'evenement
+// Date, heure, commune, departement et reference de la cote d'archives.
+// La validation declenche le controle de coherence et la synchronisation
+// cote MainActivity.
+
+@Composable
+fun DialogueEditionBloc(
+    titre: String,
+    dateInit: String,
+    heureInit: String,
+    communeInit: String,
+    deptInit: String,
+    refInit: String,
+    onValider: (String, String, String, String, String) -> Unit,
+    onAnnuler: () -> Unit
+) {
+    var date by remember { mutableStateOf(dateInit) }
+    var heure by remember { mutableStateOf(heureInit) }
+    var commune by remember { mutableStateOf(communeInit) }
+    var dept by remember { mutableStateOf(deptInit) }
+    var ref by remember { mutableStateOf(refInit) }
+
+    AlertDialog(
+        onDismissRequest = onAnnuler,
+        title = { Text(titre) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = date,
+                        onValueChange = { date = it },
+                        label = { Text("Date (jj/mm/aaaa)") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = heure,
+                        onValueChange = { heure = it },
+                        label = { Text("Heure (hh:mm)") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Champ("Commune", commune, { commune = it })
+                Champ("D\u00E9partement (ex 59)", dept, { dept = it })
+                Champ("R\u00E9f\u00E9rence (cote AD)", ref, { ref = it })
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onValider(date.trim(), heure.trim(), commune.trim(), dept.trim(), ref.trim())
+                }
+            ) { Text("Enregistrer") }
+        },
+        dismissButton = {
+            TextButton(onClick = onAnnuler) { Text("Annuler") }
+        }
+    )
+}
+
+// ---------------------------------------------------------------- Saisie d'un parent
+// Depuis le bloc Naissance : cree le pere ou la mere. L'appelant verifie
+// d'abord si une fiche identique existe (aucun doublon) et rattache l'enfant.
+
+@Composable
+fun DialogueNouveauParent(
+    role: String,
+    onValider: (String, String) -> Unit,
+    onAnnuler: () -> Unit
+) {
+    var nom by remember { mutableStateOf("") }
+    var prenoms by remember { mutableStateOf("") }
+    val titreDialogue = if (role == "pere") "Saisir le p\u00E8re" else "Saisir la m\u00E8re"
+
+    AlertDialog(
+        onDismissRequest = onAnnuler,
+        title = { Text(titreDialogue) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    "Si cette personne existe d\u00E9j\u00E0 dans la base, sa fiche existante sera utilis\u00E9e : aucun doublon ne sera cr\u00E9\u00E9.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Champ("Nom", nom, { nom = it })
+                Champ("Pr\u00E9noms", prenoms, { prenoms = it })
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onValider(nom.trim(), prenoms.trim()) },
+                enabled = nom.isNotBlank() || prenoms.isNotBlank()
+            ) { Text("Enregistrer") }
+        },
+        dismissButton = {
+            TextButton(onClick = onAnnuler) { Text("Annuler") }
+        }
+    )
+}
+
+// ---------------------------------------------------------------- Choix ou creation d'un temoin
+// Aucun temoin par defaut. On propose d'abord les fiches existantes qui
+// correspondent (choix), et l'on ne propose la creation que si aucune fiche
+// ne correspond exactement : pas de doublon dans la base.
+
+@Composable
+fun DialogueNouveauTemoin(
+    personnes: List<Personne>,
+    onChoisir: (Long) -> Unit,
+    onCreer: (String, String) -> Unit,
+    onAnnuler: () -> Unit
+) {
+    var nom by remember { mutableStateOf("") }
+    var prenoms by remember { mutableStateOf("") }
+    val motNom = nom.trim().uppercase()
+    val motPrenoms = prenoms.trim().uppercase()
+
+    // Fiches existantes dont le nom ou les prenoms contiennent la saisie.
+    val correspondances = if (motNom.isEmpty() && motPrenoms.isEmpty()) {
+        listOf()
+    } else {
+        personnes.filter { q ->
+            (motNom.isNotEmpty() && q.nom.trim().uppercase().contains(motNom)) ||
+                (motPrenoms.isNotEmpty() && q.prenoms.trim().uppercase().contains(motPrenoms))
+        }.take(6)
+    }
+    // Creation proposee seulement si aucune fiche ne correspond exactement.
+    val correspondanceExacte = personnes.any { q ->
+        q.nom.trim().uppercase() == motNom && q.prenoms.trim().uppercase() == motPrenoms
+    }
+    val creationPossible = (motNom.isNotEmpty() || motPrenoms.isNotEmpty()) && !correspondanceExacte
+
+    AlertDialog(
+        onDismissRequest = onAnnuler,
+        title = { Text("Ajouter un t\u00E9moin") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Champ("Nom", nom, { nom = it })
+                Champ("Pr\u00E9noms", prenoms, { prenoms = it })
+                if (correspondances.isNotEmpty()) {
+                    Text(
+                        "Fiches existantes correspondantes :",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                    correspondances.forEach { q ->
+                        Text(
+                            q.titre(),
+                            Modifier.fillMaxWidth()
+                                .clickable { onChoisir(q.id) }
+                                .padding(vertical = 4.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+                if (creationPossible) {
+                    OutlinedButton(
+                        onClick = { onCreer(nom.trim(), prenoms.trim()) },
+                        modifier = Modifier.padding(top = 6.dp)
+                    ) { Text("Cr\u00E9er la fiche") }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onAnnuler) { Text("Fermer") }
+        }
+    )
+}
