@@ -81,6 +81,14 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'Ã
 - **Pastille corrig\u00E9e** : le rond affiche le num\u00E9ro brut (plus d'\u00E9tiquette \u00AB Lat\u00E9ral \u00BB), avec une taille de police adapt\u00E9e aux num\u00E9ros d'Aboville longs.
 - **Encodage UTF-8 robuste** : tout le code est ASCII pur (accents en s\u00E9quences d'\u00E9chappement \u00E9chap\u00E9es) \u2014 plus aucun \u00E9 mojibake possible.
 
+## Fiche personne refondue (v0.19)
+
+- **Titre identique \u00E0 la liste** : pastille au num\u00E9ro Sosa/d'Aboville, couleur bleu (homme) ou rose (femme), vert p\u00E2le si sexe absent, nom et pr\u00E9noms.
+- **Blocs resserr\u00E9s**, **Naissance et D\u00E9c\u00E8s seulement par d\u00E9faut** ; bouton **BMS** (+ Bapt\u00EAme, + Mariage, + S\u00E9pulture) pour ouvrir les autres blocs.
+- **Naissance : p\u00E8re et m\u00E8re** avec \u00E2ge \u00E0 l'acte ; **D\u00E9c\u00E8s : sans les parents**.
+- **Saisir un mariage / Saisir un enfant** depuis la carte Famille : contr\u00F4le **anti-doublon** (nom + pr\u00E9noms, insensible \u00E0 la casse), **synchronisation avec la fiche existante** au lieu d'une cr\u00E9ation, autres mariages et enfants illimit\u00E9s ; idem pour la cr\u00E9ation d'une personne.
+- **Boutons Supprimer, Annuler, Enregistrer** dans le dialogue d'\u00E9dition.
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -127,3 +135,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'Ã
 16. \u2705 v0.16 : journal exhaustif \u2014 une recherche par information manquante, regroupement par personne avec compteurs.
 17. \u2705 v0.17 : sources Heredis (c\u00F4te REFN, enregistrements SOUR avec transcription), lieux PLAC normalis\u00E9s \u00AB commune, num\u00E9ro, d\u00E9partement \u00BB, contr\u00F4le de coh\u00E9rence (encadr\u00E9 anomalies dans le journal).
 18. \u2705 v0.18 : num\u00E9rotation imm\u00E9diate (d'Aboville pour tous les enfants non-Sosa), pastille corrig\u00E9e, suppression de l'\u00E9tiquette \u00AB Lat\u00E9ral \u00BB, encodage UTF-8 v\u00E9rifi\u00E9 sur toute l'application.
+19. \u2705 v0.19 : fiche refondue \u2014 pastille et titre comme la liste, blocs N/D par d\u00E9faut + bouton BMS, naissance avec parents et d\u00E9c\u00E8s sans, saisie mariage/enfant anti-doublon avec synchronisation, boutons Supprimer/Annuler/Enregistrer.
