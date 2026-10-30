@@ -114,6 +114,14 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 - **De cujus à synchronisation instantanée** : dans le dialogue GEDCOM → « Définir le de cujus », **le numéro Sosa de chaque personne se recalcule en direct** pendant la saisie du numéro ou le choix de la personne ; Annuler restaure la numérotation précédente ; le numéro actuel de chaque personne est affiché dans la liste de choix.
 - **Un encadré par événement ouvert** : dans la frise, toucher une ligne (N., B., M., D., S.) fait apparaître **son propre encadré dédié** — père, mère, conjoint, référence (côte AD), témoins et signataires, photo de l'acte et lien vers les archives départementales n'y apparaissent **que dans ce bloc**, jamais ailleurs sur la fiche. Refermé, il ne reste que la ligne essentielle.
 
+## Formats uniques et fiche allégée (v0.23)
+
+- **Un seul format de date et d'heure** : **jj/mm/aaaa** et **hh:mm**, contrôlés à la saisie (jour 01-31, mois 01-12, heure 00-23, minute 00-59) ; à défaut, **l'année seule aaaa** est acceptée. Heures affichées partout au format 14:05.
+- **Dialogue d'édition du de cujus** : le choix de la personne se fait dans la liste (numéro actuel affiché), puis un **dialogue d'édition** demande son n° Sosa ; la numérotation se synchronise en direct, Enregistrer enregistre (contrôles, cohérence, journal), Annuler restaure.
+- **Cartouche allégé, sans édition** : uniquement la profession et le rappel du père et de la mère avec leurs dates N./D. (nom et numéro restent dans le titre) ; l'édition de l'identité passe par le crayon de la barre de titre.
+- **Frise repliée à l'ouverture** : tous les blocs sont réduits par défaut ; seules les lignes essentielles N. et D. apparaissent (B/M/S dès ouverture) ; **plus de crayon sur les lignes** — la correction se fait dans le bloc ouvert.
+- **Quatre boutons toujours visibles sous la frise** (icônes, police réduite) : **Baptême, Mariage, Sépulture, Enfant** ; « Enfant » ouvre le menu **Ajouter un enfant** (choisir dans la base ou saisir).
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -164,3 +172,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 20. ✅ v0.20 : fiche personne v2 — cartouche identité avec parents (N./D.), frise chronologique (N/D par défaut, BMS), édition par bloc avec dialogue dédié, témoins choisis/créés sans doublon avec coche de signature, date+heure sur une ligne, commune avec département accolé.
 21. ✅ v0.21 : frise légère (essentiel N/D par ligne, crayon d'édition par ligne), cartouche sans cujus, polices de boutons réduites, boutons Enfant dans la frise, bloc-fiche par enfant.
 22. ✅ v0.22 : de cujus à numérotation recalculée en direct (avec restauration sur Annuler), numéro affiché dans la liste de choix, chaque événement ouvert dans son propre encadré dédié.
+23. ✅ v0.23 : formats uniques jj/mm/aaaa + hh:mm (ou année aaaa) contrôlés partout, dialogue d'édition du de cujus, cartouche réduit sans édition, frise repliée à l'ouverture sans crayons de ligne, 4 boutons B/M/S/Enfant + menu ajouter un enfant.
