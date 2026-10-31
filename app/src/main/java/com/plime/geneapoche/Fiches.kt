@@ -629,7 +629,6 @@ fun EcranPersonne(
 // N. et D. Cartouche teinte selon le sexe. Appui long : edition.
 
 @OptIn(ExperimentalFoundationApi::class)
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CarteIdentite(
     p: Personne,
