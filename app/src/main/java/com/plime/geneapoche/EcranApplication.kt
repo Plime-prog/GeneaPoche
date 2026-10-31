@@ -37,6 +37,10 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -153,6 +157,11 @@ fun EcranApplication(
     enregistrerActe: (ActeSaisie) -> Unit,
     ouvrirLien: (String) -> Unit,
     ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
+    // G1-08 : sauvegarde chiffree exportable/importable (.gpbak).
+    sauvegarderBase: (Uri, String) -> Unit,
+    restaurerSauvegarde: (Uri, String) -> Unit,
+    // G1-09 : restauration de la base sauvegardee avant un import GEDCOM.
+    restaurerImport: () -> Unit,
     // Coche de validation d'une information : (personne, section, valide).
     validerInfo: (Personne, String, Boolean) -> Unit
 ) {
@@ -216,6 +225,21 @@ fun EcranApplication(
             var exportBrancheId by remember { mutableStateOf(0L) }
             var exportTout by remember { mutableStateOf(true) }
             var pickerBranche by remember { mutableStateOf(false) }
+            // G1-08 : phrase secrete + lanceurs .gpbak (export et import).
+            var phraseSecrete by remember { mutableStateOf("") }
+            var phraseEnAttente by remember { mutableStateOf("") }
+            var demandePhraseExport by remember { mutableStateOf(false) }
+            var demandePhraseImport by remember { mutableStateOf(false) }
+            val lanceurGpbakExport = rememberLauncherForActivityResult(
+                ActivityResultContracts.CreateDocument("application/octet-stream")
+            ) { uri ->
+                if (uri != null) sauvegarderBase(uri, phraseEnAttente)
+            }
+            val lanceurGpbakImport = rememberLauncherForActivityResult(
+                ActivityResultContracts.OpenDocument()
+            ) { uri ->
+                if (uri != null) restaurerSauvegarde(uri, phraseEnAttente)
+            }
 
             val lanceurGedcom = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -312,7 +336,7 @@ fun EcranApplication(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                                 Text(
-                                    personnes.size.toString() + " / " + PlafondPersonnes.toString() + " personnes",
+                                    personnes.size.toString() + " personnes",
                                     Modifier.weight(1f),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -499,7 +523,7 @@ fun EcranApplication(
                     title = { Text("GEDCOM (Heredis)") },
                     text = {
                         Column {
-                            Text(personnes.size.toString() + " / " + PlafondPersonnes.toString() + " personnes", fontWeight = FontWeight.Bold)
+                            Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -532,6 +556,36 @@ fun EcranApplication(
                                 }
                             }
                             TextButton(
+                                onClick = { menuGedcom = false; phraseSecrete = ""; demandePhraseExport = true },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.List, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Sauvegarde chiffr\u00E9e (.gpbak)")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; phraseSecrete = ""; demandePhraseImport = true },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Send, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Restaurer une sauvegarde (.gpbak)")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; restaurerImport() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Refresh, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Restaurer la base d'avant import")
+                                }
+                            }
+                            TextButton(
                                 onClick = { menuGedcom = false; confirmeVider = true },
                                 Modifier.fillMaxWidth()
                             ) {
@@ -545,6 +599,51 @@ fun EcranApplication(
                     },
                     confirmButton = {
                         TextButton(onClick = { menuGedcom = false }) { Text("Fermer") }
+                    }
+                )
+            }
+            // G1-08 : dialogue de phrase secrete (export/import .gpbak).
+            if (demandePhraseExport || demandePhraseImport) {
+                AlertDialog(
+                    onDismissRequest = { demandePhraseExport = false; demandePhraseImport = false; phraseSecrete = "" },
+                    title = { Text(if (demandePhraseExport) "Sauvegarde chiffr\u00E9e (.gpbak)" else "Restaurer une sauvegarde (.gpbak)") },
+                    text = {
+                        Column {
+                            Text(
+                                if (demandePhraseExport)
+                                    "La sauvegarde contiendra toute la base (personnes, journal, actes, notes et images), chiffr\u00E9e par votre phrase secr\u00E8te. Sans elle, le fichier est indechiffrable."
+                                else
+                                    "Choisissez le fichier .gpbak : la base actuelle sera remplace\u00E9e par son contenu.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            OutlinedTextField(
+                                value = phraseSecrete,
+                                onValueChange = { phraseSecrete = it },
+                                label = { Text("Phrase secr\u00E8te (6 caract\u00E8res min.)") },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                phraseEnAttente = phraseSecrete
+                                phraseSecrete = ""
+                                if (demandePhraseExport) {
+                                    demandePhraseExport = false
+                                    lanceurGpbakExport.launch("geneapoche.gpbak")
+                                } else {
+                                    demandePhraseImport = false
+                                    lanceurGpbakImport.launch(arrayOf("*/*"))
+                                }
+                            },
+                            enabled = phraseSecrete.length >= 6
+                        ) { Text("Continuer") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { demandePhraseExport = false; demandePhraseImport = false; phraseSecrete = "" }) { Text("Annuler") }
                     }
                 )
             }
@@ -640,14 +739,10 @@ fun EcranApplication(
                         )
                         return@DialogueEdition
                     }
-                    if (personnes.size >= PlafondPersonnes) {
-                        onMessage("Limite de " + PlafondPersonnes.toString() + " personnes atteinte.")
-                    } else {
-                        (personnes as? MutableList<Personne>)?.add(p2)
-                        if (pickerRole.isNotEmpty()) {
-                            lier(pickerRole, p2.id)
-                            return@DialogueEdition
-                        }
+                    (personnes as? MutableList<Personne>)?.add(p2)
+                    if (pickerRole.isNotEmpty()) {
+                        lier(pickerRole, p2.id)
+                        return@DialogueEdition
                     }
                 }
                 enregistrer()

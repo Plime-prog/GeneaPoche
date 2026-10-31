@@ -540,11 +540,6 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             }
             cible = existante
         } else {
-            if (personnes.size >= PlafondPersonnes) {
-                message = "Limite de " + PlafondPersonnes.toString() + " personnes atteinte."
-                enregistrer()
-                return
-            }
             val nouvelle = Personne(
                 id = (personnes.maxOfOrNull { it.id } ?: 0L) + 1L,
                 nom = n,
@@ -588,10 +583,6 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             }
             enfant = existant
         } else {
-            if (personnes.size >= PlafondPersonnes) {
-                message = "Limite de " + PlafondPersonnes.toString() + " personnes atteinte."
-                return
-            }
             enfant = Personne(
                 id = (personnes.maxOfOrNull { it.id } ?: 0L) + 1L,
                 nom = n,
@@ -659,11 +650,6 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         if (existante != null) {
             cible = existante
         } else {
-            if (personnes.size >= PlafondPersonnes) {
-                message = "Limite de " + PlafondPersonnes.toString() + " personnes atteinte."
-                enregistrer()
-                return
-            }
             val nouvelle = Personne(
                 id = (personnes.maxOfOrNull { it.id } ?: 0L) + 1L,
                 nom = n,
@@ -701,11 +687,6 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             }
         }
         if (cible == null) {
-            if (personnes.size >= PlafondPersonnes) {
-                message = "Limite de " + PlafondPersonnes.toString() + " personnes atteinte."
-                enregistrer()
-                return
-            }
             val nouvelle = Personne(
                 id = (personnes.maxOfOrNull { it.id } ?: 0L) + 1L,
                 nom = n,
@@ -851,6 +832,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     }
 
     fun remplacerBase(importees: List<Personne>) {
+        // G1-09 : sauvegarde automatique de la base avant remplacement.
+        Stockage.sauvegardeAvantImport(ctx)
         personnes.clear()
         personnes.addAll(importees)
         pistes.clear()
@@ -870,11 +853,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         }
         arbreCentre = premier?.id ?: 0L
         enregistrer()
-        message = if (importees.size >= 50) {
-            "Import limit\u00E9 \u00E0 50 personnes (" + importees.size.toString() + " import\u00E9es)."
-        } else {
-            importees.size.toString() + " personnes import\u00E9es."
-        }
+        message = importees.size.toString() + " personnes import\u00E9es."
     }
 
     // Vide entierement la base (personnes, journal, actes et images), apres confirmation.
@@ -890,6 +869,70 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         sosaCujus = 1L
         enregistrer()
         message = "Base vid\u00E9e."
+    }
+
+    // G1-08 : sauvegarde chiffree exportable (.gpbak) protegee par phrase secrete.
+    fun sauvegarderBase(uri: Uri, phrase: String) {
+        if (Sauvegarde.exporter(ctx, uri, phrase, personnes, pistes, actes)) {
+            message = "Sauvegarde .gpbak cr\u00E9\u00E9e : conservez-la et notez la phrase secr\u00E8te."
+        } else {
+            message = "\u00C9chec de la sauvegarde .gpbak."
+        }
+    }
+
+    // G1-08 : restauration d'une sauvegarde .gpbak (phrase secrete exige).
+    fun restaurerSauvegardeBase(uri: Uri, phrase: String) {
+        val contenu = Sauvegarde.importer(ctx, uri, phrase)
+        if (contenu == null) {
+            message = "Sauvegarde illisible : v\u00E9rifiez le fichier et la phrase secr\u00E8te."
+            return
+        }
+        personnes.clear()
+        personnes.addAll(contenu.personnes)
+        pistes.clear()
+        pistes.addAll(contenu.pistes)
+        actes.forEach { Stockage.supprimerImage(ctx, it.id) }
+        actes.clear()
+        actes.addAll(contenu.actes)
+        contenu.actes.forEach { a ->
+            contenu.images[a.id]?.let { octets -> Stockage.sauverImage(ctx, a.id, octets) }
+        }
+        pileFiches.clear()
+        idOuvert = 0L
+        val premier = personnes.filter { it.sosa.trim().toLongOrNull() != null }.minByOrNull { it.sosa.trim().toLong() }
+        if (premier != null) {
+            sosaCujus = premier.sosa.trim().toLongOrNull() ?: 1L
+            Stockage.definirCujus(ctx, premier.id, sosaCujus)
+            arbreCentre = premier.id
+        }
+        enregistrer()
+        message = "Sauvegarde restaur\u00E9e : " + contenu.personnes.size.toString() + " personnes."
+    }
+
+    // G1-09 : restauration de la base sauvegardee automatiquement avant un import GEDCOM.
+    fun restaurerSauvegardeImport() {
+        if (!Stockage.aSauvegardeImport(ctx)) {
+            message = "Aucune sauvegarde d'import disponible."
+            return
+        }
+        if (!Stockage.restaurerSauvegardeImport(ctx)) {
+            message = "\u00C9chec de la restauration."
+            return
+        }
+        personnes.clear()
+        pistes.clear()
+        actes.clear()
+        val rp = Stockage.charger(ctx)
+        val rj = Stockage.chargerJournal(ctx)
+        val ra = Stockage.chargerActes(ctx)
+        personnes.addAll(rp.liste)
+        pistes.addAll(rj.liste)
+        actes.addAll(ra.liste)
+        fichiersIllisibles = listOf(rp, rj, ra).filter { it.illisible }.map { it.nom }
+        pileFiches.clear()
+        idOuvert = 0L
+        message = "Base d'avant import restaur\u00E9e."
+        rafraichirTout()
     }
 
     // ------------------------------------------------------------ Saisie par acte
@@ -944,7 +987,6 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         }
         acteAConfirmer = null
         var crees = 0
-        var plafondAtteint = false
 
         // Trouve une personne existante (par id ou nom+premoms), sinon la cree.
         fun trouverOuCreer(id: Long, nomSaisi: String, prenomsSaisis: String, sexeDefaut: String): Personne? {
@@ -956,10 +998,6 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 it.nom.trim().uppercase() == n.uppercase() &&
                 it.prenoms.trim().uppercase() == pr.uppercase()
             }?.let { return it }
-            if (personnes.size >= PlafondPersonnes) {
-                plafondAtteint = true
-                return null
-            }
             val np = Personne(
                 id = (personnes.maxOfOrNull { it.id } ?: 0L) + 1L,
                 nom = n, prenoms = pr, sexe = if (sexeDefaut.isNotEmpty()) sexeDefaut else ""
@@ -992,8 +1030,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
 
         val p = trouverOuCreer(a.personneId, a.nom, a.prenoms, a.sexe)
         if (p == null) {
-            message = "Acte non enregistr\u00E9 : personne concern\u00E9e non identifi\u00E9e" +
-                (if (plafondAtteint) " (plafond de " + PlafondPersonnes.toString() + " personnes atteint)" else "") + "."
+            message = "Acte non enregistr\u00E9 : personne concern\u00E9e non identifi\u00E9e."
             return
         }
 
@@ -1136,8 +1173,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
 
         enregistrer()
         message = "Acte enregistr\u00E9 : " + libelleType(a.type) +
-            (if (crees > 0) " ; " + crees.toString() + " personne(s) cr\u00E9\u00E9e(s)" else "") +
-            (if (plafondAtteint) " ; plafond de " + PlafondPersonnes.toString() + " personnes atteint" else "")
+            (if (crees > 0) " ; " + crees.toString() + " personne(s) cr\u00E9\u00E9e(s)" else "")
     }
 
     fun ajouterActe(personneId: Long, uri: Uri, type: String, titre: String) {
@@ -1270,6 +1306,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             ouvrirEtatCivil = { commune, dept, type, annee ->
                 ouvrirLien(ctx, lienEtatCivil(commune, dept, type, annee))?.let { m -> message = m }
             },
+            sauvegarderBase = { uri, ph -> sauvegarderBase(uri, ph) },
+            restaurerSauvegarde = { uri, ph -> restaurerSauvegardeBase(uri, ph) },
+            restaurerImport = { restaurerSauvegardeImport() },
             validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) }
         )
     }
@@ -1457,7 +1496,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             title = { Text("Importer ce GEDCOM ?") },
             text = {
                 Text(
-                    "La base actuelle (" + personnes.size.toString() + " personnes, pistes et actes) sera REMPLAC\u00C9E par les " + importees.size.toString() + " personnes du fichier. Pensez \u00E0 exporter la branche actuelle en GEDCOM avant de continuer."
+                    "La base actuelle (" + personnes.size.toString() + " personnes, pistes et actes) sera REMPLAC\u00C9E par les " + importees.size.toString() + " personnes du fichier. Une sauvegarde automatique (restaurable depuis le menu GEDCOM) sera cr\u00E9\u00E9e avant le remplacement."
                 )
             },
             confirmButton = {

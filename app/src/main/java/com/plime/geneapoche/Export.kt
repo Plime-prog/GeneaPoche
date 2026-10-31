@@ -452,7 +452,7 @@ fun importerGedcom(texte: String): List<Personne> {
         }
     }
 
-    return personnes.take(50)
+    return personnes
 }
 
 

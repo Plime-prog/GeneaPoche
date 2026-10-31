@@ -431,6 +431,45 @@ object Stockage {
         }
     }
 
+    // G1-09 : sauvegarde automatique avant un import GEDCOM. Copies chiffrees
+    // (cle maitre) des trois fichiers, restaurables tant que le PIN est inchange.
+    fun sauvegardeAvantImport(ctx: Context): Boolean {
+        return try {
+            var ok = true
+            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
+                val src = File(ctx.filesDir, nom)
+                if (src.exists()) {
+                    val dst = File(ctx.filesDir, nom + ".importbak")
+                    if (dst.exists()) dst.delete()
+                    if (!src.renameTo(dst)) ok = false
+                }
+            }
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun aSauvegardeImport(ctx: Context): Boolean =
+        File(ctx.filesDir, FICHIER_PERSONNES + ".importbak").exists()
+
+    fun restaurerSauvegardeImport(ctx: Context): Boolean {
+        return try {
+            var ok = true
+            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
+                val bak = File(ctx.filesDir, nom + ".importbak")
+                if (bak.exists()) {
+                    val principal = File(ctx.filesDir, nom)
+                    if (principal.exists()) principal.delete()
+                    if (!bak.renameTo(principal)) ok = false
+                }
+            }
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     // ------------------------------------------------------------ Fichiers chiffres generiques
 
     // Resultat d'une lecture chiffree : illisible = vrai si NI le fichier

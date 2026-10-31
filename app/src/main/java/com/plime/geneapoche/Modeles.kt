@@ -10,9 +10,6 @@ import org.json.JSONObject
 // Etat : "" (neutre), "vert" (verifie), "rouge" (a verifier) par section de la fiche.
 // Sections : identite, naissance, bapteme, mariage, deces, sepulture.
 
-// Plafond de l'application : une genealogie de poche, 3 generations + lateraux.
-val PlafondPersonnes = 50
-
 // ---------------------------------------------------- Noms et prenoms systematiques
 // Nom de famille : TOUJOURS en majuscules ("dupont" -> "DUPONT").
 // Prenoms : seule l'initiale de chaque element en majuscule, y compris
