@@ -311,6 +311,8 @@ class MainActivity : ComponentActivity() {
         val d = verrou.dernierArret
         if (d > 0L && System.currentTimeMillis() - d > 60_000L) {
             verrou.deverrouille = false
+            // La cle maitre quitte la memoire des le verrouillage (G1-01).
+            Stockage.verrouillerStockage()
         }
     }
 }
@@ -1494,7 +1496,9 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
 
     fun essayer() {
         if (pin.isEmpty() || blocage > 0L) return
-        if (Stockage.verifierPin(ctx, pin)) {
+        // Deverrouillage complet : PIN verifie PUIS cle maitre ouverte
+        // (les donnees restent indechiffrables sans le PIN, G1-01).
+        if (Stockage.deverrouiller(ctx, pin)) {
             onDeverrouille()
         } else {
             Stockage.enregistrerEchec(ctx)
