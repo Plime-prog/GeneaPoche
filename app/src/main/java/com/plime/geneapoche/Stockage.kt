@@ -42,6 +42,8 @@ object Stockage {
     private const val CLE_ERREURS = "pin_erreurs"
     private const val CLE_NIVEAU = "blocage_niveau"
     private const val CLE_JUSQUA = "blocage_jusqua"
+    private const val CLE_ECRIT = "blocage_ecrit"
+    private const val CLE_JUSQUA_MUR = "blocage_jusqua_mur"
     private const val CLE_ID_CUJUS = "id_cujus"
     private const val CLE_SOSA_CUJUS = "sosa_cujus"
     private const val CLE_MAITRE = "cle_maitre"
@@ -65,6 +67,13 @@ object Stockage {
             .putLong(CLE_ID_CUJUS, id)
             .putLong(CLE_SOSA_CUJUS, sosa)
             .apply()
+    }
+
+    // G1-14 : delai de reverrouillage reglable (0 = immediat, 60000, 300000).
+    fun lireDelaiVerrouillage(ctx: Context): Long = prefs(ctx).getLong("delai_verrouillage", 0L)
+
+    fun definirDelaiVerrouillage(ctx: Context, ms: Long) {
+        prefs(ctx).edit().putLong("delai_verrouillage", ms).commit()
     }
 
     // ----------------------------------------- Cle maitre (liee au PIN, v0.29)
@@ -276,6 +285,22 @@ object Stockage {
         return MessageDigest.isEqual(calcule, Base64.decode(hashStocke, Base64.NO_WRAP))
     }
 
+    // G1-15 : changement de PIN. L'ancien PIN est exige ; la cle maitre est
+    // re-enveloppee avec le nouveau PIN, les donnees restent intactes.
+    fun changerPin(ctx: Context, ancien: String, nouveau: String): Boolean {
+        if (!verifierPin(ctx, ancien)) return false
+        val m = cleMaitre ?: return false
+        val sel = ByteArray(16)
+        SecureRandom().nextBytes(sel)
+        val hash = hacherPin(nouveau, sel)
+        val ok = prefs(ctx).edit()
+            .putString(CLE_SEL, Base64.encodeToString(sel, Base64.NO_WRAP))
+            .putString(CLE_HASH, Base64.encodeToString(hash, Base64.NO_WRAP))
+            .commit()
+        if (!ok) return false
+        return envelopperCleMaitre(ctx, nouveau, m)
+    }
+
     private fun hacherPin(pin: String, sel: ByteArray): ByteArray {
         val spec = PBEKeySpec(pin.toCharArray(), sel, ITERATIONS_PIN, 256)
         val fabrique = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
@@ -286,6 +311,10 @@ object Stockage {
 
     // ------------------------------------------------------------ Blocage apres erreurs
 
+    // G1-11 : blocage sur l'horloge elapsedRealtime (immunise contre tout
+    // changement de l'heure du telephone), avec repli sur l'horloge murale
+    // apres un redemarrage. L'echec est enregistre de facon SYNCHRONE (commit)
+    // pour etre deja pris en compte au verification suivante du PIN.
     fun enregistrerEchec(ctx: Context) {
         val p = prefs(ctx)
         var erreurs = p.getInt(CLE_ERREURS, 0) + 1
@@ -293,12 +322,15 @@ object Stockage {
         if (erreurs >= ERREURS_AVANT_PALIER) {
             erreurs = 0
             val duree = if (niveau < DUREES_BLOCAGE.size) DUREES_BLOCAGE[niveau] else DUREES_BLOCAGE.last()
+            val e = android.os.SystemClock.elapsedRealtime()
             p.edit()
-                .putLong(CLE_JUSQUA, System.currentTimeMillis() + duree)
+                .putLong(CLE_ECRIT, e)
+                .putLong(CLE_JUSQUA, e + duree)
+                .putLong(CLE_JUSQUA_MUR, System.currentTimeMillis() + duree)
                 .putInt(CLE_NIVEAU, if (niveau < DUREES_BLOCAGE.size) niveau + 1 else niveau)
-                .apply()
+                .commit()
         }
-        p.edit().putInt(CLE_ERREURS, erreurs).apply()
+        p.edit().putInt(CLE_ERREURS, erreurs).commit()
     }
 
     fun reinitialiserEchecs(ctx: Context) {
@@ -310,8 +342,14 @@ object Stockage {
     }
 
     fun secondesBlocage(ctx: Context): Long {
-        val fin = prefs(ctx).getLong(CLE_JUSQUA, 0L)
-        val reste = (fin - System.currentTimeMillis()) / 1000L
+        val p = prefs(ctx)
+        val e = android.os.SystemClock.elapsedRealtime()
+        val reste = if (e >= p.getLong(CLE_ECRIT, 0L)) {
+            (p.getLong(CLE_JUSQUA, 0L) - e) / 1000L
+        } else {
+            // Redemarrage du telephone : repli sur l'horloge murale.
+            (p.getLong(CLE_JUSQUA_MUR, 0L) - System.currentTimeMillis()) / 1000L
+        }
         return if (reste > 0L) reste else 0L
     }
 

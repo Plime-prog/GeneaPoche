@@ -290,10 +290,21 @@ class Verrou {
 class MainActivity : ComponentActivity() {
     val verrou = Verrou()
 
+    // G1-14 : verrouillage aussi a l'extinction de l'ecran.
+    private val recepteurEcran = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: android.content.Intent?) {
+            if (intent?.action == android.content.Intent.ACTION_SCREEN_OFF) {
+                verrou.deverrouille = false
+                Stockage.verrouillerStockage()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // FLAG_SECURE : captures d'ecran et apercu dans les recents interdits
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        registerReceiver(recepteurEcran, android.content.IntentFilter(android.content.Intent.ACTION_SCREEN_OFF))
         setContent {
             MaterialTheme(colorScheme = PaletteGeneaPoche, shapes = FormesGeneaPoche) {
                 AppEcran(this, verrou)
@@ -308,11 +319,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        // G1-14 : delai de reverrouillage reglable (immediat par defaut).
+        val delai = Stockage.lireDelaiVerrouillage(this)
         val d = verrou.dernierArret
-        if (d > 0L && System.currentTimeMillis() - d > 60_000L) {
+        if (delai == 0L || (d > 0L && System.currentTimeMillis() - d > delai)) {
             verrou.deverrouille = false
             // La cle maitre quitte la memoire des le verrouillage (G1-01).
             Stockage.verrouillerStockage()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            unregisterReceiver(recepteurEcran)
+        } catch (e: Exception) {
+            // deja desenregistre
         }
     }
 }
@@ -349,6 +371,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     // l'enregistrement est bloque jusqu'a restauration (ne rien ecraser).
     var fichiersIllisibles by remember { mutableStateOf(listOf<String>()) }
     var avertissementLectureFerme by remember { mutableStateOf(false) }
+    var dialoguePin by remember { mutableStateOf(false) }
+    var dialogueDelai by remember { mutableStateOf(false) }
 
     // Recopie structurelle des listes : force Compose a rafraichir l'affichage
     // meme quand une Personne est modifiee en place (correctif mise a jour immediate).
@@ -362,6 +386,16 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         val ca = actes.toList()
         actes.clear()
         actes.addAll(ca)
+    }
+
+    // G1-13 : une recherche resolsee portant une note ne disparait jamais sans
+    // filet : la note est recopiee dans les notes libres de la personne.
+    // Seules les recherches SANS note sont supprimees sans question.
+    fun conserverNote(piste: Piste) {
+        val note = piste.enCours.trim()
+        if (note.isEmpty()) return
+        val pers = personneParId(personnes, piste.personneId) ?: return
+        pers.notesLibres = (if (pers.notesLibres.isBlank()) note else pers.notesLibres + "\n" + note).trim()
     }
 
     // Synchronise le journal avec les donnees manquantes (grisees dans les fiches) :
@@ -383,6 +417,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 aRetirer.add(ps)
             }
         }
+        aRetirer.forEach { conserverNote(it) }
         pistes.removeAll(aRetirer)
         personnes.forEach { p ->
             val existantes = pistes.filter { !it.faite && it.personneId == p.id }.map { it.categorie }.toSet()
@@ -771,7 +806,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             }
         } else {
             // Coche positive : la recherche de verification correspondante est
-            // supprimee (plus d'archivage, plus d'historique).
+            // supprimee (plus d'archivage, plus d'historique) ; G1-13 : sa note
+            // eventuelle est conservee dans les notes libres de la personne.
+            pistes.filter { !it.faite && it.personneId == p.id && it.categorie == cle }.forEach { conserverNote(it) }
             pistes.removeAll { !it.faite && it.personneId == p.id && it.categorie == cle }
         }
         enregistrer()
@@ -1207,6 +1244,16 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             charge = true
             if (fichiersIllisibles.isEmpty()) completerJournal()
         }
+        // G1-14 : au verrouillage, PLUS AUCUNE donnee ne reste en memoire
+        // (personnes, journal, actes, fiche ouverte, pile de navigation).
+        if (!verrou.deverrouille && charge) {
+            personnes.clear()
+            pistes.clear()
+            actes.clear()
+            pileFiches.clear()
+            idOuvert = 0L
+            charge = false
+        }
     }
     LaunchedEffect(Unit) { aPin = Stockage.aPin(ctx) }
 
@@ -1309,7 +1356,91 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             sauvegarderBase = { uri, ph -> sauvegarderBase(uri, ph) },
             restaurerSauvegarde = { uri, ph -> restaurerSauvegardeBase(uri, ph) },
             restaurerImport = { restaurerSauvegardeImport() },
+            changerPin = { dialoguePin = true },
+            reglagesVerrouillage = { dialogueDelai = true },
             validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) }
+        )
+    }
+
+    // G1-15 : changement de code PIN (l'ancien est exige).
+    if (dialoguePin) {
+        var ancienPin by remember { mutableStateOf("") }
+        var nouveauPin1 by remember { mutableStateOf("") }
+        var nouveauPin2 by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { dialoguePin = false },
+            title = { Text("Changer le code PIN") },
+            text = {
+                Column {
+                    Text("L'ancien code est exig\u00E9 ; la base est re-chiffr\u00E9e avec le nouveau code, sans rien perdre.", style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = ancienPin,
+                        onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) ancienPin = it },
+                        label = { Text("Ancien code") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    )
+                    OutlinedTextField(
+                        value = nouveauPin1,
+                        onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) nouveauPin1 = it },
+                        label = { Text("Nouveau code") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                    )
+                    OutlinedTextField(
+                        value = nouveauPin2,
+                        onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) nouveauPin2 = it },
+                        label = { Text("Confirmez le nouveau code") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (nouveauPin1.length < 4) {
+                            message = "Le nouveau code doit contenir au moins 4 chiffres."
+                        } else if (nouveauPin1 != nouveauPin2) {
+                            message = "Les deux nouveaux codes ne correspondent pas."
+                        } else if (Stockage.changerPin(ctx, ancienPin, nouveauPin1)) {
+                            message = "Code PIN chang\u00E9 : utilisez le nouveau code au prochain d\u00E9verrouillage."
+                            dialoguePin = false
+                        } else {
+                            message = "Ancien code incorrect."
+                        }
+                    },
+                    enabled = ancienPin.isNotEmpty() && nouveauPin1.isNotEmpty() && nouveauPin2.isNotEmpty()
+                ) { Text("Changer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { dialoguePin = false }) { Text("Annuler") }
+            }
+        )
+    }
+
+    // G1-14 : delai de reverrouillage reglable.
+    if (dialogueDelai) {
+        AlertDialog(
+            onDismissRequest = { dialogueDelai = false },
+            title = { Text("D\u00E9lai de verrouillage") },
+            text = {
+                Column {
+                    Text("Verrouillage apr\u00E8s un passage en arri\u00E8re-plan ou l'extinction de l'\u00E9cran :", style = MaterialTheme.typography.bodySmall)
+                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 0L); dialogueDelai = false; message = "Verrouillage imm\u00E9diat." }, Modifier.fillMaxWidth()) { Text("Imm\u00E9diat (par d\u00E9faut)") }
+                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 60_000L); dialogueDelai = false; message = "Verrouillage apr\u00E8s 1 minute." }, Modifier.fillMaxWidth()) { Text("Apr\u00E8s 1 minute") }
+                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 300_000L); dialogueDelai = false; message = "Verrouillage apr\u00E8s 5 minutes." }, Modifier.fillMaxWidth()) { Text("Apr\u00E8s 5 minutes") }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { dialogueDelai = false }) { Text("Fermer") }
+            }
         )
     }
 

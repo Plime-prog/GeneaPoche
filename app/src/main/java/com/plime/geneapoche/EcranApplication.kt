@@ -39,6 +39,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.material3.AlertDialog
@@ -162,6 +164,9 @@ fun EcranApplication(
     restaurerSauvegarde: (Uri, String) -> Unit,
     // G1-09 : restauration de la base sauvegardee avant un import GEDCOM.
     restaurerImport: () -> Unit,
+    // G1-15 : changement de code PIN ; G1-14 : delai de verrouillage.
+    changerPin: () -> Unit,
+    reglagesVerrouillage: () -> Unit,
     // Coche de validation d'une information : (personne, section, valide).
     validerInfo: (Personne, String, Boolean) -> Unit
 ) {
@@ -553,6 +558,26 @@ fun EcranApplication(
                                     Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text("D\u00E9finir le de cujus et son n\u00B0 Sosa")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; changerPin() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Lock, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Changer le code PIN")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; reglagesVerrouillage() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Settings, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("D\u00E9lai de verrouillage")
                                 }
                             }
                             TextButton(
