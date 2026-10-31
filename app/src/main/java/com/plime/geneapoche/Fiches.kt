@@ -129,8 +129,7 @@ fun PastilleNumero(p: Personne, diametre: Int) {
 // evenements : N et D par defaut, B/M/S via le bouton BMS ; toucher un
 // evenement ouvre son bloc.
 
-@OptIn(ExperimentalMaterial3Api::class)
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun EcranPersonne(
     personnes: List<Personne>,
