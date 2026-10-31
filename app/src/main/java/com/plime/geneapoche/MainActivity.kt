@@ -764,7 +764,10 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         sosaCujus = s
         Stockage.definirCujus(ctx, p.id, s)
         arbreCentre = p.id
-        enregistrer()
+        // Retour visible : la numerotation a ete recalculee et enregistree.
+        if (enregistrer()) {
+            message = "De cujus : " + p.titre() + " (Sosa " + s.toString() + "). Num\u00E9rotation recalcul\u00E9e et enregistr\u00E9e."
+        }
     }
 
     // Identifiant du de cujus : memorise en preferences, sinon par n Sosa, sinon 1re personne.
@@ -1305,9 +1308,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         )
     }
 
-    // Dialogue d'edition du n Sosa du de cujus choisi : synchronisation
-    // instantanee de tous les numeros pendant la saisie, restauration si
-    // Annuler, controles + journal a l'enregistrement.
+    // Dialogue d'edition du n Sosa du de cujus choisi : APERCU PUR pendant la
+    // saisie (aucune donnee n'est modifiee avant Enregistrer), puis recalcule
+    // complet + sauvegarde a l'enregistrement, avec message de confirmation.
     if (cujusEdite != null) {
         val cible = cujusEdite!!
         var numCujus by remember(cible.id) {
@@ -1315,18 +1318,19 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         }
         val numSaisi = numCujus.trim().toLongOrNull() ?: 0L
         val numValide = numSaisi >= 1L
-        LaunchedEffect(cible.id, numSaisi) {
-            if (numSaisi >= 1L) {
-                renumeroter(personnes, cible.id, numSaisi)
-                // sosa/lateral sont des champs simples : la recopie des
-                // listes force l'affichage a suivre la numerotation en direct.
-                rafraichirTout()
+        // Apercu SANS toucher aux donnees : le numero du de cujus, puis les
+        // numeros qui en decouleront (pere 2n, mere 2n+1, enfants n.1, n.2...).
+        fun apercuNumerotation(n: Long): String {
+            val m = mutableListOf<String>()
+            m.add(cible.titre() + " : Sosa " + n.toString())
+            if (cible.pere != 0L) m.add("P\u00E8re : Sosa " + (2L * n).toString())
+            if (cible.mere != 0L) m.add("M\u00E8re : Sosa " + (2L * n + 1L).toString())
+            if (cible.enfants.isNotEmpty()) {
+                m.add("Enfants : d'Aboville " + n.toString() + ".1 \u00E0 " + n.toString() + "." + cible.enfants.size.toString())
             }
+            return m.joinToString("\n")
         }
         fun annulerCujus() {
-            val idOrigine = idDuCujus()
-            if (idOrigine != 0L) renumeroter(personnes, idOrigine, sosaCujus)
-            rafraichirTout()
             cujusEdite = null
         }
         AlertDialog(
@@ -1335,7 +1339,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             text = {
                 Column {
                     Text(
-                        "N\u00B0 Sosa du de cujus : toute la num\u00E9rotation se recalcule en direct pendant la saisie.",
+                        "N\u00B0 Sosa du de cujus : l'aper\u00E7u se met \u00E0 jour en direct ; Enregistrer recalcule et applique toute la num\u00E9rotation.",
                         style = MaterialTheme.typography.bodySmall
                     )
                     OutlinedTextField(
@@ -1346,6 +1350,14 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                     )
+                    if (numValide) {
+                        Text(
+                            apercuNumerotation(numSaisi),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = CouleurVertFonce,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
                 }
             },
             confirmButton = {

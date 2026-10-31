@@ -148,6 +148,13 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 - **Branches = les 4 grands-parents du de cujus** : seuls les quatre noms des grands-parents sont proposés ; choisir un nom affiche **toutes les personnes de cette branche** (conjoints et descendants par les liens père/mère), même si elles portent un autre nom.
 - **Dialogue « de cujus » compact** : interlignes réduits, numéro supprimé, nom et prénoms **tronqués sur une seule ligne** pour un affichage dégagé.
 
+## Numérotation du de cujus fiable (v0.27)
+
+- **Correction du bug de mise à jour** : modifier le n° Sosa du de cujus renumérote désormais **toute la base à coup sûr** — l'ancienne renumérotation « en direct » pendant la frappe (qui modifiait les données avant validation) est supprimée.
+- **Aperçu en direct, application à l'enregistrement** : pendant la saisie du numéro, le dialogue affiche les numéros qui en découleront (père 2n, mère 2n+1, enfants n.1…) **sans toucher aux données** ; « Enregistrer » applique et sauvegarde la numérotation complète.
+- **Message de confirmation** : « De cujus : … (Sosa n). Numérotation recalculée et enregistrée. » s'affiche après chaque enregistrement.
+- **Annuler ne modifie plus rien** : fermeture simple du dialogue, aucune donnée n'a été changée.
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -202,3 +209,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 24. ✅ v0.24 : menus de navigation toujours visibles, tri Aboville croissant dans Personnes, frise à ordre fixe N/M/D, convertisseur calendrier républicain→grégorien, noms en majuscules et prénoms normalisés, numérotation qui suit le de cujus, 5 boutons fixes à icônes en bas de fiche.
 25. ✅ v0.25 : règle des 100 ans (décès/sépulture masqués si la personne peut avoir moins de 100 ans), journal limité aux événements de plus de 75 ans (10 max, du plus récent au plus ancien) avec n° d'Aboville en pastille, arbre relié par des lignes et centré façon généalogique, coche de validation par acte/information reportée au journal.
 26. ✅ v0.26 : accents de l'arbre corrigés (UTF-8 réel), menus de tri et index figés en haut de Personnes, A–Z devient un filtre (une lettre = un seul affichage), branches limitées aux 4 grands-parents du de cujus avec filtrage par liens de parenté, dialogue de cujus compact sur une ligne sans numéro.
+27. ✅ v0.27 : correction de la mise à jour de la numérotation après modification du n° Sosa du de cujus — aperçu pur en direct (père/mère/enfants) sans modifier les données, application complète et sauvegarde à Enregistrer avec message de confirmation, Annuler sans effet.
