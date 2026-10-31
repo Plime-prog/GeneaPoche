@@ -158,7 +158,7 @@ object Stockage {
     }
 
     private fun desenvelopperCleMaitre(ctx: Context, pin: String): javax.crypto.SecretKey? {
-        try {
+        return try {
             val p = prefs(ctx)
             val emb64 = p.getString(CLE_MAITRE, null) ?: return null
             val sel64 = p.getString(CLE_SEL_MAITRE, null) ?: return null
