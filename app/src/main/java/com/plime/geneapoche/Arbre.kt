@@ -35,18 +35,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// ---------------------------------------------------------------- Arbre genealogique
-// Vue centree sur une personne, RELIEE et CENTREE facon genealogique :
-// grands-parents, parents, personne et conjoint centres, enfants centres
-// sous le couple. Chaque rangee est une grille reguliere, les liaisons sont
-// tracees entre les cartes (verticales + barres horizontales).
+// ---------------------------------------------------------------- Arbre généalogique
+// Vue centrée sur une personne, RELIÉE et CENTRÉE façon généalogique :
+// grands-parents, parents, personne et conjoint centrés, enfants centrés
+// sous le couple. Chaque rangée est une grille régulière, les liaisons sont
+// tracées entre les cartes (verticales + barres horizontales).
 // Toucher une carte ouvre la fiche et recentre l'arbre sur elle.
 
 val CouleurLiaison = Color(0xFF4C7A50)
 
-// Trace les liaisons entre deux rangees : verticales depuis la rangee du
-// haut, une barre horizontale au milieu, verticales vers la rangee du bas.
-// Les positions sont des fractions de la largeur (grille reguliere).
+// Trace les liaisons entre deux rangées : verticales depuis la rangée du
+// haut, une barre horizontale au milieu, verticales vers la rangée du bas.
+// Les positions sont des fractions de la largeur (grille régulière).
 @Composable
 fun LiaisonsArbre(
     verticalesHaut: List<Float>,
@@ -84,16 +84,16 @@ fun EcranArbre(
         Text("Arbre", fontSize = 22.sp, fontWeight = FontWeight.Bold)
         if (centre == null) {
             Spacer(Modifier.height(12.dp))
-            Text("Aucune personne : ajoutez la premiu00E8re personne (de cujus, Sosa 1) depuis l'onglet Personnes.")
+            Text("Aucune personne : ajoutez la première personne (de cujus, Sosa 1) depuis l'onglet Personnes.")
         } else {
             OutlinedButton(onClick = { pickerOuvert = true }, Modifier.padding(top = 8.dp)) {
-                Text("Centru00E9 sur : " + centre.titre())
+                Text("Centré sur : " + centre.titre())
             }
             val pere = personneParId(personnes, centre.pere)
             val mere = personneParId(personnes, centre.mere)
             val conjoint = personneParId(personnes, centre.conjoint)
 
-            // --- Grands-parents : 4 cases egales (centres a 1/8, 3/8, 5/8, 7/8).
+            // --- Grands-parents : 4 cases égales (centres à 1/8, 3/8, 5/8, 7/8).
             Text(
                 "Grands-parents",
                 Modifier.padding(top = 8.dp),
@@ -102,22 +102,22 @@ fun EcranArbre(
                 color = MaterialTheme.colorScheme.primary
             )
             Row(Modifier.fillMaxWidth()) {
-                CarteMiniArbre(personneParId(personnes, pere?.pere ?: 0L), "Au00EEeul pat.", onOuvrir, modifier = Modifier.weight(1f))
-                CarteMiniArbre(personneParId(personnes, pere?.mere ?: 0L), "Au00EEeule pat.", onOuvrir, modifier = Modifier.weight(1f))
-                CarteMiniArbre(personneParId(personnes, mere?.pere ?: 0L), "Au00EEeul mat.", onOuvrir, modifier = Modifier.weight(1f))
-                CarteMiniArbre(personneParId(personnes, mere?.mere ?: 0L), "Au00EEeule mat.", onOuvrir, modifier = Modifier.weight(1f))
+                CarteMiniArbre(personneParId(personnes, pere?.pere ?: 0L), "Aïeul pat.", onOuvrir, modifier = Modifier.weight(1f))
+                CarteMiniArbre(personneParId(personnes, pere?.mere ?: 0L), "Aïeule pat.", onOuvrir, modifier = Modifier.weight(1f))
+                CarteMiniArbre(personneParId(personnes, mere?.pere ?: 0L), "Aïeul mat.", onOuvrir, modifier = Modifier.weight(1f))
+                CarteMiniArbre(personneParId(personnes, mere?.mere ?: 0L), "Aïeule mat.", onOuvrir, modifier = Modifier.weight(1f))
             }
-            // Aieux -> parents : union de chaque couple, descente au parent.
+            // Aïeux -> parents : union de chaque couple, descente au parent.
             LiaisonsArbre(
                 listOf(0.125f, 0.375f, 0.625f, 0.875f),
                 listOf(0.125f to 0.375f, 0.625f to 0.875f),
                 listOf(0.25f, 0.75f)
             )
 
-            // --- Parents : 2 cases egales (centres a 1/4 et 3/4).
+            // --- Parents : 2 cases égales (centres à 1/4 et 3/4).
             Row(Modifier.fillMaxWidth()) {
-                CarteMiniArbre(pere, "Pu00E8re", onOuvrir, modifier = Modifier.weight(1f))
-                CarteMiniArbre(mere, "Mu00E8re", onOuvrir, modifier = Modifier.weight(1f))
+                CarteMiniArbre(pere, "Père", onOuvrir, modifier = Modifier.weight(1f))
+                CarteMiniArbre(mere, "Mère", onOuvrir, modifier = Modifier.weight(1f))
             }
             // Parents -> couple central : barre d'union au centre (1/2).
             LiaisonsArbre(
@@ -126,7 +126,7 @@ fun EcranArbre(
                 listOf(0.5f)
             )
 
-            // --- Personne et conjoint : le couple est CENTRE, uni par une barre.
+            // --- Personne et conjoint : le couple est CENTRÉ, uni par une barre.
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -137,7 +137,7 @@ fun EcranArbre(
                 CarteMiniArbre(conjoint, "Conjoint(e)", onOuvrir, modifier = Modifier.width(150.dp))
             }
 
-            // --- Enfants : centru00E9s sous le couple, relies par leurs centres.
+            // --- Enfants : centrés sous le couple, reliés par leurs centres.
             val nb = centre.enfants.size
             Text(
                 "Enfants",
@@ -147,7 +147,7 @@ fun EcranArbre(
                 color = MaterialTheme.colorScheme.primary
             )
             if (nb == 0) {
-                Text("Aucun enfant renseignu00E9.", style = MaterialTheme.typography.bodySmall)
+                Text("Aucun enfant renseigné.", style = MaterialTheme.typography.bodySmall)
             } else {
                 val centres = (0 until nb).map { i -> (2 * i + 1).toFloat() / (2 * nb) }
                 LiaisonsArbre(
@@ -208,8 +208,8 @@ fun CarteMiniArbre(
             containerColor = if (centre) MaterialTheme.colorScheme.primaryContainer
             else if (p == null) MaterialTheme.colorScheme.surfaceVariant
             else when (p.sexe) {
-                "F" -> androidx.compose.ui.graphics.Color(0xFFF8DDE7) // rose pale
-                "M" -> androidx.compose.ui.graphics.Color(0xFFDDE9F6) // bleu pale
+                "F" -> androidx.compose.ui.graphics.Color(0xFFF8DDE7) // rose pâle
+                "M" -> androidx.compose.ui.graphics.Color(0xFFDDE9F6) // bleu pâle
                 else -> MaterialTheme.colorScheme.surface
             }
         )
@@ -244,10 +244,10 @@ fun CarteMiniArbre(
                 val d = dateAffichee(p.dateDeces.trim())
                 val morceaux = mutableListOf<String>()
                 if (n.isNotEmpty()) morceaux.add("N. " + n)
-                // R\u00E8gle des 100 ans : d\u00E9c\u00E8s affich\u00E9 seulement si connu ou possible.
+                // Règle des 100 ans : décès affiché seulement si connu ou possible.
                 if (d.isNotEmpty() && decesAffichable(p)) morceaux.add("D. " + d)
                 if (morceaux.isNotEmpty()) {
-                    Text(morceaux.joinToString(" \u2013 "), style = MaterialTheme.typography.labelSmall)
+                    Text(morceaux.joinToString(" – "), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

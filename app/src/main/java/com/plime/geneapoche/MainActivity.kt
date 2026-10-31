@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -1152,6 +1153,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     } else {
         EcranApplication(
             personnes = personnes,
+            cujus = personneParId(personnes, idDuCujus()),
             pistes = pistes,
             charge = charge,
             message = message,
@@ -1282,11 +1284,15 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                                         if (idDuCujus() == cand.id) CouleurVertPale
                                         else androidx.compose.ui.graphics.Color.Transparent
                                     )
-                                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                                    .padding(horizontal = 8.dp, vertical = 2.dp)
                             ) {
+                                // Une seule ligne, tronquee a l'ellipsis ; plus de numero.
                                 Text(
-                                    cand.titre() + (if (cand.numeroBrut().isNotEmpty()) "  \u00B7  " + cand.numeroBrut() else ""),
-                                    style = MaterialTheme.typography.bodyMedium
+                                    cand.titre(),
+                                    Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }

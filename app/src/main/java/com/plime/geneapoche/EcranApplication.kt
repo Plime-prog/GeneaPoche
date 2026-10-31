@@ -107,6 +107,7 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
 @Composable
 fun EcranApplication(
     personnes: List<Personne>,
+    cujus: Personne?,
     pistes: List<Piste>,
     charge: Boolean,
     message: String,
@@ -257,7 +258,11 @@ fun EcranApplication(
                         )
                     )
                     val etatListe = rememberLazyListState()
-                    val portee = rememberCoroutineScope()
+                    // A-Z : lettre touchee = FILTRE (seuls les noms qui
+                    // commencent par elle sont affiches) ; re-toucher efface.
+                    var lettreChoisie by remember { mutableStateOf<Char?>(null) }
+                    // Branches : id du grand-parent choisi (filtre), null = tout.
+                    var brancheChoisie by remember { mutableStateOf<Long?>(null) }
                     val lettresUtilisees = triees
                         .map { it.nom.trim().uppercase().firstOrNull() ?: '?' }
                         .toSet()
@@ -266,40 +271,44 @@ fun EcranApplication(
                     // (pere, sinon mere) ; la branche porte le nom de cette racine.
                     // Classement Aboville : numeros (Sosa ou d'Aboville) croissants,
                     // segments compares un a un, non numeros en fin de liste.
+                    // Les 4 grands-parents du de cujus : une branche chacun.
+                    val pereC = personneParId(personnes, cujus?.pere ?: 0L)
+                    val mereC = personneParId(personnes, cujus?.mere ?: 0L)
+                    val grandsParents = listOfNotNull(
+                        personneParId(personnes, pereC?.pere ?: 0L),
+                        personneParId(personnes, pereC?.mere ?: 0L),
+                        personneParId(personnes, mereC?.pere ?: 0L),
+                        personneParId(personnes, mereC?.mere ?: 0L)
+                    ).distinctBy { it.id }
+
+                    // Liste affichee selon le tri et les filtres :
+                    // A-Z : tout, ou la lettre choisie ; Aboville : n croissant ;
+                    // Branches : tout, ou les personnes liees au grand-parent
+                    // choisi (par les liens, quel que soit leur nom).
+                    val parAboville = personnes.sortedWith(
+                        ComparateurAboville
+                            .thenComparator { a, b -> a.nom.trim().uppercase().compareTo(b.nom.trim().uppercase()) }
+                            .thenComparator { a, b -> a.prenoms.trim().uppercase().compareTo(b.prenoms.trim().uppercase()) }
+                    )
                     val entrees: List<Any> = if (triPersonnes == 0) {
-                        triees.toList()
+                        if (lettreChoisie == null) {
+                            triees.toList()
+                        } else {
+                            triees.filter { (it.nom.trim().uppercase().firstOrNull() ?: '?') == lettreChoisie }
+                        }
                     } else if (triPersonnes == 1) {
-                        personnes.sortedWith(
-                            ComparateurAboville
-                                .thenComparator { a, b -> a.nom.trim().uppercase().compareTo(b.nom.trim().uppercase()) }
-                                .thenComparator { a, b -> a.prenoms.trim().uppercase().compareTo(b.prenoms.trim().uppercase()) }
-                        ).toList()
+                        parAboville
                     } else {
-                        val liste = mutableListOf<Any>()
-                        personnes.groupBy { racineBranche(it, personnes).nom.trim().uppercase().ifEmpty { "?" } }
-                            .toSortedMap()
-                            .forEach { (etiquette, membres) ->
-                                liste.add(etiquette)
-                                membres.sortedWith(
-                                    compareBy(
-                                        { it.sosa.trim().toLongOrNull() ?: Long.MAX_VALUE },
-                                        { it.lateral.trim() },
-                                        { it.nom.trim().uppercase() }
-                                    )
-                                ).forEach { liste.add(it) }
-                            }
-                        liste
+                        val membres = brancheChoisie?.let { b -> brancheDe(b, personnes) } ?: emptySet()
+                        if (brancheChoisie == null) parAboville else parAboville.filter { it.id in membres }
                     }
 
-                    LazyColumn(
-                        Modifier.fillMaxSize().padding(marges).padding(vertical = 4.dp),
-                        state = etatListe
-                    ) {
-                        item {
-                            Row(
-                                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                    Column(Modifier.fillMaxSize().padding(marges)) {
+                        // Compteur et tris FIGES en haut de l'ecran.
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                                 Text(
                                     personnes.size.toString() + " / " + PlafondPersonnes.toString() + " personnes",
                                     Modifier.weight(1f),
@@ -323,67 +332,68 @@ fun EcranApplication(
                                     onClick = { triPersonnes = 2 },
                                     label = { Text("Branches") }
                                 )
-                            }
                         }
-                        item {
-                            Row(
-                                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp)
-                            ) {
+                        // Index alphabetique ou 4 branches : FIGE aussi.
+                        Row(
+                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 2.dp)
+                        ) {
                                 if (triPersonnes == 0) {
                                     // Alphabet complet, resserre pour tenir d'un coup d'oeil :
                                     // lettres inutilisees grisees.
                                     ('A'..'Z').forEach { lettre ->
                                         val utilisee = lettresUtilisees.contains(lettre)
+                                        val active = lettreChoisie == lettre
                                         Text(
                                             lettre.toString(),
                                             Modifier
                                                 .clickable(enabled = utilisee) {
-                                                    val pos = triees.indexOfFirst {
-                                                        (it.nom.trim().uppercase().firstOrNull() ?: '?') == lettre
-                                                    }
-                                                    if (pos >= 0) portee.launch { etatListe.scrollToItem(2 + pos) }
+                                                    lettreChoisie = if (active) null else lettre
                                                 }
-                                                .padding(horizontal = 3.dp),
+                                                .background(if (active) CouleurVert else Color.Transparent)
+                                                .padding(horizontal = 4.dp, vertical = 1.dp),
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (utilisee) CouleurVertFonce else Color(0xFFB9C2AE)
+                                            color = if (active) Color.White else if (utilisee) CouleurVertFonce else Color(0xFFB9C2AE)
                                         )
                                     }
                                 } else if (triPersonnes == 2) {
-                                    val etiquettes = entrees.filterIsInstance<String>()
-                                    etiquettes.forEach { etiquette ->
+                                    if (grandsParents.isEmpty()) {
+                                        Text(
+                                            "D\u00E9finissez le de cujus et ses parents pour voir les 4 branches.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    grandsParents.forEach { gp ->
+                                        val active = brancheChoisie == gp.id
                                         TextButton(
-                                            onClick = {
-                                                val pos = entrees.indexOf(etiquette)
-                                                if (pos >= 0) portee.launch { etatListe.scrollToItem(2 + pos) }
-                                            },
+                                            onClick = { brancheChoisie = if (active) null else gp.id },
                                             contentPadding = PaddingValues(horizontal = 6.dp)
-                                        ) { Text(etiquette, fontWeight = FontWeight.Bold) }
+                                        ) {
+                                            Text(
+                                                gp.nom.trim() + (if (gp.numeroBrut().isNotEmpty()) " (" + gp.numeroBrut() + ")" else ""),
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (active) CouleurVertFonce else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        }
-                        items(entrees.size) { i ->
-                            val e = entrees[i]
-                            if (e is String) {
-                                Text(
-                                    e,
-                                    Modifier.fillMaxWidth()
-                                        .background(CouleurVertPale)
-                                        .padding(horizontal = 12.dp, vertical = 5.dp),
-                                    fontWeight = FontWeight.Bold,
-                                    color = CouleurVertFonce
-                                )
-                            } else {
-                                val p = e as Personne
+                        LazyColumn(
+                            Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp),
+                            state = etatListe
+                        ) {
+                            items(entrees.size) { i ->
+                                val p = entrees[i] as Personne
                                 CartePersonne(
                                     p,
                                     onOuvrir = { onIdOuvert(p.id) },
                                     onSupprimer = { onConfirmSuppression(p) }
                                 )
                             }
+                            item { Spacer(Modifier.height(12.dp)) }
                         }
-                        item { Spacer(Modifier.height(12.dp)) }
                     }
                 }
             } else if (onglet == 2) {
@@ -735,6 +745,26 @@ fun EcranApplication(
 }
 
 // ---------------------------------------------------------------- Liste : carte personne
+
+// Branche d'un grand-parent : lui, ses conjoints et TOUS ses descendants,
+// quel que soit leur nom (les liens font la branche, pas le nom de famille).
+fun brancheDe(rootId: Long, personnes: List<Personne>): Set<Long> {
+    val racine = personnes.firstOrNull { it.id == rootId }
+    val res = mutableSetOf(rootId)
+    if (racine != null) {
+        racine.tousConjoints().forEach { c -> if (c != 0L) res.add(c) }
+    }
+    var front = listOf(rootId)
+    while (front.isNotEmpty()) {
+        val nouveaux = personnes
+            .filter { pers -> front.any { f -> pers.pere == f || pers.mere == f } }
+            .map { it.id }
+            .filter { it !in res }
+        res.addAll(nouveaux)
+        front = nouveaux
+    }
+    return res
+}
 
 // Racine de branche d'une personne : l'ancetre le plus haut atteignable
 // (pere, sinon mere). La branche porte le nom de famille de cette racine.
