@@ -155,6 +155,17 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 - **Message de confirmation** : « De cujus : … (Sosa n). Numérotation recalculée et enregistrée. » s'affiche après chaque enregistrement.
 - **Annuler ne modifie plus rien** : fermeture simple du dialogue, aucune donnée n'a été changée.
 
+## Batch des 20 demandes (v0.28)
+
+- **Un bloc encadré par événement** dans la frise : chaque N/B/M/D/S a son propre encadré (bordure au couleur du sexe), toucher l'en-tête ouvre le bloc, **appui long sur l'en-tête ouvre directement l'édition**.
+- **Sous-bloc pour chaque acte stocké** : référence (côte AD), pages « p. x/y », **zone de recherche libre** et **loupe vers les archives départementales** regroupées au même endroit ; toucher le titre affiche l'image, appui long ouvre pages/référence.
+- **Identité par bouton de couleur** : rouge (aucune info) → orange → vert selon les 4 informations (nom, prénoms, date et lieu de naissance) ; le toucher confirme (« Identité confirmée »), le crayon disparaît (édition par appui long sur le bloc identité).
+- **Retour en arrière = fiche précédente** : la flèche retour dépile les fiches visitées (la liste n'apparaît qu'une fois la pile vide) ; toucher un nom (père, mère, conjoint, témoin, enfant) ouvre directement sa fiche, plus de bouton « Fiche ».
+- **Plus d'historique nulle part** : les recherches résolues sont **supprimées** (jamais archivées, jamais horodatées) ; suppression des recherches archivées du journal et des fiches.
+- **Boutons du bas immédiats** : Baptême/Mariage/Sépulture ouvrent le bloc **dès l'appui** ; la coche d'un événement passe au vert **dès qu'une date est saisie** dans le bloc.
+- **Calendrier républicain affiché tel quel** : une date républicaine saisie reste républicaine et s'affiche avec sa conversion grégorienne entre parenthèses (ex : « 22 Germinal An II (11/04/1794) »).
+- **Affichage épuré partout** : vignettes à l'initiale, noms tronqués sur une ligne (ellipsis), interlignes et paddings réduits, **plus de mots « Sosa » ou « d'Aboville » hors des menus**, sélecteur de sexe F/M sans troisième choix (re-toucher efface : information manquante déduite par la couleur), bloc « Notes libres » sans titre et bloc « Recherches » sur chaque fiche.
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -210,3 +221,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 25. ✅ v0.25 : règle des 100 ans (décès/sépulture masqués si la personne peut avoir moins de 100 ans), journal limité aux événements de plus de 75 ans (10 max, du plus récent au plus ancien) avec n° d'Aboville en pastille, arbre relié par des lignes et centré façon généalogique, coche de validation par acte/information reportée au journal.
 26. ✅ v0.26 : accents de l'arbre corrigés (UTF-8 réel), menus de tri et index figés en haut de Personnes, A–Z devient un filtre (une lettre = un seul affichage), branches limitées aux 4 grands-parents du de cujus avec filtrage par liens de parenté, dialogue de cujus compact sur une ligne sans numéro.
 27. ✅ v0.27 : correction de la mise à jour de la numérotation après modification du n° Sosa du de cujus — aperçu pur en direct (père/mère/enfants) sans modifier les données, application complète et sauvegarde à Enregistrer avec message de confirmation, Annuler sans effet.
+28. ✅ v0.28 : batch des 20 demandes — un bloc encadré par événement (édition par appui long), sous-bloc par acte (référence, recherche libre, loupe AD), bouton d'identité coloré du rouge au vert, retour par pile des fiches et appui direct sur les noms, suppression de tout l'historique, blocs ouverts au toucher et coche verte dès qu'une date est saisie, dates républicaines affichées avec conversion, affichage épuré sans numéros ni mots Sosa/Aboville hors menus, sexe F/M sans tiers choix, blocs Notes libres et Recherches.
