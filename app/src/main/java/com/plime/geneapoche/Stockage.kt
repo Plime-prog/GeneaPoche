@@ -6,6 +6,7 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import org.json.JSONArray
 import java.io.File
+import java.io.FileOutputStream
 import java.security.KeyStore
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -316,23 +317,25 @@ object Stockage {
 
     // ------------------------------------------------------------ Personnes (chiffre)
 
-    fun charger(ctx: Context): MutableList<Personne> {
-        val liste = mutableListOf<Personne>()
+    fun charger(ctx: Context): ResultatLecture<Personne> {
         // Migration : ancien fichier en clair de la v0.1/v0.2 -> chiffre puis supprime
         try {
             val legacy = File(ctx.filesDir, ANCIEN_FICHIER_CLAIR)
             if (legacy.exists()) {
+                val liste = mutableListOf<Personne>()
                 ajouterPersonnesDepuisTexte(liste, String(legacy.readBytes()))
                 if (sauver(ctx, liste)) legacy.delete()
-                return liste
+                return ResultatLecture(FICHIER_PERSONNES, liste, false)
             }
         } catch (e: Exception) {
             // on continue sur la lecture chiffree
         }
-        val octets = lireFichier(ctx, FICHIER_PERSONNES) ?: return liste
-        val clair = dechiffrer(octets) ?: return liste
-        ajouterPersonnesDepuisTexte(liste, String(clair))
-        return liste
+        return lireChiffreToutOuRien(ctx, FICHIER_PERSONNES) { texte ->
+            val tableau = JSONArray(texte)
+            val liste = mutableListOf<Personne>()
+            for (i in 0 until tableau.length()) liste.add(Personne.depuisJson(tableau.getJSONObject(i)))
+            liste
+        }
     }
 
     fun sauver(ctx: Context, liste: List<Personne>): Boolean {
@@ -359,20 +362,13 @@ object Stockage {
 
     // ------------------------------------------------------------ Journal (chiffre)
 
-    fun chargerJournal(ctx: Context): MutableList<Piste> {
-        val liste = mutableListOf<Piste>()
-        val octets = lireFichier(ctx, FICHIER_JOURNAL) ?: return liste
-        val clair = dechiffrer(octets) ?: return liste
-        try {
-            val tableau = JSONArray(String(clair))
-            for (i in 0 until tableau.length()) {
-                liste.add(Piste.depuisJson(tableau.getJSONObject(i)))
-            }
-        } catch (e: Exception) {
-            // journal illisible : vide
+    fun chargerJournal(ctx: Context): ResultatLecture<Piste> =
+        lireChiffreToutOuRien(ctx, FICHIER_JOURNAL) { texte ->
+            val tableau = JSONArray(texte)
+            val liste = mutableListOf<Piste>()
+            for (i in 0 until tableau.length()) liste.add(Piste.depuisJson(tableau.getJSONObject(i)))
+            liste
         }
-        return liste
-    }
 
     fun sauverJournal(ctx: Context, liste: List<Piste>): Boolean {
         return try {
@@ -387,20 +383,13 @@ object Stockage {
 
     // ------------------------------------------------------------ Actes (index chiffre + images chiffrees)
 
-    fun chargerActes(ctx: Context): MutableList<Acte> {
-        val liste = mutableListOf<Acte>()
-        val octets = lireFichier(ctx, FICHIER_ACTES) ?: return liste
-        val clair = dechiffrer(octets) ?: return liste
-        try {
-            val tableau = JSONArray(String(clair))
-            for (i in 0 until tableau.length()) {
-                liste.add(Acte.depuisJson(tableau.getJSONObject(i)))
-            }
-        } catch (e: Exception) {
-            // actes illisibles : vide
+    fun chargerActes(ctx: Context): ResultatLecture<Acte> =
+        lireChiffreToutOuRien(ctx, FICHIER_ACTES) { texte ->
+            val tableau = JSONArray(texte)
+            val liste = mutableListOf<Acte>()
+            for (i in 0 until tableau.length()) liste.add(Acte.depuisJson(tableau.getJSONObject(i)))
+            liste
         }
-        return liste
-    }
 
     fun sauverActes(ctx: Context, liste: List<Acte>): Boolean {
         return try {
@@ -419,8 +408,7 @@ object Stockage {
             val dossier = File(ctx.filesDir, DOSSIER_IMAGES)
             if (!dossier.exists()) dossier.mkdirs()
             val chiffre = chiffrer(octets) ?: return false
-            File(dossier, "acte_" + id + ".bin").writeBytes(chiffre)
-            true
+            remplacerFichier(File(dossier, "acte_" + id + ".bin"), chiffre)
         } catch (e: Exception) {
             false
         }
@@ -445,23 +433,139 @@ object Stockage {
 
     // ------------------------------------------------------------ Fichiers chiffres generiques
 
-    // Ecriture securisee : tmp -> relecture + comparaison -> bak -> renommage
+    // Resultat d'une lecture chiffree : illisible = vrai si NI le fichier
+    // principal NI la copie .bak n'ont pu etre dechiffres/parses (G1-04/G1-05).
+    class ResultatLecture<T>(val nom: String, val liste: MutableList<T>, val illisible: Boolean)
+
+    // G1-05 : lecture TOUT OU RIEN - un element invalide ne produit JAMAIS une
+    // liste partielle (le parse entier echoue, la liste reste vide et illisible).
+    // G1-06 : si le fichier principal est corrompu (pas seulement absent), la
+    // copie .bak est lue a la place.
+    private fun <T> lireChiffreToutOuRien(ctx: Context, nom: String, parse: (String) -> MutableList<T>): ResultatLecture<T> {
+        val principal = File(ctx.filesDir, nom)
+        val bak = File(ctx.filesDir, nom + ".bak")
+        if (principal.exists()) {
+            try {
+                val octets = principal.readBytes()
+                val clair = dechiffrer(octets)
+                if (clair != null) {
+                    val liste = try { parse(String(clair)) } catch (e: Exception) { null }
+                    if (liste != null) return ResultatLecture(nom, liste, false)
+                }
+            } catch (e: Exception) {
+                // principal illisible : on tente la copie .bak
+            }
+            if (bak.exists()) {
+                try {
+                    val octets = bak.readBytes()
+                    val clair = dechiffrer(octets)
+                    if (clair != null) {
+                        val liste = try { parse(String(clair)) } catch (e: Exception) { null }
+                        if (liste != null) return ResultatLecture(nom, liste, false)
+                    }
+                } catch (e: Exception) {
+                    // .bak illisible aussi
+                }
+            }
+            return ResultatLecture(nom, mutableListOf(), true)
+        }
+        if (bak.exists()) {
+            try {
+                val octets = bak.readBytes()
+                val clair = dechiffrer(octets)
+                if (clair != null) {
+                    val liste = try { parse(String(clair)) } catch (e: Exception) { null }
+                    if (liste != null) return ResultatLecture(nom, liste, false)
+                }
+            } catch (e: Exception) {
+                // .bak illisible
+            }
+            return ResultatLecture(nom, mutableListOf(), true)
+        }
+        return ResultatLecture(nom, mutableListOf(), false)
+    }
+
+    // G1-04 : restauration explicite depuis la copie .bak (jamais de perte).
+    fun restaurerBak(ctx: Context, nom: String): Boolean {
+        return try {
+            val principal = File(ctx.filesDir, nom)
+            val bak = File(ctx.filesDir, nom + ".bak")
+            if (!bak.exists()) return false
+            val contenu = bak.readBytes()
+            val tmp = File(ctx.filesDir, nom + ".tmp")
+            if (!ecrireOctetsDurables(tmp, contenu)) return false
+            if (!MessageDigest.isEqual(tmp.readBytes(), contenu)) {
+                tmp.delete()
+                return false
+            }
+            principal.delete()
+            if (!tmp.renameTo(principal)) {
+                tmp.delete()
+                return false
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // G1-07 : ecriture durable sur disque (flush + fd.sync).
+    private fun ecrireOctetsDurables(f: File, octets: ByteArray): Boolean {
+        return try {
+            FileOutputStream(f).use { fos ->
+                fos.write(octets)
+                fos.flush()
+                fos.fd.sync()
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // G1-07 : remplacement atomique par fichier temporaire + verification.
+    private fun remplacerFichier(f: File, octets: ByteArray): Boolean {
+        val tmp = File(f.parentFile, f.name + ".tmp")
+        if (!ecrireOctetsDurables(tmp, octets)) return false
+        if (!MessageDigest.isEqual(tmp.readBytes(), octets)) {
+            tmp.delete()
+            return false
+        }
+        if (!tmp.renameTo(f)) {
+            tmp.delete()
+            return false
+        }
+        return true
+    }
+
+    // Ecriture securisee (G1-06) : ecriture durable du tmp, relecture et
+    // comparaison, PUIS rotation bak ; l'ancien .bak n'est supprime qu'apres
+    // ecriture ET relecture reussies du nouveau contenu. Une coupure entre
+    // les deux renommages laisse toujours une copie lisible (.bak ou .tmp).
     private fun ecrireFichier(ctx: Context, nom: String, octets: ByteArray): Boolean {
         return try {
             val tmp = File(ctx.filesDir, nom + ".tmp")
             val principal = File(ctx.filesDir, nom)
             val bak = File(ctx.filesDir, nom + ".bak")
-            tmp.writeBytes(octets)
+            if (!ecrireOctetsDurables(tmp, octets)) {
+                tmp.delete()
+                return false
+            }
             if (!MessageDigest.isEqual(tmp.readBytes(), octets)) {
                 tmp.delete()
                 return false
             }
-            bak.delete()
             if (principal.exists()) {
+                if (!bak.delete() && bak.exists()) {
+                    tmp.delete()
+                    return false
+                }
                 if (!principal.renameTo(bak)) {
                     tmp.delete()
                     return false
                 }
+            } else {
+                bak.delete()
             }
             if (!tmp.renameTo(principal)) {
                 if (bak.exists()) bak.renameTo(principal)

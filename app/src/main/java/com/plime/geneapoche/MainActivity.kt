@@ -345,6 +345,10 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var importConfirme by remember { mutableStateOf<List<Personne>?>(null) }
     var cujusEdite by remember { mutableStateOf<Personne?>(null) }
     var cujasOuvert by remember { mutableStateOf(false) }
+    // G1-04 : fichiers dont NI le contenu NI la copie .bak ne se lisent :
+    // l'enregistrement est bloque jusqu'a restauration (ne rien ecraser).
+    var fichiersIllisibles by remember { mutableStateOf(listOf<String>()) }
+    var avertissementLectureFerme by remember { mutableStateOf(false) }
 
     // Recopie structurelle des listes : force Compose a rafraichir l'affichage
     // meme quand une Personne est modifiee en place (correctif mise a jour immediate).
@@ -405,6 +409,11 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     }
 
     fun enregistrer(): Boolean {
+        // G1-04 : donnees illisibles -> AUCUNE sauvegarde, ne rien ecraser.
+        if (fichiersIllisibles.isNotEmpty()) {
+            message = "Donn\u00E9es illisibles : enregistrement bloqu\u00E9 (restaurez la copie .bak)."
+            return false
+        }
         // Numerotation Sosa / d'Aboville recalculee A CHAQUE enregistrement :
         // creation d'une personne, rattachement (pere/mere/enfant/conjoint),
         // suppression... tout se met a jour automatiquement.
@@ -420,6 +429,30 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         rafraichirTout()
         message = if (ok1 && ok2 && ok3) "" else "Echec de l'enregistrement."
         return ok1 && ok2 && ok3
+    }
+
+    // G1-04 : restauration explicite depuis la copie .bak des fichiers
+    // illisibles, puis rechargement complet. L'enregistrement redevient
+    // possible seulement si tout est de nouveau lisible.
+    fun restaurerDepuisBak() {
+        fichiersIllisibles.forEach { nom -> Stockage.restaurerBak(ctx, nom) }
+        personnes.clear()
+        pistes.clear()
+        actes.clear()
+        val rp = Stockage.charger(ctx)
+        val rj = Stockage.chargerJournal(ctx)
+        val ra = Stockage.chargerActes(ctx)
+        personnes.addAll(rp.liste)
+        pistes.addAll(rj.liste)
+        actes.addAll(ra.liste)
+        fichiersIllisibles = listOf(rp, rj, ra).filter { it.illisible }.map { it.nom }
+        if (fichiersIllisibles.isEmpty()) {
+            completerJournal()
+            message = "Base restaur\u00E9e depuis la copie .bak."
+        } else {
+            message = "Restauration impossible : aucune copie .bak lisible."
+        }
+        rafraichirTout()
     }
 
     fun supprimer(p: Personne) {
@@ -1122,15 +1155,21 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         }
     }
 
-    // Chargement uniquement apres deverrouillage (rien ne s'affiche sans PIN)
+    // Chargement uniquement apres deverrouillage (rien ne s'affiche sans PIN).
+    // G1-04/G1-05/G1-06 : lecture tout-ou-rien avec repli sur la copie .bak ;
+    // tout fichier illisible BLOQUE l'enregistrement (rien n'est ecrase).
     LaunchedEffect(verrou.deverrouille) {
         if (verrou.deverrouille && !charge) {
-            personnes.addAll(Stockage.charger(ctx))
-            pistes.addAll(Stockage.chargerJournal(ctx))
-            actes.addAll(Stockage.chargerActes(ctx))
+            val rp = Stockage.charger(ctx)
+            val rj = Stockage.chargerJournal(ctx)
+            val ra = Stockage.chargerActes(ctx)
+            personnes.addAll(rp.liste)
+            pistes.addAll(rj.liste)
+            actes.addAll(ra.liste)
             sosaCujus = Stockage.lireSosaCujus(ctx)
+            fichiersIllisibles = listOf(rp, rj, ra).filter { it.illisible }.map { it.nom }
             charge = true
-            completerJournal()
+            if (fichiersIllisibles.isEmpty()) completerJournal()
         }
     }
     LaunchedEffect(Unit) { aPin = Stockage.aPin(ctx) }
@@ -1232,6 +1271,25 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 ouvrirLien(ctx, lienEtatCivil(commune, dept, type, annee))?.let { m -> message = m }
             },
             validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) }
+        )
+    }
+
+    // G1-04 : donnees illisibles -> affichage + restauration depuis la copie .bak
+    if (fichiersIllisibles.isNotEmpty() && !avertissementLectureFerme) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Donn\u00E9es illisibles") },
+            text = {
+                Text(
+                    fichiersIllisibles.size.toString() + " fichier(s) de donn\u00E9es ne se lisent plus, pas plus que leur copie .bak. L'enregistrement est bloqu\u00E9 pour ne rien \u00E9craser : restaurez la derni\u00E8re copie valide ou fermez sans rien modifier."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { restaurerDepuisBak() }) { Text("Restaurer la copie .bak") }
+            },
+            dismissButton = {
+                TextButton(onClick = { avertissementLectureFerme = true }) { Text("Fermer") }
+            }
         )
     }
 
