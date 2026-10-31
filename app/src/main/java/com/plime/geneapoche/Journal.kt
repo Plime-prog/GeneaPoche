@@ -2,6 +2,7 @@ package com.plime.geneapoche
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -62,6 +63,8 @@ data class Suggestion(
 )
 
 fun dateVersAnnee(date: String): Int? {
+    // Date republicaine : l'annee se deduit de sa conversion gregorienne.
+    repubAGregorien(date)?.let { g -> return g.takeLast(4).toIntOrNull() }
     return Regex("[0-9]{4}").find(date)?.value?.toIntOrNull()
 }
 
@@ -219,9 +222,7 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
             return
         }
         // Acte localise : chaque champ manquant est une recherche a part entiere.
-        if (ch.heure.isBlank()) {
-            ajouter(cleBase + "_heure", "Compl\u00E9ter " + lib.heure + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
-        }
+        // (L'HEURE manquante ne cree PAS de recherche : information annexe.)
         if (ch.lieu.isBlank()) {
             ajouter(cleBase + "_lieu", "Compl\u00E9ter " + lib.lieu + " de " + titreCourt(p), type, "", "", debut, fin)
         }
@@ -334,7 +335,6 @@ fun EcranJournal(
         .filter { ps -> val a = anneeCiblePiste(ps); a == null || a <= limite }
         .sortedByDescending { ps -> anneeCiblePiste(ps) ?: 0 }
         .take(10)
-    val archivees = pistes.filter { it.faite }.sortedByDescending { it.cloture }.take(30)
     val anomalies = anomaliesPour(personnes)
 
     LazyColumn(Modifier.fillMaxSize().padding(12.dp)) {
@@ -342,7 +342,7 @@ fun EcranJournal(
             Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                 Text("Journal de recherches", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
                 Text(
-                    prioritaires.size.toString() + " recherche(s) prioritaire(s) : \u00E9v\u00E9nements survenus il y a plus de 75 ans, du plus r\u00E9cent au plus ancien, 10 au maximum. La pastille porte le num\u00E9ro d'Aboville de la personne.",
+                    prioritaires.size.toString() + " recherche(s) prioritaire(s) : \u00E9v\u00E9nements survenus il y a plus de 75 ans, du plus r\u00E9cent au plus ancien, 10 au maximum. La pastille porte le num\u00E9ro de la personne.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -362,11 +362,14 @@ fun EcranJournal(
                             fontWeight = FontWeight.Bold, color = Color(0xFF9C5A00)
                         )
                         anomalies.take(5).forEach { an ->
+                            // Touchez l'anomalie : la fiche a corriger s'ouvre directement.
                             Text(
                                 an.texte,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp)
+                                color = CouleurVertFonce,
+                                modifier = Modifier
+                                    .padding(top = 4.dp)
+                                    .clickable { onOuvrirPersonne(an.personneId) }
                             )
                         }
                         if (anomalies.size > 5) {
@@ -416,26 +419,8 @@ fun EcranJournal(
             }
         }
 
-        if (archivees.isNotEmpty()) {
-            item {
-                Text(
-                    "Recherches archiv\u00E9es (" + archivees.size.toString() + ")",
-                    Modifier.padding(top = 12.dp, bottom = 4.dp),
-                    fontWeight = FontWeight.Bold,
-                    color = CouleurVertFonce
-                )
-            }
-            archivees.forEach { ps ->
-                item(key = "archivee" + ps.id.toString()) {
-                    val pers = personneParId(personnes, ps.personneId)
-                    TexteAvecLiens(
-                        "\u2022 " + formaterDateHeure(ps.cloture) + " \u2013 " + ps.texte +
-                            (if (pers != null) " (" + titreCourt(pers) + ")" else ""),
-                        ouvrirLien
-                    )
-                }
-            }
-        }
+        // Une recherche effectuee est supprimee sans archive ni historique.
+
         item { Spacer(Modifier.height(24.dp)) }
     }
 }
@@ -519,22 +504,23 @@ fun CarteRecherche(
                 }
             }
 
-            // Personne concernee, avec rappel du numero d'Aboville
+            // Personne concernee : appui sur le nom = fiche (plus de bouton).
             if (pers != null) {
-                TextButton(onClick = { onOuvrirPersonne(piste.personneId) }) {
-                    Text(
-                        "Fiche de " + titreCourt(pers) + " \u2013 n\u00B0 d'Aboville " + pers.numeroAffiche(),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
+                Text(
+                    titreCourt(pers) + " \u2013 " + pers.numeroAffiche(),
+                    Modifier.fillMaxWidth().clickable { onOuvrirPersonne(piste.personneId) },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = CouleurVertFonce,
+                    maxLines = 1
+                )
             }
 
-            // Zone de texte pour la recherche en cours
+            // Zone de saisie libre unique pour la recherche en cours
             var note by remember(piste.id) { mutableStateOf(piste.enCours) }
             OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Recherche en cours : pages, c\u00F4tes, notes...") },
+                label = { Text("Recherche : pages, c\u00F4tes, notes...") },
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -542,11 +528,6 @@ fun CarteRecherche(
                 TextButton(onClick = { piste.enCours = note.trim(); onSauver() }) {
                     Text("Enregistrer la note")
                 }
-            }
-
-            // Notes archivees horodatees de cette recherche
-            piste.historique.take(3).forEach { r ->
-                TexteAvecLiens("   \u2022 " + formaterDateHeure(r.date) + " \u2013 " + libelleRecherche(r), ouvrirLien)
             }
         }
     }

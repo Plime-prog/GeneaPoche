@@ -109,10 +109,12 @@ fun DialogueEdition(
                 )
                 Champ("Nom", nom, { nom = it })
                 Champ("Pr\u00E9noms", prenoms, { prenoms = it })
+                // Sexe : F ou M seulement (pas de troisieme choix affiche).
+                // Re-toucher la puce selectionnee remet le sexe non renseigne
+                // (information manquante, deduite par la couleur verte).
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("M") })
-                    FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("F") })
-                    FilterChip(selected = sexe.isEmpty(), onClick = { sexe = "" }, label = { Text("?") })
+                    FilterChip(selected = sexe == "M", onClick = { sexe = if (sexe == "M") "" else "M" }, label = { Text("M") })
+                    FilterChip(selected = sexe == "F", onClick = { sexe = if (sexe == "F") "" else "F" }, label = { Text("F") })
                 }
                 Champ("Profession", profession, { profession = it })
 
@@ -244,10 +246,11 @@ fun DialogueNouvelEnfant(
                 )
                 Champ("Nom", nom, { nom = it })
                 Champ("Pr\u00E9noms", prenoms, { prenoms = it })
+                // Sexe : Garcon ou Fille seulement (pas de troisieme choix affiche).
+                // Re-toucher la puce selectionnee remet le sexe non renseigne.
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("Gar\u00E7on") })
-                    FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("Fille") })
-                    FilterChip(selected = sexe.isEmpty(), onClick = { sexe = "" }, label = { Text("?") })
+                    FilterChip(selected = sexe == "M", onClick = { sexe = if (sexe == "M") "" else "M" }, label = { Text("Gar\u00E7on") })
+                    FilterChip(selected = sexe == "F", onClick = { sexe = if (sexe == "F") "" else "F" }, label = { Text("Fille") })
                 }
                 Champ("Naissance (jj/mm/aaaa, aaaa ou 22 Germinal An II)", date, { date = it }, !dateValide(date), "jj/mm/aaaa, aaaa ou 22 Germinal An II")
             }

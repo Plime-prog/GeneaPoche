@@ -84,7 +84,7 @@ fun EcranArbre(
         Text("Arbre", fontSize = 22.sp, fontWeight = FontWeight.Bold)
         if (centre == null) {
             Spacer(Modifier.height(12.dp))
-            Text("Aucune personne : ajoutez la première personne (de cujus, Sosa 1) depuis l'onglet Personnes.")
+            Text("Aucune personne : ajoutez la première personne (de cujus, n° 1) depuis l'onglet Personnes.")
         } else {
             OutlinedButton(onClick = { pickerOuvert = true }, Modifier.padding(top = 8.dp)) {
                 Text("Centré sur : " + centre.titre())

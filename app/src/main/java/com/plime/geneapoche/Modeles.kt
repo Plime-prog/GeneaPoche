@@ -108,9 +108,10 @@ fun repubAGregorien(s: String): String? {
         res.monthValue.toString().padStart(2, '0') + "/" + res.year.toString()
 }
 
-// Date systematique : une saisie republicaine est convertie en gregorien,
-// toute autre valeur est conservee telle quelle (jj/mm/aaaa ou aaaa).
-fun dateGreg(s: String): String = repubAGregorien(s) ?: s.trim()
+// Date systematique : une saisie republicaine est GARDEE TELLE QUELLE
+// (l'affichage la complete de sa conversion gregorienne), toute autre
+// valeur est conservee telle quelle (jj/mm/aaaa ou aaaa).
+fun dateGreg(s: String): String = s.trim()
 
 data class Personne(
     val id: Long,
@@ -120,6 +121,8 @@ data class Personne(
     var prenoms: String = "",
     var sexe: String = "",
     var profession: String = "",
+    // Bloc sans titre de saisie libre sur la fiche (notes personnelles).
+    var notesLibres: String = "",
     var dateNaissance: String = "",
     var heureNaissance: String = "",
     var lieuNaissance: String = "",
@@ -168,7 +171,8 @@ data class Personne(
 ) {
     // Normalisation systematique a TOUTE construction (chargement, import,
     // creation) : nom en majuscules, prenoms a l'initiale pres, dates
-    // republicaines converties en gregoriennes.
+    // republicaines GARDEES TELLES QUELLES (conversion gregorienne affichee,
+    // jamais stockee).
     init {
         nom = normaliserNom(nom)
         prenoms = normaliserPrenoms(prenoms)
@@ -185,11 +189,11 @@ data class Personne(
             .joinToString(" ")
     }
 
-    // Numero affichable : "Sosa 12" ou d'Aboville brut ("7.2"), sans etiquette.
-    // Aucun accent ici : sequence d'echappement ou ASCII seul, pour un UTF-8 fiable.
+    // Numero affichable SANS etiquette : juste le numero ("12" ou "7.2").
+    // Les mots Sosa et d'Aboville ne restent que dans les menus (de cujus, tri).
     fun numeroAffiche(): String {
         val s = sosa.trim()
-        if (s.isNotEmpty()) return "Sosa " + s
+        if (s.isNotEmpty()) return s
         return lateral.trim()
     }
 
@@ -257,6 +261,7 @@ data class Personne(
         o.put("prenoms", prenoms)
         o.put("sexe", sexe)
         o.put("profession", profession)
+        o.put("notesLibres", notesLibres)
         o.put("dateNaissance", dateNaissance)
         o.put("heureNaissance", heureNaissance)
         o.put("lieuNaissance", lieuNaissance)
@@ -335,6 +340,7 @@ data class Personne(
                 prenoms = o.optString("prenoms", o.optString("prenom", "")),
                 sexe = o.optString("sexe", ""),
                 profession = o.optString("profession", ""),
+                notesLibres = o.optString("notesLibres", ""),
                 dateNaissance = o.optString("dateNaissance", ""),
                 heureNaissance = o.optString("heureNaissance", ""),
                 lieuNaissance = o.optString("lieuNaissance", ancienneNaissance),

@@ -127,6 +127,9 @@ fun dateAffichee(s: String): String {
     Regex("^(\\d{1,2})[./\\- ](\\d{1,2})[./\\- ](\\d{4})$").find(t)?.let { m ->
         return m.groupValues[1].padStart(2, '0') + "/" + m.groupValues[2].padStart(2, '0') + "/" + m.groupValues[3]
     }
+    // Date du calendrier republicain : affichee telle quelle, completee de sa
+    // conversion gregorienne entre parentheses.
+    repubAGregorien(t)?.let { return t + " (" + it + ")" }
     return t
 }
 
@@ -139,8 +142,8 @@ fun heureAffichee(s: String): String {
 }
 
 // Format unique impose : jj/mm/aaaa (ou, a defaut, l'annee seule aaaa),
-// ou une date du calendrier republicain (ex "22 Germinal An II"),
-// convertie en gregorien a l'enregistrement.
+// ou une date du calendrier republicain (ex "22 Germinal An II"), gardee
+// telle quelle et completee de sa conversion gregorienne a l'affichage.
 fun dateValide(s: String): Boolean {
     val t = s.trim()
     if (t.isEmpty()) return true
@@ -323,6 +326,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var aPin by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
     var idOuvert by remember { mutableStateOf(0L) }
+    // Pile de navigation des fiches : retour = fiche precedemment ouverte
+    // (la liste n'apparait qu'une fois la pile vide).
+    val pileFiches = remember { mutableStateListOf<Long>() }
     var onglet by remember { mutableStateOf(1) }
     var editionOuverte by remember { mutableStateOf(false) }
     var editionCible by remember { mutableStateOf<Personne?>(null) }
@@ -353,12 +359,12 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     }
 
     // Synchronise le journal avec les donnees manquantes (grisees dans les fiches) :
-    // 1) toute recherche ouverte dont la donnee est maintenant presente (saisie
-    //    ou image) est archivee automatiquement, horodatee ;
-    // 2) chaque donnee manquante sans recherche ouverte en obtient une.
+    // une recherche dont la donnee est maintenant presente (saisie ou image) est
+    // SUPPRIMEE (plus aucun archivage, plus aucun historique) ; chaque donnee
+    // manquante sans recherche ouverte en obtient une.
     fun completerJournal() {
         if (!charge) return
-        val maintenant = System.currentTimeMillis()
+        val aRetirer = mutableListOf<Piste>()
         pistes.filter { !it.faite }.forEach { ps ->
             val pers = personneParId(personnes, ps.personneId)
             // Les pistes de validation (coche negative d'une information)
@@ -367,14 +373,10 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             val encoreManquante = pers != null &&
                 suggestionsPour(pers, personnes, actes).any { it.cle == ps.categorie }
             if (pers == null || !encoreManquante) {
-                if (ps.enCours.isNotBlank()) {
-                    ps.historique.add(0, Recherche(date = maintenant, resultat = "X", note = ps.enCours.trim()))
-                }
-                ps.faite = true
-                ps.cloture = maintenant
-                if (pers != null) ps.texte = "Trouv\u00E9 : " + ps.texte
+                aRetirer.add(ps)
             }
         }
+        pistes.removeAll(aRetirer)
         personnes.forEach { p ->
             val existantes = pistes.filter { !it.faite && it.personneId == p.id }.map { it.categorie }.toSet()
             suggestionsPour(p, personnes, actes).forEach { s ->
@@ -431,6 +433,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         actes.removeAll(actesASupprimer)
         actesASupprimer.forEach { Stockage.supprimerImage(ctx, it.id) }
         enregistrer()
+        pileFiches.removeAll { it == p.id }
         if (idOuvert == p.id) idOuvert = 0L
     }
 
@@ -712,6 +715,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             "D" -> { p.dateDeces = dateGreg(date); p.heureDeces = heure; p.lieuDeces = commune; p.deptDeces = dept }
             "S" -> { p.dateSepulture = dateGreg(date); p.heureSepulture = heure; p.lieuSepulture = commune; p.deptSepulture = dept }
         }
+        // Date saisie dans le bloc : la coche de l'evenement passe au vert
+        // directement (plus besoin de cocher a la main).
+        if (date.isNotBlank()) p.changerEtat(sectionDe(type), "vert")
         if (ref.isNotBlank()) {
             val acte = actes.filter { it.personneId == p.id && it.type == type }
                 .maxByOrNull { it.creation }
@@ -747,11 +753,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 )
             }
         } else {
-            pistes.filter { !it.faite && it.personneId == p.id && it.categorie == cle }.forEach { ps ->
-                ps.faite = true
-                ps.cloture = maintenant
-                ps.texte = "V\u00E9rifi\u00E9 : " + ps.texte
-            }
+            // Coche positive : la recherche de verification correspondante est
+            // supprimee (plus d'archivage, plus d'historique).
+            pistes.removeAll { !it.faite && it.personneId == p.id && it.categorie == cle }
         }
         enregistrer()
     }
@@ -814,6 +818,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         personnes.clear()
         personnes.addAll(importees)
         pistes.clear()
+        pileFiches.clear()
         actes.forEach { Stockage.supprimerImage(ctx, it.id) }
         actes.clear()
         // De cujus apres import : la personne au plus petit n Sosa du fichier, sinon la 1re.
@@ -843,6 +848,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         actes.forEach { Stockage.supprimerImage(ctx, it.id) }
         actes.clear()
         idOuvert = 0L
+        pileFiches.clear()
         arbreCentre = 0L
         Stockage.definirCujus(ctx, 0L, 1L)
         sosaCujus = 1L
@@ -1162,7 +1168,15 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             message = message,
             onMessage = { message = it },
             idOuvert = idOuvert,
-            onIdOuvert = { idOuvert = it },
+            onIdOuvert = { id ->
+                // Empile la fiche courante avant d'en ouvrir une autre
+                // (retour arriere = depilement).
+                if (id != 0L && idOuvert != 0L) pileFiches.add(idOuvert)
+                idOuvert = id
+            },
+            onRetourFiche = {
+                idOuvert = if (pileFiches.isNotEmpty()) pileFiches.removeAt(pileFiches.size - 1) else 0L
+            },
             onglet = onglet,
             onOnglet = { onglet = it },
             editionOuverte = editionOuverte,

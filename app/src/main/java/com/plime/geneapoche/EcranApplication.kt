@@ -66,6 +66,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -114,6 +115,7 @@ fun EcranApplication(
     onMessage: (String) -> Unit,
     idOuvert: Long,
     onIdOuvert: (Long) -> Unit,
+    onRetourFiche: () -> Unit,
     onglet: Int,
     onOnglet: (Int) -> Unit,
     editionOuverte: Boolean,
@@ -244,7 +246,7 @@ fun EcranApplication(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text("Aucune personne pour le moment.")
-                        Text("Touchez le bouton + pour ajouter la premi\u00E8re personne (de cujus, Sosa 1).")
+                        Text("Touchez le bouton + pour ajouter la premi\u00E8re personne (de cujus, n\u00B0 1).")
                     }
                 } else {
                     // Onglet PERSONNES : compteur, tri A-Z / Aboville / Branches, index, cartes.
@@ -575,7 +577,9 @@ fun EcranApplication(
             p = p,
             enregistrer = enregistrer,
             onOuvrir = { onIdOuvert(it) },
-            onRetour = { onIdOuvert(0L) },
+            onRetour = onRetourFiche,
+            pistes = pistes,
+            onSupprimerPiste = { supprimerPiste(it) },
             onModifier = { onEditionCible(p); onEditionOuverte(true) },
             onSupprimer = { onConfirmSuppression(p) },
             onChoisir = { onPickerRole(it) },
@@ -707,13 +711,9 @@ fun EcranApplication(
                             Row(
                                 Modifier.fillMaxWidth()
                                     .clickable { lier(role, c.id) }
-                                    .padding(vertical = 10.dp)
+                                    .padding(vertical = 6.dp)
                             ) {
-                                val num = c.numeroAffiche()
-                                if (num.isNotEmpty()) {
-                                    Text(num + "  ", fontWeight = FontWeight.Bold)
-                                }
-                                Text(c.titre())
+                                Text(c.titre(), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
@@ -796,16 +796,13 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = couleurCarte)
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(8.dp),
+            Modifier.fillMaxWidth().padding(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Vignette : rond au numero Sosa ou d'Aboville, calcule
-            // automatiquement a partir du de cujus (jamais saisi).
-            // Numero brut (plus d'etiquette "Lat\u00E9ral"), taille adaptee
-            // aux numeros d'Aboville longs pour ne jamais deborder du rond.
-            val num = p.numeroBrut()
+            // Vignette : rond a l'INITIALE du prenom (plus de numero, qui
+            // n'apparait plus que dans les menus de numerotation).
             val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
-            val vignette = num.ifEmpty { initiale.toString() }
+            val vignette = initiale.toString()
             val couleurAvatar = when (p.sexe) {
                 "F" -> Color(0xFFE9C4D2) // rose
                 "M" -> Color(0xFFBFD4E8) // bleu
@@ -829,7 +826,13 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
             }
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
-                Text(p.titre(), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(
+                    p.titre(),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 val n = dateAffichee(p.dateNaissance.trim())
                 val m = dateAffichee(p.dateMariage.trim())
                 val d = dateAffichee(p.dateDeces.trim())
