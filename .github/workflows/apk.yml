@@ -25,10 +25,28 @@ jobs:
         with:
           gradle-version: '9.4.1'
 
-      - name: Compiler l'APK debug
+      # G1-03 : cle de signature dans les secrets GitHub (jamais dans le depot).
+      - name: Cle de signature release
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > /tmp/geneapoche-release.jks
+            echo "GP_KEYSTORE=/tmp/geneapoche-release.jks" >> $GITHUB_ENV
+            echo "GP_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> $GITHUB_ENV
+            echo "GP_KEY_ALIAS=$KEY_ALIAS" >> $GITHUB_ENV
+            echo "GP_KEY_PASSWORD=$KEY_PASSWORD" >> $GITHUB_ENV
+          else
+            echo "Secrets de signature absents : APK release signe avec la cle debug (non debuggable)."
+          fi
+
+      - name: Compiler les APK debug et release
         run: |
           set +e
-          gradle assembleDebug --no-daemon > /tmp/build.log 2>&1
+          gradle assembleDebug assembleRelease --no-daemon > /tmp/build.log 2>&1
           code=$?
           if [ $code -ne 0 ]; then
             grep '^e: ' /tmp/build.log | head -10 | while IFS= read -r l; do
@@ -45,8 +63,14 @@ jobs:
             exit 1
           fi
 
-      - name: Publier l'APK
+      - name: Publier l'APK debug
         uses: actions/upload-artifact@v7
         with:
           name: geneapoche-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publier l'APK release
+        uses: actions/upload-artifact@v7
+        with:
+          name: geneapoche-release-apk
+          path: app/build/outputs/apk/release/app-release.apk

@@ -16,9 +16,28 @@ android {
         versionName = "0.29"
     }
 
+    signingConfigs {
+        if (System.getenv("GP_KEYSTORE") != null) {
+            create("release") {
+                storeFile = file(System.getenv("GP_KEYSTORE")!!)
+                storePassword = System.getenv("GP_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("GP_KEY_ALIAS")
+                keyPassword = System.getenv("GP_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            debuggable(false)
+            // G1-03 : cle de signature dans les secrets GitHub (GP_KEYSTORE...).
+            // Tant que les secrets n'existent pas, repli sur la cle debug (APK installable, non debuggable).
+            signingConfig = if (System.getenv("GP_KEYSTORE") != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 
