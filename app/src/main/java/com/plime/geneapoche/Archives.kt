@@ -77,10 +77,20 @@ fun lienEtatCivil(commune: String, dept: Int?, typeActe: String, annee: String):
     return "https://www.google.com/search?q=" + requete
 }
 
-// Ouvre une URL (AD, lien colle dans le journal). Renvoie un message d'erreur ou null.
+// G1-19 : la recherche AD passe par le NAVIGATEUR : commune, annee et type
+// d'acte sont envoyes au moteur de recherche (rien d'autre ne sort de l'app).
+//
+// G1-18 : ouvre une URL (AD, lien colle dans le journal) : seuls http:// et
+// https:// sont autorises, les liens www. recoivent le prefixe https, tout
+// autre schema (javascript:, intent:, file:) est refuse.
 fun ouvrirLien(ctx: Context, url: String): String? {
+    var u = url.trim()
+    if (u.startsWith("www.", ignoreCase = true)) u = "https://" + u
+    if (!u.startsWith("http://") && !u.startsWith("https://")) {
+        return "Lien refus\u00E9 : seuls http et https sont autoris\u00E9s."
+    }
     return try {
-        ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u)))
         null
     } catch (e: Exception) {
         "Aucun navigateur disponible."

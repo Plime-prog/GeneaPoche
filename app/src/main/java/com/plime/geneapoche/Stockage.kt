@@ -25,7 +25,8 @@ import javax.crypto.spec.PBEKeySpec
 // Fichiers chiffres : personnes.bin, journal.bin, actes.bin (+ .bak/.tmp)
 // et images actes_img/*.bin. Migration v0.28 -> v0.29 automatique au premier
 // deverrouillage (anciens fichiers conserves en .old apres verification).
-// PIN : PBKDF2-HmacSHA256 (150 000 iterations, sel aleatoire 128 bits), comparaison temps constant.
+// PIN : PBKDF2-HmacSHA256 (600 000 iterations, sel aleatoire 128 bits), calcul hors du
+// thread principal (G1-12), comparaison temps constant.
 // Blocage : 5 erreurs -> paliers 30 s / 2 min / 10 min / 1 h.
 // Aucune permission Internet dans le manifeste : rien ne peut etre transmis.
 
@@ -44,13 +45,14 @@ object Stockage {
     private const val CLE_JUSQUA = "blocage_jusqua"
     private const val CLE_ECRIT = "blocage_ecrit"
     private const val CLE_JUSQUA_MUR = "blocage_jusqua_mur"
+    private const val CLE_ITERATIONS = "pin_iterations"
     private const val CLE_ID_CUJUS = "id_cujus"
     private const val CLE_SOSA_CUJUS = "sosa_cujus"
     private const val CLE_MAITRE = "cle_maitre"
     private const val CLE_SEL_MAITRE = "cle_maitre_sel"
     private val DUREES_BLOCAGE = longArrayOf(30_000L, 120_000L, 600_000L, 3_600_000L)
     private const val ERREURS_AVANT_PALIER = 5
-    private const val ITERATIONS_PIN = 150_000
+    private const val ITERATIONS_PIN = 600_000
 
     // ------------------------------------------------------------ Preferences
 
@@ -248,6 +250,7 @@ object Stockage {
             .putInt(CLE_ERREURS, 0)
             .putInt(CLE_NIVEAU, 0)
             .putLong(CLE_JUSQUA, 0L)
+            .putInt(CLE_ITERATIONS, ITERATIONS_PIN)
             .commit()
         if (!ok || !envelopperCleMaitre(ctx, pin, maitre)) return false
         cleMaitre = maitre
@@ -281,7 +284,10 @@ object Stockage {
         val p = prefs(ctx)
         val hashStocke = p.getString(CLE_HASH, null) ?: return false
         val selStocke = p.getString(CLE_SEL, null) ?: return false
-        val calcule = hacherPin(pin, Base64.decode(selStocke, Base64.NO_WRAP))
+        // G1-12 : le nombre d'iterations est stocke, pour pouvoir l'augmenter
+        // plus tard sans casser les PIN existants.
+        val iterations = p.getInt(CLE_ITERATIONS, ITERATIONS_PIN)
+        val calcule = hacherPin(pin, Base64.decode(selStocke, Base64.NO_WRAP), iterations)
         return MessageDigest.isEqual(calcule, Base64.decode(hashStocke, Base64.NO_WRAP))
     }
 
@@ -296,13 +302,14 @@ object Stockage {
         val ok = prefs(ctx).edit()
             .putString(CLE_SEL, Base64.encodeToString(sel, Base64.NO_WRAP))
             .putString(CLE_HASH, Base64.encodeToString(hash, Base64.NO_WRAP))
+            .putInt(CLE_ITERATIONS, ITERATIONS_PIN)
             .commit()
         if (!ok) return false
         return envelopperCleMaitre(ctx, nouveau, m)
     }
 
-    private fun hacherPin(pin: String, sel: ByteArray): ByteArray {
-        val spec = PBEKeySpec(pin.toCharArray(), sel, ITERATIONS_PIN, 256)
+    private fun hacherPin(pin: String, sel: ByteArray, iterations: Int = ITERATIONS_PIN): ByteArray {
+        val spec = PBEKeySpec(pin.toCharArray(), sel, iterations, 256)
         val fabrique = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         val hash = fabrique.generateSecret(spec).encoded
         java.util.Arrays.fill(spec.password, ' ')

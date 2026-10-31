@@ -54,6 +54,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -837,14 +840,19 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             ?: 0L
     }
 
-    fun exporterGedcom(uri: Uri, sousEnsemble: Set<Long>?) {
+    fun exporterGedcom(uri: Uri, sousEnsemble: Set<Long>?, exclureVivants: Boolean = false) {
         try {
-            val texte = construireGedcom(personnes, sousEnsemble, actes)
+            // G1-16 : option exclure les personnes vivantes (sans deces
+            // connu, nees il y a moins de 100 ans).
+            val annee = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+            val exportables = if (exclureVivants) personnes.filter { !estVivante(it, annee) } else personnes
+            val sous = if (exclureVivants && sousEnsemble != null) sousEnsemble.filter { id -> exportables.any { it.id == id } }.toSet() else sousEnsemble
+            val texte = construireGedcom(exportables, sous, actes)
             ctx.contentResolver.openOutputStream(uri)?.use { sortie ->
                 sortie.write(texte.toByteArray(Charsets.UTF_8))
             }
-            val n = if (sousEnsemble == null) personnes.size else texte.split("\n").count { it.endsWith(" INDI") }
-            message = "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis."
+            val n = if (sous == null) exportables.size else texte.split("\n").count { it.endsWith(" INDI") }
+            message = "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "")
         } catch (e: Exception) {
             message = "Echec de l'export GEDCOM."
         }
@@ -852,9 +860,28 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
 
     fun lireGedcom(uri: Uri) {
         try {
-            val texte = ctx.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+            // G1-17 : taille limite (10 Mo) et lecture par flux borne,
+            // jamais de readText() sans limite sur un fichier arbitraire.
+            val taille = try {
+                ctx.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
+            } catch (e: Exception) { -1L }
+            if (taille > 10_000_000L) {
+                message = "Fichier trop volumineux (plus de 10 Mo) : import refus\u00E9."
+                return
+            }
+            val texte = ctx.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { lecteur ->
+                val sb = StringBuilder()
+                var total = 0
+                while (true) {
+                    val ligne = lecteur.readLine() ?: break
+                    total += ligne.length + 1
+                    if (total > 10_000_000) return@use null
+                    sb.append(ligne).append("\n")
+                }
+                sb.toString()
+            }
             if (texte.isNullOrBlank()) {
-                message = "Fichier GEDCOM illisible."
+                message = "Fichier GEDCOM illisible (ou trop volumineux)."
                 return
             }
             val importees = importerGedcom(texte)
@@ -1345,7 +1372,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 idDuCujus()
             },
             onArbreCentre = { arbreCentre = it },
-            exporterGedcom = { uri, sel -> exporterGedcom(uri, sel) },
+            exporterGedcom = { uri, sel, ev -> exporterGedcom(uri, sel, ev) },
             importerGedcom = { uri -> lireGedcom(uri) },
             viderBase = { viderBase() },
             enregistrerActe = { a -> enregistrerActe(a) },
@@ -1646,10 +1673,44 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
 // ------------------------------------------------------------ Creation du PIN
 
 @Composable
+// G1-12 : validation du PIN : 6 chiffres minimum, codes triviaux refuses
+// (000000, 123456, chiffres identiques), ou phrase secrete alphanumerique
+// d'au moins 8 caracteres.
+fun erreurPin(p: String, phrase: Boolean): String? {
+    if (phrase) {
+        if (p.length < 8) return "La phrase secr\u00E8te doit contenir au moins 8 caract\u00E8res."
+        return null
+    }
+    if (p.length < 6) return "Le code doit contenir au moins 6 chiffres."
+    if (p.toSet().size == 1) return "Code trop simple : chiffres tous identiques."
+    if (p == "012345" || p == "123456" || p == "1234567" || p == "12345678" || p == "654321") {
+        return "Code trop simple : suite \u00E9vidente."
+    }
+    return null
+}
+
+@Composable
 fun DialogueCreationPin(onCree: (String) -> Unit) {
     var pin1 by remember { mutableStateOf("") }
     var pin2 by remember { mutableStateOf("") }
     var erreur by remember { mutableStateOf("") }
+    var phraseMode by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var travail by remember { mutableStateOf(false) }
+    fun creer(p: String) {
+        val e = erreurPin(p, phraseMode)
+        if (e != null) {
+            erreur = e
+            return
+        }
+        erreur = ""
+        travail = true
+        // G1-12 : le PBKDF2 (600 000 iterations) tourne HORS du thread
+        // principal, l'ecran ne fige jamais.
+        scope.launch(Dispatchers.Default) {
+            onCree(p)
+        }
+    }
     Surface(Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxSize().padding(24.dp),
@@ -1660,49 +1721,51 @@ fun DialogueCreationPin(onCree: (String) -> Unit) {
             Text("D\u00E9finissez un code PIN pour prot\u00E9ger vos donn\u00E9es.", Modifier.padding(vertical = 8.dp))
             OutlinedTextField(
                 value = pin1,
-                onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) pin1 = it },
-                label = { Text("Code PIN (4 \u00E0 8 chiffres)") },
+                onValueChange = { if (phraseMode) { if (it.length <= 64 && it.all { c -> c.isLetterOrDigit() }) pin1 = it } else if (it.length <= 8 && it.all { c -> c.isDigit() }) pin1 = it },
+                label = { Text(if (phraseMode) "Phrase secr\u00E8te (lettres et chiffres)" else "Code PIN (6 \u00E0 8 chiffres)") },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                keyboardOptions = KeyboardOptions(keyboardType = if (phraseMode) KeyboardType.Password else KeyboardType.NumberPassword),
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = pin2,
-                onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) pin2 = it },
-                label = { Text("Confirmez le code") },
+                onValueChange = { if (phraseMode) { if (it.length <= 64 && it.all { c -> c.isLetterOrDigit() }) pin2 = it } else if (it.length <= 8 && it.all { c -> c.isDigit() }) pin2 = it },
+                label = { Text("Confirmez") },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.NumberPassword,
+                    keyboardType = if (phraseMode) KeyboardType.Password else KeyboardType.NumberPassword,
                     imeAction = ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(onDone = {
-                    if (pin1.length >= 4 && pin1 == pin2) onCree(pin1)
+                    if (pin1 == pin2) creer(pin1) else erreur = "Les deux codes ne correspondent pas."
                 }),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
             if (erreur.isNotEmpty()) {
                 Text(erreur, color = CouleurRouge, modifier = Modifier.padding(vertical = 8.dp))
             }
+            // G1-19 : dire la verite sur la vie privee.
             Text(
-                "Attention : sans ce code, vos donn\u00E9es sont ind\u00E9chiffrables (aucune r\u00E9cup\u00E9ration possible).",
+                "Vos donn\u00E9es sont chiffr\u00E9es avec une cl\u00E9 li\u00E9e \u00E0 ce code : sans lui, elles sont ind\u00E9chiffrables (aucune r\u00E9cup\u00E9ration possible). " +
+                    "La recherche d'archives, elle, passe par votre navigateur et lui transmet la commune, l'ann\u00E9e et le type d'acte.",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
+            TextButton(onClick = { phraseMode = !phraseMode; pin1 = ""; pin2 = ""; erreur = "" }) {
+                Text(if (phraseMode) "Utiliser plut\u00F4t un code PIN (6 \u00E0 8 chiffres)" else "Utiliser plut\u00F4t une phrase secr\u00E8te (lettres et chiffres)")
+            }
             Button(
                 onClick = {
-                    if (pin1.length < 4) {
-                        erreur = "Le code doit contenir au moins 4 chiffres."
-                    } else if (pin1 != pin2) {
+                    if (pin1 != pin2) {
                         erreur = "Les deux codes ne correspondent pas."
                     } else {
-                        erreur = ""
-                        onCree(pin1)
+                        creer(pin1)
                     }
                 },
-                enabled = pin1.isNotEmpty() && pin2.isNotEmpty()
-            ) { Text("Cr\u00E9er le code") }
+                enabled = pin1.isNotEmpty() && pin2.isNotEmpty() && !travail
+            ) { Text(if (travail) "Chiffrement en cours..." else "Cr\u00E9er le code") }
         }
     }
 }
@@ -1722,18 +1785,27 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
         }
     }
 
+    val scope = rememberCoroutineScope()
+    var travail by remember { mutableStateOf(false) }
+
     fun essayer() {
-        if (pin.isEmpty() || blocage > 0L) return
-        // Deverrouillage complet : PIN verifie PUIS cle maitre ouverte
-        // (les donnees restent indechiffrables sans le PIN, G1-01).
-        if (Stockage.deverrouiller(ctx, pin)) {
-            onDeverrouille()
-        } else {
-            Stockage.enregistrerEchec(ctx)
-            blocage = Stockage.secondesBlocage(ctx)
-            erreur = "Code incorrect."
+        if (pin.isEmpty() || blocage > 0L || travail) return
+        travail = true
+        // G1-12 : le PBKDF2 (600 000 iterations) tourne HORS du thread
+        // principal. Deverrouillage complet : PIN verifie PUIS cle maitre
+        // ouverte (les donnees restent indechiffrables sans le PIN, G1-01).
+        scope.launch(Dispatchers.Default) {
+            val ok = Stockage.deverrouiller(ctx, pin)
+            if (ok) {
+                onDeverrouille()
+            } else {
+                Stockage.enregistrerEchec(ctx)
+                blocage = Stockage.secondesBlocage(ctx)
+                erreur = "Code incorrect."
+            }
+            pin = ""
+            travail = false
         }
-        pin = ""
     }
 
     Surface(Modifier.fillMaxSize()) {
@@ -1747,12 +1819,12 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     value = pin,
-                    onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) pin = it },
+                    onValueChange = { if (it.length <= 64 && it.all { c -> c.isLetterOrDigit() }) pin = it },
                     label = { Text("Code PIN") },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.NumberPassword,
+                        keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Go
                     ),
                     keyboardActions = KeyboardActions(onGo = { essayer() }),
@@ -1762,7 +1834,7 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
                 Spacer(Modifier.width(10.dp))
                 Button(
                     onClick = { essayer() },
-                    enabled = pin.isNotEmpty() && blocage == 0L
+                    enabled = pin.isNotEmpty() && blocage == 0L && !travail
                 ) { Text("D\u00E9verrouiller") }
             }
             if (erreur.isNotEmpty()) {

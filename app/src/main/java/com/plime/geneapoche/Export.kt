@@ -13,6 +13,14 @@ fun moisGedcom(m: Int): String = when (m) {
 
 // Convertit une date saisie en date GEDCOM :
 // "27/10/1890" -> "27 OCT 1890", "vers 1890" -> "ABT 1890", "1890" -> "1890".
+// G1-16 : une personne est vivante si elle n'a pas de deces connu ET
+// (sans annee de naissance exploitable ou) nee il y a moins de 100 ans.
+fun estVivante(p: Personne, anneeCourante: Int): Boolean {
+    if (p.dateDeces.isNotBlank()) return false
+    val annee = Regex("\\d{4}").find(p.dateNaissance)?.value?.toIntOrNull() ?: return true
+    return annee > anneeCourante - 100
+}
+
 fun dateGedcom(s: String): String? {
     val t = s.trim()
     if (t.isEmpty()) return null

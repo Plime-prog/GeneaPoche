@@ -12,16 +12,19 @@ Un outil l\u00E9ger pour :
 - suivre ce qui est v\u00E9rifi\u00E9 (pastilles vertes) ou \u00E0 v\u00E9rifier (rouge doux) ;
 - **exporter en GEDCOM 5.5.1** pour alimenter Heredis, et importer depuis Heredis.
 
-P\u00E9rim\u00E8tre : 50 personnes max (compteur affich\u00E9), France uniquement, actes N/B/M/D/S.
+Périmètre : France uniquement, actes N/B/M/D/S (le plafond de 50 personnes a été levé).
 
 ## S\u00E9curit\u00E9
 
-- **Aucune permission** dans le manifeste : pas d'Internet, aucune donn\u00E9e ne peut \u00EAtre transmise.
-- Stockage local **chiffr\u00E9 AES-256/GCM**, cl\u00E9 dans AndroidKeyStore (jamais exportable), sauvegarde v\u00E9rifi\u00E9e avec copie `.bak`.
-- **Code PIN** : PBKDF2-HmacSHA256 (150 000 it\u00E9rations, sel al\u00E9atoire), blocage progressif (5 erreurs \u2192 30 s / 2 min / 10 min / 1 h). Touche Entr\u00E9e + bouton D\u00E9verrouiller.
-- **FLAG_SECURE** : captures d'\u00E9cran et aper\u00E7u dans les applications r\u00E9centes interdits.
-- Reverrouillage automatique apr\u00E8s plus de 60 secondes en arri\u00E8re-plan.
-- \u26A0\uFE0F Sans le code PIN, les donn\u00E9es sont ind\u00E9chiffrables : aucune r\u00E9cup\u00E9ration possible.
+- **Aucune permission Internet** dans le manifeste : l'application elle-même ne transmet rien.
+- Stockage local **chiffré AES-256/GCM** avec une **clé maître aléatoire de 256 bits liée au code PIN** (double enveloppe PBKDF2 + AndroidKeyStore) : sans le PIN, aucune donnée ne se déchiffre.
+- **Code PIN** : PBKDF2-HmacSHA256 (600 000 itérations, sel aléatoire, calcul hors du thread principal), codes triviaux refusés, phrase secrète alphanumérique possible, blocage progressif (5 erreurs → 30 s / 2 min / 10 min / 1 h) insensible au changement d'heure.
+- **FLAG_SECURE** : captures d'écran et aperçu dans les applications récentes interdits.
+- **Reverrouillage** automatique (délai réglable, immédiat par défaut) et à l'extinction de l'écran ; purge complète de la mémoire au verrouillage.
+- **Sauvegarde `.gpbak` chiffrée** exportable/importable avec phrase secrète, copie `.bak` locale vérifiée, écritures atomiques et durables.
+- ⚠️ **Recherche d'archives** : la loupe AD ouvre votre navigateur et lui envoie la commune, l'année et le type d'acte ; aucune autre donnée ne sort de l'application.
+- ⚠️ **Exports GEDCOM et images** : ces fichiers sont en clair, à manipuler avec prudence.
+- ⚠️ Sans le code PIN, la base est indéchiffrable : aucune récupération possible.
 
 ## Numérotation (v0.11)
 

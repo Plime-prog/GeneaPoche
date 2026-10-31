@@ -48,6 +48,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -153,7 +154,7 @@ fun EcranApplication(
     onVoirActe: (Acte) -> Unit,
     arbreCentre: Long,
     onArbreCentre: (Long) -> Unit,
-    exporterGedcom: (Uri, Set<Long>?) -> Unit,
+    exporterGedcom: (Uri, Set<Long>?, Boolean) -> Unit,
     importerGedcom: (Uri) -> Unit,
     viderBase: () -> Unit,
     enregistrerActe: (ActeSaisie) -> Unit,
@@ -180,6 +181,7 @@ fun EcranApplication(
 
     val ouverte = personneParId(personnes, idOuvert)
     var menuGedcom by remember { mutableStateOf(false) }
+    var exclureVivants by remember { mutableStateOf(false) }
     var confirmeVider by remember { mutableStateOf(false) }
 
     if (ouverte == null) {
@@ -249,14 +251,14 @@ fun EcranApplication(
             val lanceurGedcom = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
             ) { uri ->
-                if (uri != null) exporterGedcom(uri, null)
+                if (uri != null) exporterGedcom(uri, null, exclureVivants)
             }
             val lanceurGedcomBranche = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
             ) { uri ->
                 if (uri != null) {
                     val sel = exportBrancheId
-                    exporterGedcom(uri, if (sel != 0L) brancheDe(personnes, sel) else null)
+                    exporterGedcom(uri, if (sel != 0L) brancheDe(personnes, sel) else null, exclureVivants)
                 }
             }
             val lanceurImport = rememberLauncherForActivityResult(
@@ -481,6 +483,14 @@ fun EcranApplication(
                             }
                             Text(
                                 "Le fichier .ged cr\u00E9\u00E9 est importable dans Heredis (GEDCOM 5.5.1).",
+                            Text(
+                                "\u26A0\uFE0F Le fichier GEDCOM est EN CLAIR, sans chiffrement : ne le partagez qu'avec pr\u00E9caution.",
+                                style = MaterialTheme.typography.bodySmall
+                            ),
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(checked = exclureVivants, onCheckedChange = { exclureVivants = it })
+                                Text("Exclure les personnes vivantes (sans d\u00E9c\u00E8s, n\u00E9es il y a moins de 100 ans)", style = MaterialTheme.typography.bodySmall)
+                            },
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(top = 8.dp)
                             )
