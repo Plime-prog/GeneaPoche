@@ -364,6 +364,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     // manquante sans recherche ouverte en obtient une.
     fun completerJournal() {
         if (!charge) return
+        val maintenant = System.currentTimeMillis()
         val aRetirer = mutableListOf<Piste>()
         pistes.filter { !it.faite }.forEach { ps ->
             val pers = personneParId(personnes, ps.personneId)
