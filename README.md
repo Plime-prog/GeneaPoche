@@ -140,6 +140,14 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 - **Arbre relié et centré façon généalogique** : grands-parents (4 cases), parents, couple central uni par une barre de mariage, enfants centrés sous le couple — le tout **relié par des lignes de parenté** et centré sur la personne choisie.
 - **Coche « validé » sur chaque acte et information** : dans chaque bloc d'événement et sur l'identité, une coche permet de valider ou non les données ; **une coche négative crée automatiquement une recherche dans le journal**, une coche positive l'archive.
 
+## Accents corrigés, listes figées et 4 branches (v0.26)
+
+- **Accents de la page Arbre corrigés** : les libellés s'affichaient avec des séquences brutes (« premiu00E8re ») — la page est désormais écrite en UTF-8 réel, accents parfaits (« première », « aîeule », « ée »).
+- **Personnes : menus figés** : compteur, puces de tri (A–Z / d'Aboville / Branches) et index alphabétique restent **toujours visibles en haut**, seule la liste des noms défile.
+- **A–Z = filtre direct** : toucher une lettre n'affiche **que** les personnes dont le nom de famille commence par elle (lettre active surlignée) ; re-toucher la lettre efface le filtre.
+- **Branches = les 4 grands-parents du de cujus** : seuls les quatre noms des grands-parents sont proposés ; choisir un nom affiche **toutes les personnes de cette branche** (conjoints et descendants par les liens père/mère), même si elles portent un autre nom.
+- **Dialogue « de cujus » compact** : interlignes réduits, numéro supprimé, nom et prénoms **tronqués sur une seule ligne** pour un affichage dégagé.
+
 ## Arbre
 
 3 g\u00E9n\u00E9rations d'ascendance + conjoint + enfants, cartes cliquables avec statut vert/rouge, conjoints multiples g\u00E9r\u00E9s.
@@ -193,3 +201,4 @@ Nouvel onglet **Saisie** (bouton + en bas) : transcription directe d'un acte d'�
 23. ✅ v0.23 : formats uniques jj/mm/aaaa + hh:mm (ou année aaaa) contrôlés partout, dialogue d'édition du de cujus, cartouche réduit sans édition, frise repliée à l'ouverture sans crayons de ligne, 4 boutons B/M/S/Enfant + menu ajouter un enfant.
 24. ✅ v0.24 : menus de navigation toujours visibles, tri Aboville croissant dans Personnes, frise à ordre fixe N/M/D, convertisseur calendrier républicain→grégorien, noms en majuscules et prénoms normalisés, numérotation qui suit le de cujus, 5 boutons fixes à icônes en bas de fiche.
 25. ✅ v0.25 : règle des 100 ans (décès/sépulture masqués si la personne peut avoir moins de 100 ans), journal limité aux événements de plus de 75 ans (10 max, du plus récent au plus ancien) avec n° d'Aboville en pastille, arbre relié par des lignes et centré façon généalogique, coche de validation par acte/information reportée au journal.
+26. ✅ v0.26 : accents de l'arbre corrigés (UTF-8 réel), menus de tri et index figés en haut de Personnes, A–Z devient un filtre (une lettre = un seul affichage), branches limitées aux 4 grands-parents du de cujus avec filtrage par liens de parenté, dialogue de cujus compact sur une ligne sans numéro.
