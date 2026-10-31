@@ -15,8 +15,15 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 
-// Stockage chiffre AES-256/GCM (cle AndroidKeyStore, jamais exportable).
-// Deux fichiers chiffres : personnes.bin et journal.bin (+ .bak/.tmp de securite).
+// Stockage chiffre AES-256/GCM. Depuis la v0.29, les donnees sont chiffrees
+// avec une CLE MAITRE aleatoire de 256 bits LIEE AU PIN : la cle maitre est
+// chiffree par une cle derivee du PIN (PBKDF2-HmacSHA256), PUIS le tout par
+// la cle AndroidKeyStore (jamais exportable). Sans le PIN, aucune donnee ne
+// se dechiffre, meme en appelant Stockage directement ; la cle maitre n'est
+// en memoire QUE pendant le deverrouillage.
+// Fichiers chiffres : personnes.bin, journal.bin, actes.bin (+ .bak/.tmp)
+// et images actes_img/*.bin. Migration v0.28 -> v0.29 automatique au premier
+// deverrouillage (anciens fichiers conserves en .old apres verification).
 // PIN : PBKDF2-HmacSHA256 (150 000 iterations, sel aleatoire 128 bits), comparaison temps constant.
 // Blocage : 5 erreurs -> paliers 30 s / 2 min / 10 min / 1 h.
 // Aucune permission Internet dans le manifeste : rien ne peut etre transmis.
@@ -36,6 +43,8 @@ object Stockage {
     private const val CLE_JUSQUA = "blocage_jusqua"
     private const val CLE_ID_CUJUS = "id_cujus"
     private const val CLE_SOSA_CUJUS = "sosa_cujus"
+    private const val CLE_MAITRE = "cle_maitre"
+    private const val CLE_SEL_MAITRE = "cle_maitre_sel"
     private val DUREES_BLOCAGE = longArrayOf(30_000L, 120_000L, 600_000L, 3_600_000L)
     private const val ERREURS_AVANT_PALIER = 5
     private const val ITERATIONS_PIN = 150_000
@@ -57,6 +66,17 @@ object Stockage {
             .apply()
     }
 
+    // ----------------------------------------- Cle maitre (liee au PIN, v0.29)
+
+    // Cle maitre en memoire UNIQUEMENT pendant le deverrouillage : sans elle,
+    // aucun chiffrage ni dechiffrage n'est possible.
+    @Volatile
+    private var cleMaitre: javax.crypto.SecretKey? = null
+
+    fun deverrouilleStockage(): Boolean = cleMaitre != null
+
+    fun verrouillerStockage() { cleMaitre = null }
+
     // ------------------------------------------------------------ Cle de chiffrement (AndroidKeyStore)
 
     private fun cle(): javax.crypto.SecretKey {
@@ -77,14 +97,34 @@ object Stockage {
         return kg.generateKey()
     }
 
-    private fun chiffrer(octets: ByteArray): ByteArray {
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, cle())
-        // Format : [12 octets IV][donnees chiffrees + tag GCM]
-        return cipher.iv + cipher.doFinal(octets)
+    // Chiffre avec la cle maitre (en memoire) : null si app verrouillee.
+    private fun chiffrer(octets: ByteArray): ByteArray? {
+        val m = cleMaitre ?: return null
+        return try {
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.ENCRYPT_MODE, m)
+            // Format : [12 octets IV][donnees chiffrees + tag GCM]
+            cipher.iv + cipher.doFinal(octets)
+        } catch (e: Exception) {
+            null
+        }
     }
 
+    // Dechiffre avec la cle maitre : null si verrouille ou donnees invalides.
     private fun dechiffrer(donnees: ByteArray): ByteArray? {
+        if (donnees.size < 13) return null
+        val m = cleMaitre ?: return null
+        return try {
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, m, GCMParameterSpec(128, donnees, 0, 12))
+            cipher.doFinal(donnees, 12, donnees.size - 12)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // Dechiffre avec l'ancienne cle AndroidKeyStore seule (migration v0.28).
+    private fun dechiffrerAncien(donnees: ByteArray): ByteArray? {
         if (donnees.size < 13) return null
         return try {
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
@@ -95,21 +135,136 @@ object Stockage {
         }
     }
 
+    // Enveloppe de la cle maitre : PBKDF2(PIN) PUIS AndroidKeyStore.
+    // Chaque couche : [12 octets IV][chiffre].
+    private fun envelopperCleMaitre(ctx: Context, pin: String, maitre: javax.crypto.SecretKey): Boolean {
+        return try {
+            val sel = ByteArray(16)
+            SecureRandom().nextBytes(sel)
+            val kek = javax.crypto.spec.SecretKeySpec(hacherPin(pin, sel), "AES")
+            val c1 = Cipher.getInstance("AES/GCM/NoPadding")
+            c1.init(Cipher.ENCRYPT_MODE, kek)
+            val blob = c1.iv + c1.doFinal(maitre.encoded)
+            val c2 = Cipher.getInstance("AES/GCM/NoPadding")
+            c2.init(Cipher.ENCRYPT_MODE, cle())
+            val emb = c2.iv + c2.doFinal(blob)
+            prefs(ctx).edit()
+                .putString(CLE_SEL_MAITRE, Base64.encodeToString(sel, Base64.NO_WRAP))
+                .putString(CLE_MAITRE, Base64.encodeToString(emb, Base64.NO_WRAP))
+                .commit()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun desenvelopperCleMaitre(ctx: Context, pin: String): javax.crypto.SecretKey? {
+        try {
+            val p = prefs(ctx)
+            val emb64 = p.getString(CLE_MAITRE, null) ?: return null
+            val sel64 = p.getString(CLE_SEL_MAITRE, null) ?: return null
+            val emb = Base64.decode(emb64, Base64.NO_WRAP)
+            val c2 = Cipher.getInstance("AES/GCM/NoPadding")
+            c2.init(Cipher.DECRYPT_MODE, cle(), GCMParameterSpec(128, emb, 0, 12))
+            val blob = c2.doFinal(emb, 12, emb.size - 12)
+            val kek = javax.crypto.spec.SecretKeySpec(hacherPin(pin, Base64.decode(sel64, Base64.NO_WRAP)), "AES")
+            val c1 = Cipher.getInstance("AES/GCM/NoPadding")
+            c1.init(Cipher.DECRYPT_MODE, kek, GCMParameterSpec(128, blob, 0, 12))
+            return javax.crypto.spec.SecretKeySpec(c1.doFinal(blob, 12, blob.size - 12), "AES")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // Migration v0.28 -> v0.29 : les fichiers etaient chiffres avec la seule
+    // cle AndroidKeyStore. Re-chiffrement avec la cle maitre, VERIFICATION par
+    // relecture + dechiffrage, anciens fichiers conserves en .old.
+    private fun migrerVersCleMaitre(ctx: Context) {
+        listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
+            try {
+                val f = File(ctx.filesDir, nom)
+                if (!f.exists()) return@forEach
+                val anciens = f.readBytes()
+                val clair = dechiffrerAncien(anciens) ?: return@forEach
+                val nouveau = chiffrer(clair) ?: return@forEach
+                if (!ecrireFichier(ctx, nom, nouveau)) return@forEach
+                val relu = lireFichier(ctx, nom) ?: return@forEach
+                if (MessageDigest.isEqual(relu, nouveau) && dechiffrer(relu) != null) {
+                    File(ctx.filesDir, nom + ".old").writeBytes(anciens)
+                }
+            } catch (e: Exception) {
+                // fichier suivant
+            }
+        }
+        // Images chiffrees : meme re-chiffrement, une par une, avec .old.
+        try {
+            val dossier = File(ctx.filesDir, DOSSIER_IMAGES)
+            dossier.listFiles()?.forEach { f ->
+                try {
+                    val anciens = f.readBytes()
+                    val clair = dechiffrerAncien(anciens) ?: return@forEach
+                    val nouveau = chiffrer(clair) ?: return@forEach
+                    val tmp = File(dossier, f.name + ".tmp")
+                    tmp.writeBytes(nouveau)
+                    if (MessageDigest.isEqual(tmp.readBytes(), nouveau) && dechiffrer(tmp.readBytes()) != null) {
+                        File(dossier, f.name + ".old").writeBytes(anciens)
+                        if (!tmp.renameTo(f)) tmp.delete()
+                    } else {
+                        tmp.delete()
+                    }
+                } catch (e: Exception) {
+                    // image suivante
+                }
+            }
+        } catch (e: Exception) {
+            // pas de dossier images
+        }
+    }
+
     // ------------------------------------------------------------ PIN
 
     fun aPin(ctx: Context): Boolean = prefs(ctx).contains(CLE_HASH)
 
     fun definirPin(ctx: Context, pin: String): Boolean {
+        // Cle maitre aleatoire de 256 bits, liee au PIN des la creation (v0.29).
+        val octets = ByteArray(32)
+        SecureRandom().nextBytes(octets)
+        val maitre = javax.crypto.spec.SecretKeySpec(octets, "AES")
         val sel = ByteArray(16)
         SecureRandom().nextBytes(sel)
         val hash = hacherPin(pin, sel)
-        return prefs(ctx).edit()
+        val ok = prefs(ctx).edit()
             .putString(CLE_SEL, Base64.encodeToString(sel, Base64.NO_WRAP))
             .putString(CLE_HASH, Base64.encodeToString(hash, Base64.NO_WRAP))
             .putInt(CLE_ERREURS, 0)
             .putInt(CLE_NIVEAU, 0)
             .putLong(CLE_JUSQUA, 0L)
             .commit()
+        if (!ok || !envelopperCleMaitre(ctx, pin, maitre)) return false
+        cleMaitre = maitre
+        migrerVersCleMaitre(ctx)
+        return true
+    }
+
+    // Deverrouillage : verification du PIN PUIS ouverture de la cle maitre.
+    // Premier lancement depuis la v0.28 : la cle maitre n'existe pas encore,
+    // on la cree et on migre les fichiers chiffres avec l'ancienne cle.
+    fun deverrouiller(ctx: Context, pin: String): Boolean {
+        if (!verifierPin(ctx, pin)) return false
+        val maitre = desenvelopperCleMaitre(ctx, pin)
+        if (maitre != null) {
+            cleMaitre = maitre
+            return true
+        }
+        val octets = ByteArray(32)
+        SecureRandom().nextBytes(octets)
+        val nouvelle = javax.crypto.spec.SecretKeySpec(octets, "AES")
+        cleMaitre = nouvelle
+        migrerVersCleMaitre(ctx)
+        if (!envelopperCleMaitre(ctx, pin, nouvelle)) {
+            cleMaitre = null
+            return false
+        }
+        return true
     }
 
     fun verifierPin(ctx: Context, pin: String): Boolean {
@@ -184,7 +339,8 @@ object Stockage {
         return try {
             val tableau = JSONArray()
             liste.forEach { tableau.put(it.versJson()) }
-            ecrireFichier(ctx, FICHIER_PERSONNES, chiffrer(tableau.toString().toByteArray()))
+            val chiffre = chiffrer(tableau.toString().toByteArray()) ?: return false
+            ecrireFichier(ctx, FICHIER_PERSONNES, chiffre)
         } catch (e: Exception) {
             false
         }
@@ -222,7 +378,8 @@ object Stockage {
         return try {
             val tableau = JSONArray()
             liste.forEach { tableau.put(it.versJson()) }
-            ecrireFichier(ctx, FICHIER_JOURNAL, chiffrer(tableau.toString().toByteArray()))
+            val chiffre = chiffrer(tableau.toString().toByteArray()) ?: return false
+            ecrireFichier(ctx, FICHIER_JOURNAL, chiffre)
         } catch (e: Exception) {
             false
         }
@@ -249,7 +406,8 @@ object Stockage {
         return try {
             val tableau = JSONArray()
             liste.forEach { tableau.put(it.versJson()) }
-            ecrireFichier(ctx, FICHIER_ACTES, chiffrer(tableau.toString().toByteArray()))
+            val chiffre = chiffrer(tableau.toString().toByteArray()) ?: return false
+            ecrireFichier(ctx, FICHIER_ACTES, chiffre)
         } catch (e: Exception) {
             false
         }
@@ -260,7 +418,8 @@ object Stockage {
         return try {
             val dossier = File(ctx.filesDir, DOSSIER_IMAGES)
             if (!dossier.exists()) dossier.mkdirs()
-            File(dossier, "acte_" + id + ".bin").writeBytes(chiffrer(octets))
+            val chiffre = chiffrer(octets) ?: return false
+            File(dossier, "acte_" + id + ".bin").writeBytes(chiffre)
             true
         } catch (e: Exception) {
             false
