@@ -30,7 +30,6 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            debuggable(false)
             // G1-03 : cle de signature dans les secrets GitHub (GP_KEYSTORE...).
             // Tant que les secrets n'existent pas, repli sur la cle debug (APK installable, non debuggable).
             signingConfig = if (System.getenv("GP_KEYSTORE") != null) {
