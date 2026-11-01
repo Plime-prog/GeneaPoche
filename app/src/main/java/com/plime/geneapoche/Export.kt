@@ -469,10 +469,11 @@ fun importerGedcom(texte: String): List<Personne> {
                         "TIME" -> ind.sH = valeur
                         "PLAC" -> { val cd = couperLieu(valeur); ind.sL = cd.first; ind.sDpt = cd.second }
                     }
-                }
-                "NOTE" -> when (tag) {
-                    "CONT" -> ind.note += "\n" + valeur.replace("@@", "@")
-                    "CONC" -> ind.note += valeur.replace("@@", "@")
+                    // G2-02 : relire les notes coupees en CONC/CONT.
+                    "NOTE" -> when (tag) {
+                        "CONT" -> ind.note += "\n" + valeur.replace("@@", "@")
+                        "CONC" -> ind.note += valeur.replace("@@", "@")
+                    }
                 }
             } else if (fam != null && blocActuel == "MARR") {
                 when (tag) {
