@@ -117,7 +117,7 @@ fun EcranFrise(
     val anneeMin = (naissances.minOrNull() ?: (anneeCourante - 100)).coerceAtMost(anneeCourante)
     val anneeMax = (fins.maxOrNull() ?: anneeCourante).coerceAtLeast(anneeMin + 10)
     val pxAn = 14.dp
-    val hauteurFrise = (anneeMax - anneeMin + 1) * pxAn
+    val hauteurFrise = pxAn * (anneeMax - anneeMin + 1)
     val decades = (anneeMin / 10 * 10..anneeMax step 10).toList()
 
     // Navigation au doigt : pincement = zoom, glissement = déplacement.
@@ -264,7 +264,7 @@ fun ColonneFrise(
     }
     val nai = anneeDe(p.dateNaissance)
     val fin = anneeDe(p.dateDeces) ?: (nai?.plus(100))
-    val hauteurFrise = (anneeMax - anneeMin + 1) * pxAn
+    val hauteurFrise = pxAn * (anneeMax - anneeMin + 1)
 
     Box(Modifier.width(largeur).height(hauteurFrise)) {
         if (nai != null && fin != null && fin > nai) {
@@ -273,9 +273,9 @@ fun ColonneFrise(
             Box(
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = ((nai - anneeMin).coerceAtLeast(0)) * pxAn)
+                    .padding(bottom = pxAn * ((nai - anneeMin).coerceAtLeast(0)))
                     .width(if (choisie) 10.dp else 8.dp)
-                    .height((fin - nai) * pxAn)
+                    .height(pxAn * (fin - nai))
                     .background(couleurTrait, RoundedCornerShape(4.dp))
             )
             // Le nom au sommet du trait de vie.
@@ -283,7 +283,7 @@ fun ColonneFrise(
                 p.titre(),
                 Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = ((anneeMax - fin).coerceAtLeast(0)) * pxAn)
+                    .padding(top = pxAn * ((anneeMax - fin).coerceAtLeast(0)))
                     .clickable { onOuvrir(p.id) }
                     .padding(horizontal = 2.dp),
                 fontSize = 10.sp,
@@ -317,7 +317,7 @@ fun ColonneFrise(
             evts.forEach { ev ->
                 val rang = parAnnee.getOrDefault(ev.annee, 0)
                 parAnnee[ev.annee] = rang + 1
-                val y = ((anneeMax - ev.annee).coerceAtLeast(0)) * pxAn + (rang * 20).dp
+                val y = pxAn * ((anneeMax - ev.annee).coerceAtLeast(0)) + (rang * 20).dp
                 Surface(
                     Modifier
                         .align(Alignment.TopStart)
