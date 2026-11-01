@@ -1412,79 +1412,79 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     } else {
         Box {
         EcranApplication(
-            personnes = personnes,
-            cujus = personneParId(personnes, idDuCujus()),
-            pistes = pistes,
-            charge = charge,
-            message = message,
-            onMessage = { message = it },
-            idOuvert = idOuvert,
-            onIdOuvert = { id ->
-                // Empile la fiche courante avant d'en ouvrir une autre
-                // (retour arriere = depilement).
-                if (id != 0L && idOuvert != 0L) pileFiches.add(idOuvert)
-                idOuvert = id
-            },
-            onRetourFiche = {
-                idOuvert = if (pileFiches.isNotEmpty()) pileFiches.removeAt(pileFiches.size - 1) else 0L
-            },
-            onglet = onglet,
-            onOnglet = { onglet = it },
-            editionOuverte = editionOuverte,
-            onEditionOuverte = { editionOuverte = it },
-            editionCible = editionCible,
-            onEditionCible = { editionCible = it },
-            pickerRole = pickerRole,
-            onPickerRole = { pickerRole = it },
-            confirmSuppression = confirmSuppression,
-            onConfirmSuppression = { confirmSuppression = it },
-            enregistrer = { enregistrer() },
-            supprimer = { supprimer(it) },
-            lier = { role, id -> lier(role, id) },
-            delier = { role, id -> delier(role, id) },
-            ajouterMariage = { nom, prenoms, date, commune, dept ->
-                ajouterMariage(nom, prenoms, date, commune, dept)
-            },
-            nouveauParent = { role, nom, prenoms -> nouveauParent(role, nom, prenoms) },
-            nouveauTemoin = { type, id, nom, prenoms -> nouveauTemoin(type, id, nom, prenoms) },
-            retirerTemoin = { type, id -> retirerTemoin(type, id) },
-            basculerSignature = { type, id -> basculerSignature(type, id) },
-            majEvenement = { type, d, h, co, de, rf -> majEvenement(type, d, h, co, de, rf) },
-            ajouterEnfant = { nom, prenoms, sexe, date ->
-                ajouterEnfant(nom, prenoms, sexe, date)
-            },
-            definirCujus = { cujusPreselec = it; cujusDialogue = true },
-            choisirCujus = { cujusPreselec = null; cujusDialogue = true },
-            renumeroter = { renumeroter(personnes, it, sosaCujus) },
-            actes = actes,
-            ajouterActe = { personneId, uri, type, titre -> ajouterActe(personneId, uri, type, titre) },
-            onSupprimerActe = {
-                Stockage.supprimerImage(ctx, it.id)
-                actes.remove(it)
-                enregistrer()
-            },
-            onVoirActe = { acteVisionne = it },
-            supprimerPiste = { supprimerPiste(it) },
-            arbreCentre = if (arbreCentre != 0L) {
-                arbreCentre
-            } else {
-                idDuCujus()
-            },
-            onArbreCentre = { arbreCentre = it },
-            exporterGedcom = { uri, sel, ev -> exporterGedcom(uri, sel, ev) },
-            importerGedcom = { uri -> lireGedcom(uri) },
-            viderBase = { viderBase() },
-            enregistrerActe = { a -> enregistrerActe(a) },
-            ouvrirLien = { url -> ouvrirLien(ctx, url)?.let { m -> message = m } },
-            ouvrirEtatCivil = { commune, dept, type, annee ->
-                ouvrirLien(ctx, lienEtatCivil(commune, dept, type, annee))?.let { m -> message = m }
-            },
-            sauvegarderBase = { uri, ph -> sauvegarderBase(uri, ph) },
-            restaurerSauvegarde = { uri, ph -> restaurerSauvegardeBase(uri, ph) },
-            restaurerImport = { restaurerSauvegardeImport() },
-            changerPin = { dialoguePin = true },
-            reglagesVerrouillage = { dialogueDelai = true },
-            validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) }
+            etat = EtatApplication(
+                personnes = personnes,
+                cujus = personneParId(personnes, idDuCujus()),
+                pistes = pistes,
+                actes = actes,
+                charge = charge,
+                message = message,
+                idOuvert = idOuvert,
+                onglet = onglet,
+                editionOuverte = editionOuverte,
+                editionCible = editionCible,
+                pickerRole = pickerRole,
+                confirmSuppression = confirmSuppression,
+                arbreCentre = if (arbreCentre != 0L) arbreCentre else idDuCujus()
+            ),
+            actions = ActionsApplication(
+                onMessage = { message = it },
+                onIdOuvert = { id ->
+                    // Empile la fiche courante avant d'en ouvrir une autre
+                    // (retour arriere = depilement).
+                    if (id != 0L && idOuvert != 0L) pileFiches.add(idOuvert)
+                    idOuvert = id
+                },
+                onRetourFiche = {
+                    idOuvert = if (pileFiches.isNotEmpty()) pileFiches.removeAt(pileFiches.size - 1) else 0L
+                },
+                onOnglet = { onglet = it },
+                onEditionOuverte = { editionOuverte = it },
+                onEditionCible = { editionCible = it },
+                onPickerRole = { pickerRole = it },
+                onConfirmSuppression = { confirmSuppression = it },
+                enregistrer = { enregistrer() },
+                supprimer = { supprimer(it) },
+                lier = { role, id -> lier(role, id) },
+                delier = { role, id -> delier(role, id) },
+                ajouterMariage = { nom, prenoms, date, commune, dept ->
+                    ajouterMariage(nom, prenoms, date, commune, dept)
+                },
+                nouveauParent = { role, nom, prenoms -> nouveauParent(role, nom, prenoms) },
+                nouveauTemoin = { type, id, nom, prenoms -> nouveauTemoin(type, id, nom, prenoms) },
+                retirerTemoin = { type, id -> retirerTemoin(type, id) },
+                basculerSignature = { type, id -> basculerSignature(type, id) },
+                majEvenement = { type, d, h, co, de, rf -> majEvenement(type, d, h, co, de, rf) },
+                ajouterEnfant = { nom, prenoms, sexe, date ->
+                    ajouterEnfant(nom, prenoms, sexe, date)
+                },
+                definirCujus = { cujusPreselec = it; cujusDialogue = true },
+                choisirCujus = { cujusPreselec = null; cujusDialogue = true },
+                renumeroter = { renumeroter(personnes, it, sosaCujus) },
+                supprimerPiste = { supprimerPiste(it) },
+                ajouterActe = { personneId, uri, type, titre -> ajouterActe(personneId, uri, type, titre) },
+                onSupprimerActe = {
+                    Stockage.supprimerImage(ctx, it.id)
+                    actes.remove(it)
+                    enregistrer()
+                },
+                onVoirActe = { acteVisionne = it },
+                onArbreCentre = { arbreCentre = it },
+                exporterGedcom = { uri, sel, ev -> exporterGedcom(uri, sel, ev) },
+                importerGedcom = { uri -> lireGedcom(uri) },
+                viderBase = { viderBase() },
+                enregistrerActe = { a -> enregistrerActe(a) },
+                ouvrirLien = { url -> ouvrirLien(ctx, url)?.let { m -> message = m } },
+                ouvrirEtatCivil = { commune, dept, type, annee ->
+                    ouvrirLien(ctx, lienEtatCivil(commune, dept, type, annee))?.let { m -> message = m }
+                },
+                sauvegarderBase = { uri, ph -> sauvegarderBase(uri, ph) },
+                restaurerSauvegarde = { uri, ph -> restaurerSauvegardeBase(uri, ph) },
+                restaurerImport = { restaurerSauvegardeImport() },
+                changerPin = { dialoguePin = true },
+                reglagesVerrouillage = { dialogueDelai = true },
+                validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) }
+            )
         )
         // G2-06 : indicateur d'occupation (image, GEDCOM, sauvegarde).
         if (occupation.isNotEmpty()) {

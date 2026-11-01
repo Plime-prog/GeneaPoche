@@ -111,66 +111,75 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
     }
 }
 
+// G2-09 : l'etat de l'ecran (donnees affichees) regroupe en une seule classe,
+// pour ramener la signature d'EcranApplication a 2 parametres.
+class EtatApplication(
+    val personnes: List<Personne>,
+    val cujus: Personne?,
+    val pistes: List<Piste>,
+    val actes: List<Acte>,
+    val charge: Boolean,
+    val message: String,
+    val idOuvert: Long,
+    val onglet: Int,
+    val editionOuverte: Boolean,
+    val editionCible: Personne?,
+    val pickerRole: String,
+    val confirmSuppression: Personne?,
+    val arbreCentre: Long
+)
+
+// G2-09 : toutes les actions de l'ecran regroupees en une seule classe.
+class ActionsApplication(
+    val onMessage: (String) -> Unit,
+    val onIdOuvert: (Long) -> Unit,
+    val onRetourFiche: () -> Unit,
+    val onOnglet: (Int) -> Unit,
+    val onEditionOuverte: (Boolean) -> Unit,
+    val onEditionCible: (Personne?) -> Unit,
+    val onPickerRole: (String) -> Unit,
+    val onConfirmSuppression: (Personne?) -> Unit,
+    val enregistrer: () -> Unit,
+    val supprimer: (Personne) -> Unit,
+    val lier: (String, Long) -> Unit,
+    val delier: (String, Long) -> Unit,
+    val ajouterMariage: (String, String, String, String, String) -> Unit,
+    val nouveauParent: (String, String, String) -> Unit,
+    val nouveauTemoin: (String, Long, String, String) -> Unit,
+    val retirerTemoin: (String, Long) -> Unit,
+    val basculerSignature: (String, Long) -> Unit,
+    val majEvenement: (String, String, String, String, String, String) -> Unit,
+    val ajouterEnfant: (String, String, String, String) -> Unit,
+    val definirCujus: (Personne) -> Unit,
+    val choisirCujus: () -> Unit,
+    val renumeroter: (Long) -> Unit,
+    val supprimerPiste: (Piste) -> Unit,
+    val ajouterActe: (Long, Uri, String, String) -> Unit,
+    val onSupprimerActe: (Acte) -> Unit,
+    val onVoirActe: (Acte) -> Unit,
+    val onArbreCentre: (Long) -> Unit,
+    val exporterGedcom: (Uri, Set<Long>?, Boolean) -> Unit,
+    val importerGedcom: (Uri) -> Unit,
+    val viderBase: () -> Unit,
+    val enregistrerActe: (ActeSaisie) -> Unit,
+    val ouvrirLien: (String) -> Unit,
+    val ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
+    val sauvegarderBase: (Uri, String) -> Unit,
+    val restaurerSauvegarde: (Uri, String) -> Unit,
+    val restaurerImport: () -> Unit,
+    val changerPin: () -> Unit,
+    val reglagesVerrouillage: () -> Unit,
+    val validerInfo: (Personne, String, Boolean) -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EcranApplication(
-    personnes: List<Personne>,
-    cujus: Personne?,
-    pistes: List<Piste>,
-    charge: Boolean,
-    message: String,
-    onMessage: (String) -> Unit,
-    idOuvert: Long,
-    onIdOuvert: (Long) -> Unit,
-    onRetourFiche: () -> Unit,
-    onglet: Int,
-    onOnglet: (Int) -> Unit,
-    editionOuverte: Boolean,
-    onEditionOuverte: (Boolean) -> Unit,
-    editionCible: Personne?,
-    onEditionCible: (Personne?) -> Unit,
-    pickerRole: String,
-    onPickerRole: (String) -> Unit,
-    confirmSuppression: Personne?,
-    onConfirmSuppression: (Personne?) -> Unit,
-    enregistrer: () -> Unit,
-    supprimer: (Personne) -> Unit,
-    lier: (String, Long) -> Unit,
-    delier: (String, Long) -> Unit,
-    ajouterMariage: (String, String, String, String, String) -> Unit,
-    nouveauParent: (String, String, String) -> Unit,
-    nouveauTemoin: (String, Long, String, String) -> Unit,
-    retirerTemoin: (String, Long) -> Unit,
-    basculerSignature: (String, Long) -> Unit,
-    majEvenement: (String, String, String, String, String, String) -> Unit,
-    ajouterEnfant: (String, String, String, String) -> Unit,
-    definirCujus: (Personne) -> Unit,
-    choisirCujus: () -> Unit,
-    renumeroter: (Long) -> Unit,
-    supprimerPiste: (Piste) -> Unit,
-    actes: List<Acte>,
-    ajouterActe: (Long, Uri, String, String) -> Unit,
-    onSupprimerActe: (Acte) -> Unit,
-    onVoirActe: (Acte) -> Unit,
-    arbreCentre: Long,
-    onArbreCentre: (Long) -> Unit,
-    exporterGedcom: (Uri, Set<Long>?, Boolean) -> Unit,
-    importerGedcom: (Uri) -> Unit,
-    viderBase: () -> Unit,
-    enregistrerActe: (ActeSaisie) -> Unit,
-    ouvrirLien: (String) -> Unit,
-    ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
-    // G1-08 : sauvegarde chiffree exportable/importable (.gpbak).
-    sauvegarderBase: (Uri, String) -> Unit,
-    restaurerSauvegarde: (Uri, String) -> Unit,
-    // G1-09 : restauration de la base sauvegardee avant un import GEDCOM.
-    restaurerImport: () -> Unit,
-    // G1-15 : changement de code PIN ; G1-14 : delai de verrouillage.
-    changerPin: () -> Unit,
-    reglagesVerrouillage: () -> Unit,
-    // Coche de validation d'une information : (personne, section, valide).
-    validerInfo: (Personne, String, Boolean) -> Unit
+    etat: EtatApplication,
+    actions: ActionsApplication
 ) {
+    with(etat) {
+    with(actions) {
     BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty()) {
         when {
             pickerRole.isNotEmpty() -> onPickerRole("")
@@ -877,6 +886,8 @@ fun EcranApplication(
                 TextButton(onClick = { onConfirmSuppression(null) }) { Text("Annuler") }
             }
         )
+    }
+    }
     }
 }
 
