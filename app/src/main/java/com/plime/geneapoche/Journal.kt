@@ -40,7 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyle
+import androidx.compose.foundation.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -560,10 +560,10 @@ fun TexteAvecLiens(texte: String, ouvrirLien: (String) -> Unit) {
             addLink(
                 LinkAnnotation.Clickable(
                     tag = "lien",
-                    styles = TextLinkStyle(
-                        SpanStyle(color = CouleurVertFonce, textDecoration = TextDecoration.Underline)
+                    styles = TextLinkStyles(
+                        text = SpanStyle(color = CouleurVertFonce, textDecoration = TextDecoration.Underline)
                     ),
-                    linkInteractionListener = { _, _ -> ouvrirLien(lien) }
+                    linkInteractionListener = { ouvrirLien(lien) }
                 ),
                 deb,
                 fin
