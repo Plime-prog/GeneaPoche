@@ -1490,10 +1490,6 @@ fun AppEcran(
                 importerGedcom = { uri -> lireGedcom(uri) },
                 viderBase = { viderBase() },
                 enregistrerActe = { a -> enregistrerActe(a) },
-                ouvrirLien = { url -> ouvrirLien(ctx, url)?.let { m -> message = m } },
-                ouvrirEtatCivil = { commune, dept, type, annee ->
-                    ouvrirLien(ctx, lienEtatCivil(commune, dept, type, annee))?.let { m -> message = m }
-                },
                 sauvegarderBase = { uri, ph -> sauvegarderBase(uri, ph) },
                 restaurerSauvegarde = { uri, ph -> restaurerSauvegardeBase(uri, ph) },
                 restaurerImport = { restaurerSauvegardeImport() },

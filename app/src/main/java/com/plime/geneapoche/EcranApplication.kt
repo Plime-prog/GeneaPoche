@@ -182,8 +182,6 @@ class ActionsApplication(
     val importerGedcom: (Uri) -> Unit,
     val viderBase: () -> Unit,
     val enregistrerActe: (ActeSaisie) -> Unit,
-    val ouvrirLien: (String) -> Unit,
-    val ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
     val sauvegarderBase: (Uri, String) -> Unit,
     val restaurerSauvegarde: (Uri, String) -> Unit,
     val restaurerImport: () -> Unit,
@@ -608,8 +606,6 @@ fun EcranApplication(
                     actes = actes,
                     onSupprimer = { supprimerPiste(it) },
                     onOuvrirPersonne = { onIdOuvert(it) },
-                    ouvrirLien = ouvrirLien,
-                    ouvrirEtatCivil = ouvrirEtatCivil,
                     onSauver = enregistrer
                 )
                 }
@@ -910,7 +906,6 @@ fun EcranApplication(
             onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },
             onSupprimerActe = { onSupprimerActe(it) },
             onVoirActe = { onVoirActe(it) },
-            ouvrirEtatCivil = ouvrirEtatCivil,
             onValider = { section, valide -> validerInfo(p, section, valide) }
         )
             }
