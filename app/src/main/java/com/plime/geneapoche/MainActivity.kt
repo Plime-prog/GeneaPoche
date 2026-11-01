@@ -363,6 +363,10 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     // Pile de navigation des fiches : retour = fiche precedemment ouverte
     // (la liste n'apparait qu'une fois la pile vide).
     val pileFiches = remember { mutableStateListOf<Long>() }
+    // Reponse utilisateur (la croix ne fonctionnait pas) : une recherche
+    // supprimee manuellement NE REVIENT PAS ; sa cle (personne|categorie) est
+    // ignoree jusqu a ce que la donnee redevienne manquante apres re-saisie.
+    val categoriesIgnorees = remember { mutableStateListOf<String>() }
     var onglet by remember { mutableStateOf(1) }
     var editionOuverte by remember { mutableStateOf(false) }
     var editionCible by remember { mutableStateOf<Personne?>(null) }
@@ -432,6 +436,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         personnes.forEach { p ->
             val existantes = pistes.filter { !it.faite && it.personneId == p.id }.map { it.categorie }.toSet()
             suggestionsPour(p, personnes, actes).forEach { s ->
+                if (categoriesIgnorees.contains(p.id.toString() + "|" + s.cle)) return@forEach
                 if (s.cle !in existantes) {
                     val nouvelId = (pistes.maxOfOrNull { it.id } ?: 0L) + 1L
                     pistes.add(
@@ -789,6 +794,10 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     }
 
     fun supprimerPiste(piste: Piste) {
+        if (piste.categorie.isNotEmpty()) {
+            val cle = piste.personneId.toString() + "|" + piste.categorie
+            if (!categoriesIgnorees.contains(cle)) categoriesIgnorees.add(cle)
+        }
         pistes.remove(piste)
         enregistrer()
     }
