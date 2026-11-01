@@ -110,6 +110,39 @@ fun repubAGregorien(s: String): String? {
 // valeur est conservee telle quelle (jj/mm/aaaa ou aaaa).
 fun dateGreg(s: String): String = s.trim()
 
+// G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement \u00E0 intitul\u00E9 LIBRE (profession,
+// d\u00E9m\u00E9nagement\u2026) rang\u00E9 dans la chronologie de la fiche.
+data class EvenementLibre(
+    var id: Long = 0L,
+    var intitule: String = "",
+    var date: String = "",
+    var heure: String = "",
+    var lieu: String = "",
+    var dept: String = ""
+) {
+    fun versJson(): JSONObject {
+        val o = JSONObject()
+        o.put("id", id)
+        o.put("intitule", intitule)
+        o.put("date", date)
+        o.put("heure", heure)
+        o.put("lieu", lieu)
+        o.put("dept", dept)
+        return o
+    }
+
+    companion object {
+        fun depuisJson(o: JSONObject): EvenementLibre = EvenementLibre(
+            id = o.optLong("id", 0L),
+            intitule = o.optString("intitule", ""),
+            date = o.optString("date", ""),
+            heure = o.optString("heure", ""),
+            lieu = o.optString("lieu", ""),
+            dept = o.optString("dept", "")
+        )
+    }
+}
+
 data class Personne(
     val id: Long,
     var sosa: String = "",
@@ -153,6 +186,9 @@ data class Personne(
     var enfants: MutableList<Long> = mutableListOf(),
     // Blocs facultatifs crees par l'utilisateur : "bapteme", "sepulture"
     var blocsOuverts: MutableList<String> = mutableListOf(),
+    // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements \u00E0 intitul\u00E9 libre (profession,
+    // d\u00E9m\u00E9nagement, etc.) rang\u00E9s dans la chronologie de la fiche.
+    var evenementsLibres: MutableList<EvenementLibre> = mutableListOf(),
     // Temoins de chaque acte (ids de fiches). Aucun par defaut.
     var temoinsN: MutableList<Long> = mutableListOf(),
     var temoinsB: MutableList<Long> = mutableListOf(),
@@ -297,6 +333,10 @@ data class Personne(
         val blocs = JSONArray()
         blocsOuverts.forEach { blocs.put(it) }
         o.put("blocsOuverts", blocs)
+        // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres de la chronologie.
+        val evLibres = JSONArray()
+        evenementsLibres.forEach { evLibres.put(it.versJson()) }
+        o.put("evenementsLibres", evLibres)
         fun ecrire(nom: String, liste: List<Long>) {
             val t = JSONArray()
             liste.forEach { t.put(it) }
@@ -389,6 +429,15 @@ data class Personne(
                     if (blocs != null) {
                         for (i in 0 until blocs.length()) {
                             add(blocs.optString(i, ""))
+                        }
+                    }
+                },
+                evenementsLibres = mutableListOf<EvenementLibre>().apply {
+                    val evLibres = o.optJSONArray("evenementsLibres")
+                    if (evLibres != null) {
+                        for (i in 0 until evLibres.length()) {
+                            val eo = evLibres.optJSONObject(i)
+                            if (eo != null) add(EvenementLibre.depuisJson(eo))
                         }
                     }
                 },
@@ -549,6 +598,7 @@ data class Acte(
         )
     }
 }
+
 
 
 
