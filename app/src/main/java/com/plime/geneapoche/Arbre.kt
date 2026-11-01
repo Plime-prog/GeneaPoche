@@ -14,12 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -34,22 +32,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 // ---------------------------------------------------------------- Arbre généalogique
-// Vue centrée sur une personne, RELIÉE et CENTRÉE façon généalogique :
-// grands-parents, parents, personne et conjoint centrés, enfants centrés
-// sous le couple. Chaque rangée est une grille régulière, les liaisons sont
-// tracées entre les cartes (verticales + barres horizontales).
+// GénéaPoche 3 (v0.35) : arbre COMPLET et VERTICAL, navigable au doigt
+// (pincement = zoom, glissement = déplacement) :
+//   - en haut, TOUTES les générations d'ascendants (jusqu'à la plus haute
+//     renseignée), aïeux reliés façon généalogique ;
+//   - sous le couple racine, TOUS les descendants, génération par
+//     génération, avec leurs conjoints et tous les latéraux (chaque
+//     enfant de chaque couple apparaît).
+// L'ancienne vue "4 générations" horizontale est supprimée.
 // Toucher une carte ouvre la fiche et recentre l'arbre sur elle.
 
 
 // Trace les liaisons entre deux rangées : verticales depuis la rangée du
-// haut, une barre horizontale au milieu, verticales vers la rangée du bas.
-// Les positions sont des fractions de la largeur (grille régulière).
+// haut, une barre horizontale au milieu, verticales vers la rangée du
+// bas. Les positions sont des fractions de la largeur.
 @Composable
 fun LiaisonsArbre(
     verticalesHaut: List<Float>,
@@ -71,6 +72,101 @@ fun LiaisonsArbre(
     }
 }
 
+// Enfants d'un couple (id du père, id de la mère ; 0 = inconnu) :
+// toute personne dont le père OU la mère est l'un des deux partenaires,
+// rangée par année de naissance (les sans-date en dernier).
+fun enfantsDuCouple(
+    personnes: List<Personne>,
+    pereId: Long,
+    mereId: Long,
+    exclus: Set<Long>
+): List<Personne> {
+    return personnes.filter { p ->
+        p.id !in exclus && p.id != pereId && p.id != mereId &&
+            ((pereId != 0L && p.pere == pereId) || (mereId != 0L && p.mere == mereId))
+    }.sortedWith(
+        compareBy({ anneeNaissance(it) ?: 9999 }, { it.id })
+    )
+}
+
+// Plan d'une sous-famille : la personne, son conjoint, ses sous-familles
+// (une par enfant) et la largeur du bloc en "unités" (1 par feuille).
+// La récursion s'arrête sur les personnes déjà développées (garde-fou
+// contre les liens circulaires) et au-delà de 25 générations.
+class PlanFamille(
+    val personne: Personne,
+    val conjoint: Personne?,
+    val sousFamilles: List<PlanFamille>,
+    val largeur: Int
+)
+
+fun planFamille(
+    p: Personne,
+    personnes: List<Personne>,
+    vus: MutableSet<Long>,
+    profondeur: Int
+): PlanFamille {
+    if (p.id in vus || profondeur > 25) return PlanFamille(p, null, emptyList(), 1)
+    vus.add(p.id)
+    val conjoint = personneParId(personnes, p.conjoint)
+    val exclus = mutableSetOf(p.id)
+    if (conjoint != null) exclus.add(conjoint.id)
+    val enfants = enfantsDuCouple(personnes, p.id, conjoint?.id ?: 0L, exclus)
+    val sous = enfants.map { e -> planFamille(e, personnes, vus, profondeur + 1) }
+    val largeur = sous.fold(0) { acc, s -> acc + s.largeur }.coerceAtLeast(1)
+    return PlanFamille(p, conjoint, sous, largeur)
+}
+
+// Largeur d'une carte d'arbre en dp (une unité de plan).
+val UniteArbre = 168.dp
+
+// Rend un bloc famille : le couple en haut, les liaisons, puis une
+// colonne par enfant contenant sa propre famille (récursif).
+@Composable
+fun FamilleArbre(
+    plan: PlanFamille,
+    personnes: List<Personne>,
+    idCentre: Long,
+    onOuvrir: (Long) -> Unit
+) {
+    val total = plan.largeur
+    Column(Modifier.width(UniteArbre * total), horizontalAlignment = Alignment.CenterHorizontally) {
+        // Le couple : les deux cartes unies par une petite barre.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CarteMiniArbre(
+                plan.personne, "", onOuvrir,
+                centre = plan.personne.id == idCentre,
+                modifier = Modifier.width(74.dp)
+            )
+            if (plan.conjoint != null) {
+                Box(Modifier.width(14.dp).height(2.dp).background(CouleurLiaison))
+                CarteMiniArbre(plan.conjoint, "", onOuvrir, modifier = Modifier.width(74.dp))
+            }
+        }
+        if (plan.sousFamilles.isNotEmpty()) {
+            // Centres des colonnes enfants, en fractions de la largeur.
+            var cumul = 0
+            val centres = plan.sousFamilles.map { s ->
+                val c = (cumul + s.largeur / 2).toFloat() / total.toFloat()
+                cumul += s.largeur
+                c
+            }
+            LiaisonsArbre(
+                listOf(0.5f),
+                listOf(centres.first() to centres.last()),
+                centres
+            )
+            Row(Modifier.fillMaxWidth()) {
+                plan.sousFamilles.forEach { s ->
+                    Box(Modifier.width(UniteArbre * s.largeur)) {
+                        FamilleArbre(s, personnes, idCentre, onOuvrir)
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun EcranArbre(
     personnes: List<Personne>,
@@ -80,12 +176,8 @@ fun EcranArbre(
 ) {
     val centre = personneParId(personnes, idCentre)
     var pickerOuvert by remember { mutableStateOf(false) }
-    // Réponse utilisateur : vue compacte "Arbre 4 générations", en
-    // horizontal, SANS les enfants (quatre générations d'ascendants).
-    var vueQuatreGenerations by remember { mutableStateOf(false) }
-
-    // G3-16 : zoom (pincement) et deplacement fluides sur l'ensemble de
-    // l'arbre ; le defilement vertical reste libre a un doigt.
+    // Zoom (pincement) et déplacement (glissement) : l'arbre complet est
+    // souvent plus large que l'écran, on navigue dedans au doigt.
     var echelleZoom by remember { mutableStateOf(1f) }
     var deplacementZoom by remember { mutableStateOf(Offset.Zero) }
     Box(
@@ -93,127 +185,53 @@ fun EcranArbre(
             .fillMaxSize()
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
-                    echelleZoom = (echelleZoom * zoom).coerceIn(0.6f, 2.5f)
+                    echelleZoom = (echelleZoom * zoom).coerceIn(0.25f, 3f)
                     deplacementZoom += pan
                 }
             }
-            .verticalScroll(rememberScrollState())
     ) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .graphicsLayer {
-                scaleX = echelleZoom
-                scaleY = echelleZoom
-                translationX = deplacementZoom.x
-                translationY = deplacementZoom.y
-            }
-            .padding(10.dp)
-    ) {
-        if (centre == null) {
-            Spacer(Modifier.height(12.dp))
-            Text("Aucune personne : ajoutez la première personne (de cujus, n° 1) depuis l'onglet Personnes.")
-        } else {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedButton(onClick = { pickerOuvert = true }) {
-                    Text("Centré sur : " + centre.titre(), maxLines = 1)
+        Column(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = echelleZoom
+                    scaleY = echelleZoom
+                    translationX = deplacementZoom.x
+                    translationY = deplacementZoom.y
                 }
-                OutlinedButton(onClick = { vueQuatreGenerations = !vueQuatreGenerations }) {
-                    Text(if (vueQuatreGenerations) "Arbre complet" else "Arbre 4 générations")
-                }
-            }
-            if (vueQuatreGenerations) {
-                ArbreQuatreGenerations(centre = centre, personnes = personnes, onOuvrir = onOuvrir)
-                Spacer(Modifier.height(24.dp))
+                .verticalScroll(rememberScrollState())
+                .padding(10.dp)
+        ) {
+            if (centre == null) {
+                Spacer(Modifier.height(12.dp))
+                Text("Aucune personne : ajoutez la première personne (de cujus, n° 1) depuis l'onglet Personnes.")
             } else {
-            val pere = personneParId(personnes, centre.pere)
-            val mere = personneParId(personnes, centre.mere)
-            val conjoint = personneParId(personnes, centre.conjoint)
-
-            // --- Grands-parents : 4 cases égales (centres à 1/8, 3/8, 5/8, 7/8).
-            Text(
-                "Grands-parents",
-                Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Row(Modifier.fillMaxWidth()) {
-                CarteMiniArbre(personneParId(personnes, pere?.pere ?: 0L), "Aïeul pat.", onOuvrir, modifier = Modifier.weight(1f))
-                CarteMiniArbre(personneParId(personnes, pere?.mere ?: 0L), "Aïeule pat.", onOuvrir, modifier = Modifier.weight(1f))
-                CarteMiniArbre(personneParId(personnes, mere?.pere ?: 0L), "Aïeul mat.", onOuvrir, modifier = Modifier.weight(1f))
-                CarteMiniArbre(personneParId(personnes, mere?.mere ?: 0L), "Aïeule mat.", onOuvrir, modifier = Modifier.weight(1f))
-            }
-            // Aïeux -> parents : union de chaque couple, descente au parent.
-            LiaisonsArbre(
-                listOf(0.125f, 0.375f, 0.625f, 0.875f),
-                listOf(0.125f to 0.375f, 0.625f to 0.875f),
-                listOf(0.25f, 0.75f)
-            )
-
-            // --- Parents : 2 cases égales (centres à 1/4 et 3/4).
-            Row(Modifier.fillMaxWidth()) {
-                CarteMiniArbre(pere, "Père", onOuvrir, modifier = Modifier.weight(1f))
-                CarteMiniArbre(mere, "Mère", onOuvrir, modifier = Modifier.weight(1f))
-            }
-            // Parents -> couple central : barre d'union au centre (1/2).
-            LiaisonsArbre(
-                listOf(0.25f, 0.75f),
-                listOf(0.25f to 0.75f),
-                listOf(0.5f)
-            )
-
-            // --- Personne et conjoint : le couple est CENTRÉ, uni par une barre.
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CarteMiniArbre(centre, "", onOuvrir, centre = true, modifier = Modifier.width(150.dp))
-                Box(Modifier.width(14.dp).height(2.dp).background(CouleurLiaison))
-                CarteMiniArbre(conjoint, "Conjoint(e)", onOuvrir, modifier = Modifier.width(150.dp))
-            }
-
-            // --- Enfants : centrés sous le couple, reliés par leurs centres.
-            val nb = centre.enfants.size
-            Text(
-                "Enfants",
-                Modifier.padding(top = 2.dp),
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            if (nb == 0) {
-                Text("Aucun enfant renseigné.", style = MaterialTheme.typography.bodySmall)
-            } else {
-                val centres = (0 until nb).map { i -> (2 * i + 1).toFloat() / (2 * nb) }
-                LiaisonsArbre(
-                    listOf(0.5f),
-                    listOf(centres.first() to centres.last()),
-                    centres
-                )
-                Row(Modifier.fillMaxWidth()) {
-                    centre.enfants.forEach { idEnfant ->
-                        CarteMiniArbre(personneParId(personnes, idEnfant), "Enfant", onOuvrir, modifier = Modifier.weight(1f))
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(onClick = { pickerOuvert = true }) {
+                        Text("Centré sur : " + centre.titre(), maxLines = 1)
+                    }
+                    OutlinedButton(onClick = {
+                        echelleZoom = 1f
+                        deplacementZoom = Offset.Zero
+                    }) {
+                        Text("Vue initiale")
                     }
                 }
-            }
-            Spacer(Modifier.height(16.dp))
-            Text(
-                "Touchez une carte pour ouvrir la fiche : l'arbre se recentre sur cette personne.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(24.dp))
+                ArbreComplet(centre = centre, personnes = personnes, onOuvrir = onOuvrir)
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    "Pincez pour zoomer, glissez pour déplacer l'arbre. Touchez une carte pour ouvrir la fiche.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(24.dp))
             }
         }
     }
-    }
-    // Fermeture du Box de zoom (G3-16).
 
     if (pickerOuvert) {
         AlertDialog(
@@ -235,59 +253,83 @@ fun EcranArbre(
     }
 }
 
-// Vue "Arbre 4 générations" : très compacte et HORIZONTALE, sans les
-// enfants. De gauche à droite : arrière-grands-parents (8), grands-
-// parents (4), parents (2), personne et conjoint. Chaque carte reste
-// touchable (ouverture de la fiche).
+// L'arbre complet d'une personne :
+//   - rangées d'ancêtres (toutes les générations jusqu'à la plus haute
+//     renseignée), chaque rangée large de n cases égales ;
+//   - puis le bloc famille récursif du couple racine (les parents, ou la
+//     personne elle-même) qui déroule TOUS les descendants et latéraux.
 @Composable
-fun ArbreQuatreGenerations(
+fun ArbreComplet(
     centre: Personne,
     personnes: List<Personne>,
     onOuvrir: (Long) -> Unit
 ) {
     val pere = personneParId(personnes, centre.pere)
     val mere = personneParId(personnes, centre.mere)
-    val conjoint = personneParId(personnes, centre.conjoint)
-    val grandsParents = listOfNotNull(
-        personneParId(personnes, pere?.pere ?: 0L),
-        personneParId(personnes, pere?.mere ?: 0L),
-        personneParId(personnes, mere?.pere ?: 0L),
-        personneParId(personnes, mere?.mere ?: 0L)
+
+    // ---- Ancêtres au-dessus du couple racine : depuis les grands-parents.
+    // Chaque rangée garde TOUTES ses cases (même inconnues) pour préserver
+    // l'alignement des couples ; la rangée du dessus double la largeur.
+    fun slotsParents(slots: List<Personne?>): List<Personne?> =
+        slots.flatMap { p ->
+            if (p == null) listOf(null, null)
+            else listOf(personneParId(personnes, p.pere), personneParId(personnes, p.mere))
+        }
+    val rangees = mutableListOf<List<Personne?>>()
+    var courante: List<Personne?> = listOf(
+        pere?.let { personneParId(personnes, it.pere) },
+        pere?.let { personneParId(personnes, it.mere) },
+        mere?.let { personneParId(personnes, it.pere) },
+        mere?.let { personneParId(personnes, it.mere) }
     )
-    fun parentsDe(p: Personne?): List<Personne?> {
-        if (p == null) return listOf(null, null)
-        return listOf(personneParId(personnes, p.pere), personneParId(personnes, p.mere))
+    var gardeFou = 0
+    while (courante.any { it != null } && gardeFou < 10) {
+        gardeFou += 1
+        rangees.add(courante)
+        if (courante.size >= 64) break
+        courante = slotsParents(courante)
     }
-    val arrieres = grandsParents.flatMap { gp -> parentsDe(gp) }
-    Row(
-        Modifier.fillMaxWidth().padding(top = 8.dp).horizontalScroll(rememberScrollState()),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Colonne 1 : les 8 arrière-grands-parents (génération la plus ancienne).
-        Column(Modifier.width(76.dp)) {
-            arrieres.forEach { ai ->
-                CarteMiniArbre(ai, "", onOuvrir, modifier = Modifier.fillMaxWidth().padding(1.dp))
+
+    // Centres des cases d'une rangée de n cellules (grille régulière).
+    fun centres(n: Int): List<Float> = (0 until n).map { (2 * it + 1).toFloat() / (2 * n) }
+    // Barres d'union des couples d'une rangée de n cellules : la case 2j
+    // est unie à la case 2j+1.
+    fun barres(n: Int): List<Pair<Float, Float>> =
+        (0 until n / 2).map { j -> (4 * j + 1).toFloat() / (2 * n) to (4 * j + 3).toFloat() / (2 * n) }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+        // Les rangées d'ancêtres, de la plus haute (haut de l'écran) vers
+        // la plus basse : on affiche la liste renversée.
+        val affichees = rangees.reversed()
+        affichees.forEachIndexed { i, rangee ->
+            val n = rangee.size.coerceAtLeast(1)
+            Column(Modifier.width(84.dp * n)) {
+                Row(Modifier.fillMaxWidth()) {
+                    rangee.forEach { a ->
+                        CarteMiniArbre(a, "", onOuvrir, modifier = Modifier.weight(1f))
+                    }
+                }
+                if (i < affichees.size - 1) {
+                    // Vers la rangée du dessous : verticales + barres de
+                    // couples + descente vers les cellules enfants.
+                    val m = affichees[i + 1].size.coerceAtLeast(1)
+                    LiaisonsArbre(centres(n), barres(n), centres(m))
+                } else {
+                    // Dernière rangée d'ancêtres : descente vers le couple
+                    // racine (père et mère, centrés dans l'arbre).
+                    LiaisonsArbre(centres(n), barres(n), listOf(0.25f, 0.75f))
+                }
             }
         }
-        Spacer(Modifier.width(6.dp))
-        // Colonne 2 : les 4 grands-parents.
-        Column(Modifier.width(80.dp)) {
-            (0 until 4).forEach { i ->
-                CarteMiniArbre(grandsParents.getOrNull(i), "", onOuvrir, modifier = Modifier.fillMaxWidth().padding(1.dp))
-            }
+
+        // ---- Bloc famille récursif : couple racine puis tous les
+        // descendants (latéraux compris).
+        val racine = pere ?: mere ?: centre
+        val plan = remember(racine.id, personnes) {
+            planFamille(racine, personnes, mutableSetOf(), 0)
         }
-        Spacer(Modifier.width(6.dp))
-        // Colonne 3 : père et mère.
-        Column(Modifier.width(92.dp)) {
-            CarteMiniArbre(pere, "", onOuvrir, modifier = Modifier.fillMaxWidth().padding(1.dp))
-            CarteMiniArbre(mere, "", onOuvrir, modifier = Modifier.fillMaxWidth().padding(1.dp))
-        }
-        Spacer(Modifier.width(6.dp))
-        // Colonne 4 : personne et conjoint.
-        Column(Modifier.width(104.dp)) {
-            CarteMiniArbre(centre, "", onOuvrir, centre = true, modifier = Modifier.fillMaxWidth().padding(1.dp))
-            CarteMiniArbre(conjoint, "", onOuvrir, modifier = Modifier.fillMaxWidth().padding(1.dp))
-        }
+        Spacer(Modifier.height(4.dp))
+        FamilleArbre(plan, personnes, centre.id, onOuvrir)
     }
 }
 
@@ -331,12 +373,12 @@ fun CarteMiniArbre(
                 )
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // G3-11/G3-16 : le sexe n'est pas signale par la couleur
-                    // seule, un petit symbole le double (lisibilite + TalkBack).
+                    // Le sexe n'est pas signalé par la couleur seule, un
+                    // petit symbole le double (lisibilité + TalkBack).
                     Text(
                         when (p.sexe) {
-                            "F" -> "\u2640 "
-                            "M" -> "\u2642 "
+                            "F" -> "♀ "
+                            "M" -> "♂ "
                             else -> ""
                         },
                         style = MaterialTheme.typography.labelSmall

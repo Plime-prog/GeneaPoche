@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -120,6 +121,14 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
             onClick = { onChoisir(3) },
             icon = { Icon(Icons.Filled.Add, contentDescription = null) },
             label = { Text("Saisie") }
+        )
+        // GénéaPoche 3 (v0.35) : frise chronologique verticale des
+        // vivantes de la branche.
+        NavigationBarItem(
+            selected = onglet == 4,
+            onClick = { onChoisir(4) },
+            icon = { Icon(Icons.Filled.DateRange, contentDescription = null) },
+            label = { Text("Frise") }
         )
     }
 }
@@ -619,6 +628,17 @@ fun EcranApplication(
                         onFermer = { saisieType = null }
                     )
                 }
+                }
+            } else if (onglet == 4) {
+                // GénéaPoche 3 (v0.35) : frise chronologique verticale
+                // des vivantes de la branche, années de 10 en 10.
+                Box(Modifier.fillMaxSize().padding(marges)) {
+                EcranFrise(
+                    personnes = personnes,
+                    idChoisie = arbreCentre,
+                    onOuvrir = { onIdOuvert(it); onArbreCentre(it) },
+                    onChoisir = { onArbreCentre(it) }
+                )
                 }
             } else {
                 Box(Modifier.fillMaxSize().padding(marges)) {
