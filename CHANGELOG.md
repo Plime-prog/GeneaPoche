@@ -1,5 +1,14 @@
 # Historique des versions — GénéaPoche
 
+## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
+
+- **Fiche : N, M et D toujours regroupés**, même sans information (B et S apparaissent dès qu'une donnée existe) ; tous les blocs sont rangés dans l'**ordre chronologique** ; règle des 100 ans conservée pour le décès et la sépulture.
+- **Appui long sur un bloc d'événement = la saisie d'acte du menu +Saisie**, pré-remplie avec tout ce qui est connu (identité, père et mère avec dates/lieux/professions, conjoint et ses parents pour un mariage, témoins, signataires, date, heure, commune, département, côte AD).
+- **Suppression des deux rangées de boutons** en bas de fiche, remplacées par un **bloc encadré vert « Ajouter un événement »** (icône +) qui ouvre la même saisie pré-remplie, et un bloc **« Ajouter un enfant »** après les enfants.
+- **L'enregistrement met à jour l'acte existant** en mode édition (aucun doublon) et synchronise son jumeau chez le conjoint ; fiche, numérotation, cohérence et journal recalculés.
+- **Nouvelle fiche depuis n'importe quelle page** : le bouton + est visible sur tous les onglets.
+- GEDCOM : version réelle 0.33.
+
 ## v0.31 (audit « 3 × 20 points »)
 
 - **Groupe 1 (sécurité et données, 20 points)** : clé maître aléatoire de 256 bits liée au PIN (double enveloppe PBKDF2 + AndroidKeyStore) avec migration automatique ; build release signé (clé dans les secrets GitHub, R8 activé) ; jamais d'écrasement de données illisibles (blocage + restauration .bak) ; lecture JSON « tout ou rien » ; deux copies valides et écritures atomiques durables (fd.sync()) ; sauvegarde chiffrée .gpbak exportable ; sauvegarde automatique avant « Remplacer la base » ; plafond de 50 personnes levé à l'import ; blocage anti-force-brute insensible au changement d'heure ; PIN durci (6 chiffres, phrase secrète, codes triviaux refusés, PBKDF2 ≥ 600 000 itérations) ; purge mémoire au verrouillage et à l'extinction de l'écran ; changement de PIN dans l'application ; export GEDCOM « exclure les personnes vivantes » ; import GEDCOM limité à 10 Mo ; seuls http/https ouverts ; transparence vie privée (README, écran PIN) ; manifeste durci (backup exclu, cleartext interdit) + SECURITY.md, secret scanning, Dependabot.
