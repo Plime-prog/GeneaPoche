@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -77,18 +78,33 @@ fun EcranArbre(
 ) {
     val centre = personneParId(personnes, idCentre)
     var pickerOuvert by remember { mutableStateOf(false) }
+    // Réponse utilisateur : vue compacte "Arbre 4 générations", en
+    // horizontal, SANS les enfants (quatre générations d'ascendants).
+    var vueQuatreGenerations by remember { mutableStateOf(false) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(10.dp)
     ) {
-        Text("Arbre", fontSize = 22.sp, fontWeight = FontWeight.Bold)
         if (centre == null) {
             Spacer(Modifier.height(12.dp))
             Text("Aucune personne : ajoutez la première personne (de cujus, n° 1) depuis l'onglet Personnes.")
         } else {
-            OutlinedButton(onClick = { pickerOuvert = true }, Modifier.padding(top = 8.dp)) {
-                Text("Centré sur : " + centre.titre())
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(onClick = { pickerOuvert = true }) {
+                    Text("Centré sur : " + centre.titre(), maxLines = 1)
+                }
+                OutlinedButton(onClick = { vueQuatreGenerations = !vueQuatreGenerations }) {
+                    Text(if (vueQuatreGenerations) "Arbre complet" else "Arbre 4 générations")
+                }
             }
+            if (vueQuatreGenerations) {
+                ArbreQuatreGenerations(centre = centre, personnes = personnes, onOuvrir = onOuvrir)
+                Spacer(Modifier.height(24.dp))
+            } else {
             val pere = personneParId(personnes, centre.pere)
             val mere = personneParId(personnes, centre.mere)
             val conjoint = personneParId(personnes, centre.conjoint)
@@ -168,6 +184,7 @@ fun EcranArbre(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(24.dp))
+            }
         }
     }
 
@@ -188,6 +205,62 @@ fun EcranArbre(
                 TextButton(onClick = { pickerOuvert = false }) { Text("Fermer") }
             }
         )
+    }
+}
+
+// Vue "Arbre 4 générations" : très compacte et HORIZONTALE, sans les
+// enfants. De gauche à droite : arrière-grands-parents (8), grands-
+// parents (4), parents (2), personne et conjoint. Chaque carte reste
+// touchable (ouverture de la fiche).
+@Composable
+fun ArbreQuatreGenerations(
+    centre: Personne,
+    personnes: List<Personne>,
+    onOuvrir: (Long) -> Unit
+) {
+    val pere = personneParId(personnes, centre.pere)
+    val mere = personneParId(personnes, centre.mere)
+    val conjoint = personneParId(personnes, centre.conjoint)
+    val grandsParents = listOfNotNull(
+        personneParId(personnes, pere?.pere ?: 0L),
+        personneParId(personnes, pere?.mere ?: 0L),
+        personneParId(personnes, mere?.pere ?: 0L),
+        personneParId(personnes, mere?.mere ?: 0L)
+    )
+    fun parentsDe(p: Personne?): List<Personne?> {
+        if (p == null) return listOf(null, null)
+        return listOf(personneParId(personnes, p.pere), personneParId(personnes, p.mere))
+    }
+    val arrieres = grandsParents.flatMap { gp -> parentsDe(gp) }
+    Row(
+        Modifier.fillMaxWidth().padding(top = 8.dp).horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Colonne 1 : les 8 arrière-grands-parents (génération la plus ancienne).
+        Column(Modifier.width(76.dp)) {
+            arrieres.forEach { ai ->
+                CarteMiniArbre(ai, "", onOuvrir, modifier = Modifier.fillMaxWidth().padding(1.dp))
+            }
+        }
+        Spacer(Modifier.width(6.dp))
+        // Colonne 2 : les 4 grands-parents.
+        Column(Modifier.width(80.dp)) {
+            (0 until 4).forEach { i ->
+                CarteMiniArbre(grandsParents.getOrNull(i), "", onOuvrir, modifier = Modifier.fillMaxWidth().padding(1.dp))
+            }
+        }
+        Spacer(Modifier.width(6.dp))
+        // Colonne 3 : père et mère.
+        Column(Modifier.width(92.dp)) {
+            CarteMiniArbre(pere, "", onOuvrir, modifier = Modifier.fillMaxWidth().padding(1.dp))
+            CarteMiniArbre(mere, "", onOuvrir, modifier = Modifier.fillMaxWidth().padding(1.dp))
+        }
+        Spacer(Modifier.width(6.dp))
+        // Colonne 4 : personne et conjoint.
+        Column(Modifier.width(104.dp)) {
+            CarteMiniArbre(centre, "", onOuvrir, centre = true, modifier = Modifier.fillMaxWidth().padding(1.dp))
+            CarteMiniArbre(conjoint, "", onOuvrir, modifier = Modifier.fillMaxWidth().padding(1.dp))
+        }
     }
 }
 
