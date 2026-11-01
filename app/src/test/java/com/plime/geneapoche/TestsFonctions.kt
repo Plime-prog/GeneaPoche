@@ -51,7 +51,7 @@ class TestsFonctions {
     fun dateRepubliquerAfficheeAvecConversion() {
         val s = dateAffichee("22 Germinal An II")
         assertTrue(s.contains("(11/04/1794)"))
-        assertEquals("1/2/1890", dateAffichee("1.2.1890"))
+        assertEquals("01/02/1890", dateAffichee("1.2.1890"))
     }
 
     @Test
@@ -146,15 +146,17 @@ class TestsFonctions {
 
     @Test
     fun allerRetourGedcom() {
+        // La FAM pere-mere n est exportee QUE si les DEUX parents existent.
         val cujus = Personne(
-            id = 1L, nom = "Dupont", prenoms = "Jean", sexe = "M",
+            id = 1L, sosa = "1", nom = "Dupont", prenoms = "Jean", sexe = "M",
             dateNaissance = "27/10/1890", lieuNaissance = "Roubaix", deptNaissance = "59",
-            notesLibres = "note libre", pere = 2L
+            notesLibres = "note libre", pere = 2L, mere = 3L
         )
         val pere = Personne(id = 2L, nom = "Dupont", prenoms = "Pierre", sexe = "M")
-        val ged = construireGedcom(listOf(cujus, pere), actes = listOf())
+        val mere = Personne(id = 3L, nom = "Dupont", prenoms = "Marie", sexe = "F")
+        val ged = construireGedcom(listOf(cujus, pere, mere), actes = listOf())
         val import = importerGedcomRapporte(ged)
-        assertEquals(2, import.personnes.size)
+        assertEquals(3, import.personnes.size)
         val j = import.personnes.first { it.prenoms == "Jean" }
         assertEquals("DUPONT", j.nom)
         assertEquals("M", j.sexe)
