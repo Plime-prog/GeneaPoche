@@ -348,8 +348,61 @@ fun couperLieu(plac: String): Pair<String, String> {
 // Parseur d'un fichier GEDCOM 5.5.1 (Heredis, Geneatique...) :
 // personnes (INDI), familles (FAM), dates N/BAPM/M/D/BURI, heures TIME, conjoints multiples.
 // Aucun plafond de personnes depuis la G1-10 (decision de l auteur).
-fun importerGedcom(texte: String): List<Personne> {
-    val lignes = texte.split("\n").map { it.trimEnd('\r') }
+// G2-04 : resultat d import avec rapport de ce qui a ete ignore
+// (aucune donnee personnelle n y figure, seulement des noms de balises).
+data class ResultatImport(val personnes: List<Personne>, val ignores: List<String>)
+
+// G2-04 : detecter l encodage d un fichier GEDCOM : BOM UTF-16 LE/BE ou
+// UTF-8, sinon UTF-8 STRICT, avec repli ANSI (windows-1252).
+fun decoderGedcom(octets: ByteArray): String {
+    if (octets.size >= 2 && octets[0] == 0xFF.toByte() && octets[1] == 0xFE.toByte()) {
+        return String(octets, 2, octets.size - 2, Charsets.UTF_16LE)
+    }
+    if (octets.size >= 2 && octets[0] == 0xFE.toByte() && octets[1] == 0xFF.toByte()) {
+        return String(octets, 2, octets.size - 2, Charsets.UTF_16BE)
+    }
+    val corps = if (octets.size >= 3 && octets[0] == 0xEF.toByte() && octets[1] == 0xBB.toByte() && octets[2] == 0xBF.toByte()) {
+        octets.copyOfRange(3, octets.size)
+    } else octets
+    return try {
+        val dec = Charsets.UTF_8.newDecoder()
+            .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+            .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+        dec.decode(java.nio.ByteBuffer.wrap(corps)).toString()
+    } catch (e: Exception) {
+        String(corps, Charsets.ISO_8859_1)
+    }
+}
+
+// G2-04 : recoller les suites CONC (meme ligne) et CONT (nouvelle ligne)
+// AVANT l analyse : les valeurs coupees par l exportateur sont restituees.
+fun recollerConcCont(brutes: List<String>): List<String> {
+    val res = mutableListOf<String>()
+    var cible = -1
+    brutes.forEach { ligne ->
+        val m = Regex("^(\\d+)\\s+(CONC|CONT)(?:\\s(.*))?$").find(ligne.trim())
+        if (m == null || cible < 0) {
+            res.add(ligne)
+            cible = res.size - 1
+            return@forEach
+        }
+        if (m.groupValues[2] == "CONT") {
+            res[cible] = res[cible] + "\n" + m.groupValues[3]
+        } else {
+            res[cible] = res[cible] + m.groupValues[3]
+        }
+    }
+    return res
+}
+
+fun importerGedcomRapporte(texte: String): ResultatImport {
+    val ignoresRapport = mutableListOf<String>()
+    val enregistrementsIgnores = mutableMapOf<String, Int>()
+    val balisesIgnorees = mutableMapOf<String, Int>()
+    fun ignorer(carte: MutableMap<String, Int>, cle: String) {
+        carte[cle] = (carte[cle] ?: 0) + 1
+    }
+    val lignes = recollerConcCont(texte.split("\n").map { it.trimEnd('\r') })
 
     class Ind {
         var nom = ""
@@ -403,6 +456,10 @@ fun importerGedcom(texte: String): List<Personne> {
             } else {
                 indCourant = null
                 famCourante = null
+                // G2-04 : comptage des enregistrements non importes (SOUR,
+                // NOTE, REPO...) pour le rapport, sans perte silencieuse.
+                val balise = Regex("^(@.*@\\s+)?([A-Za-z_]+)").find(contenu)?.groupValues?.get(2) ?: "?"
+                if (balise != "HEAD" && balise != "TRLR") ignorer(enregistrementsIgnores, balise)
             }
             return@forEach
         }
@@ -431,12 +488,16 @@ fun importerGedcom(texte: String): List<Personne> {
                         if (numR != null) ind.rfn = numR
                     }
                     "NOTE" -> ind.note = contenu.removePrefix("NOTE").trim().replace("@@", "@")
+                    else -> if (blocActuel !in listOf("BIRT", "BAPM", "CHR", "BAPT", "MARR", "DEAT", "BURI", "BUR")) {
+                        ignorer(balisesIgnorees, blocActuel)
+                    }
                 }
             } else if (fam != null) {
                 when (blocActuel) {
                     "HUSB" -> fam.husb = contenu.removePrefix("HUSB").trim()
                     "WIFE" -> fam.wife = contenu.removePrefix("WIFE").trim()
                     "CHIL" -> fam.chil.add(contenu.removePrefix("CHIL").trim())
+                    else -> ignorer(balisesIgnorees, blocActuel)
                 }
             }
         } else if (niveau == 2) {
@@ -537,7 +598,16 @@ fun importerGedcom(texte: String): List<Personne> {
         }
     }
 
-    return personnes
+    // G2-04 : rapport de ce qui a ete ignore (noms de balises seulement).
+    enregistrementsIgnores.forEach { (balise, n) ->
+        ignoresRapport.add(n.toString() + " enregistrement(s) " + balise + " non import\u00E9(s)")
+    }
+    balisesIgnorees.forEach { (balise, n) ->
+        ignoresRapport.add(n.toString() + " balise(s) " + balise + " non import\u00E9e(s)")
+    }
+    return ResultatImport(personnes, ignoresRapport)
 }
+
+fun importerGedcom(texte: String): List<Personne> = importerGedcomRapporte(texte).personnes
 
 
