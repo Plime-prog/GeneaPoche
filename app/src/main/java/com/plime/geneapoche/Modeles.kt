@@ -82,7 +82,7 @@ fun repubAGregorien(s: String): String? {
     if (t.isEmpty()) return null
     // "22 germinal an II" : jour, mois (lettres), puis "an" facultatif,
     // numero d'an en chiffres arabes ou romains.
-    val m = Regex("^(\\d{1,2})\\s+(\\p{L}+)\\s+(?:an\\s+)?(\\p{L}+|\\d{1,4})$").find(t) ?: return null
+    val m = Regex("^(\\d{1,2})\\s+(\\p{L}+)\\s+(?:an\\s+)?(\\p{L}+|\\d{1,4})$", RegexOption.IGNORE_CASE).find(t) ?: return null
     val jour = m.groupValues[1].toIntOrNull() ?: return null
     val mois = moisRepubli(m.groupValues[2]) ?: return null
     val an = anneeRepubli(m.groupValues[3]) ?: return null
@@ -549,6 +549,7 @@ data class Acte(
         )
     }
 }
+
 
 
 
