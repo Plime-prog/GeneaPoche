@@ -157,7 +157,6 @@ fun EcranPersonne(
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
-    ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
     // Coche de validation d'une information : (section, valide).
     // Une coche negative cree automatiquement une recherche dans le journal.
     onValider: (String, Boolean) -> Unit,
@@ -343,7 +342,6 @@ fun EcranPersonne(
                                     onSupprimerActe = onSupprimerActe,
                                     onVoirActe = onVoirActe,
                                     onEnregistrer = enregistrer,
-                                    ouvrirEtatCivil = ouvrirEtatCivil,
                                     onValider = { v -> onValider(sectionDe(t), v) },
                                     pistes = pistes,
                                     modifier = Modifier
@@ -709,7 +707,7 @@ fun CarteIdentite(
 // ---------------------------------------------------------------- Bloc d'evenement
 // Tout ramasse : date, heure, lieu, departement, parents (avec age a l'acte
 // et date de naissance deduite a l'annee), conjoint, temoins.
-// Icones : ajout d'une photo d'acte + recherche Internet aux AD.
+// Icones : ajout d'une photo d'acte.
 // Les donnees manquantes sont grisees et synchronisees avec le journal.
 
 fun libelleType(t: String): String = when (t) {
@@ -987,7 +985,6 @@ fun CarteEvenement(
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
     onEnregistrer: () -> Unit,
-    ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
     // Coche de validation de l'acte : negative => recherche dans le journal.
     onValider: (Boolean) -> Unit,
     // Recherches ouvertes (la premiere de la section alimente le sous-bloc).
@@ -1242,7 +1239,7 @@ fun CarteEvenement(
         }
 
         // Actes stockes pour cet evenement (images + transcriptions) :
-        // chacun dans son SOUS-BLOC avec sources, recherche et lien AD.
+        // chacun dans son SOUS-BLOC avec sources et recherche libre.
         if (actes.isNotEmpty()) {
             Text(
                 "Actes stock\u00E9s (" + actes.size.toString() + ")",
@@ -1254,9 +1251,6 @@ fun CarteEvenement(
                 SousBlocActe(
                     acte = acte,
                     piste = pisteEv,
-                    ouvrirAD = {
-                        ouvrirEtatCivil(l, numDept, libelleType(typeActe), anneeActe?.toString() ?: "")
-                    },
                     onVoir = { onVoirActe(acte) },
                     onSupprimer = { onSupprimerActe(acte) },
                     onEnregistrer = onEnregistrer
@@ -1302,13 +1296,12 @@ fun AjoutActeIcone(typeActe: String, onAjouterActe: (Uri, String, String) -> Uni
 
 // Sous-bloc de detail d'un acte (v0.28) : titre (toucher = voir l'image,
 // appui long = pages/reference), reference de la cote, zone de recherche
-// libre et loupe vers les AD, le tout regroupe au meme endroit.
+// libre, le tout regroupe au meme endroit.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SousBlocActe(
     acte: Acte,
     piste: Piste?,
-    ouvrirAD: () -> Unit,
     onVoir: () -> Unit,
     onSupprimer: () -> Unit,
     onEnregistrer: () -> Unit
@@ -1338,9 +1331,6 @@ fun SousBlocActe(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(end = 4.dp)
                     )
-                }
-                IconButton(onClick = ouvrirAD, Modifier.size(28.dp)) {
-                    Icon(Icons.Filled.Search, contentDescription = "Rechercher cet acte aux AD", Modifier.size(14.dp))
                 }
                 IconButton(onClick = onSupprimer, Modifier.size(28.dp)) {
                     Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(14.dp))
