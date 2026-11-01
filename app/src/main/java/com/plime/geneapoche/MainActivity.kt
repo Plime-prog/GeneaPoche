@@ -63,9 +63,6 @@ import kotlinx.coroutines.withContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.rememberCoroutineScope
 import java.io.ByteArrayOutputStream
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 
 
@@ -336,7 +333,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             q.conjointsSupp.remove(p.id)
             q.enfants.remove(p.id)
         }
-        pistes.forEach { if (it.personneId == p.id) it.personneId = 0L }
+        // G2-19 : les pistes de la personne supprimee disparaissent avec
+        // elle (aucune reference orpheline ne subsiste dans le journal).
+        pistes.removeAll { it.personneId == p.id }
         val actesASupprimer = actes.filter { it.personneId == p.id }
         actes.removeAll(actesASupprimer)
         actesASupprimer.forEach { Stockage.supprimerImage(ctx, it.id) }

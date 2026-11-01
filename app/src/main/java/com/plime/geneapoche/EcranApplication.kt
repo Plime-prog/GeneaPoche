@@ -33,12 +33,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.OutlinedTextField
@@ -93,7 +93,7 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
         NavigationBarItem(
             selected = onglet == 1,
             onClick = { onChoisir(1) },
-            icon = { Icon(Icons.Filled.List, contentDescription = null) },
+            icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
             label = { Text("Journal") }
         )
         NavigationBarItem(
@@ -570,7 +570,7 @@ fun EcranApplication(
                                 Modifier.fillMaxWidth()
                             ) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.ExitToApp, contentDescription = null, Modifier.size(18.dp))
+                                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text("Importer un GEDCOM (remplace la base)")
                                 }
@@ -610,7 +610,7 @@ fun EcranApplication(
                                 Modifier.fillMaxWidth()
                             ) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.List, contentDescription = null, Modifier.size(18.dp))
+                                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text("Sauvegarde chiffr\u00E9e (.gpbak)")
                                 }
@@ -620,7 +620,7 @@ fun EcranApplication(
                                 Modifier.fillMaxWidth()
                             ) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.Send, contentDescription = null, Modifier.size(18.dp))
+                                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text("Restaurer une sauvegarde (.gpbak)")
                                 }
@@ -997,6 +997,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 
 
 

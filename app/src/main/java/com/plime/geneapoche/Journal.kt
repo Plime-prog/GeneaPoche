@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -39,7 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -553,18 +554,23 @@ fun TexteAvecLiens(texte: String, ouvrirLien: (String) -> Unit) {
         for (m in motif.findAll(texte)) {
             val deb = m.range.first
             val fin = m.range.last + 1
-            addStyle(SpanStyle(color = CouleurVertFonce, textDecoration = TextDecoration.Underline), deb, fin)
-            addStringAnnotation("lien", m.value, deb, fin)
+            val lien = m.value
+            // G2-20 : ClickableText (obsolete) remplace par Text +
+            // LinkAnnotation (API actuelle de Compose).
+            addLink(
+                LinkAnnotation.Clickable(
+                    tag = "lien",
+                    styles = TextLinkStyle(
+                        SpanStyle(color = CouleurVertFonce, textDecoration = TextDecoration.Underline)
+                    ),
+                    linkInteractionListener = { _, _ -> ouvrirLien(lien) }
+                ),
+                deb,
+                fin
+            )
         }
     }
-    ClickableText(
-        text = annote,
-        style = MaterialTheme.typography.bodySmall,
-        onClick = { offset ->
-            annote.getStringAnnotations("lien", offset, offset).firstOrNull()?.let { a ->
-                ouvrirLien(a.item)
-            }
-        }
-    )
+    Text(text = annote, style = MaterialTheme.typography.bodySmall)
 }
+
 

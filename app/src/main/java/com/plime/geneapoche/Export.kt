@@ -1,7 +1,5 @@
 package com.plime.geneapoche
 
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 // ---------------------------------------------------------------- Export / import GEDCOM 5.5.1
@@ -184,7 +182,9 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
     lignes.add("2 VERS 5.5.1")
     lignes.add("2 FORM LINEAGE-LINKED")
     lignes.add("1 SUBM @SUB1@") // G2-02 : reference a l'enregistrement SOUMIS (exige par la norme)
-    lignes.add("1 DATE " + SimpleDateFormat("d MMM yyyy", Locale.US).format(Date()))
+    // G2-20 : SimpleDateFormat remplace par DateTimeFormatter (sur entre
+    // threads, pas d API obsolete).
+    lignes.add("1 DATE " + java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", Locale.US)))
 
     // Un evenement de la personne, avec ses sources (actes rattaches).
     fun evenement(p: Personne, tag: String, typeActe: String, date: String, heure: String, lieu: String, dept: String) {

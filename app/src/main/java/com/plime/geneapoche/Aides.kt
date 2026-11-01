@@ -1,17 +1,22 @@
 package com.plime.geneapoche
 
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val formatJour = SimpleDateFormat("dd/MM/yyyy", Locale.FRANCE)
-private val formatJourHeure = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE)
+// G2-20 : SimpleDateFormat statique n est pas sur entre threads ; remplace
+// par DateTimeFormatter (immuable, sur partout).
+private val formatJour: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("dd/MM/yyyy").withLocale(Locale.FRANCE)
+private val formatJourHeure: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").withLocale(Locale.FRANCE)
 
 fun formaterDate(ts: Long): String =
-    if (ts > 0L) formatJour.format(Date(ts)) else ""
+    if (ts > 0L) formatJour.format(Instant.ofEpochMilli(ts).atZone(ZoneId.systemDefault())) else ""
 
 fun formaterDateHeure(ts: Long): String =
-    if (ts > 0L) formatJourHeure.format(Date(ts)) else ""
+    if (ts > 0L) formatJourHeure.format(Instant.ofEpochMilli(ts).atZone(ZoneId.systemDefault())) else ""
 
 // Formats d'affichage partout dans l'application :
 // dates "jj/mm/aaaa", heures "14h05" (les valeurs saisies restent libres).
