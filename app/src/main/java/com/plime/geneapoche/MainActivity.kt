@@ -60,6 +60,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.rememberCoroutineScope
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
@@ -369,44 +370,39 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppEcran(ctx: Context, verrou: Verrou) {
-    val personnes = remember { mutableStateListOf<Personne>() }
-    val pistes = remember { mutableStateListOf<Piste>() }
-    val actes = remember { mutableStateListOf<Acte>() }
-    var charge by remember { mutableStateOf(false) }
+    // G2-07 : l'ETAT de l'application vit dans le modele de vue, qui SURVIT
+    // a la rotation et au changement de theme ; les alias locaux ci-dessous
+    // gardent les memes noms que le reste du code utilise deja.
+    val modele: ModeleVueGeneaPoche = viewModel()
+    val personnes = modele.personnes
+    val pistes = modele.pistes
+    val actes = modele.actes
+    val pileFiches = modele.pileFiches
+    val categoriesIgnorees = modele.categoriesIgnorees
+    var charge by modele::charge
     var aPin by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf("") }
-    var idOuvert by remember { mutableStateOf(0L) }
-    // Pile de navigation des fiches : retour = fiche precedemment ouverte
-    // (la liste n'apparait qu'une fois la pile vide).
-    val pileFiches = remember { mutableStateListOf<Long>() }
-    // Reponse utilisateur (la croix ne fonctionnait pas) : une recherche
-    // supprimee manuellement NE REVIENT PAS ; sa cle (personne|categorie) est
-    // ignoree jusqu a ce que la donnee redevienne manquante apres re-saisie.
-    val categoriesIgnorees = remember { mutableStateListOf<String>() }
-    var onglet by remember { mutableStateOf(1) }
-    var editionOuverte by remember { mutableStateOf(false) }
-    var editionCible by remember { mutableStateOf<Personne?>(null) }
-    var pickerRole by remember { mutableStateOf("") }
-    var confirmSuppression by remember { mutableStateOf<Personne?>(null) }
-    var acteVisionne by remember { mutableStateOf<Acte?>(null) }
-    var acteAConfirmer by remember { mutableStateOf<ActeSaisie?>(null) }
-    var arbreCentre by remember { mutableStateOf(0L) }
-    var sosaCujus by remember { mutableStateOf(1L) }
-    var cujusDialogue by remember { mutableStateOf(false) }
-    var cujusPreselec by remember { mutableStateOf<Personne?>(null) }
-    var importConfirme by remember { mutableStateOf<List<Personne>?>(null) }
-    // G2-04 : ce que l import GEDCOM a ignore (affiche avant remplacement).
-    var importRapport by remember { mutableStateOf(listOf<String>()) }
-    var cujusEdite by remember { mutableStateOf<Personne?>(null) }
-    var cujasOuvert by remember { mutableStateOf(false) }
-    // G1-04 : fichiers dont NI le contenu NI la copie .bak ne se lisent :
-    // l'enregistrement est bloque jusqu'a restauration (ne rien ecraser).
-    var fichiersIllisibles by remember { mutableStateOf(listOf<String>()) }
-    var avertissementLectureFerme by remember { mutableStateOf(false) }
-    var dialoguePin by remember { mutableStateOf(false) }
-    var dialogueDelai by remember { mutableStateOf(false) }
-    // G2-06 : indicateur d'occupation et travaux lourds HORS du thread principal.
-    var occupation by remember { mutableStateOf("") }
+    var message by modele::message
+    var idOuvert by modele::idOuvert
+    var onglet by modele::onglet
+    var editionOuverte by modele::editionOuverte
+    var editionCible by modele::editionCible
+    var pickerRole by modele::pickerRole
+    var confirmSuppression by modele::confirmSuppression
+    var acteVisionne by modele::acteVisionne
+    var acteAConfirmer by modele::acteAConfirmer
+    var arbreCentre by modele::arbreCentre
+    var sosaCujus by modele::sosaCujus
+    var cujusDialogue by modele::cujusDialogue
+    var cujusPreselec by modele::cujusPreselec
+    var importConfirme by modele::importConfirme
+    var importRapport by modele::importRapport
+    var cujusEdite by modele::cujusEdite
+    var cujasOuvert by modele::cujasOuvert
+    var fichiersIllisibles by modele::fichiersIllisibles
+    var avertissementLectureFerme by modele::avertissementLectureFerme
+    var dialoguePin by modele::dialoguePin
+    var dialogueDelai by modele::dialogueDelai
+    var occupation by modele::occupation
     val scopeTravail = rememberCoroutineScope()
 
     // Recopie structurelle des listes : force Compose a rafraichir l'affichage
