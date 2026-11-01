@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- G3-18 : au minimum le nom de l'application vit dans strings.xml,
+         en UTF-8 reel. L'application reste monolingue (FR) : l'audit ne
+         demande pas de traduction, mais la chaine n'est plus en dur dans
+         le manifeste. -->
+    <string name="app_name">GénéaPoche</string>
+</resources>
