@@ -281,10 +281,9 @@ fun EcranApplication(
             },
             bottomBar = { BarreOnglets(onglet, onOnglet) },
             floatingActionButton = {
-                if (onglet == 0) {
-                    FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Ajouter")
-                    }
+                // G\u00E9n\u00E9aPoche 2 : nouvelle fiche depuis N'IMPORTE QUELLE page.
+                FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
+                    Icon(Icons.Filled.Add, contentDescription = "Ajouter")
                 }
             }
         ) { marges ->
