@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -450,18 +451,25 @@ fun EcranApplication(
                     }
                 }
             } else if (onglet == 2) {
+                // G3-03 : marges du Scaffold (barre du haut, barre du bas)
+                // appliquees aussi a ces onglets.
+                Box(Modifier.fillMaxSize().padding(marges)) {
                 EcranArbre(
                     personnes = personnes,
                     idCentre = arbreCentre,
                     onOuvrir = { onIdOuvert(it); onArbreCentre(it) },
                     onCentrerSur = { onArbreCentre(it) }
                 )
+                }
             } else if (onglet == 3) {
+                Box(Modifier.fillMaxSize().padding(marges).imePadding()) {
                 EcranSaisieActe(
                     personnes = personnes,
                     onEnregistrer = enregistrerActe
                 )
+                }
             } else {
+                Box(Modifier.fillMaxSize().padding(marges)) {
                 EcranJournal(
                     pistes = pistes,
                     personnes = personnes,
@@ -472,6 +480,7 @@ fun EcranApplication(
                     ouvrirEtatCivil = ouvrirEtatCivil,
                     onSauver = enregistrer
                 )
+                }
             }
 
             if (exportDialogue) {

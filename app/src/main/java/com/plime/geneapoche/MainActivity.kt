@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -89,7 +91,13 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // G3-05 : ecran de demarrage aux couleurs de l'application,
+        // puis bascule vers Theme.GeneaPoche (postSplashScreenTheme).
+        installSplashScreen()
         super.onCreate(savedInstanceState)
+        // G3-03 : affichage bord a bord ; les ecrans gerent les marges
+        // (barre d'etat, barre de navigation, clavier) via les insets.
+        enableEdgeToEdge()
         // FLAG_SECURE : captures d'ecran et apercu dans les recents interdits
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         registerReceiver(recepteurEcran, android.content.IntentFilter(android.content.Intent.ACTION_SCREEN_OFF))
