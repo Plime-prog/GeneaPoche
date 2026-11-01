@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -216,11 +217,10 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
         if (!ouvert) return
         val img = aUneImage(actes, p.id, type)
         val trans = aUneTranscription(actes, p.id, type)
-        if (ch.date.isBlank() && !img) {
-            // L'acte lui-meme est a trouver : une seule recherche couvre tout.
-            ajouter(cleBase + "_date", "Rechercher " + lib.acte + " de " + titreCourt(p) + suffixe(ch.lieu.trim(), ch.dept.trim()), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
-            return
-        }
+        // Reponse utilisateur : PLUS AUCUNE recherche sur un acte
+        // manquant ; seules les donnees d un acte DEJA localise (date ou
+        // image) completent encore le journal.
+        if (ch.date.isBlank() && !img) return
         // Acte localise : chaque champ manquant est une recherche a part entiere.
         // (L'HEURE manquante ne cree PAS de recherche : information annexe.)
         if (ch.lieu.isBlank()) {
@@ -252,10 +252,7 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
     evenement("deces", "D", LibellesDeces, champsEvenement(p, "D"), decesPossible, dDebut, dFin)
     evenement("sepulture", "S", LibellesSepulture, champsEvenement(p, "S"), decesPossible && (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || aUneImage(actes, p.id, "S") || aUneTranscription(actes, p.id, "S")), dDebut, dFin)
 
-    // --- Identite
-    if (p.profession.isBlank()) {
-        ajouter("profession", "Rechercher la profession de " + titreCourt(p), "A", "", "", (if (anneeN != null) (anneeN + 30).toString() else ""), (if (anneeN != null) (anneeN + 50).toString() else ""))
-    }
+    // --- Identite (plus de recherche sur la profession : demande utilisateur)
     if (p.sexe.isBlank()) {
         ajouter("sexe", "Pr\u00E9ciser le sexe de " + titreCourt(p), "A")
     }
@@ -313,6 +310,12 @@ fun libelleRecherche(r: Recherche): String {
 // ---------------------------------------------------------------- Ecran Journal
 // Regroupe les recherches par personne, avec compteurs et acces a la fiche.
 
+// Numero de la personne concernee par une piste (pour le tri du journal).
+fun numeroDePiste(piste: Piste, personnes: List<Personne>): List<Int> {
+    val p = personneParId(personnes, piste.personneId) ?: return listOf(Int.MAX_VALUE)
+    return cleNumero(p)
+}
+
 @Composable
 fun EcranJournal(
     pistes: List<Piste>,
@@ -331,24 +334,15 @@ fun EcranJournal(
     // d'abord. Plafond : 10 recherches au total. Chaque carte rappelle le
     // num\u00E9ro d'Aboville de la personne concern\u00E9e.
     val limite = anneeCourante() - 75
+    // Reponse utilisateur : ordre CROISSANT des numeros de haut en bas
+    // (Sosa puis d Aboville), toujours limite aux evenements de plus de 75 ans.
     val prioritaires = ouvertes
         .filter { ps -> val a = anneeCiblePiste(ps); a == null || a <= limite }
-        .sortedByDescending { ps -> anneeCiblePiste(ps) ?: 0 }
+        .sortedBy { ps -> numeroDePiste(ps, personnes) }
         .take(10)
     val anomalies = anomaliesPour(personnes)
 
     LazyColumn(Modifier.fillMaxSize().padding(12.dp)) {
-        item {
-            Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                Text("Journal de recherches", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
-                Text(
-                    prioritaires.size.toString() + " recherche(s) prioritaire(s) : \u00E9v\u00E9nements survenus il y a plus de 75 ans, du plus r\u00E9cent au plus ancien, 10 au maximum. La pastille porte le num\u00E9ro de la personne.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
         if (anomalies.isNotEmpty()) {
             item {
                 Card(
@@ -444,6 +438,15 @@ fun CarteRecherche(
     val texte = textePisteActuel(piste, personnes, actes)
     // Num\u00E9ro d'Aboville de la personne (ou Sosa) : rappel\u00E9 sur la pastille.
     val numeroAboville = pers?.numeroAffiche()?.ifEmpty { "?" } ?: "?"
+    // Type d acte vise par la recherche : N, M, D (B, S aussi).
+    val lettreEvenement = when {
+        piste.categorie.startsWith("naissance") -> "N"
+        piste.categorie.startsWith("mariage") -> "M"
+        piste.categorie.startsWith("deces") -> "D"
+        piste.categorie.startsWith("bapteme") -> "B"
+        piste.categorie.startsWith("sepulture") -> "S"
+        else -> ""
+    }
 
     // Categories issues d'un acte : la recherche AD a un sens.
     val evPrefix = listOf("naissance", "bapteme", "mariage", "deces", "sepulture")
@@ -464,13 +467,15 @@ fun CarteRecherche(
     ) {
         Column(Modifier.fillMaxWidth().padding(10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                // Pastille au num\u00E9ro d'Aboville de la personne
+                // Reponse utilisateur : pastille = numero + type d acte (NMD)
                 Box(
-                    Modifier.size(32.dp).background(CouleurVert, CircleShape),
+                    Modifier
+                        .background(CouleurVert, RoundedCornerShape(50))
+                        .padding(horizontal = 8.dp, vertical = 7.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        numeroAboville,
+                        numeroAboville + (if (lettreEvenement.isNotEmpty()) " " + lettreEvenement else ""),
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = if (numeroAboville.length <= 3) 12.sp else 9.sp,
