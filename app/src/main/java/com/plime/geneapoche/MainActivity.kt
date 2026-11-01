@@ -57,6 +57,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
+import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -380,6 +381,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var cujusDialogue by remember { mutableStateOf(false) }
     var cujusPreselec by remember { mutableStateOf<Personne?>(null) }
     var importConfirme by remember { mutableStateOf<List<Personne>?>(null) }
+    // G2-04 : ce que l import GEDCOM a ignore (affiche avant remplacement).
+    var importRapport by remember { mutableStateOf(listOf<String>()) }
     var cujusEdite by remember { mutableStateOf<Personne?>(null) }
     var cujasOuvert by remember { mutableStateOf(false) }
     // G1-04 : fichiers dont NI le contenu NI la copie .bak ne se lisent :
@@ -886,27 +889,30 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 message = "Fichier trop volumineux (plus de 10 Mo) : import refus\u00E9."
                 return
             }
-            val texte = ctx.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { lecteur ->
-                val sb = StringBuilder()
-                var total = 0
+            // G2-04 : lecture par octets born\u00E9e puis d\u00E9tection de l encodage
+            // (BOM UTF-16 LE/BE, UTF-8 strict, repli ANSI) avant l analyse.
+            val octets = ctx.contentResolver.openInputStream(uri)?.use { entree ->
+                val tampon = ByteArrayOutputStream()
+                val morceau = ByteArray(64 * 1024)
                 while (true) {
-                    val ligne = lecteur.readLine() ?: break
-                    total += ligne.length + 1
-                    if (total > 10_000_000) return@use null
-                    sb.append(ligne).append("\n")
+                    val n = entree.read(morceau)
+                    if (n <= 0) break
+                    tampon.write(morceau, 0, n)
+                    if (tampon.size() > 10_000_000) return@use null
                 }
-                sb.toString()
+                tampon.toByteArray()
             }
-            if (texte.isNullOrBlank()) {
+            if (octets == null || octets.isEmpty()) {
                 message = "Fichier GEDCOM illisible (ou trop volumineux)."
                 return
             }
-            val importees = importerGedcom(texte)
-            if (importees.isEmpty()) {
+            val resultat = importerGedcomRapporte(decoderGedcom(octets))
+            if (resultat.personnes.isEmpty()) {
                 message = "Aucune personne trouv\u00E9e dans ce GEDCOM."
                 return
             }
-            importConfirme = importees
+            importConfirme = resultat.personnes
+            importRapport = resultat.ignores
         } catch (e: Exception) {
             message = "Echec de la lecture du GEDCOM."
         }
@@ -1670,9 +1676,22 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             onDismissRequest = { importConfirme = null },
             title = { Text("Importer ce GEDCOM ?") },
             text = {
-                Text(
-                    "La base actuelle (" + personnes.size.toString() + " personnes, pistes et actes) sera REMPLAC\u00C9E par les " + importees.size.toString() + " personnes du fichier. Une sauvegarde automatique (restaurable depuis le menu GEDCOM) sera cr\u00E9\u00E9e avant le remplacement."
-                )
+                Column {
+                    Text(
+                        "La base actuelle (" + personnes.size.toString() + " personnes, pistes et actes) sera REMPLAC\u00C9E par les " + importees.size.toString() + " personnes du fichier. Une sauvegarde automatique (restaurable depuis le menu GEDCOM) sera cr\u00E9\u00E9e avant le remplacement."
+                    )
+                    // G2-04 : avertissement listant ce que l import ignore.
+                    if (importRapport.isNotEmpty()) {
+                        Text(
+                            "\u00C9l\u00E9ments ignor\u00E9s par l import (aucune perte silencieuse) :",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                        importRapport.take(6).forEach { ligneIgn ->
+                            Text("\u2022 " + ligneIgn, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
