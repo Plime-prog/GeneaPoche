@@ -7,6 +7,7 @@
 - **Suppression des deux rangées de boutons** en bas de fiche, remplacées par un **bloc encadré vert « Ajouter un événement »** (icône +) qui ouvre la même saisie pré-remplie, et un bloc **« Ajouter un enfant »** après les enfants.
 - **L'enregistrement met à jour l'acte existant** en mode édition (aucun doublon) et synchronise son jumeau chez le conjoint ; fiche, numérotation, cohérence et journal recalculés.
 - **Nouvelle fiche depuis n'importe quelle page** : le bouton + est visible sur tous les onglets.
+- **Zéro Internet** : plus aucun lien ni recherche vers les archives départementales ; l'application n'accède à aucun réseau, le seul échange externe reste le fichier GEDCOM.
 - GEDCOM : version réelle 0.33.
 
 ## v0.31 (audit « 3 × 20 points »)
