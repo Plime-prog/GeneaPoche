@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -90,13 +91,12 @@ import androidx.compose.ui.window.DialogProperties
 // Blocs modifiables par appui long uniquement. Les informations manquantes
 // sont affichees en gris : elles alimentent le journal de recherches.
 
-val GrisManquant = Color(0xFF9AA099)
 
 // Couleur de la pastille : rose (F), bleu (M), vert p\u00E2le si sexe absent.
 fun couleurPastille(sexe: String): Color = when (sexe) {
-    "F" -> Color(0xFFE9C4D2)
-    "M" -> Color(0xFFBFD4E8)
-    else -> Color(0xFFD9E4D6)
+    "F" -> CouleurRose
+    "M" -> CouleurBleu
+    else -> CouleurNeutreDoux
 }
 
 // Pastille ronde au num\u00E9ro (ou initiale), identique \u00E0 la liste Personnes :
@@ -292,6 +292,16 @@ fun EcranPersonne(
         LazyColumn(
             Modifier.fillMaxSize().padding(marges).padding(horizontal = 12.dp)
         ) {
+            // G3-15 : geste cache rendu decouvrable sans icone crayon
+            // (choix utilisateur) : un indice discret en tete de fiche.
+            item {
+                Text(
+                    "Appui long sur l'en-t\\u00EAte d'un \\u00E9v\\u00E9nement pour le modifier, sur le titre d'un acte pour voir ses pages.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+                )
+            }
             item {
                 CarteIdentite(
                     p = p,
@@ -316,7 +326,7 @@ fun EcranPersonne(
                         val remplisEv = listOf(dEv, cEv.heure.trim(), lEv, dpEv).count { it.isNotEmpty() }
                         val couleurBlocEv = when {
                             remplisEv >= 4 -> CouleurVert
-                            remplisEv >= 1 -> Color(0xFFE8A33D)
+                            remplisEv >= 1 -> CouleurOrange
                             else -> CouleurRouge
                         }
                         Card(
@@ -330,7 +340,9 @@ fun EcranPersonne(
                                         .padding(vertical = 1.dp)
                                         .combinedClickable(
                                             onClick = { ouverts = if (ouverts.contains(t)) ouverts - t else ouverts + t },
-                                            onLongClick = { blocEdite = t }
+                                            onClickLabel = "Ouvrir ou replier ce bloc",
+                                            onLongClick = { blocEdite = t },
+                                            onLongClickLabel = "Modifier ce bloc"
                                         ),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -348,6 +360,13 @@ fun EcranPersonne(
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
                                     color = if (morceaux.isEmpty()) GrisManquant else Color.Unspecified
+                                )
+                                // G3-11 : le remplissage n'est pas signale par
+                                // la couleur seule, un mot l'explicite.
+                                Text(
+                                    if (remplisEv >= 4) "complet" else if (remplisEv >= 1) "partiel" else "\u00E0 compl\u00E9ter",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (remplisEv >= 4) CouleurVert else if (remplisEv >= 1) CouleurOrange else CouleurRouge
                                 )
                             }
                             if (ouverts.contains(t)) {
@@ -390,7 +409,7 @@ fun EcranPersonne(
                                 border = BorderStroke(1.dp, if (e != null) couleurPastille(e.sexe) else GrisManquant)
                             ) {
                                 Column(
-                                    Modifier.fillMaxWidth().padding(6.dp).clickable { onOuvrir(idE) }
+                                    Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(6.dp).clickable { onOuvrir(idE) }
                                 ) {
                                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                         if (e != null) {
@@ -444,7 +463,7 @@ fun EcranPersonne(
                         Card(
                             Modifier.fillMaxWidth().padding(vertical = 3.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
-                            border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                            border = BorderStroke(1.dp, CouleurGrisBord)
                         ) {
                             Column(Modifier.fillMaxWidth().padding(6.dp)) {
                                 var libre by remember(p.id) { mutableStateOf(p.notesLibres) }
@@ -456,7 +475,7 @@ fun EcranPersonne(
                                     textStyle = MaterialTheme.typography.bodySmall
                                 )
                                 TextButton(onClick = { p.notesLibres = libre.trim(); enregistrer() }) {
-                                    Text("Enregistrer", fontSize = 10.sp)
+                                    Text("Enregistrer", fontSize = 12.sp)
                                 }
                             }
                         }
@@ -467,7 +486,7 @@ fun EcranPersonne(
                             Card(
                                 Modifier.fillMaxWidth().padding(vertical = 3.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                border = BorderStroke(1.dp, Color(0xFF9CBF9A))
+                                border = BorderStroke(1.dp, CouleurBordVert)
                             ) {
                                 Column(Modifier.fillMaxWidth().padding(6.dp)) {
                                     Text(
@@ -673,20 +692,20 @@ fun CarteIdentite(
             val remplis = listOf(p.nom, p.prenoms, p.dateNaissance, p.lieuNaissance).count { it.trim().isNotEmpty() }
             val validee = p.etatDe("identite") == "vert"
             val couleurBouton = if (validee) CouleurVert else when {
-                remplis >= 4 -> Color(0xFF9CBF9A)
-                remplis >= 2 -> Color(0xFFE8A33D)
+                remplis >= 4 -> CouleurBordVert
+                remplis >= 2 -> CouleurOrange
                 else -> CouleurRouge
             }
             Button(
                 onClick = { onValider(!validee) },
-                modifier = Modifier.fillMaxWidth().height(28.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = couleurBouton),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
             ) {
                 Text(
                     if (validee) "Identit\u00E9 confirm\u00E9e" else "Identit\u00E9 " + remplis.toString() + "/4",
                     color = Color.White,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     maxLines = 1
                 )
             }
@@ -713,7 +732,7 @@ fun CarteIdentite(
                         val parenthese = if (nd.isNotEmpty()) " (" + nd.joinToString(" \u2013 ") + ")" else ""
                         Text(
                             q.titre() + parenthese,
-                            Modifier.weight(1f).clickable { onOuvrir(idParent) },
+                            Modifier.weight(1f).heightIn(min = 48.dp).clickable { onOuvrir(idParent) },
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -829,7 +848,7 @@ fun EvenementsFamille(p: Personne, personnes: List<Personne>) {
     Card(
         Modifier.fillMaxWidth().padding(vertical = 3.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
+        border = BorderStroke(1.dp, CouleurBordVert)
     ) {
         Column(Modifier.fillMaxWidth().padding(8.dp)) {
             evs.forEach { ev ->
@@ -888,7 +907,7 @@ fun LignePersonneG(
             // Appui direct sur le nom : ouverture de la fiche.
             Text(
                 m.joinToString(", "),
-                Modifier.weight(1f).clickable(enabled = onOuvrir != null) { onOuvrir?.invoke() },
+                Modifier.weight(1f).heightIn(min = 48.dp).clickable(enabled = onOuvrir != null) { onOuvrir?.invoke() },
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -963,7 +982,7 @@ fun CarteEvenement(
         // utilisateur) : l'edition du bloc ouvert se fait par APPUI LONG sur
         // cette entete (ou sur la ligne repliee de la frise).
         Row(
-            Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = onEditer),
+            Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = onEditer, onLongClickLabel = "Modifier ce bloc"),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -1017,10 +1036,10 @@ fun CarteEvenement(
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (p.pere == 0L) {
                     OutlinedButton(onClick = { onChoisir("pere") }, Modifier.height(32.dp)) {
-                        Text("Choisir", fontSize = 10.sp)
+                        Text("Choisir", fontSize = 12.sp)
                     }
                     TextButton(onClick = { onOuvrirParent("pere") }) {
-                        Text("Cr\u00E9er", fontSize = 10.sp)
+                        Text("Cr\u00E9er", fontSize = 12.sp)
                     }
                 } else {
                     Checkbox(
@@ -1044,10 +1063,10 @@ fun CarteEvenement(
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (p.mere == 0L) {
                     OutlinedButton(onClick = { onChoisir("mere") }, Modifier.height(32.dp)) {
-                        Text("Choisir", fontSize = 10.sp)
+                        Text("Choisir", fontSize = 12.sp)
                     }
                     TextButton(onClick = { onOuvrirParent("mere") }) {
-                        Text("Cr\u00E9er", fontSize = 10.sp)
+                        Text("Cr\u00E9er", fontSize = 12.sp)
                     }
                 } else {
                     IconButton(onClick = { onRetirer("mere", 0L) }, Modifier.size(28.dp)) {
@@ -1071,10 +1090,10 @@ fun CarteEvenement(
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (p.conjoint == 0L) {
                     OutlinedButton(onClick = { onChoisir("conjoint") }, Modifier.height(32.dp)) {
-                        Text("Choisir", fontSize = 10.sp)
+                        Text("Choisir", fontSize = 12.sp)
                     }
                     TextButton(onClick = onOuvrirMariage) {
-                        Text("Saisir", fontSize = 10.sp)
+                        Text("Saisir", fontSize = 12.sp)
                     }
                 } else {
                     IconButton(onClick = { onRetirer("conjoint", 0L) }, Modifier.size(28.dp)) {
@@ -1098,10 +1117,10 @@ fun CarteEvenement(
             }
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
                 OutlinedButton(onClick = { onChoisir("conjointsupp") }, Modifier.weight(1f)) {
-                    Text("Autre conjoint", fontSize = 10.sp)
+                    Text("Autre conjoint", fontSize = 12.sp)
                 }
                 OutlinedButton(onClick = onOuvrirMariage, Modifier.weight(1f)) {
-                    Text("Saisir un mariage", fontSize = 10.sp)
+                    Text("Saisir un mariage", fontSize = 12.sp)
                 }
             }
 
@@ -1121,7 +1140,7 @@ fun CarteEvenement(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         t?.titre() ?: "(fiche supprim\u00E9e)",
-                        Modifier.weight(1f).clickable { onOuvrir(idT) },
+                        Modifier.weight(1f).heightIn(min = 48.dp).clickable { onOuvrir(idT) },
                         style = MaterialTheme.typography.bodySmall
                     )
                     Checkbox(
@@ -1144,7 +1163,7 @@ fun CarteEvenement(
                 onClick = { menuTemoin = true },
                 modifier = Modifier.fillMaxWidth().height(32.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = CouleurVert),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
             ) {
                 Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
@@ -1179,7 +1198,7 @@ fun CarteEvenement(
                         personnes.filter { it.id != p.id }.sortedBy { it.titre() }.forEach { c ->
                             Text(
                                 c.titre(),
-                                Modifier.fillMaxWidth().clickable {
+                                Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable {
                                     pickerTemoin = false
                                     onAjouterTemoinExistant(typeActe, c.id)
                                 }.padding(vertical = 6.dp),
@@ -1269,8 +1288,8 @@ fun SousBlocActe(
     var note by remember(acte.id) { mutableStateOf(piste?.enCours ?: "") }
     Card(
         Modifier.fillMaxWidth().padding(top = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF6FAF5)),
-        border = BorderStroke(1.dp, Color(0xFF9CBF9A))
+        colors = CardDefaults.cardColors(containerColor = CouleurCarte),
+        border = BorderStroke(1.dp, CouleurBordVert)
     ) {
         Column(Modifier.fillMaxWidth().padding(6.dp)) {
             Row(
@@ -1279,7 +1298,7 @@ fun SousBlocActe(
             ) {
                 Text(
                     if (acte.titre.trim().isNotEmpty()) acte.titre.trim() else "(sans titre)",
-                    Modifier.weight(1f).combinedClickable(onClick = onVoir, onLongClick = { pageOuvert = true }),
+                    Modifier.weight(1f).combinedClickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte", onLongClick = { pageOuvert = true }, onLongClickLabel = "Voir les pages de l'acte"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -1315,7 +1334,7 @@ fun SousBlocActe(
                         textStyle = MaterialTheme.typography.bodySmall
                     )
                     TextButton(onClick = { piste.enCours = note.trim(); onEnregistrer() }) {
-                        Text("Enregistrer", fontSize = 10.sp)
+                        Text("Enregistrer", fontSize = 12.sp)
                     }
                 }
             }
@@ -1351,7 +1370,7 @@ fun LigneActe(
     ) {
         Text(
             if (acte.titre.trim().isNotEmpty()) acte.titre.trim() else "(sans titre)",
-            Modifier.weight(1f).combinedClickable(onClick = onVoir, onLongClick = { pageOuvert = true }),
+            Modifier.weight(1f).combinedClickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte", onLongClick = { pageOuvert = true }, onLongClickLabel = "Voir les pages de l'acte"),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary
         )
@@ -1536,7 +1555,7 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
                     )
                     Image(
                         bitmap = bmp.asImageBitmap(),
-                        contentDescription = null,
+                        contentDescription = "Image de l'acte " + acte.titre.trim(),
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxWidth()

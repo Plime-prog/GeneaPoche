@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -216,7 +217,7 @@ fun EcranApplication(
                                 Text(
                                     "Ma g\u00E9n\u00E9alogie dans ma poche",
                                     fontSize = 14.sp,
-                                    color = Color(0xFFE3F1DF)
+                                    color = CouleurSurvol
                                 )
                             }
                         }
@@ -394,6 +395,7 @@ fun EcranApplication(
                                         Text(
                                             lettre.toString(),
                                             Modifier
+                                                .heightIn(min = 48.dp)
                                                 .clickable(enabled = utilisee) {
                                                     lettreChoisie = if (active) null else lettre
                                                 }
@@ -401,7 +403,7 @@ fun EcranApplication(
                                                 .padding(horizontal = 4.dp, vertical = 1.dp),
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (active) Color.White else if (utilisee) CouleurVertFonce else Color(0xFFB9C2AE)
+                                            color = if (active) Color.White else if (utilisee) CouleurVertFonce else CouleurInactif
                                         )
                                     }
                                 } else if (triPersonnes == 2) {
@@ -882,6 +884,7 @@ fun EcranApplication(
                         candidats.forEach { c ->
                             Row(
                                 Modifier.fillMaxWidth()
+                                    .heightIn(min = 48.dp)
                                     .clickable { lier(role, c.id) }
                                     .padding(vertical = 6.dp)
                             ) {
@@ -959,12 +962,13 @@ fun racineBranche(p: Personne, personnes: List<Personne>): Personne {
 fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
     // Tout l'encadre rose pale (femme) ou bleu pale (homme), neutre sinon.
     val couleurCarte = when (p.sexe) {
-        "F" -> Color(0xFFF8DDE7) // rose pale
-        "M" -> Color(0xFFDDE9F6) // bleu pale
-        else -> Color(0xFFEFF4EE) // neutre verd\u00E2tre pale
+        "F" -> CouleurRosePale
+        "M" -> CouleurBleuPale
+        else -> CouleurNeutrePale
     }
     Card(
         Modifier.fillMaxWidth()
+            .heightIn(min = 48.dp)
             .padding(horizontal = 12.dp, vertical = 3.dp)
             .clickable { onOuvrir() },
         colors = CardDefaults.cardColors(containerColor = couleurCarte)
@@ -978,9 +982,9 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
             val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
             val vignette = p.numeroAffiche().ifEmpty { initiale.toString() }
             val couleurAvatar = when (p.sexe) {
-                "F" -> Color(0xFFE9C4D2) // rose
-                "M" -> Color(0xFFBFD4E8) // bleu
-                else -> Color(0xFFD9E4D6) // neutre
+                "F" -> CouleurRose
+                "M" -> CouleurBleu
+                else -> CouleurNeutreDoux
             }
             Box(
                 Modifier.size(40.dp).clip(CircleShape).background(couleurAvatar),
@@ -993,7 +997,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
                     fontSize = when {
                         vignette.length <= 3 -> 15.sp
                         vignette.length <= 5 -> 12.sp
-                        else -> 9.sp
+                        else -> 12.sp
                     },
                     maxLines = 1
                 )

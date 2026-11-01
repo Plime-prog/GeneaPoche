@@ -2,10 +2,15 @@ package com.plime.geneapoche
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 // Couleurs : blanc, verts pale et fonce, rouge doux pour "a verifier".
 val CouleurVert = Color(0xFF2E7D32)
@@ -13,6 +18,22 @@ val CouleurVertFonce = Color(0xFF1F4F26)
 val CouleurRouge = Color(0xFFB45046)
 val CouleurVertPale = Color(0xFFE7F0E5)
 val CouleurNeutrePale = Color(0xFFEFF4EE)
+
+// G3-06 : couleurs metier centralisees (seule source de Color(...) en dehors
+// des palettes claire et sombre ci-dessus).
+val CouleurRose = Color(0xFFE9C4D2)
+val CouleurBleu = Color(0xFFBFD4E8)
+val CouleurNeutreDoux = Color(0xFFD9E4D6)
+val CouleurRosePale = Color(0xFFF8DDE7)
+val CouleurBleuPale = Color(0xFFDDE9F6)
+val CouleurBordVert = Color(0xFF9CBF9A)
+val CouleurOrange = Color(0xFFE8A33D)
+val CouleurSurvol = Color(0xFFE3F1DF)
+val CouleurInactif = Color(0xFFB9C2AE)
+val CouleurCarte = Color(0xFFF6FAF5)
+val CouleurGrisBord = Color(0xFFE0E0E0)
+val GrisManquant = Color(0xFF9AA099)
+val CouleurLiaison = Color(0xFF4C7A50)
 
 val PaletteGeneaPoche = lightColorScheme(
     primary = Color(0xFF2E5D3A),
@@ -95,4 +116,27 @@ val FormesGeneaPoche = Shapes(
     medium = RoundedCornerShape(14.dp),
     large = RoundedCornerShape(20.dp),
     extraLarge = RoundedCornerShape(28.dp)
+)
+
+// G3-07 : typographie Material 3 complete ; serif pour les noms et les
+// titres, sans-serif (police du systeme) pour le texte. Aucun telechargement :
+// l'application n'a pas Internet ; des polices OFL embarquees dans res/font
+// pourront remplacer FontFamily.Serif quand l'auteur fournira les .ttf.
+val TypographieGeneaPoche = Typography(
+    displayLarge = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 57.sp, lineHeight = 64.sp),
+    displayMedium = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 45.sp, lineHeight = 52.sp),
+    displaySmall = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 36.sp, lineHeight = 44.sp),
+    headlineLarge = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 32.sp, lineHeight = 40.sp),
+    headlineMedium = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 36.sp),
+    headlineSmall = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 24.sp, lineHeight = 32.sp),
+    titleLarge = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp),
+    titleMedium = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 24.sp),
+    titleSmall = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp),
+    bodyLarge = TextStyle(fontFamily = FontFamily.Default, fontSize = 16.sp, lineHeight = 24.sp),
+    bodyMedium = TextStyle(fontFamily = FontFamily.Default, fontSize = 14.sp, lineHeight = 20.sp),
+    bodySmall = TextStyle(fontFamily = FontFamily.Default, fontSize = 12.sp, lineHeight = 16.sp),
+    labelLarge = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
+    labelMedium = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
+    labelSmall = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp)
+)
 )

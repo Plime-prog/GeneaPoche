@@ -112,7 +112,8 @@ class MainActivity : ComponentActivity() {
             }
             MaterialTheme(
                 colorScheme = if (sombre) PaletteGeneaPocheSombre else PaletteGeneaPoche,
-                shapes = FormesGeneaPoche
+                shapes = FormesGeneaPoche,
+                typography = TypographieGeneaPoche
             ) {
                 AppEcran(this, verrou, etatTheme)
             }
@@ -1526,6 +1527,7 @@ fun AppEcran(ctx: Context, verrou: Verrou, themeChoisi: androidx.compose.runtime
                             Row(
                                 Modifier
                                     .fillMaxWidth()
+                                    .heightIn(min = 48.dp)
                                     .clickable { cujusEdite = cand }
                                     .background(
                                         if (idDuCujus() == cand.id) CouleurVertPale

@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.sp
 // tracées entre les cartes (verticales + barres horizontales).
 // Toucher une carte ouvre la fiche et recentre l'arbre sur elle.
 
-val CouleurLiaison = Color(0xFF4C7A50)
 
 // Trace les liaisons entre deux rangées : verticales depuis la rangée du
 // haut, une barre horizontale au milieu, verticales vers la rangée du bas.
@@ -276,13 +275,13 @@ fun CarteMiniArbre(
         modifier
             .padding(2.dp)
             .clickable { if (p != null) onOuvrir(p.id) },
-        border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0xFF9CBF9A)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, CouleurBordVert),
         colors = androidx.compose.material3.CardDefaults.cardColors(
             containerColor = if (centre) MaterialTheme.colorScheme.primaryContainer
             else if (p == null) MaterialTheme.colorScheme.surfaceVariant
             else when (p.sexe) {
-                "F" -> androidx.compose.ui.graphics.Color(0xFFF8DDE7) // rose pâle
-                "M" -> androidx.compose.ui.graphics.Color(0xFFDDE9F6) // bleu pâle
+                "F" -> CouleurRosePale
+                "M" -> CouleurBleuPale
                 else -> MaterialTheme.colorScheme.surface
             }
         )
