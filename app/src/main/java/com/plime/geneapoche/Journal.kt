@@ -311,6 +311,15 @@ fun libelleRecherche(r: Recherche): String {
 // Regroupe les recherches par personne, avec compteurs et acces a la fiche.
 
 // Numero de la personne concernee par une piste (pour le tri du journal).
+fun comparerNumeros(a: List<Int>, b: List<Int>): Int {
+    val n = minOf(a.size, b.size)
+    for (i in 0 until n) {
+        val r = a[i].compareTo(b[i])
+        if (r != 0) return r
+    }
+    return a.size.compareTo(b.size)
+}
+
 fun numeroDePiste(piste: Piste, personnes: List<Personne>): List<Int> {
     val p = personneParId(personnes, piste.personneId) ?: return listOf(Int.MAX_VALUE)
     return cleNumero(p)
@@ -338,7 +347,7 @@ fun EcranJournal(
     // (Sosa puis d Aboville), toujours limite aux evenements de plus de 75 ans.
     val prioritaires = ouvertes
         .filter { ps -> val a = anneeCiblePiste(ps); a == null || a <= limite }
-        .sortedBy { ps -> numeroDePiste(ps, personnes) }
+        .sortedWith { a, b -> comparerNumeros(numeroDePiste(a, personnes), numeroDePiste(b, personnes)) }
         .take(10)
     val anomalies = anomaliesPour(personnes)
 
