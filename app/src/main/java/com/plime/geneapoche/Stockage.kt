@@ -79,6 +79,13 @@ object Stockage {
         prefs(ctx).edit().putLong("delai_verrouillage", ms).commit()
     }
 
+    // G3-02 : choix du theme memorise : "systeme" (defaut), "clair", "sombre".
+    fun lireTheme(ctx: Context): String = prefs(ctx).getString("theme_mode", "systeme") ?: "systeme"
+
+    fun definirTheme(ctx: Context, mode: String) {
+        prefs(ctx).edit().putString("theme_mode", mode).commit()
+    }
+
     // ----------------------------------------- Cle maitre (liee au PIN, v0.29)
 
     // Cle maitre en memoire UNIQUEMENT pendant le deverrouillage : sans elle,

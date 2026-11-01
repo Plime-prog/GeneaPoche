@@ -2,6 +2,7 @@ package com.plime.geneapoche
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,43 @@ val PaletteGeneaPoche = lightColorScheme(
     surfaceContainer = Color(0xFFF4F8F1),
     surfaceContainerHigh = Color(0xFFF7FAF4),
     surfaceContainerHighest = Color(0xFFEFF3E9)
+)
+
+// G3-02 : palette SOMBRE deduite de la meme palette verte ; contrastes
+// verifies (texte clair E2E5DC sur fond 11150E > 12:1).
+val PaletteGeneaPocheSombre = darkColorScheme(
+    primary = Color(0xFF9CD2A0),
+    onPrimary = Color(0xFF0E2412),
+    primaryContainer = Color(0xFF24452B),
+    onPrimaryContainer = Color(0xFFD8EBD4),
+    secondary = Color(0xFFB3CCB6),
+    onSecondary = Color(0xFF1D2B20),
+    secondaryContainer = Color(0xFF334738),
+    onSecondaryContainer = Color(0xFFE1EDE0),
+    tertiary = Color(0xFFA5D4AF),
+    onTertiary = Color(0xFF0F2A17),
+    tertiaryContainer = Color(0xFF275032),
+    onTertiaryContainer = Color(0xFFD8EBD4),
+    background = Color(0xFF11150E),
+    onBackground = Color(0xFFE2E5DC),
+    surface = Color(0xFF11150E),
+    onSurface = Color(0xFFE2E5DC),
+    surfaceVariant = Color(0xFF252B22),
+    onSurfaceVariant = Color(0xFFC0CABC),
+    outline = Color(0xFF8B988A),
+    outlineVariant = Color(0xFF4A5445),
+    error = Color(0xFFF2B8B2),
+    onError = Color(0xFF3A1110),
+    errorContainer = Color(0xFF5C1F1B),
+    onErrorContainer = Color(0xFFF6DDD8),
+    surfaceTint = Color(0xFF9CD2A0),
+    surfaceDim = Color(0xFF0C0F0A),
+    surfaceBright = Color(0xFF31372D),
+    surfaceContainerLowest = Color(0xFF0C0F0A),
+    surfaceContainerLow = Color(0xFF191E15),
+    surfaceContainer = Color(0xFF1D2219),
+    surfaceContainerHigh = Color(0xFF272C22),
+    surfaceContainerHighest = Color(0xFF31372D)
 )
 
 val FormesGeneaPoche = Shapes(

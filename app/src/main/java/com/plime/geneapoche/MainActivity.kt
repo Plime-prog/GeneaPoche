@@ -94,8 +94,19 @@ class MainActivity : ComponentActivity() {
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         registerReceiver(recepteurEcran, android.content.IntentFilter(android.content.Intent.ACTION_SCREEN_OFF))
         setContent {
-            MaterialTheme(colorScheme = PaletteGeneaPoche, shapes = FormesGeneaPoche) {
-                AppEcran(this, verrou)
+            // G3-02 : theme clair/sombre selon le choix memorise, le mode
+            // systeme suit isSystemInDarkTheme().
+            val etatTheme = remember { mutableStateOf(Stockage.lireTheme(this)) }
+            val sombre = when (etatTheme.value) {
+                "clair" -> false
+                "sombre" -> true
+                else -> androidx.compose.foundation.isSystemInDarkTheme()
+            }
+            MaterialTheme(
+                colorScheme = if (sombre) PaletteGeneaPocheSombre else PaletteGeneaPoche,
+                shapes = FormesGeneaPoche
+            ) {
+                AppEcran(this, verrou, etatTheme)
             }
         }
     }
@@ -130,7 +141,7 @@ class MainActivity : ComponentActivity() {
 // ---------------------------------------------------------------- Ecran principal
 
 @Composable
-fun AppEcran(ctx: Context, verrou: Verrou) {
+fun AppEcran(ctx: Context, verrou: Verrou, themeChoisi: androidx.compose.runtime.MutableState<String>) {
     // G2-07 : l'ETAT de l'application vit dans le modele de vue, qui SURVIT
     // a la rotation et au changement de theme ; les alias locaux ci-dessous
     // gardent les memes noms que le reste du code utilise deja.
@@ -163,6 +174,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var avertissementLectureFerme by modele::avertissementLectureFerme
     var dialoguePin by modele::dialoguePin
     var dialogueDelai by modele::dialogueDelai
+    // G3-02 : dialogue de choix du theme (clair / sombre / systeme).
+    var dialogueTheme by remember { mutableStateOf(false) }
     var occupation by modele::occupation
     val scopeTravail = rememberCoroutineScope()
 
@@ -1284,6 +1297,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                 restaurerImport = { restaurerSauvegardeImport() },
                 changerPin = { dialoguePin = true },
                 reglagesVerrouillage = { dialogueDelai = true },
+                reglagesTheme = { dialogueTheme = true },
+                prochainId = { Stockage.prochainId(ctx) },
                 validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) }
             )
         )
@@ -1384,6 +1399,38 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             },
             confirmButton = {
                 TextButton(onClick = { dialogueDelai = false }) { Text("Fermer") }
+            }
+        )
+    }
+
+    // G3-02 : choix du theme, memorise : Syst\u00E8me (suit le mode sombre du
+    // t\u00E9l\u00E9phone), Clair ou Sombre. Appliqu\u00E9 imm\u00E9diatement.
+    if (dialogueTheme) {
+        AlertDialog(
+            onDismissRequest = { dialogueTheme = false },
+            title = { Text("Th\u00E8me de l'application") },
+            text = {
+                Column {
+                    Text("Choisissez le th\u00E8me ; le choix est m\u00E9moris\u00E9 :", style = MaterialTheme.typography.bodySmall)
+                    TextButton(onClick = {
+                        Stockage.definirTheme(ctx, "systeme")
+                        themeChoisi.value = "systeme"
+                        dialogueTheme = false
+                    }, Modifier.fillMaxWidth()) { Text("Syst\u00E8me (par d\u00E9faut)") }
+                    TextButton(onClick = {
+                        Stockage.definirTheme(ctx, "clair")
+                        themeChoisi.value = "clair"
+                        dialogueTheme = false
+                    }, Modifier.fillMaxWidth()) { Text("Clair") }
+                    TextButton(onClick = {
+                        Stockage.definirTheme(ctx, "sombre")
+                        themeChoisi.value = "sombre"
+                        dialogueTheme = false
+                    }, Modifier.fillMaxWidth()) { Text("Sombre") }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { dialogueTheme = false }) { Text("Fermer") }
             }
         )
     }

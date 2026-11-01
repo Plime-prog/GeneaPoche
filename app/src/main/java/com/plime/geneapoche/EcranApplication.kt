@@ -33,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Person
@@ -169,6 +170,10 @@ class ActionsApplication(
     val restaurerImport: () -> Unit,
     val changerPin: () -> Unit,
     val reglagesVerrouillage: () -> Unit,
+    val reglagesTheme: () -> Unit,
+    // G2-18 residuel : identifiants strictement croissants aussi pour les
+    // nouvelles personnes creees par le dialogue d'edition.
+    val prochainId: () -> Long,
     val validerInfo: (Personne, String, Boolean) -> Unit
 )
 
@@ -605,6 +610,17 @@ fun EcranApplication(
                                     Text("D\u00E9lai de verrouillage")
                                 }
                             }
+                            // G3-02 : choix du theme clair / sombre / systeme.
+                            TextButton(
+                                onClick = { menuGedcom = false; reglagesTheme() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Face, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Th\u00E8me : clair, sombre ou syst\u00E8me")
+                                }
+                            }
                             TextButton(
                                 onClick = { menuGedcom = false; phraseSecrete = ""; demandePhraseExport = true },
                                 Modifier.fillMaxWidth()
@@ -770,10 +786,12 @@ fun EcranApplication(
     }
 
     if (editionOuverte) {
-        val prochainId = (personnes.maxOfOrNull { it.id } ?: 0L) + 1L
+        // G2-18 residuel : identifiant alloue UNE seule fois par ouverture du
+        // dialogue, strictement croissant (compteur persistant).
+        val idNouvellePersonne = remember { prochainId() }
         DialogueEdition(
             cible = editionCible,
-            idNouvelle = prochainId,
+            idNouvelle = idNouvellePersonne,
             onValider = { p2 ->
                 if (editionCible == null) {
                     // Contr\u00F4le anti-doublon : une fiche portant d\u00E9j\u00E0 le m\u00EAme
