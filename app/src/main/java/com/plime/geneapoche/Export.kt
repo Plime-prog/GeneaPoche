@@ -143,7 +143,7 @@ fun ajouterNote(lignes: MutableList<String>, niveau: Int, tag: String, texte: St
     }
 }
 
-fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, actes: List<Acte> = listOf()): String {
+fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, actes: List<Acte> = listOf(), version: String = "5.5.1"): String {
     val personnes = if (sousEnsemble == null) toutes else toutes.filter { sousEnsemble.contains(it.id) }
     fun cleCouple(a: Long, b: Long): Pair<Long, Long> = if (a < b) a to b else b to a
     fun xrefIndi(id: Long): String = "@I" + id.toString() + "@"
@@ -176,11 +176,20 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.33") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
+    lignes.add("2 VERS 0.34") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
     lignes.add("1 CHAR UTF-8")
-    lignes.add("1 GEDC")
-    lignes.add("2 VERS 5.5.1")
-    lignes.add("2 FORM LINEAGE-LINKED")
+    lignes.add("1 LANG fr")
+    // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
+    // 7.0.18 (derni\u00E8re version du standard au 01/11/2026) sur demande.
+    if (version.startsWith("7")) {
+        lignes.add("1 GEDC")
+        lignes.add("2 LINEAGE-LINKED")
+        lignes.add("3 VERS 7.0.18")
+    } else {
+        lignes.add("1 GEDC")
+        lignes.add("2 VERS 5.5.1")
+        lignes.add("2 FORM LINEAGE-LINKED")
+    }
     lignes.add("1 SUBM @SUB1@") // G2-02 : reference a l'enregistrement SOUMIS (exige par la norme)
     // G2-20 : SimpleDateFormat remplace par DateTimeFormatter (sur entre
     // threads, pas d API obsolete).
@@ -215,6 +224,20 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
         evenement(p, "MARR", "M", p.dateMariage, p.heureMariage, p.lieuMariage, p.deptMariage)
         evenement(p, "DEAT", "D", p.dateDeces, p.heureDeces, p.lieuDeces, p.deptDeces)
         evenement(p, "BURI", "S", p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture)
+        // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres (intitul\u00E9 libre) de la
+        // chronologie, export\u00E9s comme EVEN + TYPE (les deux formats).
+        p.evenementsLibres.forEach { ev ->
+            val dEv = dateGedcom(ev.date)
+            val hEv = heureGedcom(ev.heure)
+            val lEv = lieuGedcom(ev.lieu, ev.dept)
+            if (ev.intitule.trim().isNotEmpty() || dEv != null || lEv.isNotEmpty()) {
+                lignes.add("1 EVEN")
+                lignes.add("2 TYPE " + texteGedcom(ev.intitule.trim()))
+                if (dEv != null) lignes.add("2 DATE " + dEv)
+                if (hEv != null) lignes.add("2 TIME " + hEv)
+                if (lEv.isNotEmpty()) lignes.add("2 PLAC " + texteGedcom(lEv))
+            }
+        }
         if (p.profession.trim().isNotEmpty()) lignes.add("1 OCCU " + texteGedcom(p.profession.trim()))
         if (p.sosa.trim().isNotEmpty()) lignes.add("1 RFN Sosa " + p.sosa.trim())
         // G2-02 : le bloc "sans titre" de la fiche part en NOTE (relue a l'import).
@@ -416,6 +439,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
         var mD = ""; var mH = ""; var mL = ""; var mDpt = ""
         var dD = ""; var dH = ""; var dL = ""; var dDpt = ""
         var sD = ""; var sH = ""; var sL = ""; var sDpt = ""
+        // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres (EVEN + TYPE/DATE/TIME/PLAC).
+        val evLibres = mutableListOf<EvenementLibre>()
         val fams = mutableListOf<String>()
         var famc = ""
     }
@@ -488,6 +513,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                         if (numR != null) ind.rfn = numR
                     }
                     "NOTE" -> ind.note = contenu.removePrefix("NOTE").trim().replace("@@", "@")
+                    // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement libre (intitul\u00E9 en 2 TYPE).
+                    "EVEN" -> ind.evLibres.add(EvenementLibre())
                     else -> if (blocActuel !in listOf("BIRT", "BAPM", "CHR", "BAPT", "MARR", "DEAT", "BURI", "BUR")) {
                         ignorer(balisesIgnorees, blocActuel)
                     }
@@ -535,6 +562,16 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                         "CONT" -> ind.note += "\n" + valeur.replace("@@", "@")
                         "CONC" -> ind.note += valeur.replace("@@", "@")
                     }
+                    // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement libre de la chronologie.
+                    "EVEN" -> {
+                        val dernier = ind.evLibres.lastOrNull()
+                        if (dernier != null) when (tag) {
+                            "TYPE" -> dernier.intitule = valeur.replace("@@", "@")
+                            "DATE" -> dernier.date = dateFrancaise(valeur)
+                            "TIME" -> dernier.heure = valeur
+                            "PLAC" -> { val cd = couperLieu(valeur); dernier.lieu = cd.first; dernier.dept = cd.second }
+                        }
+                    }
                 }
             } else if (fam != null && blocActuel == "MARR") {
                 when (tag) {
@@ -565,7 +602,11 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                 dateBapteme = ind.bD, heureBapteme = ind.bH, lieuBapteme = ind.bL, deptBapteme = ind.bDpt,
                 dateMariage = ind.mD, heureMariage = ind.mH, lieuMariage = ind.mL, deptMariage = ind.mDpt,
                 dateDeces = ind.dD, heureDeces = ind.dH, lieuDeces = ind.dL, deptDeces = ind.dDpt,
-                dateSepulture = ind.sD, heureSepulture = ind.sH, lieuSepulture = ind.sL, deptSepulture = ind.sDpt
+                dateSepulture = ind.sD, heureSepulture = ind.sH, lieuSepulture = ind.sL, deptSepulture = ind.sDpt,
+                // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres relus (ids s\u00E9quentiels).
+                evenementsLibres = mutableListOf<EvenementLibre>().also { l ->
+                    ind.evLibres.forEachIndexed { i, ev -> l.add(ev.copy(id = (i + 1).toLong())) }
+                }
             )
         )
     }
@@ -609,5 +650,6 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
 }
 
 fun importerGedcom(texte: String): List<Personne> = importerGedcomRapporte(texte).personnes
+
 
 

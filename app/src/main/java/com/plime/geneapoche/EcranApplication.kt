@@ -81,7 +81,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -169,6 +168,9 @@ class ActionsApplication(
     val retirerTemoin: (String, Long) -> Unit,
     val basculerSignature: (String, Long) -> Unit,
     val majEvenement: (String, String, String, String, String, String) -> Unit,
+    // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres de la chronologie.
+    val majEvenementLibre: (Personne, EvenementLibre) -> Unit,
+    val supprimerEvenementLibre: (Personne, Long) -> Unit,
     val ajouterEnfant: (String, String, String, String) -> Unit,
     val definirCujus: (Personne) -> Unit,
     val choisirCujus: () -> Unit,
@@ -178,7 +180,7 @@ class ActionsApplication(
     val onSupprimerActe: (Acte) -> Unit,
     val onVoirActe: (Acte) -> Unit,
     val onArbreCentre: (Long) -> Unit,
-    val exporterGedcom: (Uri, Set<Long>?, Boolean) -> Unit,
+    val exporterGedcom: (Uri, Set<Long>?, Boolean, String) -> Unit,
     val importerGedcom: (Uri) -> Unit,
     val viderBase: () -> Unit,
     val enregistrerActe: (ActeSaisie) -> Unit,
@@ -216,9 +218,14 @@ fun EcranApplication(
     val ouverte = personneParId(personnes, idOuvert)
     var menuGedcom by remember { mutableStateOf(false) }
     var exclureVivants by remember { mutableStateOf(false) }
+    // G\u00E9n\u00E9aPoche 3 : double export GEDCOM (5.5.1 pour Heredis, ou
+    // 7.0.18, derni\u00E8re version du standard au 01/11/2026).
+    var formatGedcom by remember { mutableStateOf("5.5.1") }
     var confirmeVider by remember { mutableStateOf(false) }
-    // G3-13 : la barre de titre se replie au defilement des listes.
-    val comportementBarre = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    // G\u00E9n\u00E9aPoche 3 : menu Saisie \u00E0 7 entr\u00E9es ; le formulaire
+    // s'ouvre en plein \u00E9cran (type N/B/M/S/D/E ou enfant).
+    var saisieType by remember { mutableStateOf<String?>(null) }
+    var saisieParentEnfant by remember { mutableStateOf(0L) }
     // G3-19 : retours utilisateur en Snackbar (plus de dialogue "Information"),
     // avec "Annuler" apres une suppression de personne.
     val etatSnackbar = remember { SnackbarHostState() }
@@ -241,7 +248,6 @@ fun EcranApplication(
 
     if (ouverte == null) {
         Scaffold(
-            modifier = Modifier.nestedScroll(comportementBarre.nestedScrollConnection),
             snackbarHost = { SnackbarHost(etatSnackbar) },
             topBar = {
                 TopAppBar(
@@ -250,14 +256,14 @@ fun EcranApplication(
                             Image(
                                 painter = painterResource(R.drawable.ic_launcher_foreground),
                                 contentDescription = null,
-                                modifier = Modifier.size(42.dp)
+                                modifier = Modifier.size(26.dp)
                             )
                             Spacer(Modifier.width(8.dp))
                             Column {
-                                Text("G\u00E9n\u00E9aPoche", fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
                                     "Ma g\u00E9n\u00E9alogie dans ma poche",
-                                    fontSize = 14.sp,
+                                    fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
                             }
@@ -274,7 +280,6 @@ fun EcranApplication(
                         navigationIconContentColor = Color.White,
                         actionIconContentColor = Color.White
                     ),
-                    scrollBehavior = comportementBarre
                 )
             },
             bottomBar = { BarreOnglets(onglet, onOnglet) },
@@ -308,14 +313,14 @@ fun EcranApplication(
             val lanceurGedcom = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
             ) { uri ->
-                if (uri != null) exporterGedcom(uri, null, exclureVivants)
+                if (uri != null) exporterGedcom(uri, null, exclureVivants, formatGedcom)
             }
             val lanceurGedcomBranche = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
             ) { uri ->
                 if (uri != null) {
                     val sel = exportBrancheId
-                    exporterGedcom(uri, if (sel != 0L) brancheDe(personnes, sel) else null, exclureVivants)
+                    exporterGedcom(uri, if (sel != 0L) brancheDe(personnes, sel) else null, exclureVivants, formatGedcom)
                 }
             }
             val lanceurImport = rememberLauncherForActivityResult(
@@ -568,7 +573,7 @@ fun EcranApplication(
                             if (entreesListe.isEmpty()) {
                                 item {
                                     Text(
-                                        "Aucun r\\u00E9sultat pour \\u00AB " + recherche.trim() + " \\u00BB.",
+                                        "Aucun r\u00E9sultat pour \u00AB " + recherche.trim() + " \u00BB.",
                                         Modifier.fillMaxWidth().padding(16.dp),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -593,10 +598,27 @@ fun EcranApplication(
                 }
             } else if (onglet == 3) {
                 Box(Modifier.fillMaxSize().padding(marges).imePadding()) {
-                EcranSaisieActe(
-                    personnes = personnes,
-                    onEnregistrer = enregistrerActe
-                )
+                // G\u00E9n\u00E9aPoche 3 : menu de saisie \u00E0 7 entr\u00E9es (N, B, M,
+                // S, D, \u00C9v\u00E9nement, Enfant) puis formulaire plein \u00E9cran,
+                // pr\u00E9-rempli. "Enfant" choisit d'abord le parent existant.
+                if (saisieType == null) {
+                    EcranSaisie(
+                        personnes = personnes,
+                        onOuvrir = { t -> saisieType = t; saisieParentEnfant = 0L },
+                        onEnfant = { idParent -> saisieType = "N"; saisieParentEnfant = idParent }
+                    )
+                } else {
+                    EcranSaisieActe(
+                        personnes = personnes,
+                        actes = actes,
+                        onEnregistrer = enregistrerActe,
+                        initial = ActeSaisie(
+                            type = saisieType ?: "N",
+                            parentPourEnfant = saisieParentEnfant
+                        ),
+                        onFermer = { saisieType = null }
+                    )
+                }
                 }
             } else {
                 Box(Modifier.fillMaxSize().padding(marges)) {
@@ -639,7 +661,25 @@ fun EcranApplication(
                                 }
                             }
                             Text(
-                                "Le fichier .ged cr\u00E9\u00E9 est importable dans Heredis (GEDCOM 5.5.1).",
+                                "Format GEDCOM :",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                            Row {
+                                FilterChip(
+                                    selected = formatGedcom == "5.5.1",
+                                    onClick = { formatGedcom = "5.5.1" },
+                                    label = { Text("5.5.1 (Heredis)") }
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                FilterChip(
+                                    selected = formatGedcom == "7.0.18",
+                                    onClick = { formatGedcom = "7.0.18" },
+                                    label = { Text("7.0.18") }
+                                )
+                            }
+                            Text(
+                                "Le fichier .ged cr\u00E9\u00E9 est importable dans Heredis (GEDCOM 5.5.1) ou compatible GEDCOM 7.0.18.",
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(top = 8.dp)
                             )
@@ -906,7 +946,10 @@ fun EcranApplication(
             onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },
             onSupprimerActe = { onSupprimerActe(it) },
             onVoirActe = { onVoirActe(it) },
-            onValider = { section, valide -> validerInfo(p, section, valide) }
+            onValider = { section, valide -> validerInfo(p, section, valide) },
+            onEditerIdentite = { onEditionCible(p); onEditionOuverte(true) },
+            onModifierEvenementLibre = { ev -> majEvenementLibre(p, ev) },
+            onSupprimerEvenementLibre = { idEv -> supprimerEvenementLibre(p, idEv) }
         )
             }
             // Menus de l'application TOUJOURS visibles en bas, meme fiche ouverte.
@@ -1144,12 +1187,28 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
                     Text(morceaux.joinToString("  \u2013  "), style = MaterialTheme.typography.bodySmall)
                 }
             }
+            // G\u00E9n\u00E9aPoche 3 : compteur des renseignements n/4 (dates et
+            // lieux complets avec d\u00E9partement) tout \u00E0 droite, rouge \u00E0 vert.
+            val n4 = renseignementsN4(p)
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = couleurCompteur(n4, 4)
+            ) {
+                Text(
+                    "  " + n4.toString() + "/4  ",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(Modifier.width(6.dp))
             IconButton(onClick = onSupprimer, Modifier.size(30.dp)) {
                 Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(16.dp))
             }
         }
     }
 }
+
 
 
 

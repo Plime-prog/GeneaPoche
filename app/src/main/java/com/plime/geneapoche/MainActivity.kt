@@ -803,7 +803,7 @@ fun AppEcran(
             ?: 0L
     }
 
-    fun exporterGedcom(uri: Uri, sousEnsemble: Set<Long>?, exclureVivants: Boolean = false) {
+    fun exporterGedcom(uri: Uri, sousEnsemble: Set<Long>?, exclureVivants: Boolean = false, format: String = "5.5.1") {
         // G2-06 : export HORS du thread principal, indicateur a l'ecran.
         occupation = "Export GEDCOM en cours..."
         scopeTravail.launch(Dispatchers.IO) {
@@ -813,7 +813,7 @@ fun AppEcran(
                 val annee = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
                 val exportables = if (exclureVivants) personnes.filter { !estVivante(it, annee) } else personnes
                 val sous = if (exclureVivants && sousEnsemble != null) sousEnsemble.filter { id -> exportables.any { it.id == id } }.toSet() else sousEnsemble
-                val texte = construireGedcom(exportables, sous, actes)
+                val texte = construireGedcom(exportables, sous, actes, format)
                 ctx.contentResolver.openOutputStream(uri)?.use { sortie ->
                     sortie.write(texte.toByteArray(Charsets.UTF_8))
                 }
@@ -909,6 +909,101 @@ fun AppEcran(
         derniersJson.clear()
         if (enregistrer()) idsActes.forEach { Stockage.supprimerImage(ctx, it) }
         message = importees.size.toString() + " personnes import\u00E9es."
+    }
+
+    // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres de la chronologie (intitul\u00E9
+    // libre), modifi\u00E9s ou supprim\u00E9s depuis la fiche.
+    fun modifierEvenementLibre(p: Personne, ev: EvenementLibre) {
+        val i = p.evenementsLibres.indexOfFirst { it.id == ev.id }
+        if (i >= 0) p.evenementsLibres[i] = ev else p.evenementsLibres.add(ev)
+        enregistrer(false, setOf(p.id))
+    }
+
+    fun supprimerEvenementLibre(p: Personne, idEv: Long) {
+        p.evenementsLibres.removeAll { it.id == idEv }
+        enregistrer(false, setOf(p.id))
+    }
+
+    // G\u00E9n\u00E9aPoche 3 : import par FUSION intelligente. Les personnes
+    // d\u00E9j\u00E0 pr\u00E9sentes (m\u00EAme nom et pr\u00E9noms, date de naissance
+    // compatible) sont COMPL\u00C9T\u00C9ES champ par champ (jamais \u00E9cras\u00E9es),
+    // jamais dupliqu\u00E9es ; les autres sont ajout\u00E9es avec de nouveaux ids ;
+    // tous les liens (p\u00E8re, m\u00E8re, conjoint, enfants) sont remapp\u00E9s.
+    fun fusionnerBase(importees: List<Personne>) {
+        val correspondances = mutableMapOf<Long, Long>()
+        fun anneesCompatibles(d1: String, d2: String): Boolean {
+            val a1 = anneeDe(d1)
+            val a2 = anneeDe(d2)
+            return a1 == null || a2 == null || a1 == a2
+        }
+        // Passe 1 : reconnaissance des personnes existantes et compl\u00E9tion
+        // de leurs champs ENCORE VIDES uniquement.
+        importees.forEach { imp ->
+            val doublon = personnes.firstOrNull { q ->
+                q.nom.trim().uppercase() == imp.nom.trim().uppercase() &&
+                q.prenoms.trim().uppercase() == imp.prenoms.trim().uppercase() &&
+                anneesCompatibles(q.dateNaissance, imp.dateNaissance)
+            }
+            if (doublon != null) {
+                correspondances[imp.id] = doublon.id
+                if (doublon.sosa.isBlank() && imp.sosa.isNotBlank()) doublon.sosa = imp.sosa
+                if (doublon.sexe.isBlank() && imp.sexe.isNotBlank()) doublon.sexe = imp.sexe
+                if (doublon.dateNaissance.isBlank()) doublon.dateNaissance = imp.dateNaissance
+                if (doublon.heureNaissance.isBlank()) doublon.heureNaissance = imp.heureNaissance
+                if (doublon.lieuNaissance.isBlank()) doublon.lieuNaissance = imp.lieuNaissance
+                if (doublon.deptNaissance.isBlank()) doublon.deptNaissance = imp.deptNaissance
+                if (doublon.dateBapteme.isBlank()) doublon.dateBapteme = imp.dateBapteme
+                if (doublon.heureBapteme.isBlank()) doublon.heureBapteme = imp.heureBapteme
+                if (doublon.lieuBapteme.isBlank()) doublon.lieuBapteme = imp.lieuBapteme
+                if (doublon.deptBapteme.isBlank()) doublon.deptBapteme = imp.deptBapteme
+                if (doublon.dateMariage.isBlank()) doublon.dateMariage = imp.dateMariage
+                if (doublon.heureMariage.isBlank()) doublon.heureMariage = imp.heureMariage
+                if (doublon.lieuMariage.isBlank()) doublon.lieuMariage = imp.lieuMariage
+                if (doublon.deptMariage.isBlank()) doublon.deptMariage = imp.deptMariage
+                if (doublon.dateDeces.isBlank()) doublon.dateDeces = imp.dateDeces
+                if (doublon.heureDeces.isBlank()) doublon.heureDeces = imp.heureDeces
+                if (doublon.lieuDeces.isBlank()) doublon.lieuDeces = imp.lieuDeces
+                if (doublon.deptDeces.isBlank()) doublon.deptDeces = imp.deptDeces
+                if (doublon.dateSepulture.isBlank()) doublon.dateSepulture = imp.dateSepulture
+                if (doublon.heureSepulture.isBlank()) doublon.heureSepulture = imp.heureSepulture
+                if (doublon.lieuSepulture.isBlank()) doublon.lieuSepulture = imp.lieuSepulture
+                if (doublon.deptSepulture.isBlank()) doublon.deptSepulture = imp.deptSepulture
+                if (doublon.profession.isBlank()) doublon.profession = imp.profession
+                if (doublon.notesLibres.isBlank()) doublon.notesLibres = imp.notesLibres
+                imp.evenementsLibres.forEach { evI ->
+                    if (doublon.evenementsLibres.none {
+                        it.intitule.trim().uppercase() == evI.intitule.trim().uppercase() &&
+                        it.date.trim() == evI.date.trim()
+                    }) {
+                        doublon.evenementsLibres.add(evI.copy(id = Stockage.prochainId(ctx)))
+                    }
+                }
+            }
+        }
+        // Passe 2 : ajout des personnes ABSENTES avec de nouveaux ids.
+        var ajoutees = 0
+        val idsNouvelles = mutableMapOf<Long, Long>()
+        importees.filter { !correspondances.containsKey(it.id) }.forEach { imp ->
+            val nid = Stockage.prochainId(ctx)
+            idsNouvelles[imp.id] = nid
+            personnes.add(imp.copy(id = nid))
+            ajoutees += 1
+        }
+        // Passe 3 : remap des liens vers la base fusionn\u00E9e (aucun doublon).
+        fun cible(idImp: Long): Long = correspondances[idImp] ?: idsNouvelles[idImp] ?: 0L
+        importees.forEach { imp ->
+            val q = personneParId(personnes, cible(imp.id)) ?: return@forEach
+            if (q.pere == 0L && imp.pere != 0L) q.pere = cible(imp.pere)
+            if (q.mere == 0L && imp.mere != 0L) q.mere = cible(imp.mere)
+            if (q.conjoint == 0L && imp.conjoint != 0L) q.conjoint = cible(imp.conjoint)
+            imp.enfants.forEach { idEnf ->
+                val idCible = cible(idEnf)
+                if (idCible != 0L && !q.enfants.contains(idCible)) q.enfants.add(idCible)
+            }
+        }
+        verifierLiensEtRapporter()
+        enregistrer()
+        message = "Fusion termin\u00E9e : " + correspondances.size.toString() + " personne(s) compl\u00E9t\u00E9e(s), " + ajoutees.toString() + " ajout\u00E9e(s). Aucun doublon."
     }
 
     // Vide entierement la base (personnes, journal, actes et images), apres confirmation.
@@ -1078,6 +1173,28 @@ fun AppEcran(
 
     // Synchronisation avec les fiches existantes, ou proposition de creation.
     fun enregistrerActe(a: ActeSaisie, confirme: Boolean = false) {
+        // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement \u00E0 intitul\u00E9 LIBRE (menu Saisie ou
+        // fiche) : aucun acte cr\u00E9\u00E9, l'\u00E9v\u00E9nement est rang\u00E9 dans la
+        // chronologie de la personne (evenementsLibres), tri\u00E9 par date.
+        if (a.type == "E") {
+            val cible = personneParId(personnes, a.personneId)
+            if (cible == null) {
+                message = "\u00C9v\u00E9nement non enregistr\u00E9 : personne concern\u00E9e non identifi\u00E9e."
+                return
+            }
+            val idEv = if (a.acteId != 0L) a.acteId else Stockage.prochainId(ctx)
+            val ev = EvenementLibre(
+                id = idEv,
+                intitule = a.intitule.trim(),
+                date = a.date.trim(), heure = a.heure.trim(),
+                lieu = a.commune.trim(), dept = a.dept.trim()
+            )
+            val i = cible.evenementsLibres.indexOfFirst { it.id == idEv }
+            if (i >= 0) cible.evenementsLibres[i] = ev else cible.evenementsLibres.add(ev)
+            enregistrer(false, setOf(cible.id))
+            message = "\u00C9v\u00E9nement enregistr\u00E9 : " + a.intitule.trim().ifEmpty { "sans intitul\u00E9" }
+            return
+        }
         val nouveaux = nomsNouveaux(a)
         if (nouveaux.isNotEmpty() && !confirme) {
             acteAConfirmer = a
@@ -1176,6 +1293,24 @@ fun AppEcran(
         }
         if (edition) p.profession = a.profession
         else if (p.profession.isBlank() && a.profession.isNotBlank()) p.profession = a.profession
+
+        // G\u00E9n\u00E9aPoche 3 : "Enfant" du menu Saisie : la naissance est
+        // rattach\u00E9e au parent choisi (et \u00E0 son conjoint). Aucun doublon.
+        if (a.type == "N" && a.parentPourEnfant != 0L) {
+            val parentChoisi = personneParId(personnes, a.parentPourEnfant)
+            if (parentChoisi != null && parentChoisi.id != p.id) {
+                if (parentChoisi.sexe == "F") {
+                    if (p.mere == 0L) p.mere = parentChoisi.id
+                } else {
+                    if (p.pere == 0L) p.pere = parentChoisi.id
+                }
+                if (!parentChoisi.enfants.contains(p.id)) parentChoisi.enfants.add(p.id)
+                val conjointDuParent = personneParId(personnes, parentChoisi.conjoint)
+                if (conjointDuParent != null && !conjointDuParent.enfants.contains(p.id)) {
+                    conjointDuParent.enfants.add(p.id)
+                }
+            }
+        }
 
         // Pere et mere de la personne concernee.
         val pere = trouverOuCreer(0L, a.pereNom, a.perePrenoms, "M")
@@ -1468,6 +1603,9 @@ fun AppEcran(
                 retirerTemoin = { type, id -> retirerTemoin(type, id) },
                 basculerSignature = { type, id -> basculerSignature(type, id) },
                 majEvenement = { type, d, h, co, de, rf -> majEvenement(type, d, h, co, de, rf) },
+                // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres de la chronologie.
+                majEvenementLibre = { pers, ev -> modifierEvenementLibre(pers, ev) },
+                supprimerEvenementLibre = { pers, idEv -> supprimerEvenementLibre(pers, idEv) },
                 ajouterEnfant = { nom, prenoms, sexe, date ->
                     ajouterEnfant(nom, prenoms, sexe, date)
                 },
@@ -1486,7 +1624,7 @@ fun AppEcran(
                 },
                 onVoirActe = { acteVisionne = it },
                 onArbreCentre = { arbreCentre = it },
-                exporterGedcom = { uri, sel, ev -> exporterGedcom(uri, sel, ev) },
+                exporterGedcom = { uri, sel, ev, fmt -> exporterGedcom(uri, sel, ev, fmt) },
                 importerGedcom = { uri -> lireGedcom(uri) },
                 viderBase = { viderBase() },
                 enregistrerActe = { a -> enregistrerActe(a) },
@@ -1821,7 +1959,8 @@ fun AppEcran(
             text = {
                 Column {
                     Text(
-                        "La base actuelle (" + personnes.size.toString() + " personnes, pistes et actes) sera REMPLAC\u00C9E par les " + importees.size.toString() + " personnes du fichier. Une sauvegarde automatique (restaurable depuis le menu GEDCOM) sera cr\u00E9\u00E9e avant le remplacement."
+                        "Importer ce fichier : REMPLACER toute la base (" + personnes.size.toString() + " personnes) par les " + importees.size.toString() + " personnes du fichier, ou FUSIONNER sans aucun doublon (les fiches existantes sont compl\u00E9t\u00E9es, jamais dupliqu\u00E9es). Une sauvegarde automatique sera cr\u00E9\u00E9e avant le remplacement.",
+                        style = MaterialTheme.typography.bodySmall
                     )
                     // G2-04 : avertissement listant ce que l import ignore.
                     if (importRapport.isNotEmpty()) {
@@ -1837,10 +1976,16 @@ fun AppEcran(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    remplacerBase(importees)
-                    importConfirme = null
-                }) { Text("Remplacer") }
+                Row {
+                    TextButton(onClick = {
+                        fusionnerBase(importees)
+                        importConfirme = null
+                    }) { Text("Fusionner", color = CouleurVertFonce, fontWeight = FontWeight.Bold) }
+                    TextButton(onClick = {
+                        remplacerBase(importees)
+                        importConfirme = null
+                    }) { Text("Remplacer", color = CouleurRouge, fontWeight = FontWeight.Bold) }
+                }
             },
             dismissButton = {
                 TextButton(onClick = { importConfirme = null }) { Text("Annuler") }
@@ -1848,4 +1993,5 @@ fun AppEcran(
         )
     }
 }
+
 
