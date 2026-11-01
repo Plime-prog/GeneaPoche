@@ -146,7 +146,12 @@ class EtatApplication(
     val deuxColonnes: Boolean = false,
     // G3-19 : une suppression de personne vient d'avoir lieu (Snackbar
     // avec "Annuler").
-    val annulationPossible: Boolean = false
+    val annulationPossible: Boolean = false,
+    // v0.33 : formulaire de saisie d'acte ouvert depuis une fiche, et
+    // acte en attente de confirmation apres enregistrement.
+    val saisieFicheId: Long = 0L,
+    val saisieType: String = "",
+    val acteAConfirmer: ActeSaisie? = null
 )
 
 // G2-09 : toutes les actions de l'ecran regroupees en une seule classe.

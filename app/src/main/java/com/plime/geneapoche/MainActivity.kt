@@ -1401,7 +1401,11 @@ fun AppEcran(
                 // G3-17 : largeur etendue (tablette/paysage).
                 deuxColonnes = classeTaille.widthSizeClass != androidx.compose.material3.windowsizeclass.WindowWidthSizeClass.Compact,
                 // G3-19 : une suppression peut etre annulee.
-                annulationPossible = modele.annulation != null
+                annulationPossible = modele.annulation != null,
+                // v0.33 : saisie d'acte ouverte depuis une fiche.
+                saisieFicheId = modele.saisieFicheId,
+                saisieType = modele.saisieType,
+                acteAConfirmer = modele.acteAConfirmer
             ),
             actions = ActionsApplication(
                 onMessage = { message = it },
