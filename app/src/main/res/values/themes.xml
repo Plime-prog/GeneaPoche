@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- G3-01 : theme sans barre, couleurs de fenetre et de barres definies
+     en clair ET en sombre (voir values-night) : aucun flash blanc au
+     lancement en mode sombre. -->
+<resources>
+    <style name="Theme.GeneaPoche" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/fondAppli</item>
+        <item name="android:statusBarColor">@color/barreAppli</item>
+        <item name="android:navigationBarColor">@color/barreAppli</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- G3-01 : variante sombre du theme (mode sombre du systeme). -->
+<resources>
+    <style name="Theme.GeneaPoche" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/fondAppli</item>
+        <item name="android:statusBarColor">@color/barreAppli</item>
+        <item name="android:navigationBarColor">@color/barreAppli</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

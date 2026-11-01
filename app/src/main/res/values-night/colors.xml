@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- G3-01 : couleurs de fenetre et de barres en mode sombre. -->
+    <color name="fondAppli">#11150E</color>
+    <color name="barreAppli">#0C0F0A</color>
+</resources>

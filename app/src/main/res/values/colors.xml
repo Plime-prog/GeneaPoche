@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#1B5E20</color>
+    <!-- G3-01 : couleurs de fenetre et de barres en mode clair. -->
+    <color name="fondAppli">#FFFFFF</color>
+    <color name="barreAppli">#2E5D3A</color>
 </resources>
