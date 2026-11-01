@@ -120,7 +120,7 @@ class MainActivity : ComponentActivity() {
                 shapes = FormesGeneaPoche,
                 typography = TypographieGeneaPoche
             ) {
-                AppEcran(this, verrou, etatTheme)
+                AppEcran(this, verrou, etatTheme, classeTaille)
             }
         }
     }
@@ -155,7 +155,12 @@ class MainActivity : ComponentActivity() {
 // ---------------------------------------------------------------- Ecran principal
 
 @Composable
-fun AppEcran(ctx: Context, verrou: Verrou, themeChoisi: androidx.compose.runtime.MutableState<String>) {
+fun AppEcran(
+    ctx: Context,
+    verrou: Verrou,
+    themeChoisi: androidx.compose.runtime.MutableState<String>,
+    classeTaille: androidx.compose.material3.windowsizeclass.WindowSizeClass
+) {
     // G2-07 : l'ETAT de l'application vit dans le modele de vue, qui SURVIT
     // a la rotation et au changement de theme ; les alias locaux ci-dessous
     // gardent les memes noms que le reste du code utilise deja.
