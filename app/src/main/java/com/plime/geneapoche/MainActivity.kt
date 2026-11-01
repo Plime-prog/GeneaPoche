@@ -1679,7 +1679,6 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
 
 // ------------------------------------------------------------ Creation du PIN
 
-@Composable
 // G1-12 : validation du PIN : 6 chiffres minimum, codes triviaux refuses
 // (000000, 123456, chiffres identiques), ou phrase secrete alphanumerique
 // d'au moins 8 caracteres.
