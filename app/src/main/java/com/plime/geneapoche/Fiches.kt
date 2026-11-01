@@ -230,7 +230,7 @@ fun EcranPersonne(
                     ) {
                         PastilleNumero(p = p, diametre = 30)
                         Spacer(Modifier.width(8.dp))
-                        Text(p.titre(), fontSize = 16.sp, Modifier.weight(1f, fill = false))
+                        Text(p.titre(), Modifier.weight(1f, fill = false), fontSize = 16.sp)
                         Spacer(Modifier.width(8.dp))
                         val n6 = renseignementsN6(p)
                         Surface(
@@ -846,11 +846,11 @@ fun DialogueEvenementLibre(
         title = { Text("\u00C9v\u00E9nement") },
         text = {
             Column {
-                OutlinedTextField(value = intitule, onValueChange = { intitule = it }, label = { Text("Intitul\u00E9") }, Modifier.fillMaxWidth())
-                OutlinedTextField(value = date, onValueChange = { date = it }, label = { Text("Date (jj/mm/aaaa)") }, Modifier.fillMaxWidth())
-                OutlinedTextField(value = heure, onValueChange = { heure = it }, label = { Text("Heure") }, Modifier.fillMaxWidth())
-                OutlinedTextField(value = lieu, onValueChange = { lieu = it }, label = { Text("Commune") }, Modifier.fillMaxWidth())
-                OutlinedTextField(value = dept, onValueChange = { dept = it }, label = { Text("D\u00E9partement") }, Modifier.fillMaxWidth())
+                OutlinedTextField(value = intitule, onValueChange = { intitule = it }, label = { Text("Intitul\u00E9") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = date, onValueChange = { date = it }, label = { Text("Date (jj/mm/aaaa)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = heure, onValueChange = { heure = it }, label = { Text("Heure") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = lieu, onValueChange = { lieu = it }, label = { Text("Commune") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = dept, onValueChange = { dept = it }, label = { Text("D\u00E9partement") }, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
