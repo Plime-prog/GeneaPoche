@@ -19,6 +19,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -56,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
@@ -173,6 +177,16 @@ fun heureValide(s: String): Boolean {
     if (t.isEmpty()) return true
     val m = Regex("^(\\d{1,2}):(\\d{2})$").find(t) ?: return false
     return m.groupValues[1].toInt() in 0..23 && m.groupValues[2].toInt() in 0..59
+}
+
+// G2-05 : chaque echec affiche un message DISTINCT : le TYPE de l'exception
+// est traduit en fran\u00E7ais, sans jamais reveler de donnee personnelle.
+fun messageErreur(e: Exception, defaut: String): String = when (e) {
+    is java.io.FileNotFoundException -> "Fichier introuvable."
+    is SecurityException -> "Acc\u00E8s refus\u00E9 au fichier."
+    is java.io.IOException -> "Erreur de lecture ou d'\u00E9criture du fichier."
+    is org.json.JSONException -> "Donn\u00E9es illisibles : fichier corrompu ?"
+    else -> defaut
 }
 
 // ---------------------------------------------------------------- Aides numerotation
@@ -391,6 +405,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     var avertissementLectureFerme by remember { mutableStateOf(false) }
     var dialoguePin by remember { mutableStateOf(false) }
     var dialogueDelai by remember { mutableStateOf(false) }
+    // G2-06 : indicateur d'occupation et travaux lourds HORS du thread principal.
+    var occupation by remember { mutableStateOf("") }
+    val scopeTravail = rememberCoroutineScope()
 
     // Recopie structurelle des listes : force Compose a rafraichir l'affichage
     // meme quand une Personne est modifiee en place (correctif mise a jour immediate).
@@ -481,7 +498,13 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         val ok2 = Stockage.sauverJournal(ctx, pistes)
         val ok3 = Stockage.sauverActes(ctx, actes)
         rafraichirTout()
-        message = if (ok1 && ok2 && ok3) "" else "Echec de l'enregistrement."
+        // G2-05 : message distinct selon le fichier en echec.
+        message = when {
+            ok1 && ok2 && ok3 -> ""
+            !ok1 -> "\u00C9chec de l'enregistrement des personnes."
+            !ok2 -> "\u00C9chec de l'enregistrement du journal."
+            else -> "\u00C9chec de l'enregistrement des actes."
+        }
         return ok1 && ok2 && ok3
     }
 
@@ -861,60 +884,74 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     }
 
     fun exporterGedcom(uri: Uri, sousEnsemble: Set<Long>?, exclureVivants: Boolean = false) {
-        try {
-            // G1-16 : option exclure les personnes vivantes (sans deces
-            // connu, nees il y a moins de 100 ans).
-            val annee = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-            val exportables = if (exclureVivants) personnes.filter { !estVivante(it, annee) } else personnes
-            val sous = if (exclureVivants && sousEnsemble != null) sousEnsemble.filter { id -> exportables.any { it.id == id } }.toSet() else sousEnsemble
-            val texte = construireGedcom(exportables, sous, actes)
-            ctx.contentResolver.openOutputStream(uri)?.use { sortie ->
-                sortie.write(texte.toByteArray(Charsets.UTF_8))
+        // G2-06 : export HORS du thread principal, indicateur a l'ecran.
+        occupation = "Export GEDCOM en cours..."
+        scopeTravail.launch(Dispatchers.IO) {
+            try {
+                // G1-16 : option exclure les personnes vivantes (sans deces
+                // connu, nees il y a moins de 100 ans).
+                val annee = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+                val exportables = if (exclureVivants) personnes.filter { !estVivante(it, annee) } else personnes
+                val sous = if (exclureVivants && sousEnsemble != null) sousEnsemble.filter { id -> exportables.any { it.id == id } }.toSet() else sousEnsemble
+                val texte = construireGedcom(exportables, sous, actes)
+                ctx.contentResolver.openOutputStream(uri)?.use { sortie ->
+                    sortie.write(texte.toByteArray(Charsets.UTF_8))
+                }
+                val n = if (sous == null) exportables.size else texte.split("\n").count { it.endsWith(" INDI") }
+                message = "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "")
+            } catch (e: Exception) {
+                // G2-05 : message distinct selon le type d'echec.
+                message = messageErreur(e, "\u00C9chec de l'export GEDCOM.")
+            } finally {
+                occupation = ""
             }
-            val n = if (sous == null) exportables.size else texte.split("\n").count { it.endsWith(" INDI") }
-            message = "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "")
-        } catch (e: Exception) {
-            message = "Echec de l'export GEDCOM."
         }
     }
 
     fun lireGedcom(uri: Uri) {
-        try {
-            // G1-17 : taille limite (10 Mo) et lecture par flux borne,
-            // jamais de readText() sans limite sur un fichier arbitraire.
-            val taille = try {
-                ctx.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
-            } catch (e: Exception) { -1L }
-            if (taille > 10_000_000L) {
-                message = "Fichier trop volumineux (plus de 10 Mo) : import refus\u00E9."
-                return
-            }
-            // G2-04 : lecture par octets born\u00E9e puis d\u00E9tection de l encodage
-            // (BOM UTF-16 LE/BE, UTF-8 strict, repli ANSI) avant l analyse.
-            val octets = ctx.contentResolver.openInputStream(uri)?.use { entree ->
-                val tampon = ByteArrayOutputStream()
-                val morceau = ByteArray(64 * 1024)
-                while (true) {
-                    val n = entree.read(morceau)
-                    if (n <= 0) break
-                    tampon.write(morceau, 0, n)
-                    if (tampon.size() > 10_000_000) return@use null
+        // G2-06 : lecture et analyse HORS du thread principal.
+        occupation = "Import GEDCOM en cours..."
+        scopeTravail.launch(Dispatchers.IO) {
+            try {
+                // G1-17 : taille limite (10 Mo) et lecture par flux borne,
+                // jamais de readText() sans limite sur un fichier arbitraire.
+                val taille = try {
+                    ctx.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
+                } catch (e: Exception) { -1L }
+                if (taille > 10_000_000L) {
+                    message = "Fichier trop volumineux (plus de 10 Mo) : import refus\u00E9."
+                    return@launch
                 }
-                tampon.toByteArray()
+                // G2-04 : lecture par octets born\u00E9e puis d\u00E9tection de l encodage
+                // (BOM UTF-16 LE/BE, UTF-8 strict, repli ANSI) avant l analyse.
+                val octets = ctx.contentResolver.openInputStream(uri)?.use { entree ->
+                    val tampon = ByteArrayOutputStream()
+                    val morceau = ByteArray(64 * 1024)
+                    while (true) {
+                        val n = entree.read(morceau)
+                        if (n <= 0) break
+                        tampon.write(morceau, 0, n)
+                        if (tampon.size() > 10_000_000) return@use null
+                    }
+                    tampon.toByteArray()
+                }
+                if (octets == null || octets.isEmpty()) {
+                    message = "Fichier GEDCOM illisible (ou trop volumineux)."
+                    return@launch
+                }
+                val resultat = importerGedcomRapporte(decoderGedcom(octets))
+                if (resultat.personnes.isEmpty()) {
+                    message = "Aucune personne trouv\u00E9e dans ce GEDCOM."
+                    return@launch
+                }
+                importConfirme = resultat.personnes
+                importRapport = resultat.ignores
+            } catch (e: Exception) {
+                // G2-05 : message distinct selon le type d'echec.
+                message = messageErreur(e, "\u00C9chec de la lecture du GEDCOM.")
+            } finally {
+                occupation = ""
             }
-            if (octets == null || octets.isEmpty()) {
-                message = "Fichier GEDCOM illisible (ou trop volumineux)."
-                return
-            }
-            val resultat = importerGedcomRapporte(decoderGedcom(octets))
-            if (resultat.personnes.isEmpty()) {
-                message = "Aucune personne trouv\u00E9e dans ce GEDCOM."
-                return
-            }
-            importConfirme = resultat.personnes
-            importRapport = resultat.ignores
-        } catch (e: Exception) {
-            message = "Echec de la lecture du GEDCOM."
         }
     }
 
@@ -960,40 +997,61 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
 
     // G1-08 : sauvegarde chiffree exportable (.gpbak) protegee par phrase secrete.
     fun sauvegarderBase(uri: Uri, phrase: String) {
-        if (Sauvegarde.exporter(ctx, uri, phrase, personnes, pistes, actes)) {
-            message = "Sauvegarde .gpbak cr\u00E9\u00E9e : conservez-la et notez la phrase secr\u00E8te."
-        } else {
-            message = "\u00C9chec de la sauvegarde .gpbak."
+        // G2-06 : chiffrement PBKDF2 HORS du thread principal.
+        occupation = "Sauvegarde .gpbak en cours..."
+        scopeTravail.launch(Dispatchers.IO) {
+            try {
+                if (Sauvegarde.exporter(ctx, uri, phrase, personnes, pistes, actes)) {
+                    message = "Sauvegarde .gpbak cr\u00E9\u00E9e : conservez-la et notez la phrase secr\u00E8te."
+                } else {
+                    message = "\u00C9chec de la sauvegarde .gpbak (v\u00E9rifiez le fichier et la phrase)."
+                }
+            } catch (e: Exception) {
+                message = messageErreur(e, "\u00C9chec de la sauvegarde .gpbak.")
+            } finally {
+                occupation = ""
+            }
         }
     }
 
     // G1-08 : restauration d'une sauvegarde .gpbak (phrase secrete exige).
     fun restaurerSauvegardeBase(uri: Uri, phrase: String) {
-        val contenu = Sauvegarde.importer(ctx, uri, phrase)
-        if (contenu == null) {
-            message = "Sauvegarde illisible : v\u00E9rifiez le fichier et la phrase secr\u00E8te."
-            return
+        // G2-06 : dechiffrement HORS du thread principal.
+        occupation = "Restauration .gpbak en cours..."
+        scopeTravail.launch(Dispatchers.IO) {
+            try {
+                val contenu = Sauvegarde.importer(ctx, uri, phrase)
+                if (contenu == null) {
+                    message = "Sauvegarde illisible : v\u00E9rifiez le fichier et la phrase secr\u00E8te."
+                    return@launch
+                }
+                personnes.clear()
+                personnes.addAll(contenu.personnes)
+                pistes.clear()
+                pistes.addAll(contenu.pistes)
+                actes.forEach { Stockage.supprimerImage(ctx, it.id) }
+                actes.clear()
+                actes.addAll(contenu.actes)
+                contenu.actes.forEach { a ->
+                    contenu.images[a.id]?.let { octets -> Stockage.sauverImage(ctx, a.id, octets) }
+                }
+                pileFiches.clear()
+                idOuvert = 0L
+                val premier = personnes.filter { it.sosa.trim().toLongOrNull() != null }.minByOrNull { it.sosa.trim().toLong() }
+                if (premier != null) {
+                    sosaCujus = premier.sosa.trim().toLongOrNull() ?: 1L
+                    Stockage.definirCujus(ctx, premier.id, sosaCujus)
+                    arbreCentre = premier.id
+                }
+                enregistrer()
+                message = "Sauvegarde restaur\u00E9e : " + contenu.personnes.size.toString() + " personnes."
+            } catch (e: Exception) {
+                // G2-05 : message distinct selon le type d'echec.
+                message = messageErreur(e, "\u00C9chec de la restauration .gpbak.")
+            } finally {
+                occupation = ""
+            }
         }
-        personnes.clear()
-        personnes.addAll(contenu.personnes)
-        pistes.clear()
-        pistes.addAll(contenu.pistes)
-        actes.forEach { Stockage.supprimerImage(ctx, it.id) }
-        actes.clear()
-        actes.addAll(contenu.actes)
-        contenu.actes.forEach { a ->
-            contenu.images[a.id]?.let { octets -> Stockage.sauverImage(ctx, a.id, octets) }
-        }
-        pileFiches.clear()
-        idOuvert = 0L
-        val premier = personnes.filter { it.sosa.trim().toLongOrNull() != null }.minByOrNull { it.sosa.trim().toLong() }
-        if (premier != null) {
-            sosaCujus = premier.sosa.trim().toLongOrNull() ?: 1L
-            Stockage.definirCujus(ctx, premier.id, sosaCujus)
-            arbreCentre = premier.id
-        }
-        enregistrer()
-        message = "Sauvegarde restaur\u00E9e : " + contenu.personnes.size.toString() + " personnes."
     }
 
     // G1-09 : restauration de la base sauvegardee automatiquement avant un import GEDCOM.
@@ -1264,17 +1322,28 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     }
 
     fun ajouterActe(personneId: Long, uri: Uri, type: String, titre: String) {
-        val jpg = compresserVersJpeg(ctx, uri)
-        if (jpg == null) {
-            message = "Impossible de lire cette image."
-            return
-        }
-        val nouvelId = (actes.maxOfOrNull { it.id } ?: 0L) + 1L
-        if (Stockage.sauverImage(ctx, nouvelId, jpg)) {
-            actes.add(Acte(nouvelId, personneId, type, titre, System.currentTimeMillis()))
-            enregistrer()
-        } else {
-            message = "Echec de l'enregistrement de l'image."
+        // G2-06 : compression d'une grande image HORS du thread principal.
+        occupation = "Traitement de l'image..."
+        scopeTravail.launch(Dispatchers.IO) {
+            try {
+                val jpg = compresserVersJpeg(ctx, uri)
+                if (jpg == null) {
+                    message = "Impossible de lire cette image."
+                    return@launch
+                }
+                val nouvelId = (actes.maxOfOrNull { it.id } ?: 0L) + 1L
+                if (Stockage.sauverImage(ctx, nouvelId, jpg)) {
+                    actes.add(Acte(nouvelId, personneId, type, titre, System.currentTimeMillis()))
+                    enregistrer()
+                } else {
+                    message = "\u00C9chec de l'enregistrement de l'image."
+                }
+            } catch (e: Exception) {
+                // G2-05 : message distinct selon le type d'echec.
+                message = messageErreur(e, "\u00C9chec de l'enregistrement de l'image.")
+            } finally {
+                occupation = ""
+            }
         }
     }
 
@@ -1283,15 +1352,21 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
     // tout fichier illisible BLOQUE l'enregistrement (rien n'est ecrase).
     LaunchedEffect(verrou.deverrouille) {
         if (verrou.deverrouille && !charge) {
-            val rp = Stockage.charger(ctx)
-            val rj = Stockage.chargerJournal(ctx)
-            val ra = Stockage.chargerActes(ctx)
+            // G2-06 : dechiffrement HORS du thread principal.
+            occupation = "Chargement des donn\u00E9es..."
+            val charges = withContext(Dispatchers.IO) {
+                Triple(Stockage.charger(ctx), Stockage.chargerJournal(ctx), Stockage.chargerActes(ctx))
+            }
+            val rp = charges.first
+            val rj = charges.second
+            val ra = charges.third
             personnes.addAll(rp.liste)
             pistes.addAll(rj.liste)
             actes.addAll(ra.liste)
             sosaCujus = Stockage.lireSosaCujus(ctx)
             fichiersIllisibles = listOf(rp, rj, ra).filter { it.illisible }.map { it.nom }
             charge = true
+            occupation = ""
             if (fichiersIllisibles.isEmpty()) completerJournal()
         }
         // G1-14 : au verrouillage, PLUS AUCUNE donnee ne reste en memoire
@@ -1335,6 +1410,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             }
         )
     } else {
+        Box {
         EcranApplication(
             personnes = personnes,
             cujus = personneParId(personnes, idDuCujus()),
@@ -1410,6 +1486,23 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             reglagesVerrouillage = { dialogueDelai = true },
             validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) }
         )
+        // G2-06 : indicateur d'occupation (image, GEDCOM, sauvegarde).
+        if (occupation.isNotEmpty()) {
+            Surface(
+                Modifier.fillMaxWidth(),
+                color = CouleurVertPale
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Text(occupation, style = MaterialTheme.typography.labelSmall, color = CouleurVertFonce)
+                }
+            }
+        }
+        }
     }
 
     // G1-15 : changement de code PIN (l'ancien est exige).
@@ -1885,6 +1978,7 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
         }
     }
 }
+
 
 
 
