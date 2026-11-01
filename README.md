@@ -14,7 +14,7 @@ Un outil léger pour :
 
 Périmètre : France uniquement, actes N/B/M/D/S.
 
-Principales fonctions : numérotation Sosa-Stradonitz et d'Aboville entièrement automatique (rien ne se saisit), saisie par acte d'état civil (témoins, signataires, transcription), calendrier républicain converti, contrôle de cohérence, arbre 3 générations, recherche par nom et lieu, mode sombre, mise en page adaptative tablette/paysage.
+Principales fonctions : numérotation Sosa-Stradonitz et d'Aboville entièrement automatique (rien ne se saisit), fiche par événements (N/M/D regroupés, ordre chronologique) éditable par appui long via la saisie d'acte pré-remplie, saisie par acte d'état civil (témoins, signataires, transcription), calendrier républicain converti, contrôle de cohérence, arbre 3 générations, recherche par nom et lieu, mode sombre, mise en page adaptative tablette/paysage.
 
 ## Modèle de sécurité — exact, avec ses limites
 
