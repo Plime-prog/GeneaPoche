@@ -149,9 +149,9 @@ fun ageAffiche(dateNaissance: String, dateEvenement: String): String {
 
 // P\u00E9riode r\u00E9aliste d'un \u00E9v\u00E9nement, indiqu\u00E9e sous le champ date de
 // la saisie. Purement indicative, jamais bloquante.
-fun periodeRealisteTxt(type: String, p: Personne): String {
-    val an = anneeDe(p.dateNaissance)
-    val deces = anneeDe(p.dateDeces)
+fun periodeRealisteTxt(type: String, p: Personne?): String {
+    val an = anneeDe(p?.dateNaissance ?: "")
+    val deces = anneeDe(p?.dateDeces ?: "")
     return when (type) {
         "B" -> if (an == null) "Bapt\u00EAme : dans les 2 ans suivant la naissance" else "Bapt\u00EAme : entre " + an.toString() + " et " + (an + 2).toString()
         "M" -> if (an == null) "Mariage : entre 16 et 40 ans" else "Mariage : entre " + (an + 16).toString() + " et " + (an + 40).toString()
@@ -168,10 +168,11 @@ fun periodeRealisteTxt(type: String, p: Personne): String {
 fun avertissementCoherence(
     type: String,
     date: String,
-    p: Personne,
+    p: Personne?,
     conjoint: Personne?,
     parentPourEnfant: Personne?
 ): String {
+    if (p == null) return ""
     val ae = anneeDe(date) ?: return ""
     val an = anneeDe(p.dateNaissance)
     val deces = anneeDe(p.dateDeces)
