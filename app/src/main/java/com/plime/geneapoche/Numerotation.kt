@@ -114,3 +114,78 @@ fun renumeroter(personnes: MutableList<Personne>, cujusId: Long, sosaDeBase: Lon
         }
     }
 }
+
+// G2-17 : controle et reparation des liens familiaux (identifiants orphelins,
+// parent egal a soi-meme, doublons d'enfants, temoins ou signataires disparus).
+// Les cycles pere/mere sont signales sans etre casses automatiquement :
+// renumeroter les supporte deja (il marque les personnes traitees, donc ne
+// boucle jamais). Retourne un RAPPORT, une ligne par anomalie corrigee.
+fun verifierLiens(personnes: MutableList<Personne>): List<String> {
+    val rapports = mutableListOf<String>()
+    val ids = personnes.map { it.id }.toHashSet()
+    fun absent(id: Long) = id != 0L && !ids.contains(id)
+    personnes.forEach { p ->
+        if (p.pere == p.id || absent(p.pere)) {
+            if (p.pere != 0L) rapports.add("Lien p\u00E8re invalide retir\u00E9 : " + p.titre() + ".")
+            p.pere = 0L
+        }
+        if (p.mere == p.id || absent(p.mere)) {
+            if (p.mere != 0L) rapports.add("Lien m\u00E8re invalide retir\u00E9 : " + p.titre() + ".")
+            p.mere = 0L
+        }
+        if (p.conjoint == p.id || absent(p.conjoint)) {
+            if (p.conjoint != 0L) rapports.add("Lien conjoint invalide retir\u00E9 : " + p.titre() + ".")
+            p.conjoint = 0L
+        }
+        val suppInconnus = p.conjointsSupp.filter { absent(it) || it == p.id }
+        if (suppInconnus.isNotEmpty()) {
+            p.conjointsSupp.removeAll(suppInconnus)
+            rapports.add("Conjoint suppl\u00E9mentaire inconnu retir\u00E9 : " + p.titre() + ".")
+        }
+        val enfantsInconnus = p.enfants.filter { absent(it) || it == p.id }
+        if (enfantsInconnus.isNotEmpty()) {
+            p.enfants.removeAll(enfantsInconnus)
+            rapports.add("Enfant inconnu retir\u00E9 : " + p.titre() + ".")
+        }
+        if (p.enfants.size != p.enfants.distinct().size) {
+            val distinct = p.enfants.distinct()
+            p.enfants.clear()
+            p.enfants.addAll(distinct)
+            rapports.add("Doublon d'enfants corrig\u00E9 : " + p.titre() + ".")
+        }
+        // Temoins et signataires disparus (0L = convention "pere", conserve).
+        listOf(
+            "T\u00E9moins inconnus retir\u00E9s" to listOf(
+                p.temoinsN, p.temoinsB, p.temoinsM, p.temoinsD, p.temoinsS
+            ),
+            "Signataires inconnus retir\u00E9s" to listOf(
+                p.signatairesN, p.signatairesB, p.signatairesM, p.signatairesD, p.signatairesS
+            )
+        ).forEach { paire ->
+            var nettoyage = false
+            paire.second.forEach { liste ->
+                val perdus = liste.filter { absent(it) }
+                if (perdus.isNotEmpty()) {
+                    liste.removeAll(perdus)
+                    nettoyage = true
+                }
+            }
+            if (nettoyage) rapports.add(paire.first + " : " + p.titre() + ".")
+        }
+    }
+    // Cycles pere/mere : signales une seule fois par paire, a corriger a la main.
+    val vus = mutableSetOf<Long>()
+    personnes.forEach { p ->
+        val pp = personneParId(personnes, p.pere)
+        if (pp != null && pp.pere == p.id && !vus.contains(p.id)) {
+            vus.add(p.id); vus.add(pp.id)
+            rapports.add("Cycle p\u00E8re \u00E0 corriger : " + p.titre() + " / " + pp.titre() + ".")
+        }
+        val pm = personneParId(personnes, p.mere)
+        if (pm != null && pm.mere == p.id && !vus.contains(p.id)) {
+            vus.add(p.id); vus.add(pm.id)
+            rapports.add("Cycle m\u00E8re \u00E0 corriger : " + p.titre() + " / " + pm.titre() + ".")
+        }
+    }
+    return rapports.distinct()
+}

@@ -202,6 +202,9 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         val maintenant = System.currentTimeMillis()
         val aRetirer = mutableListOf<Piste>()
         pistes.filter { !it.faite }.forEach { ps ->
+            // G2-17 : les rapports d'integrite restent dans le journal
+            // jusqu'a leur suppression manuelle.
+            if (ps.categorie == "controle") return@forEach
             val pers = personneParId(personnes, ps.personneId)
             // Les pistes de validation (coche negative d'une information)
             // restent ouvertes jusqu'a re-validation manuelle.
@@ -268,6 +271,26 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         return ok1 && ok2 && ok3
     }
 
+    // G2-17 : controle d'integrite des liens familiaux (chargement, import,
+    // restauration). Les anomalies sont reparees par verifierLiens() et le
+    // RAPPORT est consigne dans le journal de recherches (categorie
+    // "controle", supprimable a la main, jamais purge automatiquement).
+    fun verifierLiensEtRapporter() {
+        val rapports = verifierLiens(personnes)
+        rapports.forEach { r ->
+            val nouvelId = (pistes.maxOfOrNull { it.id } ?: 0L) + 1L
+            pistes.add(
+                Piste(
+                    id = nouvelId,
+                    texte = r,
+                    creation = System.currentTimeMillis(),
+                    type = "A",
+                    categorie = "controle"
+                )
+            )
+        }
+    }
+
     // G1-04 : restauration explicite depuis la copie .bak des fichiers
     // illisibles, puis rechargement complet. L'enregistrement redevient
     // possible seulement si tout est de nouveau lisible.
@@ -284,6 +307,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         actes.addAll(ra.liste)
         fichiersIllisibles = listOf(rp, rj, ra).filter { it.illisible }.map { it.nom }
         if (fichiersIllisibles.isEmpty()) {
+            verifierLiensEtRapporter()
             completerJournal()
             message = "Base restaur\u00E9e depuis la copie .bak."
         } else {
@@ -736,6 +760,8 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             Stockage.definirCujus(ctx, premier.id, sosaCujus)
         }
         arbreCentre = premier?.id ?: 0L
+        // G2-17 : liens de l'import verifies, rapports consignes au journal.
+        verifierLiensEtRapporter()
         enregistrer()
         message = importees.size.toString() + " personnes import\u00E9es."
     }
@@ -803,6 +829,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
                     Stockage.definirCujus(ctx, premier.id, sosaCujus)
                     arbreCentre = premier.id
                 }
+                verifierLiensEtRapporter()
                 enregistrer()
                 message = "Sauvegarde restaur\u00E9e : " + contenu.personnes.size.toString() + " personnes."
             } catch (e: Exception) {
@@ -836,6 +863,7 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
         fichiersIllisibles = listOf(rp, rj, ra).filter { it.illisible }.map { it.nom }
         pileFiches.clear()
         idOuvert = 0L
+        verifierLiensEtRapporter()
         message = "Base d'avant import restaur\u00E9e."
         rafraichirTout()
     }
@@ -1127,7 +1155,10 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             fichiersIllisibles = listOf(rp, rj, ra).filter { it.illisible }.map { it.nom }
             charge = true
             occupation = ""
-            if (fichiersIllisibles.isEmpty()) completerJournal()
+            if (fichiersIllisibles.isEmpty()) {
+                verifierLiensEtRapporter()
+                completerJournal()
+            }
         }
         // G1-14 : au verrouillage, PLUS AUCUNE donnee ne reste en memoire
         // (personnes, journal, actes, fiche ouverte, pile de navigation).
@@ -1336,226 +1367,3 @@ fun AppEcran(ctx: Context, verrou: Verrou) {
             text = {
                 Column {
                     Text("Verrouillage apr\u00E8s un passage en arri\u00E8re-plan ou l'extinction de l'\u00E9cran :", style = MaterialTheme.typography.bodySmall)
-                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 0L); dialogueDelai = false; message = "Verrouillage imm\u00E9diat." }, Modifier.fillMaxWidth()) { Text("Imm\u00E9diat (par d\u00E9faut)") }
-                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 60_000L); dialogueDelai = false; message = "Verrouillage apr\u00E8s 1 minute." }, Modifier.fillMaxWidth()) { Text("Apr\u00E8s 1 minute") }
-                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 300_000L); dialogueDelai = false; message = "Verrouillage apr\u00E8s 5 minutes." }, Modifier.fillMaxWidth()) { Text("Apr\u00E8s 5 minutes") }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { dialogueDelai = false }) { Text("Fermer") }
-            }
-        )
-    }
-
-    // G1-04 : donnees illisibles -> affichage + restauration depuis la copie .bak
-    if (fichiersIllisibles.isNotEmpty() && !avertissementLectureFerme) {
-        AlertDialog(
-            onDismissRequest = { },
-            title = { Text("Donn\u00E9es illisibles") },
-            text = {
-                Text(
-                    fichiersIllisibles.size.toString() + " fichier(s) de donn\u00E9es ne se lisent plus, pas plus que leur copie .bak. L'enregistrement est bloqu\u00E9 pour ne rien \u00E9craser : restaurez la derni\u00E8re copie valide ou fermez sans rien modifier."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { restaurerDepuisBak() }) { Text("Restaurer la copie .bak") }
-            },
-            dismissButton = {
-                TextButton(onClick = { avertissementLectureFerme = true }) { Text("Fermer") }
-            }
-        )
-    }
-
-    acteVisionne?.let { a ->
-        VisionneuseActe(ctx = ctx, acte = a, onFermer = { acteVisionne = null })
-    }
-
-    // Confirmation : noms saisis inconnus -> creer de nouvelles fiches
-    // (numerotation deduite automatiquement) ou annuler.
-    acteAConfirmer?.let { a ->
-        val nouveaux = nomsNouveaux(a)
-        AlertDialog(
-            onDismissRequest = { acteAConfirmer = null },
-            title = { Text("Noms inconnus") },
-            text = {
-                Column {
-                    Text("Ces noms ne correspondent \u00E0 aucune fiche existante :")
-                    nouveaux.forEach { n ->
-                        Text("\u2022 " + n, fontWeight = FontWeight.Bold)
-                    }
-                    Text(
-                        "Cr\u00E9er de nouvelles fiches (la num\u00E9rotation sera d\u00E9duite automatiquement) ? Pour synchroniser avec une fiche existante, annulez et choisissez-la dans la saisie.",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    acteAConfirmer = null
-                    enregistrerActe(a, true)
-                }) { Text("Cr\u00E9er les fiches") }
-            },
-            dismissButton = {
-                TextButton(onClick = { acteAConfirmer = null }) { Text("Annuler") }
-            }
-        )
-    }
-
-    // Dialogue : choix du de cujus et de son n Sosa (pas forcement 1).
-    // Toute la numerotation Sosa / d'Aboville en decoule automatiquement.
-    // Dialogue : choix du de cujus (liste des personnes avec leur numero).
-    // Toucher une personne ouvre le dialogue d'edition de son n Sosa.
-    if (cujusDialogue) {
-        LaunchedEffect(cujusDialogue) {
-            val pre = cujusPreselec
-            if (cujusDialogue && pre != null) {
-                cujusEdite = pre
-                cujusPreselec = null
-            }
-        }
-        AlertDialog(
-            onDismissRequest = { cujusDialogue = false },
-            title = { Text("De cujus") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text(
-                        "Touchez la personne de r\u00E9f\u00E9rence : son n\u00B0 Sosa (pas forc\u00E9ment 1) sera demand\u00E9, puis toute la num\u00E9rotation Sosa et d'Aboville sera recalcul\u00E9e.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
-                        personnes.sortedWith(
-                            compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
-                        ).forEach { cand ->
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable { cujusEdite = cand }
-                                    .background(
-                                        if (idDuCujus() == cand.id) CouleurVertPale
-                                        else androidx.compose.ui.graphics.Color.Transparent
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 2.dp)
-                            ) {
-                                // Une seule ligne, tronquee a l'ellipsis ; plus de numero.
-                                Text(
-                                    cand.titre(),
-                                    Modifier.weight(1f),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { cujusDialogue = false }) { Text("Fermer") }
-            }
-        )
-    }
-
-    // Dialogue d'edition du n Sosa du de cujus choisi : APERCU PUR pendant la
-    // saisie (aucune donnee n'est modifiee avant Enregistrer), puis recalcule
-    // complet + sauvegarde a l'enregistrement, avec message de confirmation.
-    if (cujusEdite != null) {
-        val cible = cujusEdite!!
-        var numCujus by remember(cible.id) {
-            mutableStateOf((cible.sosa.trim().toLongOrNull() ?: sosaCujus).toString())
-        }
-        val numSaisi = numCujus.trim().toLongOrNull() ?: 0L
-        val numValide = numSaisi >= 1L
-        // Apercu SANS toucher aux donnees : le numero du de cujus, puis les
-        // numeros qui en decouleront (pere 2n, mere 2n+1, enfants n.1, n.2...).
-        fun apercuNumerotation(n: Long): String {
-            val m = mutableListOf<String>()
-            m.add(cible.titre() + " : Sosa " + n.toString())
-            if (cible.pere != 0L) m.add("P\u00E8re : Sosa " + (2L * n).toString())
-            if (cible.mere != 0L) m.add("M\u00E8re : Sosa " + (2L * n + 1L).toString())
-            if (cible.enfants.isNotEmpty()) {
-                m.add("Enfants : d'Aboville " + n.toString() + ".1 \u00E0 " + n.toString() + "." + cible.enfants.size.toString())
-            }
-            return m.joinToString("\n")
-        }
-        fun annulerCujus() {
-            cujusEdite = null
-        }
-        AlertDialog(
-            onDismissRequest = { annulerCujus() },
-            title = { Text("De cujus : " + cible.titre()) },
-            text = {
-                Column {
-                    Text(
-                        "N\u00B0 Sosa du de cujus : l'aper\u00E7u se met \u00E0 jour en direct ; Enregistrer recalcule et applique toute la num\u00E9rotation.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    OutlinedTextField(
-                        value = numCujus,
-                        onValueChange = { t -> numCujus = t.filter { it.isDigit() } },
-                        label = { Text("N\u00B0 Sosa (chiffres)") },
-                        isError = !numValide,
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    )
-                    if (numValide) {
-                        Text(
-                            apercuNumerotation(numSaisi),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = CouleurVertFonce,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        definirCujus(cible, numSaisi)
-                        cujusEdite = null
-                        cujusDialogue = false
-                    },
-                    enabled = numValide
-                ) { Text("Enregistrer") }
-            },
-            dismissButton = {
-                TextButton(onClick = { annulerCujus() }) { Text("Annuler") }
-            }
-        )
-    }
-
-    importConfirme?.let { importees ->
-        AlertDialog(
-            onDismissRequest = { importConfirme = null },
-            title = { Text("Importer ce GEDCOM ?") },
-            text = {
-                Column {
-                    Text(
-                        "La base actuelle (" + personnes.size.toString() + " personnes, pistes et actes) sera REMPLAC\u00C9E par les " + importees.size.toString() + " personnes du fichier. Une sauvegarde automatique (restaurable depuis le menu GEDCOM) sera cr\u00E9\u00E9e avant le remplacement."
-                    )
-                    // G2-04 : avertissement listant ce que l import ignore.
-                    if (importRapport.isNotEmpty()) {
-                        Text(
-                            "\u00C9l\u00E9ments ignor\u00E9s par l import (aucune perte silencieuse) :",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                        importRapport.take(6).forEach { ligneIgn ->
-                            Text("\u2022 " + ligneIgn, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    remplacerBase(importees)
-                    importConfirme = null
-                }) { Text("Remplacer") }
-            },
-            dismissButton = {
-                TextButton(onClick = { importConfirme = null }) { Text("Annuler") }
-            }
-        )
-    }
-}
-

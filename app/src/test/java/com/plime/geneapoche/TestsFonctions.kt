@@ -238,6 +238,40 @@ class TestsFonctions {
         assertEquals("DUPONT Jean", p.titre())
     }
 
+    // ---------------------------------------------------------- Integrite des liens (G2-17)
+
+    @Test
+    fun verifierLiensRepareEtRapporte() {
+        val a = Personne(id = 1L, nom = "A")
+        val b = Personne(id = 2L, nom = "B")
+        val c = Personne(id = 3L, nom = "C")
+        val liste = mutableListOf(a, b, c)
+        a.pere = 99L
+        b.mere = 2L
+        c.enfants.add(7L)
+        c.enfants.add(1L)
+        c.enfants.add(1L)
+        val rapports = verifierLiens(liste)
+        assertEquals(0L, a.pere)
+        assertEquals(0L, b.mere)
+        assertEquals(listOf(1L), c.enfants)
+        assertTrue(rapports.size >= 3)
+    }
+
+    @Test
+    fun renumeroterSurvitAuxCyclesPere() {
+        val a = Personne(id = 1L, nom = "A")
+        val b = Personne(id = 2L, nom = "B")
+        a.pere = 2L
+        b.pere = 1L
+        val liste = mutableListOf(a, b)
+        renumeroter(liste, 1L)
+        assertEquals("1", a.sosa)
+        assertEquals("2", b.sosa)
+        // Le cycle est signale par verifierLiens, jamais casse automatiquement.
+        assertTrue(verifierLiens(liste).any { it.contains("Cycle") })
+    }
+
     // ---------------------------------------------------------- Messages d'erreur (G2-05)
 
     @Test
