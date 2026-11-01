@@ -72,6 +72,11 @@ class ModeleVueGeneaPoche : ViewModel() {
     var dialogueDelai by mutableStateOf(false)
     // G2-06 : indicateur d'occupation (image, GEDCOM, sauvegarde).
     var occupation by mutableStateOf("")
+    // v0.33 : formulaire de saisie d'acte ouvert DEPUIS UNE FICHE,
+    // pre-renseigne avec les informations connues de la personne.
+    var saisieFicheId by mutableStateOf(0L)
+    var saisieType by mutableStateOf("")
     // G3-19 : derniere suppression annulable (Snackbar "Annuler").
     var annulation by mutableStateOf<AnnulationSuppression?>(null)
 }
+

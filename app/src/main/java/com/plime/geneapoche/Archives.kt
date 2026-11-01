@@ -1,15 +1,14 @@
 package com.plime.geneapoche
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import java.net.URLEncoder
-
-// ---------------------------------------------------------------- Archives departementales
+// ---------------------------------------------------------------- Departements
+// v0.33 : PLUS AUCUNE liaison Internet dans l'application (decision
+// utilisateur). Ce fichier ne garde que la table des departements et le
+// numero extrait d'un lieu, utilises pour l'affichage ("Roubaix (59)") et
+// pour l'export GEDCOM. Aucune URL, aucun navigateur, aucune intention.
 
 // Noms des departements (numerotation officielle).
 // Les lieux saisis dans les fiches peuvent comporter le numero entre parentheses :
-// "Roubaix (59)" -> AD du Nord.
+// "Roubaix (59)" -> Nord.
 val NomsDepartements: Map<Int, String> = linkedMapOf(
     1 to "Ain", 2 to "Aisne", 3 to "Allier", 4 to "Alpes-de-Haute-Provence", 5 to "Hautes-Alpes",
     6 to "Alpes-Maritimes", 7 to "Ard\u00E8che", 8 to "Ardennes", 9 to "Ari\u00E8ge", 10 to "Aube",
@@ -30,11 +29,11 @@ val NomsDepartements: Map<Int, String> = linkedMapOf(
     79 to "Deux-S\u00E8vres", 80 to "Somme", 81 to "Tarn", 82 to "Tarn-et-Garonne", 83 to "Var",
     84 to "Vaucluse", 85 to "Vend\u00E9e", 86 to "Vienne", 87 to "Haute-Vienne", 88 to "Vosges",
     89 to "Yonne", 90 to "Territoire de Belfort", 91 to "Essonne", 92 to "Hauts-de-Seine",
-    93 to "Seine-Saint-Denis", 94 to "Val-de-Marne", 95 to "Val-d'Oise", 971 to "Guadeloupe",
-    972 to "Martinique", 973 to "Guyane", 974 to "La R\u00E9union", 976 to "Mayotte"
+    93 to "Seine-Saint-Denis", 94 to "Val-de-Marne", 95 to "Val-d'Oise",
+    971 to "Guadeloupe", 972 to "Martinique", 973 to "Guyane", 974 to "La R\u00E9union", 976 to "Mayotte"
 )
 
-// Extrait le numero de departement d'un lieu saisi :
+// Numero de departement d'un texte de lieu ou de dept :
 // "Roubaix (59)" -> 59, "Nord" -> 59, sinon null.
 fun numeroDepartement(t: String): Int? {
     val m = Regex("\\((\\d{1,3})\\)").find(t)
@@ -48,51 +47,4 @@ fun numeroDepartement(t: String): Int? {
         if (Regex("(?i)\\b" + Regex.escape(nom) + "\\b").containsMatchIn(t)) return n
     }
     return null
-}
-
-// Ouvre le navigateur sur les archives departementales du departement.
-// L'application n'a AUCUNE autorisation Internet : c'est le navigateur qui consulte,
-// et la requete ne contient aucune donnee personnelle, seulement le numero et le nom du departement.
-fun ouvrirArchives(ctx: Context, n: Int): String? {
-    val nom = NomsDepartements[n] ?: ""
-    val requete = URLEncoder.encode("archives departementales " + n.toString() + " " + nom, "UTF-8")
-    return try {
-        ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + requete)))
-        null
-    } catch (e: Exception) {
-        "Aucun navigateur disponible."
-    }
-}
-
-// Construit l'URL de recherche vers l'etat civil des AD pour un acte precis :
-// commune + departement + type d'acte + annee. Renvoie l'URL a ouvrir dans le navigateur.
-fun lienEtatCivil(commune: String, dept: Int?, typeActe: String, annee: String): String {
-    val morceaux = mutableListOf<String>()
-    if (commune.isNotBlank()) morceaux.add(commune.trim())
-    if (dept != null) morceaux.add(dept.toString() + " " + (NomsDepartements[dept] ?: ""))
-    morceaux.add("archives departementales etat civil")
-    if (typeActe.isNotBlank()) morceaux.add(typeActe.trim())
-    if (annee.isNotBlank()) morceaux.add(annee.trim())
-    val requete = URLEncoder.encode(morceaux.joinToString(" "), "UTF-8")
-    return "https://www.google.com/search?q=" + requete
-}
-
-// G1-19 : la recherche AD passe par le NAVIGATEUR : commune, annee et type
-// d'acte sont envoyes au moteur de recherche (rien d'autre ne sort de l'app).
-//
-// G1-18 : ouvre une URL (AD, lien colle dans le journal) : seuls http:// et
-// https:// sont autorises, les liens www. recoivent le prefixe https, tout
-// autre schema (javascript:, intent:, file:) est refuse.
-fun ouvrirLien(ctx: Context, url: String): String? {
-    var u = url.trim()
-    if (u.startsWith("www.", ignoreCase = true)) u = "https://" + u
-    if (!u.startsWith("http://") && !u.startsWith("https://")) {
-        return "Lien refus\u00E9 : seuls http et https sont autoris\u00E9s."
-    }
-    return try {
-        ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u)))
-        null
-    } catch (e: Exception) {
-        "Aucun navigateur disponible."
-    }
 }

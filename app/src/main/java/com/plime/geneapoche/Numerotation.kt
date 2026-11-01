@@ -189,3 +189,32 @@ fun verifierLiens(personnes: MutableList<Personne>): List<String> {
     }
     return rapports.distinct()
 }
+
+// ---------------------------------------------------------------- Compteur
+// v0.33 : compteur des renseignements d'une personne sur 13 criteres,
+// affiche en tete de la liste Personnes. Une date ne compte comme COMPLETE
+// que si elle est precisee au jour (jj/mm/aaaa) ; une annee seule est
+// incomplete. Un lieu ne compte comme complet que si le departement est
+// connu (numero ou nom du departement, ou deduit du lieu).
+fun compteurRenseignements(p: Personne): Pair<Int, Int> {
+    val regexDateComplete = Regex("^\\s*\\d{1,2}/\\d{1,2}/\\d{4}\\s*$")
+    fun dateComplete(d: String) = regexDateComplete.matches(d)
+    fun lieuComplet(l: String, dept: String) =
+        l.isNotBlank() && (dept.isNotBlank() || numeroDepartement(l) != null)
+    var n = 0
+    fun crit(ok: Boolean) { if (ok) n++ }
+    crit(p.nom.isNotBlank())
+    crit(p.prenoms.isNotBlank())
+    crit(p.sexe.isNotBlank())
+    crit(p.profession.isNotBlank())
+    crit(dateComplete(p.dateNaissance))
+    crit(lieuComplet(p.lieuNaissance, p.deptNaissance))
+    crit(dateComplete(p.dateMariage))
+    crit(lieuComplet(p.lieuMariage, p.deptMariage))
+    crit(dateComplete(p.dateDeces))
+    crit(lieuComplet(p.lieuDeces, p.deptDeces))
+    crit(p.pere != 0L)
+    crit(p.mere != 0L)
+    crit(p.conjoint != 0L || p.conjointsSupp.isNotEmpty())
+    return Pair(n, 13)
+}

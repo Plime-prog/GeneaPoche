@@ -134,25 +134,60 @@ fun BlocParent(libelle: String, e: ChampsParent, dateActe: String) {
 @Composable
 fun EcranSaisieActe(
     personnes: List<Personne>,
-    onEnregistrer: (ActeSaisie) -> Unit
+    onEnregistrer: (ActeSaisie) -> Unit,
+    // v0.33 : le formulaire est aussi ouvert DEPUIS UNE FICHE (etiquette
+    // "Ajouter un evenement" ou appui long sur un bloc) : il arrive alors
+    // pre-renseigne avec les informations deja connues de la personne.
+    personnePre: Personne? = null,
+    typePre: String = "",
+    onFermer: (() -> Unit)? = null
 ) {
-    var type by remember { mutableStateOf("N") }
-    var commune by remember { mutableStateOf("") }
-    var dept by remember { mutableStateOf("") }
+    // Champs lieu/dept/date d'un evenement selon son type.
+    fun initiale(p: Personne, t: String): Triple<String, String, String> = when (t) {
+        "N" -> Triple(p.lieuNaissance, p.deptNaissance, p.dateNaissance)
+        "B" -> Triple(p.lieuBapteme, p.deptBapteme, p.dateBapteme)
+        "M" -> Triple(p.lieuMariage, p.deptMariage, p.dateMariage)
+        "S" -> Triple(p.lieuSepulture, p.deptSepulture, p.dateSepulture)
+        else -> Triple(p.lieuDeces, p.deptDeces, p.dateDeces)
+    }
+    fun heureDe(p: Personne, t: String): String = when (t) {
+        "N" -> p.heureNaissance; "B" -> p.heureBapteme; "M" -> p.heureMariage
+        "S" -> p.heureSepulture; else -> p.heureDeces
+    }
+    val typeInit = if (personnePre != null && typePre.isNotEmpty()) typePre else "N"
+    val pInit = personnePre
+    var type by remember { mutableStateOf(typeInit) }
+    var commune by remember { mutableStateOf(if (pInit != null) initiale(pInit, typeInit).first else "") }
+    var dept by remember { mutableStateOf(if (pInit != null) initiale(pInit, typeInit).second else "") }
     var reference by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var heure by remember { mutableStateOf("") }
-    var personneId by remember { mutableStateOf(0L) }
-    var nom by remember { mutableStateOf("") }
-    var prenoms by remember { mutableStateOf("") }
-    var sexe by remember { mutableStateOf("") }
-    var profession by remember { mutableStateOf("") }
-    val pere = remember { ChampsParent() }
-    val mere = remember { ChampsParent() }
-    var marieeId by remember { mutableStateOf(0L) }
-    var marieeNom by remember { mutableStateOf("") }
-    var marieePrenoms by remember { mutableStateOf("") }
-    var marieeProf by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf(if (pInit != null) initiale(pInit, typeInit).third else "") }
+    var heure by remember { mutableStateOf(if (pInit != null) heureDe(pInit, typeInit) else "") }
+    var personneId by remember { mutableStateOf(pInit?.id ?: 0L) }
+    var nom by remember { mutableStateOf(pInit?.nom ?: "") }
+    var prenoms by remember { mutableStateOf(pInit?.prenoms ?: "") }
+    var sexe by remember { mutableStateOf(pInit?.sexe ?: "") }
+    var profession by remember { mutableStateOf(pInit?.profession ?: "") }
+    val pere = remember {
+        ChampsParent().apply {
+            if (pInit != null) {
+                val pp = personnes.firstOrNull { it.id == pInit.pere }
+                if (pp != null) { nom = pp.nom; prenoms = pp.prenoms; profession = pp.profession; ne = pp.dateNaissance; lieu = pp.lieuNaissance; dept = pp.deptNaissance; deces = pp.dateDeces; lieuDeces = pp.lieuDeces }
+            }
+        }
+    }
+    val mere = remember {
+        ChampsParent().apply {
+            if (pInit != null) {
+                val pm = personnes.firstOrNull { it.id == pInit.mere }
+                if (pm != null) { nom = pm.nom; prenoms = pm.prenoms; profession = pm.profession; ne = pm.dateNaissance; lieu = pm.lieuNaissance; dept = pm.deptNaissance; deces = pm.dateDeces; lieuDeces = pm.lieuDeces }
+            }
+        }
+    }
+    val conjointPre = if (pInit != null) personnes.firstOrNull { it.id == pInit.conjoint } else null
+    var marieeId by remember { mutableStateOf(conjointPre?.id ?: 0L) }
+    var marieeNom by remember { mutableStateOf(conjointPre?.nom ?: "") }
+    var marieePrenoms by remember { mutableStateOf(conjointPre?.prenoms ?: "") }
+    var marieeProf by remember { mutableStateOf(conjointPre?.profession ?: "") }
     val pereMariee = remember { ChampsParent() }
     val mereMariee = remember { ChampsParent() }
     val temoins = remember { mutableStateListOf<TemoinSaisie>() }
@@ -180,6 +215,14 @@ fun EcranSaisieActe(
             fontWeight = FontWeight.Bold,
             color = CouleurVertFonce
         )
+        // v0.33 : fermeture directe quand le formulaire est ouvert depuis
+        // une fiche (aucune information n'est enregistree sans le bouton
+        // "Enregistrer l'acte").
+        if (onFermer != null) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                OutlinedButton(onClick = onFermer) { Text("Fermer") }
+            }
+        }
 
         SectionTitre("Type d'acte")
         Row(
@@ -366,4 +409,5 @@ fun EcranSaisieActe(
         )
     }
 }
+
 
