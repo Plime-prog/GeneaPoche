@@ -25,6 +25,7 @@ jobs:
         with:
           gradle-version: '9.4.1'
 
+      # G2-12 : lintDebug + testDebugUnitTest dans la CI.
       # G1-03 : cle de signature dans les secrets GitHub (jamais dans le depot).
       - name: Cle de signature release
         env:
@@ -46,7 +47,7 @@ jobs:
       - name: Compiler les APK debug et release
         run: |
           set +e
-          gradle assembleDebug assembleRelease --no-daemon > /tmp/build.log 2>&1
+          gradle lintDebug testDebugUnitTest assembleDebug assembleRelease --no-daemon > /tmp/build.log 2>&1
           code=$?
           if [ $code -ne 0 ]; then
             grep '^e: ' /tmp/build.log | head -10 | while IFS= read -r l; do
@@ -74,3 +75,4 @@ jobs:
         with:
           name: geneapoche-release-apk
           path: app/build/outputs/apk/release/app-release.apk
+
