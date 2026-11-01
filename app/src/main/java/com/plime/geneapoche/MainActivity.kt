@@ -153,7 +153,14 @@ fun dateValide(s: String): Boolean {
     Regex("^(\\d{2})/(\\d{2})/(\\d{4})$").find(t)?.let { m ->
         val j = m.groupValues[1].toInt()
         val mois = m.groupValues[2].toInt()
-        return j in 1..31 && mois in 1..12
+        // G2-01 : date reelle verifiee avec java.time.LocalDate (31/02,
+        // 29/02 d une annee non bissextile, jour ou mois 00 refuses).
+        return try {
+            java.time.LocalDate.of(m.groupValues[3].toInt(), mois, j)
+            true
+        } catch (e: java.time.DateTimeException) {
+            false
+        }
     }
     if (Regex("^\\d{4}$").matches(t)) return true
     return repubAGregorien(t) != null

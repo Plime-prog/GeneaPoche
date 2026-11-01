@@ -26,7 +26,17 @@ fun dateGedcom(s: String): String? {
     if (t.isEmpty()) return null
     Regex("(\\d{1,2})/(\\d{1,2})/(\\d{4})").find(t)?.let { m ->
         val mois = m.groupValues[2].toIntOrNull() ?: return null
-        if (mois in 1..12) return m.groupValues[1] + " " + moisGedcom(mois) + " " + m.groupValues[3]
+        val jour = m.groupValues[1].toIntOrNull() ?: return null
+        val annee = m.groupValues[3].toIntOrNull() ?: return null
+        // G2-01 : date verifiee avec java.time.LocalDate avant export ; une
+        // date impossible (31/02, 29/02/1900) retombe sur l annee seule plus bas.
+        val reelle = try {
+            java.time.LocalDate.of(annee, mois, jour)
+            true
+        } catch (e: java.time.DateTimeException) {
+            false
+        }
+        if (reelle) return jour.toString() + " " + moisGedcom(mois) + " " + m.groupValues[3]
     }
     Regex("vers\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
         return "ABT " + m.groupValues[1]
@@ -44,7 +54,17 @@ fun dateGedcom(s: String): String? {
             "juin" -> 6; "juillet" -> 7; "aout", "ao\u00FBt" -> 8; "septembre" -> 9
             "octobre" -> 10; "novembre" -> 11; else -> 12
         }
-        if (index in 1..12) return m.groupValues[1] + " " + moisGedcom(index) + " " + m.groupValues[3]
+        // G2-01 : date verifiee avec java.time.LocalDate avant export.
+        if (index in 1..12) {
+            val jourL = m.groupValues[1].toIntOrNull() ?: return null
+            val anneeL = m.groupValues[3].toIntOrNull() ?: return null
+            try {
+                java.time.LocalDate.of(anneeL, index, jourL)
+            } catch (e: java.time.DateTimeException) {
+                return null
+            }
+            return jourL.toString() + " " + moisGedcom(index) + " " + m.groupValues[3]
+        }
     }
     Regex("(\\d{4})").find(t)?.let { m ->
         return m.groupValues[1]
