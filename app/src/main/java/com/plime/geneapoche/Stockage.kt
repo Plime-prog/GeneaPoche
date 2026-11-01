@@ -46,6 +46,7 @@ object Stockage {
     private const val CLE_ECRIT = "blocage_ecrit"
     private const val CLE_JUSQUA_MUR = "blocage_jusqua_mur"
     private const val CLE_ITERATIONS = "pin_iterations"
+    private const val CLE_PROCHAIN_ID = "prochain_id"
     private const val CLE_ID_CUJUS = "id_cujus"
     private const val CLE_SOSA_CUJUS = "sosa_cujus"
     private const val CLE_MAITRE = "cle_maitre"
@@ -474,6 +475,42 @@ object Stockage {
         } catch (e: Exception) {
             // rien a faire
         }
+    }
+
+    // ------------------------------------------------------------ Compteur d'identifiants (G2-18)
+
+    // G2-18 : compteur PERSISTANT strictement croissant : un identifiant
+    // (personne, piste, acte) n'est JAMAIS reutilise apres une suppression.
+    fun prochainId(ctx: Context): Long {
+        val p = prefs(ctx)
+        val n = p.getLong(CLE_PROCHAIN_ID, 0L).coerceAtLeast(1L)
+        p.edit().putLong(CLE_PROCHAIN_ID, n + 1L).commit()
+        return n
+    }
+
+    // G2-18 : apres un import ou une restauration, le compteur ne doit jamais
+    // redescendre en dessous d'un identifiant deja utilise.
+    fun alignerCompteur(ctx: Context, maxId: Long) {
+        val p = prefs(ctx)
+        if (p.getLong(CLE_PROCHAIN_ID, 0L) <= maxId) {
+            p.edit().putLong(CLE_PROCHAIN_ID, maxId + 1L).commit()
+        }
+    }
+
+    // G2-18 : images chiffrees orphelines (leur acte a ete supprime).
+    fun supprimerImagesOrphelines(ctx: Context, idsActes: Set<Long>): Int {
+        var supprimees = 0
+        try {
+            val dossier = File(ctx.filesDir, DOSSIER_IMAGES)
+            dossier.listFiles()?.forEach { f ->
+                val m = Regex("^acte_(\\d+)\\.bin$").find(f.name) ?: return@forEach
+                val id = m.groupValues[1].toLongOrNull() ?: return@forEach
+                if (!idsActes.contains(id) && f.delete()) supprimees++
+            }
+        } catch (e: Exception) {
+            // rien a faire
+        }
+        return supprimees
     }
 
     // G1-09 : sauvegarde automatique avant un import GEDCOM. Copies chiffrees
