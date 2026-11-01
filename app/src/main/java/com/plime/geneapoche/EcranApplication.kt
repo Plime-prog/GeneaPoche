@@ -281,10 +281,9 @@ fun EcranApplication(
             },
             bottomBar = { BarreOnglets(onglet, onOnglet) },
             floatingActionButton = {
-                if (onglet == 0) {
-                    FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Ajouter")
-                    }
+                // G\u00E9n\u00E9aPoche 2 : nouvelle fiche depuis N'IMPORTE QUELLE page.
+                FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
+                    Icon(Icons.Filled.Add, contentDescription = "Ajouter")
                 }
             }
         ) { marges ->
@@ -904,7 +903,7 @@ fun EcranApplication(
             onNouveauTemoin = { type, id, nom, prenoms -> nouveauTemoin(type, id, nom, prenoms) },
             onRetirerTemoin = { type, id -> retirerTemoin(type, id) },
             onBasculerSignature = { type, id -> basculerSignature(type, id) },
-            onModifierBloc = { type, d, h, co, de, rf -> majEvenement(type, d, h, co, de, rf) },
+            onEnregistrerActe = enregistrerActe,
             onNouvelEnfant = { nom, prenoms, sexe, date ->
                 ajouterEnfant(nom, prenoms, sexe, date)
             },
