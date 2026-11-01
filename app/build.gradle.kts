@@ -12,8 +12,8 @@ android {
         applicationId = "com.plime.geneapoche"
         minSdk = 26
         targetSdk = 36
-        versionCode = 33
-        versionName = "0.33"
+        versionCode = 34
+        versionName = "0.34"
     }
 
     signingConfigs {
@@ -81,3 +81,4 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 }
+
