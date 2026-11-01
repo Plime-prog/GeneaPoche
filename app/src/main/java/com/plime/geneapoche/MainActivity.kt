@@ -1305,7 +1305,7 @@ fun AppEcran(
                 confirmSuppression = confirmSuppression,
                 arbreCentre = if (arbreCentre != 0L) arbreCentre else idDuCujus(),
                 // G3-17 : largeur etendue (tablette/paysage).
-                deuxColonnes = classeTaille.width != androidx.compose.material3.windowsizeclass.WindowWidthSizeClass.Compact,
+                deuxColonnes = classeTaille.widthSizeClass != androidx.compose.material3.windowsizeclass.WindowWidthSizeClass.Compact,
                 // G3-19 : une suppression peut etre annulee.
                 annulationPossible = modele.annulation != null
             ),
