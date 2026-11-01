@@ -405,6 +405,12 @@ fun EcranApplication(
                                         ) {
                                             Text(
                                                 gp.nom.trim() + (if (gp.numeroBrut().isNotEmpty()) " (" + gp.numeroBrut() + ")" else ""),
+                                                Modifier
+                                                    .background(
+                                                        if (active) CouleurVertPale else Color.Transparent,
+                                                        RoundedCornerShape(50)
+                                                    )
+                                                    .padding(horizontal = 8.dp, vertical = 2.dp),
                                                 fontWeight = FontWeight.Bold,
                                                 color = if (active) CouleurVertFonce else MaterialTheme.colorScheme.onSurfaceVariant,
                                                 maxLines = 1
@@ -929,10 +935,10 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
             Modifier.fillMaxWidth().padding(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Vignette : rond a l'INITIALE du prenom (plus de numero, qui
-            // n'apparait plus que dans les menus de numerotation).
+            // Vignette : rond au NUMERO (Sosa ou d'Aboville) ; l'initiale
+            // du prenom sert de repli quand la personne n'a pas de numero.
             val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
-            val vignette = initiale.toString()
+            val vignette = p.numeroAffiche().ifEmpty { initiale.toString() }
             val couleurAvatar = when (p.sexe) {
                 "F" -> Color(0xFFE9C4D2) // rose
                 "M" -> Color(0xFFBFD4E8) // bleu
