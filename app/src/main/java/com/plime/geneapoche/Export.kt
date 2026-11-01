@@ -120,6 +120,31 @@ fun tagEvenement(type: String): String = when (type) {
     else -> "EVEN"
 }
 
+// G2-02 : texte GEDCOM SUR : tout "@" d'une valeur est DOUBLE ("@@"),
+// sinon il serait interprete comme un pointeur a l'import.
+fun texteGedcom(s: String): String = s.replace("@", "@@")
+
+// G2-02 : une ligne GEDCOM ne doit jamais depasser 255 caracteres : les
+// valeurs longues sont coupees en CONC (suite de la MEME ligne), au
+// niveau de la valeur + 1.
+fun ajouterValeur(lignes: MutableList<String>, niveau: Int, tag: String, valeur: String) {
+    val morceaux = texteGedcom(valeur).chunked(200)
+    lignes.add(niveau.toString() + " " + tag + " " + morceaux.first())
+    morceaux.drop(1).forEach { c ->
+        lignes.add((niveau + 1).toString() + " CONC " + c)
+    }
+}
+
+// G2-02 : note multi-lignes : premiere ligne en NOTE, suivantes en CONT,
+// chaque ligne coupee en CONC si trop longue.
+fun ajouterNote(lignes: MutableList<String>, niveau: Int, tag: String, texte: String) {
+    val morceaux = texte.split("\n")
+    ajouterValeur(lignes, niveau, tag, morceaux.first().trim())
+    morceaux.drop(1).forEach { suite ->
+        ajouterValeur(lignes, niveau + 1, "CONT", suite.trim())
+    }
+}
+
 fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, actes: List<Acte> = listOf()): String {
     val personnes = if (sousEnsemble == null) toutes else toutes.filter { sousEnsemble.contains(it.id) }
     fun cleCouple(a: Long, b: Long): Pair<Long, Long> = if (a < b) a to b else b to a
@@ -153,11 +178,12 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.9")
+    lignes.add("2 VERS 0.30") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 GEDC")
     lignes.add("2 VERS 5.5.1")
     lignes.add("2 FORM LINEAGE-LINKED")
+    lignes.add("1 SUBM @SUB1@") // G2-02 : reference a l'enregistrement SOUMIS (exige par la norme)
     lignes.add("1 DATE " + SimpleDateFormat("d MMM yyyy", Locale.US).format(Date()))
 
     // Un evenement de la personne, avec ses sources (actes rattaches).
@@ -170,7 +196,7 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
             lignes.add("1 " + tag)
             if (d != null) lignes.add("2 DATE " + d)
             if (h != null) lignes.add("2 TIME " + h)
-            if (l.isNotEmpty()) lignes.add("2 PLAC " + l)
+            if (l.isNotEmpty()) lignes.add("2 PLAC " + texteGedcom(l))
             src.forEach { a ->
                 lignes.add("2 SOUR " + xrefSour(a.id))
                 if (a.numPage.isNotEmpty()) {
@@ -182,15 +208,17 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
 
     personnes.forEach { p ->
         lignes.add("0 " + xrefIndi(p.id) + " INDI")
-        lignes.add("1 NAME " + p.prenoms.trim() + " /" + p.nom.trim() + "/")
+        lignes.add("1 NAME " + texteGedcom(p.prenoms.trim()) + " /" + texteGedcom(p.nom.trim()) + "/")
         if (p.sexe.isNotEmpty()) lignes.add("1 SEX " + p.sexe)
         evenement(p, "BIRT", "N", p.dateNaissance, p.heureNaissance, p.lieuNaissance, p.deptNaissance)
         evenement(p, "BAPM", "B", p.dateBapteme, p.heureBapteme, p.lieuBapteme, p.deptBapteme)
         evenement(p, "MARR", "M", p.dateMariage, p.heureMariage, p.lieuMariage, p.deptMariage)
         evenement(p, "DEAT", "D", p.dateDeces, p.heureDeces, p.lieuDeces, p.deptDeces)
         evenement(p, "BURI", "S", p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture)
-        if (p.profession.trim().isNotEmpty()) lignes.add("1 OCCU " + p.profession.trim())
+        if (p.profession.trim().isNotEmpty()) lignes.add("1 OCCU " + texteGedcom(p.profession.trim()))
         if (p.sosa.trim().isNotEmpty()) lignes.add("1 RFN Sosa " + p.sosa.trim())
+        // G2-02 : le bloc "sans titre" de la fiche part en NOTE (relue a l'import).
+        if (p.notesLibres.trim().isNotEmpty()) ajouterNote(lignes, 1, "NOTE", p.notesLibres.trim())
         if (p.pere != 0L && p.mere != 0L &&
             familles.containsKey(cleCouple(p.pere, p.mere))
         ) {
@@ -243,9 +271,9 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
         val pers = personnes.firstOrNull { it.id == a.personneId }
         lignes.add("0 " + xrefSour(a.id) + " SOUR")
         val t = a.titre.trim()
-        lignes.add("1 TITL " + (if (t.isNotEmpty()) t else libelleType(a.type) + (if (pers != null) " de " + pers.titre() else "")))
+        lignes.add("1 TITL " + texteGedcom(if (t.isNotEmpty()) t else libelleType(a.type) + (if (pers != null) " de " + pers.titre() else "")))
         if (a.reference.trim().isNotEmpty()) {
-            lignes.add("1 REFN " + a.reference.trim())
+            lignes.add("1 REFN " + texteGedcom(a.reference.trim()))
         }
         if (pers != null) {
             val ch = champsEvenement(pers, a.type)
@@ -259,14 +287,13 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
             }
         }
         if (a.contenu.isNotBlank()) {
-            val morceaux = a.contenu.split("\n")
-            lignes.add("1 NOTE " + morceaux.first().trim())
-            morceaux.drop(1).forEach { suite ->
-                lignes.add("2 CONT " + suite.trim())
-            }
+            ajouterNote(lignes, 1, "NOTE", a.contenu)
         }
     }
 
+    // G2-02 : enregistrement SUBM reference par le HEAD.
+    lignes.add("0 @SUB1@ SUBM")
+    lignes.add("1 NAME Utilisateur GeneaPoche")
     lignes.add("0 TRLR")
     return lignes.joinToString("\n") + "\n"
 }
@@ -329,6 +356,8 @@ fun importerGedcom(texte: String): List<Personne> {
         var prenoms = ""
         var sexe = ""
         var occu = ""
+        var rfn = ""
+        var note = ""
         var nD = ""; var nH = ""; var nL = ""; var nDpt = ""
         var bD = ""; var bH = ""; var bL = ""; var bDpt = ""
         var mD = ""; var mH = ""; var mL = ""; var mDpt = ""
@@ -395,6 +424,13 @@ fun importerGedcom(texte: String): List<Personne> {
                     "OCCU" -> ind.occu = contenu.removePrefix("OCCU").trim()
                     "FAMS" -> ind.fams.add(contenu.removePrefix("FAMS").trim())
                     "FAMC" -> ind.famc = contenu.removePrefix("FAMC").trim()
+                    // G2-02 : GeneaPoche exporte "RFN Sosa 12" ; le numero
+                    // Sosa (ou d'Aboville) est desormais RELU a l'import.
+                    "RFN" -> {
+                        val numR = Regex("\\d+(\\.\\d+)*").find(contenu.removePrefix("RFN"))?.value
+                        if (numR != null) ind.rfn = numR
+                    }
+                    "NOTE" -> ind.note = contenu.removePrefix("NOTE").trim().replace("@@", "@")
                 }
             } else if (fam != null) {
                 when (blocActuel) {
@@ -434,6 +470,10 @@ fun importerGedcom(texte: String): List<Personne> {
                         "PLAC" -> { val cd = couperLieu(valeur); ind.sL = cd.first; ind.sDpt = cd.second }
                     }
                 }
+                "NOTE" -> when (tag) {
+                    "CONT" -> ind.note += "\n" + valeur.replace("@@", "@")
+                    "CONC" -> ind.note += valeur.replace("@@", "@")
+                }
             } else if (fam != null && blocActuel == "MARR") {
                 when (tag) {
                     "DATE" -> fam.marrD = dateFrancaise(valeur)
@@ -457,6 +497,8 @@ fun importerGedcom(texte: String): List<Personne> {
                 prenoms = ind.prenoms,
                 sexe = ind.sexe,
                 profession = ind.occu,
+                sosa = ind.rfn,
+                notesLibres = ind.note,
                 dateNaissance = ind.nD, heureNaissance = ind.nH, lieuNaissance = ind.nL, deptNaissance = ind.nDpt,
                 dateBapteme = ind.bD, heureBapteme = ind.bH, lieuBapteme = ind.bL, deptBapteme = ind.bDpt,
                 dateMariage = ind.mD, heureMariage = ind.mH, lieuMariage = ind.mL, deptMariage = ind.mDpt,
