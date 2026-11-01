@@ -73,8 +73,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
+    // G3-05 : ecran de demarrage aux couleurs de l'application.
+    implementation("androidx.core:core-splashscreen:1.2.0")
     // G2-10 : tests unitaires JVM.
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 }
-

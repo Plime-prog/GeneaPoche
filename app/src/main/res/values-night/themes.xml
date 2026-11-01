@@ -7,4 +7,12 @@
         <item name="android:navigationBarColor">@color/barreAppli</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
+
+    <!-- G3-05 : le splash herite des couleurs sombres via @color/fondAppli. -->
+    <style name="Theme.GeneaPoche.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/fondAppli</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
+        <item name="postSplashScreenTheme">@style/Theme.GeneaPoche</item>
+    </style>
 </resources>
