@@ -7,23 +7,37 @@ on:
 permissions:
   contents: read
 
+# G2-15 : deux pushes rapproches ne lancent qu un build ; le plus ancien
+# est annule au profit du plus recent.
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
+      # G2-15 : actions epinglees par SHA de commit (majeur conserve).
       - name: Recuperer le depot
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Gradle 9.4.1
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 # v5.0.0
         with:
           gradle-version: '9.4.1'
+
+      # G2-15 : regenerer le jar du wrapper (fichier binaire non versionne)
+      # puis construire avec ./gradlew, reproductible pour les developpeurs.
+      - name: Wrapper Gradle
+        run: |
+          gradle wrapper --gradle-version 9.4.1 --no-daemon
+          chmod +x gradlew
 
       # G2-12 : lintDebug + testDebugUnitTest dans la CI.
       # G1-03 : cle de signature dans les secrets GitHub (jamais dans le depot).
@@ -47,7 +61,7 @@ jobs:
       - name: Compiler les APK debug et release
         run: |
           set +e
-          gradle lintDebug testDebugUnitTest assembleDebug assembleRelease --no-daemon > /tmp/build.log 2>&1
+          ./gradlew lintDebug testDebugUnitTest assembleDebug assembleRelease --no-daemon > /tmp/build.log 2>&1
           code=$?
           if [ $code -ne 0 ]; then
             grep '^e: ' /tmp/build.log | head -10 | while IFS= read -r l; do
@@ -69,13 +83,70 @@ jobs:
           fi
 
       - name: Publier l'APK debug
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: geneapoche-apk
           path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: Publier l'APK release
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: geneapoche-release-apk
           path: app/build/outputs/apk/release/app-release.apk
+
+  # G2-15 : release GitHub uniquement quand un tag v* est pousse.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: JDK 17
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle 9.4.1
+        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 # v5.0.0
+        with:
+          gradle-version: '9.4.1'
+
+      - name: Wrapper Gradle
+        run: |
+          gradle wrapper --gradle-version 9.4.1 --no-daemon
+          chmod +x gradlew
+
+      - name: Cle de signature release
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > /tmp/geneapoche-release.jks
+            echo "GP_KEYSTORE=/tmp/geneapoche-release.jks" >> $GITHUB_ENV
+            echo "GP_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> $GITHUB_ENV
+            echo "GP_KEY_ALIAS=$KEY_ALIAS" >> $GITHUB_ENV
+            echo "GP_KEY_PASSWORD=$KEY_PASSWORD" >> $GITHUB_ENV
+          else
+            echo "Secrets de signature absents : APK release signe avec la cle debug (non debuggable)."
+          fi
+
+      - name: Compiler l'APK release
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Creer la release GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            app/build/outputs/apk/release/app-release.apk#APK-release \
+            app/build/outputs/apk/debug/app-debug.apk#APK-debug \
+            --title "GeneaPoche $GITHUB_REF_NAME" \
+            --generate-notes

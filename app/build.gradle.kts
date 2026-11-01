@@ -29,7 +29,11 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // G2-13 : R8 actif en release (minification + retrait des
+            // ressources inutilisees), regles minimales dans proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // G1-03 : cle de signature dans les secrets GitHub (GP_KEYSTORE...).
             // Tant que les secrets n'existent pas, repli sur la cle debug (APK installable, non debuggable).
             signingConfig = if (System.getenv("GP_KEYSTORE") != null) {
@@ -59,7 +63,8 @@ kotlin {
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.08.00")
     implementation(composeBom)
-    implementation("androidx.core:core-ktx:1.17.0")
+    // G2-14 : dependances alignees sur le BOM Compose 2026.08.00 (bump Dependabot).
+    implementation("androidx.core:core-ktx:1.19.0")
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
     // G2-07 : viewModel() pour porter l'etat (survit a la rotation).
