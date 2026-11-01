@@ -391,6 +391,26 @@ object Stockage {
         }
     }
 
+    // G5 : ecriture depuis un texte DEJA serialise (le cache de AppEcran
+    // compare les textes et ne reecrit que ce qui a reellement change).
+    fun sauverTextePersonnes(ctx: Context, texte: String): Boolean =
+        ecrireFichierChiffre(ctx, FICHIER_PERSONNES, texte)
+
+    fun sauverTexteJournal(ctx: Context, texte: String): Boolean =
+        ecrireFichierChiffre(ctx, FICHIER_JOURNAL, texte)
+
+    fun sauverTexteActes(ctx: Context, texte: String): Boolean =
+        ecrireFichierChiffre(ctx, FICHIER_ACTES, texte)
+
+    private fun ecrireFichierChiffre(ctx: Context, nom: String, texte: String): Boolean {
+        return try {
+            val chiffre = chiffrer(texte.toByteArray()) ?: return false
+            ecrireFichier(ctx, nom, chiffre)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     fun sauver(ctx: Context, liste: List<Personne>): Boolean {
         return try {
             val tableau = JSONArray()
@@ -493,6 +513,15 @@ object Stockage {
         val n = p.getLong(CLE_PROCHAIN_ID, 0L).coerceAtLeast(1L)
         p.edit().putLong(CLE_PROCHAIN_ID, n + 1L).commit()
         return n
+    }
+
+    // G5 : version par LOT : une SEULE ecriture de preferences pour n
+    // identifiants (au lieu d'un commit par piste creee sur le thread UI).
+    fun prochainIds(ctx: Context, nombre: Int): List<Long> {
+        val p = prefs(ctx)
+        val n = p.getLong(CLE_PROCHAIN_ID, 0L).coerceAtLeast(1L)
+        p.edit().putLong(CLE_PROCHAIN_ID, n + nombre).commit()
+        return (0 until nombre).map { n + it.toLong() }
     }
 
     // G2-18 : apres un import ou une restauration, le compteur ne doit jamais

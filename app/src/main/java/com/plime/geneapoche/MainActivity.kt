@@ -198,6 +198,12 @@ fun AppEcran(
     var occupation by modele::occupation
     val scopeTravail = rememberCoroutineScope()
 
+    // G5 : cache des derniers textes JSON ecrits sur disque. enregistrer()
+    // compare le texte courant au cache et ne reecrit (chiffrement AES, ecriture
+    // durable, relecture, rotation .bak) QUE les fichiers reellement changes :
+    // une simple coche de temoin ne recalcule plus rien et ne reecrit rien.
+    val derniersJson = remember { mutableMapOf<String, String>() }
+
     // Recopie structurelle des listes : force Compose a rafraichir l'affichage
     // meme quand une Personne est modifiee en place (correctif mise a jour immediate).
     fun rafraichirTout() {
@@ -226,7 +232,7 @@ fun AppEcran(
     // une recherche dont la donnee est maintenant presente (saisie ou image) est
     // SUPPRIMEE (plus aucun archivage, plus aucun historique) ; chaque donnee
     // manquante sans recherche ouverte en obtient une.
-    fun completerJournal() {
+    fun completerJournal(personnesTouchees: Set<Long>? = null) {
         if (!charge) return
         val maintenant = System.currentTimeMillis()
         val aRetirer = mutableListOf<Piste>()
@@ -234,6 +240,9 @@ fun AppEcran(
             // G2-17 : les rapports d'integrite restent dans le journal
             // jusqu'a leur suppression manuelle.
             if (ps.categorie == "controle") return@forEach
+            // G5 : synchronisation limitee aux personnes touchees quand
+            // l'appelant le precise (une coche ne rescanne pas toute la base).
+            if (personnesTouchees != null && ps.personneId !in personnesTouchees) return@forEach
             val pers = personneParId(personnes, ps.personneId)
             // Les pistes de validation (coche negative d'une information)
             // restent ouvertes jusqu'a re-validation manuelle.
@@ -246,49 +255,82 @@ fun AppEcran(
         }
         aRetirer.forEach { conserverNote(it) }
         pistes.removeAll(aRetirer)
-        personnes.forEach { p ->
+        // G5 : creation PAR LOT (une seule ecriture de preferences pour tous
+        // les identifiants, au lieu d'un commit par piste sur le thread UI).
+        val aCreer = mutableListOf<Pair<Long, Suggestion>>()
+        personnes.filter { personnesTouchees == null || it.id in personnesTouchees!! }.forEach { p ->
             val existantes = pistes.filter { !it.faite && it.personneId == p.id }.map { it.categorie }.toSet()
             suggestionsPour(p, personnes, actes).forEach { s ->
                 if (categoriesIgnorees.contains(p.id.toString() + "|" + s.cle)) return@forEach
-                if (s.cle !in existantes) {
-                    val nouvelId = Stockage.prochainId(ctx)
-                    pistes.add(
-                        Piste(
-                            id = nouvelId,
-                            texte = s.titre,
-                            personneId = p.id,
-                            creation = maintenant,
-                            type = "A",
-                            categorie = s.cle,
-                            lieu = s.lieu,
-                            dept = s.dept,
-                            debut = s.debut,
-                            fin = s.fin
-                        )
-                    )
-                }
+                if (s.cle !in existantes) aCreer.add(p.id to s)
             }
+        }
+        val ids = if (aCreer.isEmpty()) listOf() else Stockage.prochainIds(ctx, aCreer.size)
+        aCreer.forEachIndexed { i, (personneId, s) ->
+            pistes.add(
+                Piste(
+                    id = ids[i],
+                    texte = s.titre,
+                    personneId = personneId,
+                    creation = maintenant,
+                    type = "A",
+                    categorie = s.cle,
+                    lieu = s.lieu,
+                    dept = s.dept,
+                    debut = s.debut,
+                    fin = s.fin
+                )
+            )
         }
     }
 
-    fun enregistrer(): Boolean {
+    fun enregistrer(recalculNumerotation: Boolean = true, personnesTouchees: Set<Long>? = null): Boolean {
         // G1-04 : donnees illisibles -> AUCUNE sauvegarde, ne rien ecraser.
         if (fichiersIllisibles.isNotEmpty()) {
             message = "Donn\u00E9es illisibles : enregistrement bloqu\u00E9 (restaurez la copie .bak)."
             return false
         }
-        // Numerotation Sosa / d'Aboville recalculee A CHAQUE enregistrement :
-        // creation d'une personne, rattachement (pere/mere/enfant/conjoint),
-        // suppression... tout se met a jour automatiquement.
-        val cujusId = Stockage.lireIdCujus(ctx).takeIf { id -> personnes.any { it.id == id } }
-            ?: personnes.firstOrNull { it.sosa.trim() == sosaCujus.toString() }?.id
-            ?: personnes.firstOrNull()?.id
-            ?: 0L
-        renumeroter(personnes, cujusId, sosaCujus)
-        completerJournal()
-        val ok1 = Stockage.sauver(ctx, personnes)
-        val ok2 = Stockage.sauverJournal(ctx, pistes)
-        val ok3 = Stockage.sauverActes(ctx, actes)
+        // Numerotation Sosa / d'Aboville recalculee seulement quand la
+        // structure des liens peut avoir change (creation, rattachement,
+        // suppression) : une simple coche n'est plus un recalcul complet (G5).
+        if (recalculNumerotation) {
+            val cujusId = Stockage.lireIdCujus(ctx).takeIf { id -> personnes.any { it.id == id } }
+                ?: personnes.firstOrNull { it.sosa.trim() == sosaCujus.toString() }?.id
+                ?: personnes.firstOrNull()?.id
+                ?: 0L
+            renumeroter(personnes, cujusId, sosaCujus)
+        }
+        completerJournal(personnesTouchees)
+        // G5 : serialisation puis comparaison au cache : seuls les fichiers
+        // dont le texte a change sont rechiffres et reecrits sur le disque.
+        fun texteJson(serialiser: (org.json.JSONArray) -> Unit): String? {
+            return try {
+                val tableau = org.json.JSONArray()
+                serialiser(tableau)
+                tableau.toString()
+            } catch (e: Exception) {
+                null
+            }
+        }
+        fun ecrireSiChange(cle: String, texte: String?, ecrire: (String) -> Boolean): Boolean {
+            if (texte == null) return false
+            if (derniersJson[cle] == texte) return true
+            val ok = ecrire(texte)
+            if (ok) derniersJson[cle] = texte
+            return ok
+        }
+        val ok1 = ecrireSiChange(
+            "personnes",
+            texteJson { t -> personnes.forEach { t.put(it.versJson()) } }
+        ) { Stockage.sauverTextePersonnes(ctx, it) }
+        val ok2 = ecrireSiChange(
+            "journal",
+            texteJson { t -> pistes.forEach { t.put(it.versJson()) } }
+        ) { Stockage.sauverTexteJournal(ctx, it) }
+        val ok3 = ecrireSiChange(
+            "actes",
+            texteJson { t -> actes.forEach { t.put(it.versJson()) } }
+        ) { Stockage.sauverTexteActes(ctx, it) }
         rafraichirTout()
         // G2-05 : message distinct selon le fichier en echec.
         message = when {
@@ -336,6 +378,7 @@ fun AppEcran(
     // possible seulement si tout est de nouveau lisible.
     fun restaurerDepuisBak() {
         fichiersIllisibles.forEach { nom -> Stockage.restaurerBak(ctx, nom) }
+        derniersJson.clear()
         personnes.clear()
         pistes.clear()
         actes.clear()
@@ -657,7 +700,8 @@ fun AppEcran(
         val p = personneParId(personnes, idOuvert) ?: return
         p.temoinsDe(type).remove(id)
         p.signatairesDe(type).remove(id)
-        enregistrer()
+        // G5 : pas de renumerotation ni de rescan complet pour une coche.
+        enregistrer(false, setOf(idOuvert))
     }
 
     // Coche/decoche la signature d'une personne sur un acte (0L = le pere).
@@ -665,7 +709,8 @@ fun AppEcran(
         val p = personneParId(personnes, idOuvert) ?: return
         val liste = p.signatairesDe(type)
         if (liste.contains(id)) liste.remove(id) else liste.add(id)
-        enregistrer()
+        // G5 : pas de renumerotation ni de rescan complet pour une coche.
+        enregistrer(false, setOf(idOuvert))
     }
 
     // Modification d'un bloc d'evenement depuis son dialogue d'edition :
@@ -688,7 +733,9 @@ fun AppEcran(
                 .maxByOrNull { it.creation }
             if (acte != null) acte.reference = ref
         }
-        enregistrer()
+        // G5 : seul le bloc d'evenement a change : numerotation et journal
+        // limites a cette personne.
+        enregistrer(false, setOf(p.id))
     }
 
     fun supprimerPiste(piste: Piste) {
@@ -697,7 +744,8 @@ fun AppEcran(
             if (!categoriesIgnorees.contains(cle)) categoriesIgnorees.add(cle)
         }
         pistes.remove(piste)
-        enregistrer()
+        // G5 : seule la liste des pistes a change.
+        enregistrer(false)
     }
 
     // Coche de validation d'une information (identite ou acte) : une coche
@@ -728,7 +776,8 @@ fun AppEcran(
             pistes.filter { !it.faite && it.personneId == p.id && it.categorie == cle }.forEach { conserverNote(it) }
             pistes.removeAll { !it.faite && it.personneId == p.id && it.categorie == cle }
         }
-        enregistrer()
+        // G5 : numerotation et journal limites a cette personne.
+        enregistrer(false, setOf(p.id))
     }
 
     // Definit le de cujus et son n Sosa (pas forcement 1) : toute la numerotation
@@ -769,12 +818,15 @@ fun AppEcran(
                     sortie.write(texte.toByteArray(Charsets.UTF_8))
                 }
                 val n = if (sous == null) exportables.size else texte.split("\n").count { it.endsWith(" INDI") }
-                message = "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "")
+                // R1 : etat Compose JAMAIS modifie depuis le thread IO.
+                withContext(Dispatchers.Main) {
+                    message = "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "")
+                }
             } catch (e: Exception) {
                 // G2-05 : message distinct selon le type d'echec.
-                message = messageErreur(e, "\u00C9chec de l'export GEDCOM.")
+                withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de l'export GEDCOM.") }
             } finally {
-                occupation = ""
+                withContext(Dispatchers.Main) { occupation = "" }
             }
         }
     }
@@ -790,7 +842,7 @@ fun AppEcran(
                     ctx.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
                 } catch (e: Exception) { -1L }
                 if (taille > 10_000_000L) {
-                    message = "Fichier trop volumineux (plus de 10 Mo) : import refus\u00E9."
+                    withContext(Dispatchers.Main) { message = "Fichier trop volumineux (plus de 10 Mo) : import refus\u00E9." }
                     return@launch
                 }
                 // G2-04 : lecture par octets born\u00E9e puis d\u00E9tection de l encodage
@@ -807,21 +859,24 @@ fun AppEcran(
                     tampon.toByteArray()
                 }
                 if (octets == null || octets.isEmpty()) {
-                    message = "Fichier GEDCOM illisible (ou trop volumineux)."
+                    withContext(Dispatchers.Main) { message = "Fichier GEDCOM illisible (ou trop volumineux)." }
                     return@launch
                 }
                 val resultat = importerGedcomRapporte(decoderGedcom(octets))
                 if (resultat.personnes.isEmpty()) {
-                    message = "Aucune personne trouv\u00E9e dans ce GEDCOM."
+                    withContext(Dispatchers.Main) { message = "Aucune personne trouv\u00E9e dans ce GEDCOM." }
                     return@launch
                 }
-                importConfirme = resultat.personnes
-                importRapport = resultat.ignores
+                // R1 : etat Compose modifie uniquement sur le thread principal.
+                withContext(Dispatchers.Main) {
+                    importConfirme = resultat.personnes
+                    importRapport = resultat.ignores
+                }
             } catch (e: Exception) {
                 // G2-05 : message distinct selon le type d'echec.
-                message = messageErreur(e, "\u00C9chec de la lecture du GEDCOM.")
+                withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de la lecture du GEDCOM.") }
             } finally {
-                occupation = ""
+                withContext(Dispatchers.Main) { occupation = "" }
             }
         }
     }
@@ -833,7 +888,9 @@ fun AppEcran(
         personnes.addAll(importees)
         pistes.clear()
         pileFiches.clear()
-        actes.forEach { Stockage.supprimerImage(ctx, it.id) }
+        // R2 : les images de l'ancienne base ne sont supprimees qu'apres un
+        // enregistrement reussi de la nouvelle.
+        val idsActes = actes.map { it.id }
         actes.clear()
         // De cujus apres import : la personne au plus petit n Sosa du fichier, sinon la 1re.
         val avecSosa = personnes.filter { it.sosa.trim().toLongOrNull() != null }
@@ -849,22 +906,26 @@ fun AppEcran(
         arbreCentre = premier?.id ?: 0L
         // G2-17 : liens de l'import verifies, rapports consignes au journal.
         verifierLiensEtRapporter()
-        enregistrer()
+        derniersJson.clear()
+        if (enregistrer()) idsActes.forEach { Stockage.supprimerImage(ctx, it) }
         message = importees.size.toString() + " personnes import\u00E9es."
     }
 
     // Vide entierement la base (personnes, journal, actes et images), apres confirmation.
     fun viderBase() {
+        // R2 : les images chiffrees ne sont supprimees qu'apres un
+        // enregistrement reussi de la base vide.
+        val idsActes = actes.map { it.id }
         personnes.clear()
         pistes.clear()
-        actes.forEach { Stockage.supprimerImage(ctx, it.id) }
         actes.clear()
         idOuvert = 0L
         pileFiches.clear()
         arbreCentre = 0L
         Stockage.definirCujus(ctx, 0L, 1L)
         sosaCujus = 1L
-        enregistrer()
+        derniersJson.clear()
+        if (enregistrer()) idsActes.forEach { Stockage.supprimerImage(ctx, it) }
         message = "Base vid\u00E9e."
     }
 
@@ -875,14 +936,14 @@ fun AppEcran(
         scopeTravail.launch(Dispatchers.IO) {
             try {
                 if (Sauvegarde.exporter(ctx, uri, phrase, personnes, pistes, actes)) {
-                    message = "Sauvegarde .gpbak cr\u00E9\u00E9e : conservez-la et notez la phrase secr\u00E8te."
+                    withContext(Dispatchers.Main) { message = "Sauvegarde .gpbak cr\u00E9\u00E9e : conservez-la et notez la phrase secr\u00E8te." }
                 } else {
-                    message = "\u00C9chec de la sauvegarde .gpbak (v\u00E9rifiez le fichier et la phrase)."
+                    withContext(Dispatchers.Main) { message = "\u00C9chec de la sauvegarde .gpbak (v\u00E9rifiez le fichier et la phrase)." }
                 }
             } catch (e: Exception) {
-                message = messageErreur(e, "\u00C9chec de la sauvegarde .gpbak.")
+                withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de la sauvegarde .gpbak.") }
             } finally {
-                occupation = ""
+                withContext(Dispatchers.Main) { occupation = "" }
             }
         }
     }
@@ -895,35 +956,51 @@ fun AppEcran(
             try {
                 val contenu = Sauvegarde.importer(ctx, uri, phrase)
                 if (contenu == null) {
-                    message = "Sauvegarde illisible : v\u00E9rifiez le fichier et la phrase secr\u00E8te."
+                    withContext(Dispatchers.Main) { message = "Sauvegarde illisible : v\u00E9rifiez le fichier et la phrase secr\u00E8te." }
                     return@launch
                 }
-                personnes.clear()
-                personnes.addAll(contenu.personnes)
-                pistes.clear()
-                pistes.addAll(contenu.pistes)
-                actes.forEach { Stockage.supprimerImage(ctx, it.id) }
-                actes.clear()
-                actes.addAll(contenu.actes)
-                contenu.actes.forEach { a ->
-                    contenu.images[a.id]?.let { octets -> Stockage.sauverImage(ctx, a.id, octets) }
+                // R1 : toute mutation d'etat Compose et toute sauvegarde se font
+                // sur le thread principal ; R2 : les anciennes images chiffrees
+                // ne sont supprimees qu'APRES un enregistrement reussi.
+                withContext(Dispatchers.Main) {
+                    val idsAvant = actes.map { it.id }.toSet()
+                    personnes.clear()
+                    personnes.addAll(contenu.personnes)
+                    pistes.clear()
+                    pistes.addAll(contenu.pistes)
+                    actes.clear()
+                    actes.addAll(contenu.actes)
+                    val ecrits = mutableSetOf<Long>()
+                    contenu.actes.forEach { a ->
+                        contenu.images[a.id]?.let { octets ->
+                            if (Stockage.sauverImage(ctx, a.id, octets)) ecrits.add(a.id)
+                        }
+                    }
+                    pileFiches.clear()
+                    idOuvert = 0L
+                    derniersJson.clear()
+                    val premier = personnes.filter { it.sosa.trim().toLongOrNull() != null }.minByOrNull { it.sosa.trim().toLong() }
+                    if (premier != null) {
+                        sosaCujus = premier.sosa.trim().toLongOrNull() ?: 1L
+                        Stockage.definirCujus(ctx, premier.id, sosaCujus)
+                        arbreCentre = premier.id
+                    }
+                    verifierLiensEtRapporter()
+                    if (enregistrer()) {
+                        // R2 : suppression des anciennes images seulement apres
+                        // un enregistrement reussi du nouvel etat.
+                        idsAvant.filter { it !in ecrits }.forEach { Stockage.supprimerImage(ctx, it) }
+                        message = "Sauvegarde restaur\u00E9e : " + contenu.personnes.size.toString() + " personnes."
+                    } else {
+                        // Echec d'ecriture : on ne detruit rien.
+                        message = "\u00C9chec de l'enregistrement apr\u00E8s restauration : rien n'a \u00E9t\u00E9 supprim\u00E9."
+                    }
                 }
-                pileFiches.clear()
-                idOuvert = 0L
-                val premier = personnes.filter { it.sosa.trim().toLongOrNull() != null }.minByOrNull { it.sosa.trim().toLong() }
-                if (premier != null) {
-                    sosaCujus = premier.sosa.trim().toLongOrNull() ?: 1L
-                    Stockage.definirCujus(ctx, premier.id, sosaCujus)
-                    arbreCentre = premier.id
-                }
-                verifierLiensEtRapporter()
-                enregistrer()
-                message = "Sauvegarde restaur\u00E9e : " + contenu.personnes.size.toString() + " personnes."
             } catch (e: Exception) {
                 // G2-05 : message distinct selon le type d'echec.
-                message = messageErreur(e, "\u00C9chec de la restauration .gpbak.")
+                withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de la restauration .gpbak.") }
             } finally {
-                occupation = ""
+                withContext(Dispatchers.Main) { occupation = "" }
             }
         }
     }
@@ -938,6 +1015,7 @@ fun AppEcran(
             message = "\u00C9chec de la restauration."
             return
         }
+        derniersJson.clear()
         personnes.clear()
         pistes.clear()
         actes.clear()
@@ -1203,21 +1281,25 @@ fun AppEcran(
             try {
                 val jpg = compresserVersJpeg(ctx, uri)
                 if (jpg == null) {
-                    message = "Impossible de lire cette image."
+                    withContext(Dispatchers.Main) { message = "Impossible de lire cette image." }
                     return@launch
                 }
                 val nouvelId = Stockage.prochainId(ctx)
                 if (Stockage.sauverImage(ctx, nouvelId, jpg)) {
-                    actes.add(Acte(nouvelId, personneId, type, titre, System.currentTimeMillis()))
-                    enregistrer()
+                    // R1 : mutation d'etat Compose et enregistrement sur le
+                    // thread principal ; G5 : journal limite a cette personne.
+                    withContext(Dispatchers.Main) {
+                        actes.add(Acte(nouvelId, personneId, type, titre, System.currentTimeMillis()))
+                        enregistrer(false, setOf(personneId))
+                    }
                 } else {
-                    message = "\u00C9chec de l'enregistrement de l'image."
+                    withContext(Dispatchers.Main) { message = "\u00C9chec de l'enregistrement de l'image." }
                 }
             } catch (e: Exception) {
                 // G2-05 : message distinct selon le type d'echec.
-                message = messageErreur(e, "\u00C9chec de l'enregistrement de l'image.")
+                withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de l'enregistrement de l'image.") }
             } finally {
-                occupation = ""
+                withContext(Dispatchers.Main) { occupation = "" }
             }
         }
     }
@@ -1243,6 +1325,18 @@ fun AppEcran(
             charge = true
             occupation = ""
             if (fichiersIllisibles.isEmpty()) {
+                // G5 : le cache part du contenu exact du disque : le premier
+                // enregistrement ne reecrit que ce qui a vraiment change.
+                try {
+                    val tp = org.json.JSONArray(); personnes.forEach { tp.put(it.versJson()) }
+                    val tj = org.json.JSONArray(); pistes.forEach { tj.put(it.versJson()) }
+                    val ta = org.json.JSONArray(); actes.forEach { ta.put(it.versJson()) }
+                    derniersJson["personnes"] = tp.toString()
+                    derniersJson["journal"] = tj.toString()
+                    derniersJson["actes"] = ta.toString()
+                } catch (e: Exception) {
+                    derniersJson.clear()
+                }
                 verifierLiensEtRapporter()
                 completerJournal()
             }
@@ -1346,9 +1440,12 @@ fun AppEcran(
                 supprimerPiste = { supprimerPiste(it) },
                 ajouterActe = { personneId, uri, type, titre -> ajouterActe(personneId, uri, type, titre) },
                 onSupprimerActe = {
-                    Stockage.supprimerImage(ctx, it.id)
+                    // R2 : l'image chiffree n'est supprimee qu'apres un
+                    // enregistrement reussi (sinon perte irreversible).
                     actes.remove(it)
-                    enregistrer()
+                    if (enregistrer(false, setOf(it.personneId))) {
+                        Stockage.supprimerImage(ctx, it.id)
+                    }
                 },
                 onVoirActe = { acteVisionne = it },
                 onArbreCentre = { arbreCentre = it },
