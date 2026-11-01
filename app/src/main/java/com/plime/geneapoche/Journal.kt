@@ -63,12 +63,8 @@ data class Suggestion(
     val fin: String = ""
 )
 
-fun dateVersAnnee(date: String): Int? {
-    // Date republicaine : l'annee se deduit de sa conversion gregorienne.
-    repubAGregorien(date)?.let { g -> return g.takeLast(4).toIntOrNull() }
-    return Regex("[0-9]{4}").find(date)?.value?.toIntOrNull()
-}
-
+// G2-03 : une SEULE fonction d'annee pour tout le code : anneeDe
+// (Fiches.kt), qui gere les dates gregoriennes ET republicaines.
 // Annee en cours (regle des 75 ans et des 100 ans, a la date du jour).
 fun anneeCourante(): Int = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
 
@@ -79,7 +75,7 @@ fun decesAffichable(p: Personne, actes: List<Acte> = emptyList()): Boolean {
     if (p.dateDeces.isNotBlank() || p.heureDeces.isNotBlank() || p.lieuDeces.isNotBlank()) return true
     if (p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank()) return true
     if (actes.any { it.personneId == p.id && (it.type == "D" || it.type == "S") }) return true
-    val n = dateVersAnnee(p.dateNaissance) ?: return true
+    val n = anneeDe(p.dateNaissance) ?: return true
     return anneeCourante() - n >= 100
 }
 
@@ -122,9 +118,9 @@ fun anomaliesPour(personnes: List<Personne>): List<Anomalie> {
     val l = mutableListOf<Anomalie>()
     fun nom(id: Long): String = personnes.firstOrNull { it.id == id }?.titre()?.trim() ?: "?"
     personnes.forEach { p ->
-        val n = dateVersAnnee(p.dateNaissance)
-        val d = dateVersAnnee(p.dateDeces)
-        val m = dateVersAnnee(p.dateMariage)
+        val n = anneeDe(p.dateNaissance)
+        val d = anneeDe(p.dateDeces)
+        val m = anneeDe(p.dateMariage)
         val t = p.titre().trim().ifEmpty { "(sans nom)" }
         if (n != null && d != null && d < n) {
             l.add(Anomalie(t + " : d\u00E9c\u00E8s (" + d + ") avant la naissance (" + n + ").", p.id))
@@ -138,10 +134,10 @@ fun anomaliesPour(personnes: List<Personne>): List<Anomalie> {
         if (n != null) {
             val pere = personnes.firstOrNull { it.id == p.pere }
             val mere = personnes.firstOrNull { it.id == p.mere }
-            val np = pere?.let { dateVersAnnee(it.dateNaissance) }
-            val dp = pere?.let { dateVersAnnee(it.dateDeces) }
-            val nm = mere?.let { dateVersAnnee(it.dateNaissance) }
-            val dmm = mere?.let { dateVersAnnee(it.dateDeces) }
+            val np = pere?.let { anneeDe(it.dateNaissance) }
+            val dp = pere?.let { anneeDe(it.dateDeces) }
+            val nm = mere?.let { anneeDe(it.dateNaissance) }
+            val dmm = mere?.let { anneeDe(it.dateDeces) }
             if (np != null && n - np > 80) {
                 l.add(Anomalie(t + " : p\u00E8re \u00E2g\u00E9 de " + (n - np) + " ans \u00E0 la naissance.", p.id))
             }
@@ -161,7 +157,7 @@ fun anomaliesPour(personnes: List<Personne>): List<Anomalie> {
         if (m != null) {
             p.tousConjoints().forEach { co ->
                 val c = personnes.firstOrNull { it.id == co }
-                val nc = c?.let { dateVersAnnee(it.dateNaissance) }
+                val nc = c?.let { anneeDe(it.dateNaissance) }
                 if (nc != null && m < nc) {
                     l.add(Anomalie(t + " : conjoint " + nom(co) + " n\u00E9 en " + nc + ", mariage en " + m + " avant sa naissance.", p.id))
                 }
@@ -235,12 +231,12 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
     }
 
     // Plages d'annees visees par chaque evenement (pour la regle des 75 ans).
-    val anneeN = dateVersAnnee(p.dateNaissance)
+    val anneeN = anneeDe(p.dateNaissance)
     val strN = anneeN?.toString() ?: ""
-    val anneeM = dateVersAnnee(p.dateMariage)
+    val anneeM = anneeDe(p.dateMariage)
     val mDebut = anneeM?.toString() ?: (if (anneeN != null) (anneeN + 20).toString() else "")
     val mFin = anneeM?.toString() ?: (if (anneeN != null) (anneeN + 45).toString() else "")
-    val anneeD = dateVersAnnee(p.dateDeces)
+    val anneeD = anneeDe(p.dateDeces)
     val dDebut = anneeD?.toString() ?: (if (anneeN != null) (anneeN + 50).toString() else "")
     val dFin = anneeD?.toString() ?: (if (anneeN != null) (anneeN + 95).toString() else "")
     val decesPossible = decesAffichable(p, actes)
@@ -276,7 +272,7 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
         ajouter("conjoint", "Rechercher le conjoint de " + titreCourt(p), "C", "", "", mDebut, mFin)
     }
     if (p.enfants.isEmpty()) {
-        val anneeM = dateVersAnnee(p.dateMariage)
+        val anneeM = anneeDe(p.dateMariage)
         val debut = anneeM?.toString() ?: ""
         val fin = anneeM?.let { (it + 25).toString() } ?: ""
         ajouter("enfants", "Rechercher les enfants de " + titreCourt(p) + (if (debut.isNotEmpty()) { " (apr\u00E8s le mariage de " + debut + ")" } else { "" }), "A", debut = debut, fin = fin)
