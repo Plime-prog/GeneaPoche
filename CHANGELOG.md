@@ -1,5 +1,19 @@
 # Historique des versions — GénéaPoche
 
+## v0.34 (« GénéaPoche 3 » : chronologie unique, menu Saisie refondu, compteur de renseignements)
+
+- **Bandeau réduit et figé** sur tous les écrans : icône et titre plus compacts, toujours visibles pendant le défilement.
+- **Compteur de renseignements dans la liste Personnes** : « n/4 » tout à droite du nom, couleur du rouge (rien) au vert (complet) ; une date complète exige le jour, le mois et l'année (une année seule est incomplète) et un lieu complet exige la commune avec un département identifiable.
+- **Fiche : cartouche identité + parents figé** (il reste visible en haut pendant le défilement), badge « n/6 » dans le titre (naissance et décès : date, commune, département).
+- **Édition par appui long** de l'identité (nom, prénoms, profession) ; suppression de l'indice « Appui long sur… » et de l'étiquette « Identité ».
+- **Père et mère dans un seul cadre**, affichés comme les enfants (même police, numéros cliquables) ; la pastille renvoie vers leur fiche ; appui long = choisir ou créer, avec synchronisation complète.
+- **Chronologie unique** : naissance, baptême, mariage, décès, sépulture, événements libres et enfants sont tous rangés par date, avec **l'âge entre parenthèses** pour chaque événement.
+- **Mariage** : plus de « présent et consentant » automatique ; seules les mentions réellement transcrites sur l'acte sont enregistrées.
+- **Menu Saisie refondu** : 7 entrées avec icônes (N, B, M, S, D, Événement, Enfant) ; la personne existante est proposée systématiquement et l'acte existant est édité (aucun doublon) ; le mariage traite bien les deux conjoints.
+- **Périodes réalistes indiquées** sous le champ date (baptême dans les 2 ans, mariage 16-40 ans, sépulture dans l'année du décès…) et **avertissements de cohérence non bloquants** : « Enregistrer quand même » reste possible.
+- **Événements libres** : intitulé, date, heure, commune, département, édition et suppression.
+- **GEDCOM** : export au choix 5.5.1 ou 7.0.18 ; import avec **fusion sans doublon** (complétion des fiches existantes, ajout des absents, liens recalés) ou remplacement ; version réelle 0.34.
+
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
 
 - **Fiche : N, M et D toujours regroupés**, même sans information (B et S apparaissent dès qu'une donnée existe) ; tous les blocs sont rangés dans l'**ordre chronologique** ; règle des 100 ans conservée pour le décès et la sépulture.
