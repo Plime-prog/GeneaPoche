@@ -46,7 +46,6 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -130,6 +129,20 @@ fun PastilleNumero(p: Personne, diametre: Int) {
 // (pastille + parents avec dates N/D), puis frise chronologique des
 // evenements : N et D par defaut, B/M/S via le bouton BMS ; toucher un
 // evenement ouvre son bloc.
+// ---------------------------------------------------------------- Ecran fiche
+// v0.33 : fiche refondue.
+// - En-tete fige : pastille au numero, nom et prenoms, compteur des actes.
+//   Appui long sur l'en-tete = edition nom / prenoms / profession.
+// - Cadres FIGES (visibles meme en defilant) : profession (si renseignee)
+//   puis pere et mere dans le MEME cadre, affiches comme les enfants
+//   (pastille au numero, meme police), toucher = leur fiche, appui long =
+//   choisir ou creer.
+// - CHRONOLOGIE automatique : tous les evenements ET les enfants ranges par
+//   date, age entre parentheses pour chaque evenement. Toucher un evenement
+//   ouvre son bloc ; appui long = saisie d'acte pre-remplie (menu Saisie).
+// - Etiquette verte "Ajouter un evenement" (formulaire du menu Saisie,
+//   pre-renseigne) et "Ajouter un enfant".
+// - Plus de bandeau de boutons en bas de fiche.
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -155,7 +168,9 @@ fun EcranPersonne(
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
-    ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
+    // v0.33 : ouvre le formulaire de saisie d'acte (menu Saisie) pour cette
+    // personne, pre-rempli avec ses informations connues.
+    onOuvrirSaisie: (String) -> Unit,
     // Coche de validation d'une information : (section, valide).
     // Une coche negative cree automatiquement une recherche dans le journal.
     onValider: (String, Boolean) -> Unit,
@@ -164,46 +179,68 @@ fun EcranPersonne(
     pistes: List<Piste> = emptyList(),
     onSupprimerPiste: (Piste) -> Unit = {}
 ) {
-    // Blocs ouverts sur la frise : N et D par defaut.
+    // Blocs ouverts : par defaut tout est replie ; toucher ouvre le bloc.
     var ouverts by remember { mutableStateOf(setOf<String>()) }
-    // Dialogues : edition d'un bloc, mariage, enfant, parent, temoin.
-    var blocEdite by remember { mutableStateOf<String?>(null) }
+    // Dialogues : mariage, enfant, parent, temoin.
     var mariageOuvert by remember { mutableStateOf(false) }
     var enfantOuvert by remember { mutableStateOf(false) }
     var menuEnfant by remember { mutableStateOf(false) }
-    var menuEvenement by remember { mutableStateOf(false) }
     var parentRole by remember { mutableStateOf("") }
     var temoinType by remember { mutableStateOf("") }
+    // Appui long sur un parent connu : choisir ou creer son remplacant.
+    var parentMenu by remember { mutableStateOf("") }
 
-    // Evenements de la frise : ordre FIXE N en haut, puis B, M, S s'ils
-    // existent, puis D en dernier, meme si N ou D n'ont pas d'information.
-    val ordreTypes = mutableListOf("N")
-    if (p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || actes.any { it.personneId == p.id && it.type == "B" }) {
-        ordreTypes.add("B")
-    }
-    if (p.blocsOuverts.contains("mariage") || p.dateMariage.isNotBlank() || p.heureMariage.isNotBlank() || p.lieuMariage.isNotBlank() || p.conjoint != 0L || p.conjointsSupp.isNotEmpty() || p.enfants.isNotEmpty() || actes.any { it.personneId == p.id && it.type == "M" }) {
-        ordreTypes.add("M")
-    }
-    // R\u00E8gle des 100 ans : la notion de d\u00E9c\u00E8s ou de s\u00E9pulture ne s'affiche
-    // que si la personne peut avoir plus de 100 ans \u00E0 la date du jour (ou si
-    // son d\u00E9c\u00E8s est d\u00E9j\u00E0 connu).
     val decesAffiche = decesAffichable(p, actes)
-    if (decesAffiche) {
-        if (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || actes.any { it.personneId == p.id && it.type == "S" }) {
-            ordreTypes.add("S")
-        }
-        ordreTypes.add("D")
+    val anneeN = anneeDe(p.dateNaissance)
+
+    // CHRONOLOGIE : chaque entree = un evenement ou un enfant, avec sa cle
+    // de tri (annee). Les evenements sans annee vont en fin de liste, sauf
+    // la naissance sans date, premier evenement de la vie, en tete.
+    val entrees = mutableListOf<Triple<Int, String, Long>>()
+    fun cleEvent(date: String, type: String): Int {
+        val a = anneeDe(date)
+        return a ?: if (type == "N") Int.MIN_VALUE else Int.MAX_VALUE
     }
+    fun ajouterEvenement(type: String, existe: Boolean) {
+        if (!existe) return
+        entrees.add(Triple(cleEvent(champsEvenement(p, type).date, type), type, 0L))
+    }
+    ajouterEvenement("N", true)
+    ajouterEvenement("B", p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || actes.any { it.personneId == p.id && it.type == "B" })
+    ajouterEvenement("M", p.blocsOuverts.contains("mariage") || p.dateMariage.isNotBlank() || p.heureMariage.isNotBlank() || p.lieuMariage.isNotBlank() || p.conjoint != 0L || p.conjointsSupp.isNotEmpty() || p.enfants.isNotEmpty() || actes.any { it.personneId == p.id && it.type == "M" })
+    if (decesAffiche) {
+        ajouterEvenement("S", p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || actes.any { it.personneId == p.id && it.type == "S" })
+        ajouterEvenement("D", true)
+    }
+    // Les enfants entrent dans la chronologie a leur date de naissance.
+    p.enfants.forEach { idE ->
+        val e = personneParId(personnes, idE)
+        entrees.add(Triple(e?.let { anneeDe(it.dateNaissance) } ?: Int.MAX_VALUE, "E", idE))
+    }
+    entrees.sortBy { it.first }
+
+    // Compteur des actes stockes de la personne (en-tete).
+    val nbActes = actes.count { it.personneId == p.id }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    // Pastille au numero + nom et prenoms, comme la liste.
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // En-tete : pastille au numero, nom et prenoms, compteur
+                    // des actes. Appui long : edition nom / prenoms /
+                    // profession.
+                    Row(
+                        Modifier.combinedClickable(onClick = {}, onLongClick = onModifier, onLongClickLabel = "Modifier le nom, les pr\u00E9noms et la profession"),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         PastilleNumero(p = p, diametre = 36)
                         Spacer(Modifier.width(8.dp))
-                        Text(p.titre(), fontSize = 17.sp)
+                        Text(
+                            p.titre() + "  \u00B7  " + nbActes.toString() + " acte" + (if (nbActes > 1) "s" else ""),
+                            fontSize = 16.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -218,251 +255,227 @@ fun EcranPersonne(
                     }
                 },
                 actions = {
-                    // Pas de crayon : l'edition s'ouvre par appui long sur le
-                    // bloc identite (v0.28).
                     IconButton(onClick = onSupprimer) {
                         Icon(Icons.Filled.Delete, contentDescription = "Supprimer")
                     }
                 }
             )
-        },
-            // Cinq boutons d'action FIXES en bas de la fiche, toujours
-            // visibles, texte sur une seule ligne, icone pour chacun.
-            bottomBar = {
-                Surface(shadowElevation = 8.dp, color = Color.White) {
-                    Column(
-                        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+        }
+    ) { marges ->
+        Column(Modifier.fillMaxSize().padding(marges)) {
+            // Cadres FIGES : profession (seulement si renseignee) puis pere
+            // et mere dans le meme cadre. Ils restent visibles pendant que
+            // la chronologie defile.
+            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+                if (p.profession.trim().isNotEmpty()) {
+                    Card(
+                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, couleurPastille(p.sexe))
                     ) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            FilledTonalButton(
-                                onClick = { p.blocsOuverts.add("bapteme"); ouverts = ouverts + "B"; enregistrer() },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Filled.Face, contentDescription = null, Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Bapt\u00EAme", fontSize = 12.sp, maxLines = 1)
-                            }
-                            FilledTonalButton(
-                                onClick = { p.blocsOuverts.add("mariage"); ouverts = ouverts + "M"; enregistrer() },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Filled.Favorite, contentDescription = null, Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Mariage", fontSize = 12.sp, maxLines = 1)
-                            }
-                            if (decesAffiche) {
-                                FilledTonalButton(
-                                    onClick = { p.blocsOuverts.add("sepulture"); ouverts = ouverts + "S"; enregistrer() },
-                                    modifier = Modifier.weight(1f),
-                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                                ) {
-                                    Icon(Icons.Filled.Place, contentDescription = null, Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("S\u00E9pulture", fontSize = 12.sp, maxLines = 1)
-                                }
-                            }
-                        }
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            FilledTonalButton(
-                                onClick = { menuEnfant = true },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Enfant", fontSize = 12.sp, maxLines = 1)
-                            }
-                            FilledTonalButton(
-                                onClick = { menuEvenement = true },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("\u00C9v\u00E9nement", fontSize = 12.sp, maxLines = 1)
-                            }
-                        }
+                        Text(
+                            p.profession.trim(),
+                            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
-            }
-    ) { marges ->
-        LazyColumn(
-            Modifier.fillMaxSize().padding(marges).padding(horizontal = 12.dp)
-        ) {
-            // G3-15 : geste cache rendu decouvrable sans icone crayon
-            // (choix utilisateur) : un indice discret en tete de fiche.
-            item {
-                Text(
-                    "Appui long sur l'en-t\\u00EAte d'un \\u00E9v\\u00E9nement pour le modifier, sur le titre d'un acte pour voir ses pages.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
-                )
-            }
-            item {
-                CarteIdentite(
+                CarteParents(
                     p = p,
                     personnes = personnes,
                     onOuvrir = onOuvrir,
-                    onValider = { v -> onValider("identite", v) }
+                    onChoisir = { role -> onChoisir(role) },
+                    onCreer = { role -> parentRole = role },
+                    onMenu = { role -> parentMenu = role },
+                    onRetirer = onRetirer
                 )
             }
-            // Frise chronologique : UN bloc encadre PAR EVENEMENT (v0.28), puis
-            // un bloc par enfant. Toucher l'en-tete ouvre le bloc, appui long
-            // ouvre l'edition de l'evenement.
-            item {
-                Column(Modifier.fillMaxWidth()) {
-                    ordreTypes.forEach { t ->
-                        val cEv = champsEvenement(p, t)
-                        val dEv = cEv.date.trim()
-                        val lEv = cEv.lieu.trim()
-                        val dpEv = cEv.dept.trim()
-                        val numDept = dpEv.toIntOrNull() ?: numeroDepartement(dpEv) ?: numeroDepartement(lEv)
-                        // Couleur du bloc selon les informations remplies : rouge
-                        // (rien), orange (partiel), vert (date, heure, lieu, dept).
-                        val remplisEv = listOf(dEv, cEv.heure.trim(), lEv, dpEv).count { it.isNotEmpty() }
-                        val couleurBlocEv = when {
-                            remplisEv >= 4 -> CouleurVert
-                            remplisEv >= 1 -> CouleurOrange
-                            else -> CouleurRouge
-                        }
-                        Card(
-                            Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            border = BorderStroke(1.dp, couleurBlocEv)
+            // CHRONOLOGIE : evenements et enfants ranges par date.
+            LazyColumn(
+                Modifier.fillMaxSize().weight(1f).padding(horizontal = 12.dp)
+            ) {
+                item {
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Button(
+                            onClick = { onOuvrirSaisie("") },
+                            modifier = Modifier.weight(1f).height(36.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = CouleurVert),
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp)
                         ) {
-                            Column(Modifier.fillMaxWidth().padding(8.dp)) {
-                                Row(
-                                    Modifier.fillMaxWidth()
-                                        .padding(vertical = 1.dp)
-                                        .combinedClickable(
-                                            onClick = { ouverts = if (ouverts.contains(t)) ouverts - t else ouverts + t },
-                                            onClickLabel = "Ouvrir ou replier ce bloc",
-                                            onLongClick = { blocEdite = t },
-                                            onLongClickLabel = "Modifier ce bloc"
-                                        ),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                Box(
-                                    Modifier.size(10.dp).clip(CircleShape)
-                                        .background(couleurBlocEv)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                val morceaux = mutableListOf<String>()
-                                if (dEv.isNotEmpty()) morceaux.add(dateAffichee(dEv))
-                                if (lEv.isNotEmpty()) morceaux.add(lEv + (if (numDept != null) " (" + numDept.toString() + ")" else ""))
-                                Text(
-                                    t + ". " + if (morceaux.isEmpty()) "\u2014" else morceaux.joinToString(" \u00E0 "),
-                                    Modifier.weight(1f),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (morceaux.isEmpty()) GrisManquant else Color.Unspecified
-                                )
-                                // G3-11 : le remplissage n'est pas signale par
-                                // la couleur seule, un mot l'explicite.
-                                Text(
-                                    if (remplisEv >= 4) "complet" else if (remplisEv >= 1) "partiel" else "\u00E0 compl\u00E9ter",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (remplisEv >= 4) CouleurVert else if (remplisEv >= 1) CouleurOrange else CouleurRouge
-                                )
-                            }
-                            // G3-15 : la frise s'anime a l'ouverture du bloc.
-                            androidx.compose.animation.AnimatedVisibility(
-                                visible = ouverts.contains(t),
-                                enter = androidx.compose.animation.expandVertically(),
-                                exit = androidx.compose.animation.shrinkVertically()
-                            ) {
-                                CarteEvenement(
-                                    titre = libelleType(t),
-                                    typeActe = t,
-                                    p = p,
-                                    personnes = personnes,
-                                    actes = actes.filter { it.personneId == p.id && it.type == t },
-                                    onEditer = { blocEdite = t },
-                                    onOuvrir = onOuvrir,
-                                    onChoisir = onChoisir,
-                                    onRetirer = onRetirer,
-                                    onOuvrirMariage = { mariageOuvert = true },
-                                    onOuvrirParent = { parentRole = it },
-                                    onOuvrirTemoin = { temoinType = t },
-                                    onRetirerTemoin = onRetirerTemoin,
-                                    onBasculerSignature = onBasculerSignature,
-                                    onAjouterTemoinExistant = { type, id -> onNouveauTemoin(type, id, "", "") },
-                                    onAjouterActe = onAjouterActe,
-                                    onSupprimerActe = onSupprimerActe,
-                                    onVoirActe = onVoirActe,
-                                    onEnregistrer = enregistrer,
-                                    ouvrirEtatCivil = ouvrirEtatCivil,
-                                    onValider = { v -> onValider(sectionDe(t), v) },
-                                    pistes = pistes,
-                                    modifier = Modifier
-                                )
-                            }
-                            }
+                            Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Ajouter un \u00E9v\u00E9nement", color = Color.White, fontSize = 12.sp, maxLines = 1)
                         }
+                        Button(
+                            onClick = { menuEnfant = true },
+                            modifier = Modifier.weight(1f).height(36.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = CouleurVert),
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp)
+                        ) {
+                            Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Ajouter un enfant", color = Color.White, fontSize = 12.sp, maxLines = 1)
                         }
-                        // Un bloc par enfant : en r\u00E9alit\u00E9 la fiche r\u00E9sum\u00E9e de l'enfant
-                        // (pastille au num\u00E9ro, N. et D. avec commune et d\u00E9partement).
-                        p.enfants.forEach { idE ->
-                            val e = personneParId(personnes, idE)
-                            Card(
-                                Modifier.fillMaxWidth().padding(top = 4.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                border = BorderStroke(1.dp, if (e != null) couleurPastille(e.sexe) else GrisManquant)
-                            ) {
-                                Column(
-                                    Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(6.dp).clickable { onOuvrir(idE) }
+                    }
+                }
+                item {
+                    Column(Modifier.fillMaxWidth()) {
+                        entrees.forEach { entree ->
+                            val t = entree.second
+                            if (t != "E") {
+                                val cEv = champsEvenement(p, t)
+                                val dEv = cEv.date.trim()
+                                val lEv = cEv.lieu.trim()
+                                val dpEv = cEv.dept.trim()
+                                val numDept = dpEv.toIntOrNull() ?: numeroDepartement(dpEv) ?: numeroDepartement(lEv)
+                                // Couleur du bloc selon les informations remplies :
+                                // rouge (rien), orange (partiel), vert (complet).
+                                val remplisEv = listOf(dEv, cEv.heure.trim(), lEv, dpEv).count { it.isNotEmpty() }
+                                val couleurBlocEv = when {
+                                    remplisEv >= 4 -> CouleurVert
+                                    remplisEv >= 1 -> CouleurOrange
+                                    else -> CouleurRouge
+                                }
+                                // Age de la personne au moment de l'evenement,
+                                // entre parentheses dans l'en-tete du bloc.
+                                val ageTxt = if (anneeN != null) {
+                                    val aEv = anneeDe(dEv)
+                                    if (aEv != null) " (" + (aEv - anneeN).coerceAtLeast(0).toString() + " ans)" else ""
+                                } else ""
+                                Card(
+                                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    border = BorderStroke(1.dp, couleurBlocEv)
                                 ) {
-                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                        if (e != null) {
-                                            PastilleNumero(p = e, diametre = 28)
+                                    Column(Modifier.fillMaxWidth().padding(8.dp)) {
+                                        Row(
+                                            Modifier.fillMaxWidth()
+                                                .padding(vertical = 1.dp)
+                                                .combinedClickable(
+                                                    onClick = { ouverts = if (ouverts.contains(t)) ouverts - t else ouverts + t },
+                                                    onClickLabel = "Ouvrir ou replier ce bloc",
+                                                    onLongClick = { onOuvrirSaisie(t) },
+                                                    onLongClickLabel = "Modifier cet \u00E9v\u00E9nement"
+                                                ),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(
+                                                Modifier.size(10.dp).clip(CircleShape)
+                                                    .background(couleurBlocEv)
+                                            )
                                             Spacer(Modifier.width(8.dp))
+                                            val morceaux = mutableListOf<String>()
+                                            if (dEv.isNotEmpty()) morceaux.add(dateAffichee(dEv))
+                                            if (lEv.isNotEmpty()) morceaux.add(lEv + (if (numDept != null) " (" + numDept.toString() + ")" else ""))
+                                            Text(
+                                                libelleType(t) + " : " + if (morceaux.isEmpty()) "\u2014" else morceaux.joinToString(" \u00E0 ") + ageTxt,
+                                                Modifier.weight(1f),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Medium,
+                                                color = if (morceaux.isEmpty()) GrisManquant else Color.Unspecified
+                                            )
+                                            Text(
+                                                if (remplisEv >= 4) "complet" else if (remplisEv >= 1) "partiel" else "\u00E0 compl\u00E9ter",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = if (remplisEv >= 4) CouleurVert else if (remplisEv >= 1) CouleurOrange else CouleurRouge
+                                            )
                                         }
-                                        Text(
-                                            e?.titre() ?: "(fiche supprim\u00E9e)",
-                                            Modifier.weight(1f),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        IconButton(onClick = { onRetirer("enfant", idE) }, Modifier.size(28.dp)) {
-                                            Icon(Icons.Filled.Close, contentDescription = "Retirer cet enfant", Modifier.size(14.dp))
+                                        // Ouverture animee du bloc.
+                                        androidx.compose.animation.AnimatedVisibility(
+                                            visible = ouverts.contains(t),
+                                            enter = androidx.compose.animation.expandVertically(),
+                                            exit = androidx.compose.animation.shrinkVertically()
+                                        ) {
+                                            CarteEvenement(
+                                                titre = libelleType(t),
+                                                typeActe = t,
+                                                p = p,
+                                                personnes = personnes,
+                                                actes = actes.filter { it.personneId == p.id && it.type == t },
+                                                onEditer = { onOuvrirSaisie(t) },
+                                                onOuvrir = onOuvrir,
+                                                onChoisir = onChoisir,
+                                                onRetirer = onRetirer,
+                                                onOuvrirMariage = { mariageOuvert = true },
+                                                onOuvrirParent = { parentRole = it },
+                                                onOuvrirTemoin = { temoinType = t },
+                                                onRetirerTemoin = onRetirerTemoin,
+                                                onBasculerSignature = onBasculerSignature,
+                                                onAjouterTemoinExistant = { type, id -> onNouveauTemoin(type, id, "", "") },
+                                                onAjouterActe = onAjouterActe,
+                                                onSupprimerActe = onSupprimerActe,
+                                                onVoirActe = onVoirActe,
+                                                onEnregistrer = enregistrer,
+                                                onValider = { v -> onValider(sectionDe(t), v) },
+                                                pistes = pistes,
+                                                modifier = Modifier
+                                            )
                                         }
                                     }
-                                    if (e != null) {
-                                        // R\u00E8gle des 100 ans : le d\u00E9c\u00E8s d'un enfant
-                                        // ne s'affiche que s'il est connu ou possible.
-                                        val lignesEnfant = mutableListOf(
-                                            "N" to Triple(e.dateNaissance, e.lieuNaissance, e.deptNaissance)
-                                        )
-                                        if (decesAffichable(e)) lignesEnfant.add(
-                                            "D" to Triple(e.dateDeces, e.lieuDeces, e.deptDeces)
-                                        )
-                                        lignesEnfant.forEach { paire ->
-                                            val tEnf = paire.first
-                                            val dEnf = paire.second.first.trim()
-                                            val lEnf = paire.second.second.trim()
-                                            val dpEnf = paire.second.third.trim()
-                                            val numEnf = dpEnf.toIntOrNull() ?: numeroDepartement(dpEnf) ?: numeroDepartement(lEnf)
-                                            val morceauxEnf = mutableListOf<String>()
-                                            if (dEnf.isNotEmpty()) morceauxEnf.add(dateAffichee(dEnf))
-                                            if (lEnf.isNotEmpty()) morceauxEnf.add(lEnf + (if (numEnf != null) " (" + numEnf.toString() + ")" else ""))
-                                            if (morceauxEnf.isNotEmpty()) {
-                                                Text(
-                                                    tEnf + ". " + morceauxEnf.joinToString(" \u00E0 "),
-                                                    style = MaterialTheme.typography.bodySmall
-                                                )
+                                }
+                            } else {
+                                // Un bloc par enfant : fiche resumee de l'enfant,
+                                // rangee dans la chronologie a sa naissance.
+                                val idE = entree.third
+                                val e = personneParId(personnes, idE)
+                                Card(
+                                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    border = BorderStroke(1.dp, if (e != null) couleurPastille(e.sexe) else GrisManquant)
+                                ) {
+                                    Column(
+                                        Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(6.dp).clickable { onOuvrir(idE) }
+                                    ) {
+                                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            if (e != null) {
+                                                PastilleNumero(p = e, diametre = 28)
+                                                Spacer(Modifier.width(8.dp))
+                                            }
+                                            Text(
+                                                e?.titre() ?: "(fiche supprim\u00E9e)",
+                                                Modifier.weight(1f),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            IconButton(onClick = { onRetirer("enfant", idE) }, Modifier.size(28.dp)) {
+                                                Icon(Icons.Filled.Close, contentDescription = "Retirer cet enfant", Modifier.size(14.dp))
+                                            }
+                                        }
+                                        if (e != null) {
+                                            // R\u00E8gle des 100 ans : le d\u00E9c\u00E8s d'un enfant
+                                            // ne s'affiche que s'il est connu ou possible.
+                                            val lignesEnfant = mutableListOf(
+                                                "N" to Triple(e.dateNaissance, e.lieuNaissance, e.deptNaissance)
+                                            )
+                                            if (decesAffichable(e)) lignesEnfant.add(
+                                                "D" to Triple(e.dateDeces, e.lieuDeces, e.deptDeces)
+                                            )
+                                            lignesEnfant.forEach { paire ->
+                                                val tEnf = paire.first
+                                                val dEnf = paire.second.first.trim()
+                                                val lEnf = paire.second.second.trim()
+                                                val dpEnf = paire.second.third.trim()
+                                                val numEnf = dpEnf.toIntOrNull() ?: numeroDepartement(dpEnf) ?: numeroDepartement(lEnf)
+                                                val morceauxEnf = mutableListOf<String>()
+                                                if (dEnf.isNotEmpty()) morceauxEnf.add(dateAffichee(dEnf))
+                                                if (lEnf.isNotEmpty()) morceauxEnf.add(lEnf + (if (numEnf != null) " (" + numEnf.toString() + ")" else ""))
+                                                if (morceauxEnf.isNotEmpty()) {
+                                                    Text(
+                                                        tEnf + ". " + morceauxEnf.joinToString(" \u00E0 "),
+                                                        style = MaterialTheme.typography.bodySmall
+                                                    )
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                        // Evenements de la famille (ascendants, fratrie,
-                        // enfants) dans la frise chronologique, sans bloc
-                        // repliable (reponse utilisateur).
+                        // Evenements de la famille (ascendants, fratrie, enfants).
                         EvenementsFamille(p = p, personnes = personnes)
                         // Bloc SANS TITRE : saisie libre (notes quelconques).
                         Card(
@@ -501,9 +514,8 @@ fun EcranPersonne(
                                         style = MaterialTheme.typography.titleSmall
                                     )
                                     pistesPers.forEach { ps ->
-                                        // Reponse utilisateur : sur la FICHE, le nom de la
-                                        // personne concernee ne se repete pas (dans le
-                                        // journal, il reste affiche).
+                                        // Sur la FICHE, le nom de la personne concernee
+                                        // ne se repete pas.
                                         val texteFiche = ps.texte
                                             .replace(titreCourt(p), "")
                                             .replace(Regex("\\s+de\\s*$"), "")
@@ -526,32 +538,10 @@ fun EcranPersonne(
                             }
                         }
                     }
-                // Les boutons d'action (B, M, S, Enfant, Evenement) sont
-                // FIXES en bas de la fiche (bottomBar du Scaffold).
+                }
+                item { Spacer(Modifier.height(12.dp)) }
             }
-            item { Spacer(Modifier.height(12.dp)) }
         }
-    }
-
-    // Dialogue d'edition du bloc : date, heure, commune, d\u00E9partement,
-    // r\u00E9f\u00E9rence. Validation = contr\u00F4le de coh\u00E9rence + synchronisation.
-    blocEdite?.let { t ->
-        val c = champsEvenement(p, t)
-        val ref = actes.filter { it.personneId == p.id && it.type == t && it.reference.isNotBlank() }
-            .maxByOrNull { it.creation }?.reference?.trim() ?: ""
-        DialogueEditionBloc(
-            titre = libelleType(t),
-            dateInit = c.date.trim(),
-            heureInit = c.heure.trim(),
-            communeInit = c.lieu.trim(),
-            deptInit = c.dept.trim(),
-            refInit = ref,
-            onValider = { d, h, co, de, rf ->
-                onModifierBloc(t, d, h, co, de, rf)
-                blocEdite = null
-            },
-            onAnnuler = { blocEdite = null }
-        )
     }
 
     if (mariageOuvert) {
@@ -627,119 +617,135 @@ fun EcranPersonne(
         )
     }
 
-    // Bouton Evenement : choisit l'evenement a ouvrir et corriger.
-    // N et D sont toujours dans la frise ; B, M et S y sont ajoutes.
-    if (menuEvenement) {
+    // Appui long sur un parent connu : remplacer en choisissant une fiche
+    // existante ou en creant une nouvelle.
+    if (parentMenu.isNotEmpty()) {
         AlertDialog(
-            onDismissRequest = { menuEvenement = false },
-            title = { Text("\u00C9v\u00E9nement \u00E0 ouvrir") },
+            onDismissRequest = { parentMenu = "" },
+            title = { Text(if (parentMenu == "pere") "Changer le p\u00E8re" else "Changer la m\u00E8re") },
             text = {
                 Column {
                     Text(
-                        "Touchez un \u00E9v\u00E9nement : son bloc s'ouvre et son dialogue de correction s'affiche.",
+                        "Le lien actuel sera remplac\u00E9 ; aucune fiche n'est supprim\u00E9e.",
                         style = MaterialTheme.typography.bodySmall
                     )
-                    listOf(
-                        "N" to "Naissance",
-                        "B" to "Bapt\u00EAme",
-                        "M" to "Mariage",
-                        "S" to "S\u00E9pulture",
-                        "D" to "D\u00E9c\u00E8s"
-                    ).filter { paire -> (paire.first != "S" && paire.first != "D") || decesAffichable(p, actes) }
-                        .forEach { paire ->
-                        OutlinedButton(
-                            onClick = {
-                                val t = paire.first
-                                if (t == "B" || t == "M" || t == "S") {
-                                    if (!p.blocsOuverts.contains(t)) p.blocsOuverts.add(t)
-                                    enregistrer()
-                                }
-                                blocEdite = t
-                                menuEvenement = false
-                            },
-                            Modifier.fillMaxWidth().padding(top = 6.dp)
-                        ) { Text(paire.second) }
-                    }
+                    OutlinedButton(
+                        onClick = { val role = parentMenu; parentMenu = ""; onChoisir(role) },
+                        Modifier.fillMaxWidth().padding(top = 6.dp)
+                    ) { Text("Choisir une fiche existante") }
+                    OutlinedButton(
+                        onClick = { val role = parentMenu; parentMenu = ""; parentRole = role },
+                        Modifier.fillMaxWidth().padding(top = 4.dp)
+                    ) { Text("Saisir un nouveau parent") }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { menuEvenement = false }) { Text("Fermer") }
+                TextButton(onClick = { parentMenu = "" }) { Text("Fermer") }
             }
         )
     }
 }
 
-// ---------------------------------------------------------------- Cartouche identite
-// Pastille au numero + nom, profession, rappel des parents avec dates
-// N. et D. Cartouche teinte selon le sexe. Appui long : edition.
-
+// Cadre PERE ET MERE (v0.33) : meme cadre, FIGE en haut de la fiche.
+// Affichage identique aux blocs enfants : pastille au numero, meme police,
+// lignes N. et D. (deces seulement si la regle des 100 ans l'autorise).
+// Toucher = ouvrir sa fiche ; appui long = choisir ou creer un remplacant ;
+// croix = retirer le lien (sans supprimer la fiche).
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CarteIdentite(
+fun CarteParents(
     p: Personne,
     personnes: List<Personne>,
     onOuvrir: (Long) -> Unit,
-    onValider: (Boolean) -> Unit
+    onChoisir: (String) -> Unit,
+    onCreer: (String) -> Unit,
+    onMenu: (String) -> Unit,
+    onRetirer: (String, Long) -> Unit
 ) {
     Card(
         Modifier.fillMaxWidth().padding(vertical = 3.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, couleurPastille(p.sexe))
+        border = BorderStroke(1.dp, CouleurBordVert)
     ) {
-        // Cartouche FIGE : plus aucune edition ici (reponse utilisateur),
-        // seulement le temoin de couleur et le rappel des parents.
-        Column(
-            Modifier.fillMaxWidth().padding(6.dp)
-        ) {
-            // Bouton de couleur d'identification : du rouge (aucune des 4
-            // informations) au vert (nom, prenoms, date et lieu de naissance
-            // tous renseignes, identite confirmee au toucher).
-            val remplis = listOf(p.nom, p.prenoms, p.dateNaissance, p.lieuNaissance).count { it.trim().isNotEmpty() }
-            val validee = p.etatDe("identite") == "vert"
-            val couleurBouton = if (validee) CouleurVert else when {
-                remplis >= 4 -> CouleurBordVert
-                remplis >= 2 -> CouleurOrange
-                else -> CouleurRouge
-            }
-            Button(
-                onClick = { onValider(!validee) },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = couleurBouton),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
-            ) {
-                Text(
-                    if (validee) "Identit\u00E9 confirm\u00E9e" else "Identit\u00E9 " + remplis.toString() + "/4",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    maxLines = 1
-                )
-            }
-            // Nom et numero deja affiches dans le titre : il ne reste ici que
-            // la profession et le rappel du pere et de la mere. Pas d'edition.
-            if (p.profession.trim().isNotEmpty()) {
-                Text(p.profession.trim(), style = MaterialTheme.typography.bodySmall)
-            }
-            // Rappel des parents, avec leurs dates N. et D.
-            listOf("P\u00E8re" to p.pere, "M\u00E8re" to p.mere).forEach { paire ->
-                val libelle = paire.first
-                val idParent = paire.second
+        Column(Modifier.fillMaxWidth().padding(6.dp)) {
+            listOf("P\u00E8re" to p.pere, "M\u00E8re" to p.mere).forEach { (libelle, idParent) ->
                 val q = personneParId(personnes, idParent)
-                Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
-                    if (q == null) {
-                        Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
-                    } else {
-                        val nd = mutableListOf<String>()
-                        val n = dateAffichee(q.dateNaissance.trim())
-                        val d = dateAffichee(q.dateDeces.trim())
-                        if (n.isNotEmpty()) nd.add("N. " + n)
-                        if (d.isNotEmpty()) nd.add("D. " + d)
-                        val parenthese = if (nd.isNotEmpty()) " (" + nd.joinToString(" \u2013 ") + ")" else ""
+                if (q == null) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            q.titre() + parenthese,
-                            Modifier.weight(1f).heightIn(min = 48.dp).clickable { onOuvrir(idParent) },
+                            libelle + " : \u2014",
+                            Modifier.weight(1f),
+                            color = GrisManquant,
                             style = MaterialTheme.typography.bodySmall
                         )
+                        OutlinedButton(
+                            onClick = { onChoisir(if (libelle == "P\u00E8re") "pere" else "mere") },
+                            modifier = Modifier.height(32.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) { Text("Choisir", fontSize = 11.sp) }
+                        TextButton(
+                            onClick = { onCreer(if (libelle == "P\u00E8re") "pere" else "mere") },
+                            modifier = Modifier.height(32.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) { Text("Cr\u00E9er", fontSize = 11.sp) }
+                    }
+                } else {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp)
+                            .combinedClickable(
+                                onClick = { onOuvrir(q.id) },
+                                onClickLabel = "Ouvrir la fiche",
+                                onLongClick = { onMenu(if (libelle == "P\u00E8re") "pere" else "mere") },
+                                onLongClickLabel = "Changer ce parent"
+                            )
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            PastilleNumero(p = q, diametre = 28)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                q.titre(),
+                                Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            IconButton(
+                                onClick = { onRetirer(if (libelle == "P\u00E8re") "pere" else "mere", 0L) },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.Filled.Close, contentDescription = "Retirer ce parent", modifier = Modifier.size(14.dp))
+                            }
+                        }
+                        // Lignes N. et D. : identiques aux blocs enfants.
+                        val lignesParent = mutableListOf(
+                            "N" to Triple(q.dateNaissance, q.lieuNaissance, q.deptNaissance)
+                        )
+                        if (decesAffichable(q, emptyList())) lignesParent.add(
+                            "D" to Triple(q.dateDeces, q.lieuDeces, q.deptDeces)
+                        )
+                        lignesParent.forEach { paire ->
+                            val tPar = paire.first
+                            val dPar = paire.second.first.trim()
+                            val lPar = paire.second.second.trim()
+                            val dpPar = paire.second.third.trim()
+                            val numPar = dpPar.toIntOrNull() ?: numeroDepartement(dpPar) ?: numeroDepartement(lPar)
+                            val morceauxPar = mutableListOf<String>()
+                            if (dPar.isNotEmpty()) morceauxPar.add(dateAffichee(dPar))
+                            if (lPar.isNotEmpty()) morceauxPar.add(lPar + (if (numPar != null) " (" + numPar.toString() + ")" else ""))
+                            if (morceauxPar.isNotEmpty()) {
+                                Text(
+                                    tPar + ". " + morceauxPar.joinToString(" \u00E0 "),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -747,10 +753,11 @@ fun CarteIdentite(
     }
 }
 
+
 // ---------------------------------------------------------------- Bloc d'evenement
 // Tout ramasse : date, heure, lieu, departement, parents (avec age a l'acte
 // et date de naissance deduite a l'annee), conjoint, temoins.
-// Icones : ajout d'une photo d'acte + recherche Internet aux AD.
+// Icones : ajout d'une photo d'acte.
 // Les donnees manquantes sont grisees et synchronisees avec le journal.
 
 fun libelleType(t: String): String = when (t) {
@@ -830,14 +837,14 @@ fun evenementsFamille(p: Personne, personnes: List<Personne>): List<Pair<Int, St
         val lienFr = if (fr.sexe == "F") "sa soeur" else "son fr\u00E8re"
         ligne(
             fr.dateMariage, fr.lieuMariage, fr.deptMariage,
-            "Assiste au mariage de " + lienFr + " " + fr.titre() + conjointDeTxt(fr, personnes)
+            "Mariage de " + lienFr + " " + fr.titre() + conjointDeTxt(fr, personnes)
         )?.let { res.add(it) }
         decesRelatif(fr, lienFr)
     }
     // Enfants : mariage (la personne y est presente et consentante) et deces.
     p.enfants.mapNotNull { personneParId(personnes, it) }.forEach { e ->
         val lienE = if (e.sexe == "F") "sa fille" else "son fils"
-        ligne(e.dateMariage, e.lieuMariage, e.deptMariage, "Pr\u00E9sent et consentant au mariage de " + lienE + " " + e.titre() + conjointDeTxt(e, personnes))?.let { res.add(it) }
+        ligne(e.dateMariage, e.lieuMariage, e.deptMariage, "Mariage de " + lienE + " " + e.titre() + conjointDeTxt(e, personnes))?.let { res.add(it) }
         if (decesAffichable(e)) {
             ligne(e.dateDeces, e.lieuDeces, e.deptDeces, "D\u00E9c\u00E8s de " + lienE + " " + e.titre())?.let { res.add(it) }
         }
@@ -963,7 +970,6 @@ fun CarteEvenement(
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
     onEnregistrer: () -> Unit,
-    ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
     // Coche de validation de l'acte : negative => recherche dans le journal.
     onValider: (Boolean) -> Unit,
     // Recherches ouvertes (la premiere de la section alimente le sous-bloc).
@@ -1230,9 +1236,6 @@ fun CarteEvenement(
                 SousBlocActe(
                     acte = acte,
                     piste = pisteEv,
-                    ouvrirAD = {
-                        ouvrirEtatCivil(l, numDept, libelleType(typeActe), anneeActe?.toString() ?: "")
-                    },
                     onVoir = { onVoirActe(acte) },
                     onSupprimer = { onSupprimerActe(acte) },
                     onEnregistrer = onEnregistrer
@@ -1284,7 +1287,6 @@ fun AjoutActeIcone(typeActe: String, onAjouterActe: (Uri, String, String) -> Uni
 fun SousBlocActe(
     acte: Acte,
     piste: Piste?,
-    ouvrirAD: () -> Unit,
     onVoir: () -> Unit,
     onSupprimer: () -> Unit,
     onEnregistrer: () -> Unit
@@ -1314,9 +1316,6 @@ fun SousBlocActe(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(end = 4.dp)
                     )
-                }
-                IconButton(onClick = ouvrirAD, Modifier.size(28.dp)) {
-                    Icon(Icons.Filled.Search, contentDescription = "Rechercher cet acte aux AD", Modifier.size(14.dp))
                 }
                 IconButton(onClick = onSupprimer, Modifier.size(28.dp)) {
                     Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(14.dp))
@@ -1578,5 +1577,6 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 

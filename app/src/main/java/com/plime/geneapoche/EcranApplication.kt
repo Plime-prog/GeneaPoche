@@ -182,8 +182,10 @@ class ActionsApplication(
     val importerGedcom: (Uri) -> Unit,
     val viderBase: () -> Unit,
     val enregistrerActe: (ActeSaisie) -> Unit,
-    val ouvrirLien: (String) -> Unit,
-    val ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
+    // v0.33 : ouvre le formulaire de saisie d'acte en surcouche, pre-rempli
+    // pour la personne et le type d'evenement donnes.
+    val ouvrirSaisieActe: (Personne, String) -> Unit,
+    val fermerSaisieActe: () -> Unit,
     val sauvegarderBase: (Uri, String) -> Unit,
     val restaurerSauvegarde: (Uri, String) -> Unit,
     val restaurerImport: () -> Unit,
@@ -207,8 +209,9 @@ fun EcranApplication(
 ) {
     with(etat) {
     with(actions) {
-    BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty()) {
+    BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty() || saisieFicheId != 0L) {
         when {
+            saisieFicheId != 0L -> fermerSaisieActe()
             pickerRole.isNotEmpty() -> onPickerRole("")
             editionOuverte -> onEditionOuverte(false)
             else -> onIdOuvert(0L)
@@ -219,8 +222,9 @@ fun EcranApplication(
     var menuGedcom by remember { mutableStateOf(false) }
     var exclureVivants by remember { mutableStateOf(false) }
     var confirmeVider by remember { mutableStateOf(false) }
-    // G3-13 : la barre de titre se replie au defilement des listes.
-    val comportementBarre = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    // v0.33 : bandeau REDUIT et FIGE (plus de repli au defilement, plus de
+    // slogan sous le titre).
+    val comportementBarre = TopAppBarDefaults.pinnedScrollBehavior()
     // G3-19 : retours utilisateur en Snackbar (plus de dialogue "Information"),
     // avec "Annuler" apres une suppression de personne.
     val etatSnackbar = remember { SnackbarHostState() }
@@ -241,7 +245,27 @@ fun EcranApplication(
         }
     }
 
-    if (ouverte == null) {
+    // v0.33 : surcouche de SAISIE D'ACTE (menu Saisie) pre-remplie pour la
+    // fiche ouverte. Elle recouvre tout l'ecran tant que saisieFicheId != 0.
+    if (saisieFicheId != 0L) {
+        val cibleSaisie = personneParId(personnes, saisieFicheId)
+        if (cibleSaisie != null) {
+            Box(Modifier.fillMaxSize().imePadding()) {
+                EcranSaisieActe(
+                    personnes = personnes,
+                    onEnregistrer = { a ->
+                        enregistrerActe(a)
+                        if (acteAConfirmer == null) fermerSaisieActe()
+                    },
+                    personnePre = cibleSaisie,
+                    typePre = saisieType,
+                    onFermer = fermerSaisieActe
+                )
+            }
+        } else {
+            LaunchedEffect(saisieFicheId) { fermerSaisieActe() }
+        }
+    } else if (ouverte == null) {
         Scaffold(
             modifier = Modifier.nestedScroll(comportementBarre.nestedScrollConnection),
             snackbarHost = { SnackbarHost(etatSnackbar) },
@@ -252,17 +276,10 @@ fun EcranApplication(
                             Image(
                                 painter = painterResource(R.drawable.ic_launcher_foreground),
                                 contentDescription = null,
-                                modifier = Modifier.size(42.dp)
+                                modifier = Modifier.size(30.dp)
                             )
                             Spacer(Modifier.width(8.dp))
-                            Column {
-                                Text("G\u00E9n\u00E9aPoche", fontSize = 19.sp, fontWeight = FontWeight.Bold)
-                                Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche",
-                                    fontSize = 14.sp,
-                                    color = CouleurSurvol
-                                )
-                            }
+                            Text("G\u00E9n\u00E9aPoche", fontSize = 17.sp, fontWeight = FontWeight.Bold)
                         }
                     },
                     actions = {
@@ -281,10 +298,10 @@ fun EcranApplication(
             },
             bottomBar = { BarreOnglets(onglet, onOnglet) },
             floatingActionButton = {
-                if (onglet == 0) {
-                    FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Ajouter")
-                    }
+                // v0.33 : le bouton + permet d'ouvrir une NOUVELLE fiche
+                // depuis n'importe quel onglet (formulaire N/M/D unique).
+                FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
+                    Icon(Icons.Filled.Add, contentDescription = "Ajouter")
                 }
             }
         ) { marges ->
@@ -571,7 +588,7 @@ fun EcranApplication(
                             if (entreesListe.isEmpty()) {
                                 item {
                                     Text(
-                                        "Aucun r\\u00E9sultat pour \\u00AB " + recherche.trim() + " \\u00BB.",
+                                        "Aucun r\u00E9sultat pour \u00AB " + recherche.trim() + " \u00BB.",
                                         Modifier.fillMaxWidth().padding(16.dp),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -609,8 +626,6 @@ fun EcranApplication(
                     actes = actes,
                     onSupprimer = { supprimerPiste(it) },
                     onOuvrirPersonne = { onIdOuvert(it) },
-                    ouvrirLien = ouvrirLien,
-                    ouvrirEtatCivil = ouvrirEtatCivil,
                     onSauver = enregistrer
                 )
                 }
@@ -911,7 +926,7 @@ fun EcranApplication(
             onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },
             onSupprimerActe = { onSupprimerActe(it) },
             onVoirActe = { onVoirActe(it) },
-            ouvrirEtatCivil = ouvrirEtatCivil,
+            onOuvrirSaisie = { t -> ouvrirSaisieActe(p, t) },
             onValider = { section, valide -> validerInfo(p, section, valide) }
         )
             }
@@ -1150,12 +1165,29 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
                     Text(morceaux.joinToString("  \u2013  "), style = MaterialTheme.typography.bodySmall)
                 }
             }
+            // v0.33 : compteur des renseignements "n/13", du rouge (<= 5)
+            // a l'orange (<= 10) puis au vert ; une annee seule ne compte
+            // pas comme une date complete.
+            val compte = compteurRenseignements(p)
+            val couleurCompte = when {
+                compte.first <= 5 -> CouleurRouge
+                compte.first <= 10 -> CouleurOrange
+                else -> CouleurVert
+            }
+            Text(
+                compte.first.toString() + "/" + compte.second.toString(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = couleurCompte,
+                modifier = Modifier.padding(end = 4.dp)
+            )
             IconButton(onClick = onSupprimer, Modifier.size(30.dp)) {
                 Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(16.dp))
             }
         }
     }
 }
+
 
 
 
