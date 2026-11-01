@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -56,6 +58,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
@@ -71,6 +74,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -179,7 +183,7 @@ class ActionsApplication(
     val validerInfo: (Personne, String, Boolean) -> Unit
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun EcranApplication(
     etat: EtatApplication,
@@ -199,9 +203,12 @@ fun EcranApplication(
     var menuGedcom by remember { mutableStateOf(false) }
     var exclureVivants by remember { mutableStateOf(false) }
     var confirmeVider by remember { mutableStateOf(false) }
+    // G3-13 : la barre de titre se replie au defilement des listes.
+    val comportementBarre = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     if (ouverte == null) {
         Scaffold(
+            modifier = Modifier.nestedScroll(comportementBarre.nestedScrollConnection),
             topBar = {
                 TopAppBar(
                     title = {
@@ -232,7 +239,8 @@ fun EcranApplication(
                         titleContentColor = Color.White,
                         navigationIconContentColor = Color.White,
                         actionIconContentColor = Color.White
-                    )
+                    ),
+                    scrollBehavior = comportementBarre
                 )
             },
             bottomBar = { BarreOnglets(onglet, onOnglet) },
@@ -312,6 +320,8 @@ fun EcranApplication(
                     var lettreChoisie by remember { mutableStateOf<Char?>(null) }
                     // Branches : id du grand-parent choisi (filtre), null = tout.
                     var brancheChoisie by remember { mutableStateOf<Long?>(null) }
+                    // G3-14 : recherche immediate par nom ou lieu.
+                    var recherche by remember { mutableStateOf("") }
                     val lettresUtilisees = triees
                         .map { it.nom.trim().uppercase().firstOrNull() ?: '?' }
                         .toSet()
@@ -351,8 +361,46 @@ fun EcranApplication(
                         val membres = brancheChoisie?.let { b -> brancheDe(b, personnes) } ?: emptySet()
                         if (brancheChoisie == null) parAboville else parAboville.filter { it.id in membres }
                     }
+                    // G3-14 : la recherche filtre sur nom, prenoms et lieux.
+                    val entreesFiltrees: List<Any> = if (recherche.isBlank()) entrees else entrees.filter { entree ->
+                        val pers = entree as Personne
+                        (pers.nom + " " + pers.prenoms + " " + pers.lieuNaissance + " " + pers.lieuMariage + " " + pers.lieuDeces)
+                            .contains(recherche.trim(), ignoreCase = true)
+                    }
+                    // G3-14 : en tri A-Z, sans filtre ni recherche, un
+                    // en-tete collant par lettre guide le defilement.
+                    val entreesListe: List<Any> = if (triPersonnes == 0 && lettreChoisie == null && recherche.isBlank()) {
+                        val resultat = mutableListOf<Any>()
+                        var derniereLettre: Char? = null
+                        entreesFiltrees.forEach { entree ->
+                            val pers = entree as Personne
+                            val lettre = pers.nom.trim().uppercase().firstOrNull() ?: '?'
+                            if (lettre != derniereLettre) {
+                                resultat.add(lettre)
+                                derniereLettre = lettre
+                            }
+                            resultat.add(pers)
+                        }
+                        resultat
+                    } else {
+                        entreesFiltrees
+                    }
 
                     Column(Modifier.fillMaxSize().padding(marges)) {
+                        // G3-14 : recherche par nom ou lieu.
+                        OutlinedTextField(
+                            value = recherche,
+                            onValueChange = { recherche = it },
+                            placeholder = { Text("Rechercher un nom ou un lieu") },
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                            trailingIcon = {
+                                if (recherche.isNotEmpty()) {
+                                    Icon(Icons.Filled.Close, contentDescription = "Effacer la recherche", Modifier.clickable { recherche = "" })
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
                         // Compteur et tris FIGES en haut de l'ecran.
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
@@ -440,13 +488,40 @@ fun EcranApplication(
                             Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp),
                             state = etatListe
                         ) {
-                            items(entrees.size) { i ->
-                                val p = entrees[i] as Personne
-                                CartePersonne(
-                                    p,
-                                    onOuvrir = { onIdOuvert(p.id) },
-                                    onSupprimer = { onConfirmSuppression(p) }
-                                )
+                            // G3-14 : cles stables (id) et en-tetes de lettre
+                            // collants en tri A-Z.
+                            entreesListe.forEach { entree ->
+                                when (entree) {
+                                    is Char -> stickyHeader(key = "lettre_" + entree, contentType = "lettre") {
+                                        Text(
+                                            entree.toString(),
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                                .padding(horizontal = 12.dp, vertical = 2.dp),
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.titleSmall
+                                        )
+                                    }
+                                    else -> item(key = (entree as Personne).id, contentType = "personne") {
+                                        val p = entree as Personne
+                                        CartePersonne(
+                                            p,
+                                            onOuvrir = { onIdOuvert(p.id) },
+                                            onSupprimer = { onConfirmSuppression(p) }
+                                        )
+                                    }
+                                }
+                            }
+                            if (entreesListe.isEmpty()) {
+                                item {
+                                    Text(
+                                        "Aucun r\\u00E9sultat pour \\u00AB " + recherche.trim() + " \\u00BB.",
+                                        Modifier.fillMaxWidth().padding(16.dp),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                             item { Spacer(Modifier.height(12.dp)) }
                         }
@@ -564,13 +639,21 @@ fun EcranApplication(
                 )
             }
             if (menuGedcom) {
-                AlertDialog(
-                    onDismissRequest = { menuGedcom = false },
-                    title = { Text("GEDCOM (Heredis)") },
-                    text = {
-                        Column {
-                            Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.height(8.dp))
+                // G3-13 : ModalBottomSheet a la place du dialogue.
+                ModalBottomSheet(
+                    onDismissRequest = { menuGedcom = false }
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 32.dp)
+                    ) {
+                        Text("GEDCOM (Heredis)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(4.dp))
+                        Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
                                 Modifier.fillMaxWidth()
@@ -672,12 +755,9 @@ fun EcranApplication(
                                     Text("Vider la base", color = CouleurRouge)
                                 }
                             }
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(onClick = { menuGedcom = false }) { Text("Fermer") }
+                        TextButton(onClick = { menuGedcom = false }, Modifier.fillMaxWidth()) { Text("Fermer") }
                     }
-                )
+                }
             }
             // G1-08 : dialogue de phrase secrete (export/import .gpbak).
             if (demandePhraseExport || demandePhraseImport) {
