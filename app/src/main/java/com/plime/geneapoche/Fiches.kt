@@ -151,7 +151,9 @@ fun EcranPersonne(
     onNouveauTemoin: (String, Long, String, String) -> Unit,
     onRetirerTemoin: (String, Long) -> Unit,
     onBasculerSignature: (String, Long) -> Unit,
-    onModifierBloc: (String, String, String, String, String, String) -> Unit,
+    // G\u00E9n\u00E9aPoche 2 : enregistrement d'un acte saisi depuis la fiche
+    // (bloc \u00C9v\u00E9nement ou appui long sur un bloc N/B/M/S/D).
+    onEnregistrerActe: (ActeSaisie) -> Unit,
     onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
@@ -166,34 +168,42 @@ fun EcranPersonne(
 ) {
     // Blocs ouverts sur la frise : N et D par defaut.
     var ouverts by remember { mutableStateOf(setOf<String>()) }
-    // Dialogues : edition d'un bloc, mariage, enfant, parent, temoin.
-    var blocEdite by remember { mutableStateOf<String?>(null) }
+    // Dialogues : mariage, enfant, parent, temoin.
     var mariageOuvert by remember { mutableStateOf(false) }
     var enfantOuvert by remember { mutableStateOf(false) }
     var menuEnfant by remember { mutableStateOf(false) }
-    var menuEvenement by remember { mutableStateOf(false) }
     var parentRole by remember { mutableStateOf("") }
     var temoinType by remember { mutableStateOf("") }
+    // G\u00E9n\u00E9aPoche 2 : formulaire de saisie d'acte ouvert en plein \u00E9cran
+    // depuis la fiche. null = ferm\u00E9 ; "" = nouvel \u00E9v\u00E9nement ; "N"/"B"/"M"/"S"/"D"
+    // = bloc de la frise \u00E9dit\u00E9 par appui long (formulaire pr\u00E9-rempli).
+    var saisieOuverte by remember { mutableStateOf<String?>(null) }
 
-    // Evenements de la frise : ordre FIXE N en haut, puis B, M, S s'ils
-    // existent, puis D en dernier, meme si N ou D n'ont pas d'information.
-    val ordreTypes = mutableListOf("N")
-    if (p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || actes.any { it.personneId == p.id && it.type == "B" }) {
-        ordreTypes.add("B")
-    }
-    if (p.blocsOuverts.contains("mariage") || p.dateMariage.isNotBlank() || p.heureMariage.isNotBlank() || p.lieuMariage.isNotBlank() || p.conjoint != 0L || p.conjointsSupp.isNotEmpty() || p.enfants.isNotEmpty() || actes.any { it.personneId == p.id && it.type == "M" }) {
-        ordreTypes.add("M")
-    }
+    // G\u00E9n\u00E9aPoche 2 : la fiche REGROUPE N, M et D (pr\u00E9sents m\u00EAme sans
+    // information) ; B et S apparaissent d\u00E8s qu'une donn\u00E9e existe ; le tout
+    // est rang\u00E9 dans l'ORDRE CHRONOLOGIQUE (les \u00E9v\u00E9nements sans ann\u00E9e
+    // restent en haut dans l'ordre naturel).
     // R\u00E8gle des 100 ans : la notion de d\u00E9c\u00E8s ou de s\u00E9pulture ne s'affiche
     // que si la personne peut avoir plus de 100 ans \u00E0 la date du jour (ou si
     // son d\u00E9c\u00E8s est d\u00E9j\u00E0 connu).
     val decesAffiche = decesAffichable(p, actes)
-    if (decesAffiche) {
-        if (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || actes.any { it.personneId == p.id && it.type == "S" }) {
-            ordreTypes.add("S")
-        }
-        ordreTypes.add("D")
+    val ordreNaturel = listOf("N", "B", "M", "S", "D")
+    val typesPresents = mutableListOf("N", "M")
+    if (p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || actes.any { it.personneId == p.id && it.type == "B" }) {
+        typesPresents.add("B")
     }
+    if (decesAffiche) {
+        typesPresents.add("D")
+        if (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || actes.any { it.personneId == p.id && it.type == "S" }) {
+            typesPresents.add("S")
+        }
+    }
+    val ordreTypes = typesPresents.sortedWith(
+        compareBy(
+            { anneeDe(champsEvenement(p, it).date) ?: ordreNaturel.indexOf(it) },
+            { ordreNaturel.indexOf(it) }
+        )
+    )
 
     Scaffold(
         topBar = {
@@ -226,68 +236,6 @@ fun EcranPersonne(
                 }
             )
         },
-            // Cinq boutons d'action FIXES en bas de la fiche, toujours
-            // visibles, texte sur une seule ligne, icone pour chacun.
-            bottomBar = {
-                Surface(shadowElevation = 8.dp, color = Color.White) {
-                    Column(
-                        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            FilledTonalButton(
-                                onClick = { p.blocsOuverts.add("bapteme"); ouverts = ouverts + "B"; enregistrer() },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Filled.Face, contentDescription = null, Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Bapt\u00EAme", fontSize = 12.sp, maxLines = 1)
-                            }
-                            FilledTonalButton(
-                                onClick = { p.blocsOuverts.add("mariage"); ouverts = ouverts + "M"; enregistrer() },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Filled.Favorite, contentDescription = null, Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Mariage", fontSize = 12.sp, maxLines = 1)
-                            }
-                            if (decesAffiche) {
-                                FilledTonalButton(
-                                    onClick = { p.blocsOuverts.add("sepulture"); ouverts = ouverts + "S"; enregistrer() },
-                                    modifier = Modifier.weight(1f),
-                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                                ) {
-                                    Icon(Icons.Filled.Place, contentDescription = null, Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("S\u00E9pulture", fontSize = 12.sp, maxLines = 1)
-                                }
-                            }
-                        }
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            FilledTonalButton(
-                                onClick = { menuEnfant = true },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Enfant", fontSize = 12.sp, maxLines = 1)
-                            }
-                            FilledTonalButton(
-                                onClick = { menuEvenement = true },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("\u00C9v\u00E9nement", fontSize = 12.sp, maxLines = 1)
-                            }
-                        }
-                    }
-                }
-            }
     ) { marges ->
         LazyColumn(
             Modifier.fillMaxSize().padding(marges).padding(horizontal = 12.dp)
@@ -341,7 +289,7 @@ fun EcranPersonne(
                                         .combinedClickable(
                                             onClick = { ouverts = if (ouverts.contains(t)) ouverts - t else ouverts + t },
                                             onClickLabel = "Ouvrir ou replier ce bloc",
-                                            onLongClick = { blocEdite = t },
+                                            onLongClick = { saisieOuverte = t },
                                             onLongClickLabel = "Modifier ce bloc"
                                         ),
                                     verticalAlignment = Alignment.CenterVertically
@@ -381,7 +329,7 @@ fun EcranPersonne(
                                     p = p,
                                     personnes = personnes,
                                     actes = actes.filter { it.personneId == p.id && it.type == t },
-                                    onEditer = { blocEdite = t },
+                                    onEditer = { saisieOuverte = t },
                                     onOuvrir = onOuvrir,
                                     onChoisir = onChoisir,
                                     onRetirer = onRetirer,
@@ -460,6 +408,30 @@ fun EcranPersonne(
                                 }
                             }
                         }
+                        // G\u00E9n\u00E9aPoche 2 : bloc encadr\u00E9 sans libell\u00E9 pour
+                        // AJOUTER UN ENFANT (choisir une fiche ou saisir).
+                        Card(
+                            Modifier.fillMaxWidth().padding(top = 4.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.dp, CouleurBordVert)
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(8.dp)
+                                    .clickable { menuEnfant = true },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Filled.Person, contentDescription = null,
+                                    Modifier.size(16.dp), tint = CouleurVertFonce
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    "Ajouter un enfant",
+                                    color = CouleurVertFonce,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                         // Evenements de la famille (ascendants, fratrie,
                         // enfants) dans la frise chronologique, sans bloc
                         // repliable (reponse utilisateur).
@@ -525,33 +497,60 @@ fun EcranPersonne(
                                 }
                             }
                         }
+                        // G\u00E9n\u00E9aPoche 2 : bloc \u00C9V\u00C9NEMENT encadr\u00E9 sans libell\u00E9
+                        // (remplace les deux rang\u00E9es de boutons) : il ouvre la
+                        // m\u00EAME saisie que le menu +Saisie, pr\u00E9-rempli avec les
+                        // informations connues de la personne.
+                        Card(
+                            Modifier.fillMaxWidth().padding(top = 4.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.dp, CouleurBordVert)
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(8.dp)
+                                    .clickable { saisieOuverte = "" },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Filled.Add, contentDescription = null,
+                                    Modifier.size(16.dp), tint = CouleurVertFonce
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    "Ajouter un \u00E9v\u00E9nement",
+                                    color = CouleurVertFonce,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
-                // Les boutons d'action (B, M, S, Enfant, Evenement) sont
-                // FIXES en bas de la fiche (bottomBar du Scaffold).
             }
             item { Spacer(Modifier.height(12.dp)) }
         }
     }
 
-    // Dialogue d'edition du bloc : date, heure, commune, d\u00E9partement,
-    // r\u00E9f\u00E9rence. Validation = contr\u00F4le de coh\u00E9rence + synchronisation.
-    blocEdite?.let { t ->
-        val c = champsEvenement(p, t)
-        val ref = actes.filter { it.personneId == p.id && it.type == t && it.reference.isNotBlank() }
-            .maxByOrNull { it.creation }?.reference?.trim() ?: ""
-        DialogueEditionBloc(
-            titre = libelleType(t),
-            dateInit = c.date.trim(),
-            heureInit = c.heure.trim(),
-            communeInit = c.lieu.trim(),
-            deptInit = c.dept.trim(),
-            refInit = ref,
-            onValider = { d, h, co, de, rf ->
-                onModifierBloc(t, d, h, co, de, rf)
-                blocEdite = null
-            },
-            onAnnuler = { blocEdite = null }
-        )
+    // G\u00E9n\u00E9aPoche 2 : formulaire de saisie d'acte EN PLEIN \u00C9CRAN, le m\u00EAme
+    // que l'onglet Saisie. Pr\u00E9-rempli avec tout ce qui est connu de la
+    // personne (identit\u00E9, parents, conjoint, t\u00E9moins) et de l'\u00E9v\u00E9nement
+    // touch\u00E9 par appui long. L'enregistrement met \u00E0 jour la fiche, la
+    // num\u00E9rotation, la coh\u00E9rence et le journal.
+    saisieOuverte?.let { tPre ->
+        Dialog(
+            onDismissRequest = { saisieOuverte = null },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(Modifier.fillMaxSize()) {
+                EcranSaisieActe(
+                    personnes = personnes,
+                    initial = prefillActe(p, personnes, actes, tPre.ifEmpty { null }),
+                    onEnregistrer = { a ->
+                        onEnregistrerActe(a)
+                        saisieOuverte = null
+                    },
+                    onFermer = { saisieOuverte = null }
+                )
+            }
+        }
     }
 
     if (mariageOuvert) {
@@ -627,46 +626,6 @@ fun EcranPersonne(
         )
     }
 
-    // Bouton Evenement : choisit l'evenement a ouvrir et corriger.
-    // N et D sont toujours dans la frise ; B, M et S y sont ajoutes.
-    if (menuEvenement) {
-        AlertDialog(
-            onDismissRequest = { menuEvenement = false },
-            title = { Text("\u00C9v\u00E9nement \u00E0 ouvrir") },
-            text = {
-                Column {
-                    Text(
-                        "Touchez un \u00E9v\u00E9nement : son bloc s'ouvre et son dialogue de correction s'affiche.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    listOf(
-                        "N" to "Naissance",
-                        "B" to "Bapt\u00EAme",
-                        "M" to "Mariage",
-                        "S" to "S\u00E9pulture",
-                        "D" to "D\u00E9c\u00E8s"
-                    ).filter { paire -> (paire.first != "S" && paire.first != "D") || decesAffichable(p, actes) }
-                        .forEach { paire ->
-                        OutlinedButton(
-                            onClick = {
-                                val t = paire.first
-                                if (t == "B" || t == "M" || t == "S") {
-                                    if (!p.blocsOuverts.contains(t)) p.blocsOuverts.add(t)
-                                    enregistrer()
-                                }
-                                blocEdite = t
-                                menuEvenement = false
-                            },
-                            Modifier.fillMaxWidth().padding(top = 6.dp)
-                        ) { Text(paire.second) }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { menuEvenement = false }) { Text("Fermer") }
-            }
-        )
-    }
 }
 
 // ---------------------------------------------------------------- Cartouche identite
@@ -764,6 +723,71 @@ fun libelleType(t: String): String = when (t) {
 
 // Champs date/heure/lieu/dept d'un evenement selon son type.
 data class EvChamps(val date: String, val heure: String, val lieu: String, val dept: String)
+
+// ---------------------------------------------------------------- Pr\u00E9-remplissage
+// G\u00E9n\u00E9aPoche 2 : construit l'ActeSaisie qui pr\u00E9-remplit le formulaire
+// de saisie d'acte avec tout ce qui est CONNU de la personne (identit\u00E9,
+// parents, conjoint, t\u00E9moins, signataires) et de l'\u00E9v\u00E9nement demand\u00E9.
+// t = null (nouvel \u00E9v\u00E9nement depuis le bloc vert) : identit\u00E9 seule.
+
+fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: String?): ActeSaisie {
+    val type = t ?: "N"
+    val c = if (t == null) null else champsEvenement(p, type)
+    val acteEdit = actes.filter { it.personneId == p.id && it.type == type }
+        .maxByOrNull { it.creation }
+    val pere = personneParId(personnes, p.pere)
+    val mere = personneParId(personnes, p.mere)
+    val conj = if (type == "M") personneParId(personnes, p.conjoint) else null
+    val pConj = if (conj != null) personneParId(personnes, conj.pere) else null
+    val mConj = if (conj != null) personneParId(personnes, conj.mere) else null
+    val temoinsIds = p.temoinsDe(type)
+    val signataires = p.signatairesDe(type).mapNotNull { id ->
+        when {
+            id == 0L -> "P\u00E8re"
+            id == p.id -> "Concerne(e)"
+            mere != null && id == mere.id -> "M\u00E8re"
+            conj != null && id == conj.id -> "Mari\u00E9e"
+            else -> {
+                val i = temoinsIds.indexOf(id)
+                if (i >= 0) "T\u00E9moin " + (i + 1).toString() else null
+            }
+        }
+    }
+    return ActeSaisie(
+        acteId = acteEdit?.id ?: 0L,
+        type = type,
+        commune = c?.lieu?.trim() ?: "",
+        dept = c?.dept?.trim() ?: "",
+        reference = acteEdit?.reference?.trim() ?: "",
+        date = c?.date?.trim() ?: "",
+        heure = c?.heure?.trim() ?: "",
+        personneId = p.id,
+        nom = p.nom, prenoms = p.prenoms, sexe = p.sexe, profession = p.profession,
+        pereNom = pere?.nom ?: "", perePrenoms = pere?.prenoms ?: "",
+        pereNe = pere?.dateNaissance ?: "", pereLieu = pere?.lieuNaissance ?: "",
+        pereDept = pere?.deptNaissance ?: "", pereProf = pere?.profession ?: "",
+        pereDeces = pere?.dateDeces ?: "", pereLieuDeces = pere?.lieuDeces ?: "",
+        mereNom = mere?.nom ?: "", merePrenoms = mere?.prenoms ?: "",
+        mereNe = mere?.dateNaissance ?: "", mereLieu = mere?.lieuNaissance ?: "",
+        mereDept = mere?.deptNaissance ?: "", mereProf = mere?.profession ?: "",
+        mereDeces = mere?.dateDeces ?: "", mereLieuDeces = mere?.lieuDeces ?: "",
+        marieeId = conj?.id ?: 0L,
+        marieeNom = conj?.nom ?: "", marieePrenoms = conj?.prenoms ?: "",
+        marieeProf = conj?.profession ?: "",
+        pMarieeNom = pConj?.nom ?: "", pMarieePrenoms = pConj?.prenoms ?: "",
+        pMarieeNe = pConj?.dateNaissance ?: "", pMarieeLieu = pConj?.lieuNaissance ?: "",
+        pMarieeDept = pConj?.deptNaissance ?: "", pMarieeProf = pConj?.profession ?: "",
+        pMarieeDeces = pConj?.dateDeces ?: "", pMarieeLieuDeces = pConj?.lieuDeces ?: "",
+        mMarieeNom = mConj?.nom ?: "", mMarieePrenoms = mConj?.prenoms ?: "",
+        mMarieeNe = mConj?.dateNaissance ?: "", mMarieeLieu = mConj?.lieuNaissance ?: "",
+        mMarieeDept = mConj?.deptNaissance ?: "", mMarieeProf = mConj?.profession ?: "",
+        mMarieeDeces = mConj?.dateDeces ?: "", mMarieeLieuDeces = mConj?.lieuDeces ?: "",
+        temoins = temoinsIds.mapNotNull { id ->
+            personneParId(personnes, id)?.let { q -> TemoinSaisie(q.nom, q.prenoms, q.profession) }
+        },
+        signataires = signataires
+    )
+}
 
 fun champsEvenement(p: Personne, type: String): EvChamps = when (type) {
     "N" -> EvChamps(p.dateNaissance, p.heureNaissance, p.lieuNaissance, p.deptNaissance)

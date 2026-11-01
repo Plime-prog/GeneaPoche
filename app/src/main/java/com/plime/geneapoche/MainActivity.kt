@@ -1086,6 +1086,13 @@ fun AppEcran(
         acteAConfirmer = null
         var crees = 0
 
+        // G\u00E9n\u00E9aPoche 2 : edition d'un acte existant depuis la fiche.
+        // Le formulaire etait pre-rempli ; on MET A JOUR l'acte et les champs
+        // de la fiche (un champ laisse vide = effac\\u00E9 volontairement).
+        val acteExistant = if (a.acteId != 0L) actes.firstOrNull { it.id == a.acteId } else null
+        val edition = acteExistant != null
+        val ancienContenu = acteExistant?.contenu ?: ""
+
         // Trouve une personne existante (par id ou nom+premoms), sinon la cree.
         fun trouverOuCreer(id: Long, nomSaisi: String, prenomsSaisis: String, sexeDefaut: String): Personne? {
             personneParId(personnes, id)?.let { return it }
@@ -1133,39 +1140,42 @@ fun AppEcran(
         }
 
         // Date, heure et lieu de l'acte selon son type (fiche de la personne concernee).
+        // Nouvel acte : ne remplit que les champs encore vides. Edition : le
+        // formulaire pre-rempli devient la reference (champ vide = efface).
         when (a.type) {
             "N" -> {
-                if (p.dateNaissance.isBlank()) p.dateNaissance = dateGreg(a.date)
-                if (p.heureNaissance.isBlank()) p.heureNaissance = a.heure
-                if (p.lieuNaissance.isBlank()) p.lieuNaissance = a.commune
-                if (p.deptNaissance.isBlank()) p.deptNaissance = a.dept
+                if (edition || p.dateNaissance.isBlank()) p.dateNaissance = dateGreg(a.date)
+                if (edition || p.heureNaissance.isBlank()) p.heureNaissance = a.heure
+                if (edition || p.lieuNaissance.isBlank()) p.lieuNaissance = a.commune
+                if (edition || p.deptNaissance.isBlank()) p.deptNaissance = a.dept
             }
             "B" -> {
-                if (p.dateBapteme.isBlank()) p.dateBapteme = dateGreg(a.date)
-                if (p.heureBapteme.isBlank()) p.heureBapteme = a.heure
-                if (p.lieuBapteme.isBlank()) p.lieuBapteme = a.commune
-                if (p.deptBapteme.isBlank()) p.deptBapteme = a.dept
+                if (edition || p.dateBapteme.isBlank()) p.dateBapteme = dateGreg(a.date)
+                if (edition || p.heureBapteme.isBlank()) p.heureBapteme = a.heure
+                if (edition || p.lieuBapteme.isBlank()) p.lieuBapteme = a.commune
+                if (edition || p.deptBapteme.isBlank()) p.deptBapteme = a.dept
             }
             "M" -> {
-                if (p.dateMariage.isBlank()) p.dateMariage = dateGreg(a.date)
-                if (p.heureMariage.isBlank()) p.heureMariage = a.heure
-                if (p.lieuMariage.isBlank()) p.lieuMariage = a.commune
-                if (p.deptMariage.isBlank()) p.deptMariage = a.dept
+                if (edition || p.dateMariage.isBlank()) p.dateMariage = dateGreg(a.date)
+                if (edition || p.heureMariage.isBlank()) p.heureMariage = a.heure
+                if (edition || p.lieuMariage.isBlank()) p.lieuMariage = a.commune
+                if (edition || p.deptMariage.isBlank()) p.deptMariage = a.dept
             }
             "D" -> {
-                if (p.dateDeces.isBlank()) p.dateDeces = dateGreg(a.date)
-                if (p.heureDeces.isBlank()) p.heureDeces = a.heure
-                if (p.lieuDeces.isBlank()) p.lieuDeces = a.commune
-                if (p.deptDeces.isBlank()) p.deptDeces = a.dept
+                if (edition || p.dateDeces.isBlank()) p.dateDeces = dateGreg(a.date)
+                if (edition || p.heureDeces.isBlank()) p.heureDeces = a.heure
+                if (edition || p.lieuDeces.isBlank()) p.lieuDeces = a.commune
+                if (edition || p.deptDeces.isBlank()) p.deptDeces = a.dept
             }
             "S" -> {
-                if (p.dateSepulture.isBlank()) p.dateSepulture = dateGreg(a.date)
-                if (p.heureSepulture.isBlank()) p.heureSepulture = a.heure
-                if (p.lieuSepulture.isBlank()) p.lieuSepulture = a.commune
-                if (p.deptSepulture.isBlank()) p.deptSepulture = a.dept
+                if (edition || p.dateSepulture.isBlank()) p.dateSepulture = dateGreg(a.date)
+                if (edition || p.heureSepulture.isBlank()) p.heureSepulture = a.heure
+                if (edition || p.lieuSepulture.isBlank()) p.lieuSepulture = a.commune
+                if (edition || p.deptSepulture.isBlank()) p.deptSepulture = a.dept
             }
         }
-        if (p.profession.isBlank() && a.profession.isNotBlank()) p.profession = a.profession
+        if (edition) p.profession = a.profession
+        else if (p.profession.isBlank() && a.profession.isNotBlank()) p.profession = a.profession
 
         // Pere et mere de la personne concernee.
         val pere = trouverOuCreer(0L, a.pereNom, a.perePrenoms, "M")
@@ -1250,6 +1260,32 @@ fun AppEcran(
         val contenu = lignes.joinToString("\n")
 
         // Acte rattache a la personne concernee (et a la mariee pour un mariage).
+        // Edition : l'acte existant est mis a jour (pas de doublon), ainsi que
+        // son jumeau chez le conjoint (reconnu par son ancien contenu).
+        if (acteExistant != null) {
+            acteExistant.titre = entete
+            acteExistant.contenu = contenu
+            acteExistant.reference = a.reference.trim()
+            if (mariee != null) {
+                val jumeau = actes.firstOrNull {
+                    it.personneId == mariee.id && it.type == a.type &&
+                    it.contenu == ancienContenu && it.id != acteExistant.id
+                }
+                if (jumeau != null) {
+                    jumeau.titre = entete
+                    jumeau.contenu = contenu
+                    jumeau.reference = a.reference.trim()
+                } else {
+                    actes.add(
+                        Acte(
+                            id = Stockage.prochainId(ctx), personneId = mariee.id, type = a.type,
+                            titre = entete, creation = System.currentTimeMillis(),
+                            contenu = contenu, reference = a.reference.trim()
+                        )
+                    )
+                }
+            }
+        } else {
         var idActe = Stockage.prochainId(ctx)
         actes.add(
             Acte(
@@ -1268,9 +1304,10 @@ fun AppEcran(
                 )
             )
         }
+        }
 
         enregistrer()
-        message = "Acte enregistr\u00E9 : " + libelleType(a.type) +
+        message = (if (edition) "Acte modifi\u00E9 : " else "Acte enregistr\u00E9 : ") + libelleType(a.type) +
             (if (crees > 0) " ; " + crees.toString() + " personne(s) cr\u00E9\u00E9e(s)" else "")
     }
 

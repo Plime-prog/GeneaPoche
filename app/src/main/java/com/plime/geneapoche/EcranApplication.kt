@@ -904,7 +904,7 @@ fun EcranApplication(
             onNouveauTemoin = { type, id, nom, prenoms -> nouveauTemoin(type, id, nom, prenoms) },
             onRetirerTemoin = { type, id -> retirerTemoin(type, id) },
             onBasculerSignature = { type, id -> basculerSignature(type, id) },
-            onModifierBloc = { type, d, h, co, de, rf -> majEvenement(type, d, h, co, de, rf) },
+            onEnregistrerActe = enregistrerActe,
             onNouvelEnfant = { nom, prenoms, sexe, date ->
                 ajouterEnfant(nom, prenoms, sexe, date)
             },
