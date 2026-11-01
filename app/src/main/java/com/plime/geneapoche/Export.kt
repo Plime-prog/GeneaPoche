@@ -307,9 +307,20 @@ fun dateFrancaise(s: String): String {
     return t
 }
 
+// Reponse utilisateur : un PLAC exporte par GeneaPoche ("Roubaix, 59, Nord")
+// doit se REIMPORTER en commune + numero de departement separes, pas en
+// un seul bloc avec une virgule et un mauvais departement.
+fun couperLieu(plac: String): Pair<String, String> {
+    val parties = plac.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    if (parties.size >= 2 && parties[1].toIntOrNull() != null) {
+        return parties[0] to parties[1]
+    }
+    return plac.trim() to ""
+}
+
 // Parseur d'un fichier GEDCOM 5.5.1 (Heredis, Geneatique...) :
 // personnes (INDI), familles (FAM), dates N/BAPM/M/D/BURI, heures TIME, conjoints multiples.
-// Retourne au maximum 50 personnes.
+// Aucun plafond de personnes depuis la G1-10 (decision de l auteur).
 fun importerGedcom(texte: String): List<Personne> {
     val lignes = texte.split("\n").map { it.trimEnd('\r') }
 
@@ -318,11 +329,11 @@ fun importerGedcom(texte: String): List<Personne> {
         var prenoms = ""
         var sexe = ""
         var occu = ""
-        var nD = ""; var nH = ""; var nL = ""
-        var bD = ""; var bH = ""; var bL = ""
-        var mD = ""; var mH = ""; var mL = ""
-        var dD = ""; var dH = ""; var dL = ""
-        var sD = ""; var sH = ""; var sL = ""
+        var nD = ""; var nH = ""; var nL = ""; var nDpt = ""
+        var bD = ""; var bH = ""; var bL = ""; var bDpt = ""
+        var mD = ""; var mH = ""; var mL = ""; var mDpt = ""
+        var dD = ""; var dH = ""; var dL = ""; var dDpt = ""
+        var sD = ""; var sH = ""; var sL = ""; var sDpt = ""
         val fams = mutableListOf<String>()
         var famc = ""
     }
@@ -332,6 +343,7 @@ fun importerGedcom(texte: String): List<Personne> {
         val chil = mutableListOf<String>()
         var marrD = ""
         var marrL = ""
+        var marrDept = ""
     }
 
     val indivs = LinkedHashMap<String, Ind>()
@@ -399,33 +411,33 @@ fun importerGedcom(texte: String): List<Personne> {
                     "BIRT" -> when (tag) {
                         "DATE" -> ind.nD = dateFrancaise(valeur)
                         "TIME" -> ind.nH = valeur
-                        "PLAC" -> ind.nL = valeur
+                        "PLAC" -> { val cd = couperLieu(valeur); ind.nL = cd.first; ind.nDpt = cd.second }
                     }
                     "BAPM", "CHR", "BAPT" -> when (tag) {
                         "DATE" -> ind.bD = dateFrancaise(valeur)
                         "TIME" -> ind.bH = valeur
-                        "PLAC" -> ind.bL = valeur
+                        "PLAC" -> { val cd = couperLieu(valeur); ind.bL = cd.first; ind.bDpt = cd.second }
                     }
                     "MARR" -> when (tag) {
                         "DATE" -> ind.mD = dateFrancaise(valeur)
                         "TIME" -> ind.mH = valeur
-                        "PLAC" -> ind.mL = valeur
+                        "PLAC" -> { val cd = couperLieu(valeur); ind.mL = cd.first; ind.mDpt = cd.second }
                     }
                     "DEAT" -> when (tag) {
                         "DATE" -> ind.dD = dateFrancaise(valeur)
                         "TIME" -> ind.dH = valeur
-                        "PLAC" -> ind.dL = valeur
+                        "PLAC" -> { val cd = couperLieu(valeur); ind.dL = cd.first; ind.dDpt = cd.second }
                     }
                     "BURI", "BUR" -> when (tag) {
                         "DATE" -> ind.sD = dateFrancaise(valeur)
                         "TIME" -> ind.sH = valeur
-                        "PLAC" -> ind.sL = valeur
+                        "PLAC" -> { val cd = couperLieu(valeur); ind.sL = cd.first; ind.sDpt = cd.second }
                     }
                 }
             } else if (fam != null && blocActuel == "MARR") {
                 when (tag) {
                     "DATE" -> fam.marrD = dateFrancaise(valeur)
-                    "PLAC" -> fam.marrL = valeur
+                    "PLAC" -> { val cd = couperLieu(valeur); fam.marrL = cd.first; fam.marrDept = cd.second }
                 }
             }
         }
@@ -445,11 +457,11 @@ fun importerGedcom(texte: String): List<Personne> {
                 prenoms = ind.prenoms,
                 sexe = ind.sexe,
                 profession = ind.occu,
-                dateNaissance = ind.nD, heureNaissance = ind.nH, lieuNaissance = ind.nL,
-                dateBapteme = ind.bD, heureBapteme = ind.bH, lieuBapteme = ind.bL,
-                dateMariage = ind.mD, heureMariage = ind.mH, lieuMariage = ind.mL,
-                dateDeces = ind.dD, heureDeces = ind.dH, lieuDeces = ind.dL,
-                dateSepulture = ind.sD, heureSepulture = ind.sH, lieuSepulture = ind.sL
+                dateNaissance = ind.nD, heureNaissance = ind.nH, lieuNaissance = ind.nL, deptNaissance = ind.nDpt,
+                dateBapteme = ind.bD, heureBapteme = ind.bH, lieuBapteme = ind.bL, deptBapteme = ind.bDpt,
+                dateMariage = ind.mD, heureMariage = ind.mH, lieuMariage = ind.mL, deptMariage = ind.mDpt,
+                dateDeces = ind.dD, heureDeces = ind.dH, lieuDeces = ind.dL, deptDeces = ind.dDpt,
+                dateSepulture = ind.sD, heureSepulture = ind.sH, lieuSepulture = ind.sL, deptSepulture = ind.sDpt
             )
         )
     }
@@ -468,7 +480,9 @@ fun importerGedcom(texte: String): List<Personne> {
             if (ph.dateMariage.isEmpty() && fam.marrD.isNotEmpty()) ph.dateMariage = fam.marrD
             if (pw.dateMariage.isEmpty() && fam.marrD.isNotEmpty()) pw.dateMariage = fam.marrD
             if (ph.lieuMariage.isEmpty() && fam.marrL.isNotEmpty()) ph.lieuMariage = fam.marrL
+            if (ph.deptMariage.isEmpty() && fam.marrDept.isNotEmpty()) ph.deptMariage = fam.marrDept
             if (pw.lieuMariage.isEmpty() && fam.marrL.isNotEmpty()) pw.lieuMariage = fam.marrL
+            if (pw.deptMariage.isEmpty() && fam.marrDept.isNotEmpty()) pw.deptMariage = fam.marrDept
         }
         fam.chil.forEach { xc ->
             val c = idDe(xc)
