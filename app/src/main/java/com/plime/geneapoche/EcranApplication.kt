@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.horizontalScroll
@@ -63,6 +65,10 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -133,7 +139,13 @@ class EtatApplication(
     val editionCible: Personne?,
     val pickerRole: String,
     val confirmSuppression: Personne?,
-    val arbreCentre: Long
+    val arbreCentre: Long,
+    // G3-17 : largeur etendue (tablette/paysage) pour une mise en page
+    // adaptative (liste sur deux colonnes).
+    val deuxColonnes: Boolean = false,
+    // G3-19 : une suppression de personne vient d'avoir lieu (Snackbar
+    // avec "Annuler").
+    val annulationPossible: Boolean = false
 )
 
 // G2-09 : toutes les actions de l'ecran regroupees en une seule classe.
@@ -177,6 +189,9 @@ class ActionsApplication(
     val changerPin: () -> Unit,
     val reglagesVerrouillage: () -> Unit,
     val reglagesTheme: () -> Unit,
+    // G3-19 : annulation d'une suppression via le Snackbar.
+    val onAnnulerSuppression: () -> Unit,
+    val onPurgerAnnulation: () -> Unit,
     // G2-18 residuel : identifiants strictement croissants aussi pour les
     // nouvelles personnes creees par le dialogue d'edition.
     val prochainId: () -> Long,
@@ -205,10 +220,30 @@ fun EcranApplication(
     var confirmeVider by remember { mutableStateOf(false) }
     // G3-13 : la barre de titre se replie au defilement des listes.
     val comportementBarre = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    // G3-19 : retours utilisateur en Snackbar (plus de dialogue "Information"),
+    // avec "Annuler" apres une suppression de personne.
+    val etatSnackbar = remember { SnackbarHostState() }
+    LaunchedEffect(message) {
+        if (message.isNotEmpty()) {
+            val apresSuppression = message == "Personne supprim\u00E9e." && annulationPossible
+            val resultat = etatSnackbar.showSnackbar(
+                message,
+                actionLabel = if (apresSuppression) "Annuler" else null,
+                duration = SnackbarDuration.Short
+            )
+            onMessage("")
+            if (resultat == SnackbarResult.ActionPerformed) {
+                onAnnulerSuppression()
+            } else if (apresSuppression) {
+                onPurgerAnnulation()
+            }
+        }
+    }
 
     if (ouverte == null) {
         Scaffold(
             modifier = Modifier.nestedScroll(comportementBarre.nestedScrollConnection),
+            snackbarHost = { SnackbarHost(etatSnackbar) },
             topBar = {
                 TopAppBar(
                     title = {
@@ -484,6 +519,25 @@ fun EcranApplication(
                                     }
                                 }
                             }
+                        if (deuxColonnes) {
+                            // G3-17 : tablette ou paysage, grille a deux
+                            // colonnes avec les memes cles stables.
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
+                                modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp)
+                            ) {
+                                entreesFiltrees.forEach { entree ->
+                                    val p = entree as Personne
+                                    item(key = p.id, contentType = "personne") {
+                                        CartePersonne(
+                                            p,
+                                            onOuvrir = { onIdOuvert(p.id) },
+                                            onSupprimer = { onConfirmSuppression(p) }
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
                         LazyColumn(
                             Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp),
                             state = etatListe
@@ -524,6 +578,7 @@ fun EcranApplication(
                                 }
                             }
                             item { Spacer(Modifier.height(12.dp)) }
+                        }
                         }
                     }
                 }
@@ -861,20 +916,12 @@ fun EcranApplication(
             }
             // Menus de l'application TOUJOURS visibles en bas, meme fiche ouverte.
             // Choisir un onglet ferme la fiche et affiche l'onglet demande.
+            SnackbarHost(etatSnackbar)
             BarreOnglets(onglet) { o -> onOnglet(o); onIdOuvert(0L) }
         }
     }
 
-    if (message.isNotEmpty()) {
-        AlertDialog(
-            onDismissRequest = { onMessage("") },
-            title = { Text("Information") },
-            text = { Text(message) },
-            confirmButton = {
-                TextButton(onClick = { onMessage("") }) { Text("OK") }
-            }
-        )
-    }
+    // G3-19 : le message passe par le Snackbar (declare plus haut).
 
     if (editionOuverte) {
         // G2-18 residuel : identifiant alloue UNE seule fois par ouverture du

@@ -11,6 +11,29 @@ import androidx.lifecycle.ViewModel
 // l'ecran : le modele de vue SURVIT a la rotation et au changement de
 // theme (les donnees, la fiche ouverte et la pile de navigation ne sont
 // pas perdues). Au verrouillage, AppEcran vide ces memes listes (G1-14).
+
+// G3-19 : instantane des liens d'une personne avant sa suppression,
+// pour pouvoir annuler (Snackbar "Annuler").
+class LienAvant(
+    val id: Long,
+    val pere: Long,
+    val mere: Long,
+    val conjoint: Long,
+    val conjointsSupp: List<Long>,
+    val enfants: List<Long>
+)
+
+// G3-19 : tout ce que la suppression d'une personne a retire, pour
+// pouvoir la restaurer integralement (personne, liens, actes et leurs
+// images chiffrees, pistes).
+class AnnulationSuppression(
+    val personne: Personne,
+    val actes: List<Acte>,
+    val images: Map<Long, ByteArray>,
+    val pistes: List<Piste>,
+    val liens: List<LienAvant>
+)
+
 class ModeleVueGeneaPoche : ViewModel() {
     val personnes = mutableStateListOf<Personne>()
     val pistes = mutableStateListOf<Piste>()
@@ -49,4 +72,6 @@ class ModeleVueGeneaPoche : ViewModel() {
     var dialogueDelai by mutableStateOf(false)
     // G2-06 : indicateur d'occupation (image, GEDCOM, sauvegarde).
     var occupation by mutableStateOf("")
+    // G3-19 : derniere suppression annulable (Snackbar "Annuler").
+    var annulation by mutableStateOf<AnnulationSuppression?>(null)
 }

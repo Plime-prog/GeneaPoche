@@ -2,6 +2,7 @@ package com.plime.geneapoche
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,6 +32,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -81,8 +84,31 @@ fun EcranArbre(
     // horizontal, SANS les enfants (quatre générations d'ascendants).
     var vueQuatreGenerations by remember { mutableStateOf(false) }
 
+    // G3-16 : zoom (pincement) et deplacement fluides sur l'ensemble de
+    // l'arbre ; le defilement vertical reste libre a un doigt.
+    var echelleZoom by remember { mutableStateOf(1f) }
+    var deplacementZoom by remember { mutableStateOf(Offset.Zero) }
+    Box(
+        Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    echelleZoom = (echelleZoom * zoom).coerceIn(0.6f, 2.5f)
+                    deplacementZoom += pan
+                }
+            }
+            .verticalScroll(rememberScrollState())
+    ) {
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(10.dp)
+        Modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                scaleX = echelleZoom
+                scaleY = echelleZoom
+                translationX = deplacementZoom.x
+                translationY = deplacementZoom.y
+            }
+            .padding(10.dp)
     ) {
         if (centre == null) {
             Spacer(Modifier.height(12.dp))
@@ -186,6 +212,8 @@ fun EcranArbre(
             }
         }
     }
+    }
+    // Fermeture du Box de zoom (G3-16).
 
     if (pickerOuvert) {
         AlertDialog(
@@ -302,7 +330,19 @@ fun CarteMiniArbre(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                Text(p.titre(), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall, maxLines = 2)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // G3-11/G3-16 : le sexe n'est pas signale par la couleur
+                    // seule, un petit symbole le double (lisibilite + TalkBack).
+                    Text(
+                        when (p.sexe) {
+                            "F" -> "\u2640 "
+                            "M" -> "\u2642 "
+                            else -> ""
+                        },
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                    Text(p.titre(), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall, maxLines = 2)
+                }
                 val num = p.numeroAffiche()
                 if (num.isNotEmpty()) {
                     Text(

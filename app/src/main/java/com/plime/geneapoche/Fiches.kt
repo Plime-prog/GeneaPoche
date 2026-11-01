@@ -369,7 +369,12 @@ fun EcranPersonne(
                                     color = if (remplisEv >= 4) CouleurVert else if (remplisEv >= 1) CouleurOrange else CouleurRouge
                                 )
                             }
-                            if (ouverts.contains(t)) {
+                            // G3-15 : la frise s'anime a l'ouverture du bloc.
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = ouverts.contains(t),
+                                enter = androidx.compose.animation.expandVertically(),
+                                exit = androidx.compose.animation.shrinkVertically()
+                            ) {
                                 CarteEvenement(
                                     titre = libelleType(t),
                                     typeActe = t,

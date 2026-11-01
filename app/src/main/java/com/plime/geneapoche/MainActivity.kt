@@ -77,6 +77,8 @@ class Verrou {
 
 // ---------------------------------------------------------------- Activite
 
+// G3-17 : calculateWindowSizeClass est experimental pour l'instant.
+@OptIn(androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi::class)
 class MainActivity : ComponentActivity() {
     val verrou = Verrou()
 
@@ -105,6 +107,9 @@ class MainActivity : ComponentActivity() {
             // G3-02 : theme clair/sombre selon le choix memorise, le mode
             // systeme suit isSystemInDarkTheme().
             val etatTheme = remember { mutableStateOf(Stockage.lireTheme(this)) }
+            // G3-17 : classe de taille de fenetre pour la mise en page
+            // adaptative (liste sur deux colonnes en paysage/tablette).
+            val classeTaille = androidx.compose.material3.windowsizeclass.calculateWindowSizeClass(this)
             val sombre = when (etatTheme.value) {
                 "clair" -> false
                 "sombre" -> true
@@ -347,6 +352,25 @@ fun AppEcran(ctx: Context, verrou: Verrou, themeChoisi: androidx.compose.runtime
     }
 
     fun supprimer(p: Personne) {
+        // G3-19 : capture complete avant suppression, pour le Snackbar
+        // "Annuler" (la restauration remet tout, images chiffrees comprise).
+        val liensAvant = personnes.filter {
+            it.pere == p.id || it.mere == p.id || it.conjoint == p.id ||
+                it.conjointsSupp.contains(p.id) || it.enfants.contains(p.id)
+        }.map { LienAvant(it.id, it.pere, it.mere, it.conjoint, it.conjointsSupp.toList(), it.enfants.toList()) }
+        val pistesRetirees = pistes.filter { it.personneId == p.id }.toList()
+        val actesASupprimer = actes.filter { it.personneId == p.id }.toList()
+        val imagesAvant = mutableMapOf<Long, ByteArray>()
+        actesASupprimer.forEach { a ->
+            Stockage.lireImage(ctx, a.id)?.let { octets -> imagesAvant[a.id] = octets }
+        }
+        modele.annulation = AnnulationSuppression(
+            personne = p,
+            actes = actesASupprimer,
+            images = imagesAvant,
+            pistes = pistesRetirees,
+            liens = liensAvant
+        )
         personnes.remove(p)
         personnes.forEach { q ->
             if (q.pere == p.id) q.pere = 0L
@@ -358,12 +382,38 @@ fun AppEcran(ctx: Context, verrou: Verrou, themeChoisi: androidx.compose.runtime
         // G2-19 : les pistes de la personne supprimee disparaissent avec
         // elle (aucune reference orpheline ne subsiste dans le journal).
         pistes.removeAll { it.personneId == p.id }
-        val actesASupprimer = actes.filter { it.personneId == p.id }
         actes.removeAll(actesASupprimer)
         actesASupprimer.forEach { Stockage.supprimerImage(ctx, it.id) }
         enregistrer()
         pileFiches.removeAll { it == p.id }
         if (idOuvert == p.id) idOuvert = 0L
+        // G3-19 : la chaine exacte declenche le bouton "Annuler" du Snackbar.
+        message = "Personne supprim\u00E9e."
+    }
+
+    // G3-19 : restaure integralement la personne supprimee si l'utilisateur
+    // touche "Annuler" dans le Snackbar (meme identifiants : le compteur
+    // G2-18 est strictement croissant, aucun conflit possible).
+    fun annulerSuppression() {
+        val a = modele.annulation ?: return
+        personnes.add(a.personne)
+        a.liens.forEach { l ->
+            personneParId(personnes, l.id)?.let { q ->
+                q.pere = l.pere
+                q.mere = l.mere
+                q.conjoint = l.conjoint
+                q.conjointsSupp.clear()
+                q.conjointsSupp.addAll(l.conjointsSupp)
+                q.enfants.clear()
+                q.enfants.addAll(l.enfants)
+            }
+        }
+        actes.addAll(a.actes)
+        a.images.forEach { (idActe, octets) -> Stockage.sauverImage(ctx, idActe, octets) }
+        pistes.addAll(a.pistes)
+        modele.annulation = null
+        enregistrer()
+        message = "Suppression annul\u00E9e."
     }
 
     fun lier(role: String, cibleId: Long) {
@@ -1248,7 +1298,11 @@ fun AppEcran(ctx: Context, verrou: Verrou, themeChoisi: androidx.compose.runtime
                 editionCible = editionCible,
                 pickerRole = pickerRole,
                 confirmSuppression = confirmSuppression,
-                arbreCentre = if (arbreCentre != 0L) arbreCentre else idDuCujus()
+                arbreCentre = if (arbreCentre != 0L) arbreCentre else idDuCujus(),
+                // G3-17 : largeur etendue (tablette/paysage).
+                deuxColonnes = classeTaille.width != androidx.compose.material3.windowsizeclass.WindowWidthSizeClass.Compact,
+                // G3-19 : une suppression peut etre annulee.
+                annulationPossible = modele.annulation != null
             ),
             actions = ActionsApplication(
                 onMessage = { message = it },
@@ -1308,7 +1362,10 @@ fun AppEcran(ctx: Context, verrou: Verrou, themeChoisi: androidx.compose.runtime
                 reglagesVerrouillage = { dialogueDelai = true },
                 reglagesTheme = { dialogueTheme = true },
                 prochainId = { Stockage.prochainId(ctx) },
-                validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) }
+                validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) },
+                // G3-19 : annulation d'une suppression via le Snackbar.
+                onAnnulerSuppression = { annulerSuppression() },
+                onPurgerAnnulation = { modele.annulation = null }
             )
         )
         // G2-06 : indicateur d'occupation (image, GEDCOM, sauvegarde).
