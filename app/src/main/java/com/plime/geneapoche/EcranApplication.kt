@@ -483,17 +483,17 @@ fun EcranApplication(
                             }
                             Text(
                                 "Le fichier .ged cr\u00E9\u00E9 est importable dans Heredis (GEDCOM 5.5.1).",
-                            Text(
-                                "\u26A0\uFE0F Le fichier GEDCOM est EN CLAIR, sans chiffrement : ne le partagez qu'avec pr\u00E9caution.",
-                                style = MaterialTheme.typography.bodySmall
-                            ),
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(checked = exclureVivants, onCheckedChange = { exclureVivants = it })
-                                Text("Exclure les personnes vivantes (sans d\u00E9c\u00E8s, n\u00E9es il y a moins de 100 ans)", style = MaterialTheme.typography.bodySmall)
-                            },
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(top = 8.dp)
                             )
+                            Text(
+                                "\u26A0\uFE0F Le fichier GEDCOM est EN CLAIR, sans chiffrement : ne le partagez qu'avec pr\u00E9caution.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(checked = exclureVivants, onCheckedChange = { exclureVivants = it })
+                                Text("Exclure les personnes vivantes (sans d\u00E9c\u00E8s, n\u00E9es il y a moins de 100 ans)", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     },
                     confirmButton = {
