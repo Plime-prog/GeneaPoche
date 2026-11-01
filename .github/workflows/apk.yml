@@ -139,8 +139,8 @@ jobs:
             echo "Secrets de signature absents : APK release signe avec la cle debug (non debuggable)."
           fi
 
-      - name: Compiler l'APK release
-        run: ./gradlew assembleRelease --no-daemon
+      - name: Compiler les APK debug et release
+        run: ./gradlew assembleDebug assembleRelease --no-daemon
 
       - name: Creer la release GitHub
         env:

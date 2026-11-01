@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -37,12 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -328,8 +322,6 @@ fun EcranJournal(
     actes: List<Acte>,
     onSupprimer: (Piste) -> Unit,
     onOuvrirPersonne: (Long) -> Unit,
-    ouvrirLien: (String) -> Unit,
-    ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
     onSauver: () -> Unit
 ) {
     val ouvertes = pistes.filter { !it.faite }
@@ -411,8 +403,6 @@ fun EcranJournal(
                     actes = actes,
                     onSupprimer = onSupprimer,
                     onOuvrirPersonne = onOuvrirPersonne,
-                    ouvrirLien = ouvrirLien,
-                    ouvrirEtatCivil = ouvrirEtatCivil,
                     onSauver = onSauver
                 )
             }
@@ -435,8 +425,6 @@ fun CarteRecherche(
     actes: List<Acte>,
     onSupprimer: (Piste) -> Unit,
     onOuvrirPersonne: (Long) -> Unit,
-    ouvrirLien: (String) -> Unit,
-    ouvrirEtatCivil: (String, Int?, String, String) -> Unit,
     onSauver: () -> Unit
 ) {
     val pers = personneParId(personnes, piste.personneId)
@@ -450,18 +438,6 @@ fun CarteRecherche(
         piste.categorie.startsWith("deces") -> "D"
         piste.categorie.startsWith("bapteme") -> "B"
         piste.categorie.startsWith("sepulture") -> "S"
-        else -> ""
-    }
-
-    // Categories issues d'un acte : la recherche AD a un sens.
-    val evPrefix = listOf("naissance", "bapteme", "mariage", "deces", "sepulture")
-        .firstOrNull { piste.categorie.startsWith(it + "_") }
-    val libelleActe = when (evPrefix) {
-        "naissance" -> "Naissance"
-        "bapteme" -> "Bapt\u00EAme"
-        "mariage" -> "Mariage"
-        "deces" -> "D\u00E9c\u00E8s"
-        "sepulture" -> "S\u00E9pulture"
         else -> ""
     }
 
@@ -494,21 +470,6 @@ fun CarteRecherche(
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
-                if (evPrefix != null) {
-                    IconButton(
-                        onClick = {
-                            ouvrirEtatCivil(
-                                piste.lieu,
-                                piste.dept.toIntOrNull() ?: numeroDepartement(piste.lieu),
-                                libelleActe,
-                                piste.debut
-                            )
-                        },
-                        enabled = piste.lieu.isNotBlank() || piste.dept.isNotBlank()
-                    ) {
-                        Icon(Icons.Filled.Search, contentDescription = "Rechercher aux AD")
-                    }
-                }
                 IconButton(onClick = { onSupprimer(piste) }, Modifier.size(30.dp)) {
                     Icon(Icons.Filled.Delete, contentDescription = "Supprimer", Modifier.size(16.dp))
                 }
@@ -541,33 +502,6 @@ fun CarteRecherche(
             }
         }
     }
-}
-
-// ---------------------------------------------------------------- Texte avec URL cliquables
-
-@Composable
-fun TexteAvecLiens(texte: String, ouvrirLien: (String) -> Unit) {
-    val motif = Regex("https?://\\S+|www\\.\\S+")
-    val annote: AnnotatedString = buildAnnotatedString {
-        append(texte)
-        for (m in motif.findAll(texte)) {
-            val deb = m.range.first
-            val fin = m.range.last + 1
-            val lien = m.value
-            // G2-20 : ClickableText (obsolete) remplace par Text +
-            // LinkAnnotation (API actuelle de Compose).
-            addStyle(SpanStyle(color = CouleurVertFonce, textDecoration = TextDecoration.Underline), deb, fin)
-            addLink(
-                LinkAnnotation.Clickable(
-                    tag = "lien",
-                    linkInteractionListener = { ouvrirLien(lien) }
-                ),
-                deb,
-                fin
-            )
-        }
-    }
-    Text(text = annote, style = MaterialTheme.typography.bodySmall)
 }
 
 
