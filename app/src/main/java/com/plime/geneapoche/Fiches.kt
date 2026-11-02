@@ -18,7 +18,6 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,8 +47,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,7 +54,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -171,15 +167,10 @@ fun EcranPersonne(
     onModifierEvenementLibre: (EvenementLibre) -> Unit = {},
     onSupprimerEvenementLibre: (Long) -> Unit = {}
 ) {
-    // Blocs ouverts sur la frise : N et D par defaut.
-    var ouverts by remember { mutableStateOf(setOf<String>()) }
-    // Dialogues : mariage, enfant, parent, temoin.
+    // GeneaPoche 4 : blocs N, M et D ouverts par defaut.
+    var ouverts by remember { mutableStateOf(setOf("N", "M", "D")) }    // Dialogues : mariage, enfant, parent, temoin.
     var mariageOuvert by remember { mutableStateOf(false) }
-    var enfantOuvert by remember { mutableStateOf(false) }
-    var menuEnfant by remember { mutableStateOf(false) }
-    var parentRole by remember { mutableStateOf("") }
-    var temoinType by remember { mutableStateOf("") }
-    // G\u00E9n\u00E9aPoche 2 : formulaire de saisie d'acte ouvert en plein \u00E9cran
+    var parentRole by remember { mutableStateOf("") }    // G\u00E9n\u00E9aPoche 2 : formulaire de saisie d'acte ouvert en plein \u00E9cran
     // depuis la fiche. null = ferm\u00E9 ; "" = nouvel \u00E9v\u00E9nement ; "N"/"B"/"M"/"S"/"D"
     // = bloc de la frise \u00E9dit\u00E9 par appui long (formulaire pr\u00E9-rempli).
     var saisieOuverte by remember { mutableStateOf<String?>(null) }
@@ -205,13 +196,20 @@ fun EcranPersonne(
             typesPresents.add("S")
         }
     }
-    val ordreTypes = typesPresents.sortedWith(
+    val triChronologique = typesPresents.sortedWith(
         compareBy(
             { anneeDe(champsEvenement(p, it).date) ?: ordreNaturel.indexOf(it) },
             { ordreNaturel.indexOf(it) }
         )
-    )
-
+    ).toMutableList()
+    // GeneaPoche 4 : le bloc Naissance est TOUJOURS avant le bloc mariage.
+    val posM = triChronologique.indexOf("M")
+    val posN = triChronologique.indexOf("N")
+    if (posM >= 0 && posN > posM) {
+        triChronologique.removeAt(posN)
+        triChronologique.add(posM, "N")
+    }
+    val ordreTypes = triChronologique.toList()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -434,8 +432,7 @@ fun EcranPersonne(
                                         if (dEv.isNotEmpty()) morceaux.add(dateAffichee(dEv))
                                         if (lEv.isNotEmpty()) morceaux.add(lEv + (if (numDept != null) " (" + numDept.toString() + ")" else ""))
                                         Text(
-                                            t + ". " + (if (morceaux.isEmpty()) "\u2014" else morceaux.joinToString(" \u00E0 ")) + " " + ageAffiche(p.dateNaissance, dEv),
-                                            Modifier.weight(1f),
+                                            t + ". " + (if (morceaux.isEmpty()) "\u2014" else morceaux.joinToString(" \u00E0 ")) + (if (t == "N") "" else " " + ageAffiche(p.dateNaissance, dEv)),                                            Modifier.weight(1f),
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.Medium,
                                             color = if (morceaux.isEmpty()) GrisManquant else Color.Unspecified
@@ -466,17 +463,10 @@ fun EcranPersonne(
                                             onRetirer = onRetirer,
                                             onOuvrirMariage = { mariageOuvert = true },
                                             onOuvrirParent = { parentRole = it },
-                                            onOuvrirTemoin = { temoinType = t },
-                                            onRetirerTemoin = onRetirerTemoin,
-                                            onBasculerSignature = onBasculerSignature,
-                                            onAjouterTemoinExistant = { type, id -> onNouveauTemoin(type, id, "", "") },
-                                            onAjouterActe = onAjouterActe,
                                             onSupprimerActe = onSupprimerActe,
                                             onVoirActe = onVoirActe,
                                             onEnregistrer = enregistrer,
-                                            onValider = { v -> onValider(sectionDe(t), v) },
-                                            pistes = pistes,
-                                            modifier = Modifier
+                                            pistes = pistes,                                            modifier = Modifier
                                         )
                                     }
                                     }
@@ -484,31 +474,8 @@ fun EcranPersonne(
                                 }
                             }
                         }
-                    // G\u00E9n\u00E9aPoche 2 : bloc encadr\u00E9 sans libell\u00E9 pour
-                    // AJOUTER UN ENFANT (choisir une fiche ou saisir).
-                    Card(
-                        Modifier.fillMaxWidth().padding(top = 4.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, CouleurBordVert)
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(8.dp)
-                                .clickable { menuEnfant = true },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Filled.Person, contentDescription = null,
-                                Modifier.size(16.dp), tint = CouleurVertFonce
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                "Ajouter un enfant",
-                                color = CouleurVertFonce,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                    // Evenements de la famille (ascendants, fratrie,
+                    // GeneaPoche 4 : bloc "Ajouter un enfant" supprime
+                    // (doublon avec "Ajouter un evenement" et le menu Saisie).                    // Evenements de la famille (ascendants, fratrie,
                     // enfants) dans la frise chronologique, sans bloc
                     // repliable (reponse utilisateur).
                     EvenementsFamille(p = p, personnes = personnes)
@@ -619,8 +586,9 @@ fun EcranPersonne(
                 EcranSaisieActe(
                     personnes = personnes,
                     initial = prefillActe(p, personnes, actes, tPre.ifEmpty { null }),
-                    onEnregistrer = { a ->
-                        onEnregistrerActe(a)
+                    // GeneaPoche 4 : appui long sur un bloc = SEUL ce type d'acte.
+                    typeImpose = tPre.ifEmpty { null },
+                    onEnregistrer = { a ->                        onEnregistrerActe(a)
                         saisieOuverte = null
                     },
                     onFermer = { saisieOuverte = null }
@@ -658,16 +626,6 @@ fun EcranPersonne(
         )
     }
 
-    if (enfantOuvert) {
-        DialogueNouvelEnfant(
-            onValider = { nom, prenoms, sexe, date ->
-                onNouvelEnfant(nom, prenoms, sexe, date)
-                enfantOuvert = false
-            },
-            onAnnuler = { enfantOuvert = false }
-        )
-    }
-
     if (parentRole.isNotEmpty()) {
         DialogueNouveauParent(
             role = parentRole,
@@ -679,50 +637,7 @@ fun EcranPersonne(
         )
     }
 
-    if (temoinType.isNotEmpty()) {
-        DialogueNouveauTemoin(
-            personnes = personnes,
-            onChoisir = { id ->
-                onNouveauTemoin(temoinType, id, "", "")
-                temoinType = ""
-            },
-            onCreer = { nom, prenoms ->
-                onNouveauTemoin(temoinType, 0L, nom, prenoms)
-                temoinType = ""
-            },
-            onAnnuler = { temoinType = "" }
-        )
-    }
-
-    // Menu d'ajout d'un enfant : choisir une fiche existante ou saisir.
-    if (menuEnfant) {
-        AlertDialog(
-            onDismissRequest = { menuEnfant = false },
-            title = { Text("Ajouter un enfant") },
-            text = {
-                Column {
-                    Text(
-                        "Choisir une fiche existante ou saisir un nouvel enfant : aucun doublon ne sera cr\u00E9\u00E9.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    OutlinedButton(
-                        onClick = { menuEnfant = false; onChoisir("enfant") },
-                        Modifier.fillMaxWidth().padding(top = 6.dp)
-                    ) { Text("Choisir un enfant") }
-                    OutlinedButton(
-                        onClick = { menuEnfant = false; enfantOuvert = true },
-                        Modifier.fillMaxWidth().padding(top = 4.dp)
-                    ) { Text("Saisir un enfant") }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { menuEnfant = false }) { Text("Fermer") }
-            }
-        )
-    }
-
 }
-
 // ---------------------------------------------------------------- Cartouche identite
 // G\u00E9n\u00E9aPoche 3 : identit\u00E9 seule (nom, pr\u00E9noms, profession si
 // renseign\u00E9e), sans \u00E9tiquette ni bouton. Appui long : \u00E9dition.
@@ -1013,8 +928,7 @@ fun evenementsFamille(p: Personne, personnes: List<Personne>): List<Pair<Int, St
         val lienFr = if (fr.sexe == "F") "sa soeur" else "son fr\u00E8re"
         ligne(
             fr.dateMariage, fr.lieuMariage, fr.deptMariage,
-            "Assiste au mariage de " + lienFr + " " + fr.titre() + conjointDeTxt(fr, personnes)
-        )?.let { res.add(it) }
+            "Mariage de " + lienFr + " " + fr.titre() + conjointDeTxt(fr, personnes)        )?.let { res.add(it) }
         decesRelatif(fr, lienFr)
     }
     // Enfants : mariage (la personne y est presente et consentante) et deces.
@@ -1138,17 +1052,9 @@ fun CarteEvenement(
     onRetirer: (String, Long) -> Unit,
     onOuvrirMariage: () -> Unit,
     onOuvrirParent: (String) -> Unit,
-    onOuvrirTemoin: () -> Unit,
-    onRetirerTemoin: (String, Long) -> Unit,
-    onBasculerSignature: (String, Long) -> Unit,
-    onAjouterTemoinExistant: (String, Long) -> Unit,
-    onAjouterActe: (Uri, String, String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
-    onEnregistrer: () -> Unit,
-    // Coche de validation de l'acte : negative => recherche dans le journal.
-    onValider: (Boolean) -> Unit,
-    // Recherches ouvertes (la premiere de la section alimente le sous-bloc).
+    onEnregistrer: () -> Unit,    // Recherches ouvertes (la premiere de la section alimente le sous-bloc).
     pistes: List<Piste> = emptyList(),
     modifier: Modifier = Modifier
 ) {
@@ -1159,9 +1065,7 @@ fun CarteEvenement(
     val dp = c.dept.trim()
     val anneeActe = anneeDe(d)
     val numDept = dp.toIntOrNull() ?: numeroDepartement(dp) ?: numeroDepartement(l)
-    val etatActe = p.etatDe(sectionDe(typeActe))
     val pisteEv = pistes.firstOrNull { it.personneId == p.id && !it.faite && it.categorie.startsWith(sectionDe(typeActe)) }
-
     // Le bloc est maintenant affiche DANS la carte de l'evenement (v0.28) :
     // simple colonne, plus de carte imbriquee.
     Column(modifier.fillMaxWidth().padding(top = 4.dp)) {
@@ -1173,14 +1077,7 @@ fun CarteEvenement(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            Checkbox(
-                checked = etatActe == "vert",
-                onCheckedChange = { onValider(it) },
-                modifier = Modifier.size(32.dp)
-            )
-            AjoutActeIcone(typeActe, onAjouterActe)
         }
-
         // Date et heure sur la meme ligne.
         Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Date : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
@@ -1229,17 +1126,10 @@ fun CarteEvenement(
                         Text("Cr\u00E9er", fontSize = 12.sp)
                     }
                 } else {
-                    Checkbox(
-                        checked = p.signatairesDe(typeActe).contains(0L),
-                        onCheckedChange = { onBasculerSignature(typeActe, 0L) },
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Text("Signe", style = MaterialTheme.typography.bodySmall)
                     IconButton(onClick = { onRetirer("pere", 0L) }, Modifier.size(28.dp)) {
                         Icon(Icons.Filled.Close, contentDescription = "Retirer le p\u00E8re", Modifier.size(14.dp))
                     }
-                }
-            }
+                }            }
             LignePersonneG(
                 libelle = "M\u00E8re",
                 q = personneParId(personnes, p.mere),
@@ -1312,93 +1202,8 @@ fun CarteEvenement(
             }
 
         }
-        // Temoins : aucun par defaut, choisis parmi les fiches existantes ou
-        // crees ; coche de signature devant chaque temoin.
-        val temoins = p.temoinsDe(typeActe)
-        if (temoins.isNotEmpty()) {
-            Text(
-                "T\u00E9moins (" + temoins.size.toString() + ")",
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-            temoins.forEach { idT ->
-                val t = personneParId(personnes, idT)
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        t?.titre() ?: "(fiche supprim\u00E9e)",
-                        Modifier.weight(1f).heightIn(min = 48.dp).clickable { onOuvrir(idT) },
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Checkbox(
-                        checked = p.signatairesDe(typeActe).contains(idT),
-                        onCheckedChange = { onBasculerSignature(typeActe, idT) },
-                        modifier = Modifier.size(28.dp)
-                    )
-                    IconButton(onClick = { onRetirerTemoin(typeActe, idT) }, Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer ce t\u00E9moin", Modifier.size(14.dp))
-                    }
-                }
-            }
-        }
-        // Etiquette VERTE avec icone ; le menu propose de choisir une fiche
-        // existante ou d en creer une (reponse utilisateur).
-        var menuTemoin by remember { mutableStateOf(false) }
-        var pickerTemoin by remember { mutableStateOf(false) }
-        Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
-            Button(
-                onClick = { menuTemoin = true },
-                modifier = Modifier.fillMaxWidth().height(32.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = CouleurVert),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
-            ) {
-                Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Ajouter un t\u00E9moin", color = Color.White, fontSize = 12.sp, maxLines = 1)
-            }
-        }
-        if (menuTemoin) {
-            AlertDialog(
-                onDismissRequest = { menuTemoin = false },
-                title = { Text("Ajouter un t\u00E9moin") },
-                text = {
-                    Column {
-                        Text("Choisir une personne existante, ou cr\u00E9er une nouvelle fiche :", style = MaterialTheme.typography.bodySmall)
-                        Spacer(Modifier.height(6.dp))
-                        TextButton(onClick = { menuTemoin = false; pickerTemoin = true }, Modifier.fillMaxWidth()) {
-                            Text("Choisir une personne existante")
-                        }
-                        TextButton(onClick = { menuTemoin = false; onOuvrirTemoin() }, Modifier.fillMaxWidth()) {
-                            Text("Cr\u00E9er / saisir une nouvelle fiche")
-                        }
-                    }
-                },
-                confirmButton = { TextButton(onClick = { menuTemoin = false }) { Text("Annuler") } }
-            )
-        }
-        if (pickerTemoin) {
-            AlertDialog(
-                onDismissRequest = { pickerTemoin = false },
-                title = { Text("Choisir le t\u00E9moin") },
-                text = {
-                    Column(Modifier.verticalScroll(rememberScrollState())) {
-                        personnes.filter { it.id != p.id }.sortedBy { it.titre() }.forEach { c ->
-                            Text(
-                                c.titre(),
-                                Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable {
-                                    pickerTemoin = false
-                                    onAjouterTemoinExistant(typeActe, c.id)
-                                }.padding(vertical = 6.dp),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                },
-                confirmButton = { TextButton(onClick = { pickerTemoin = false }) { Text("Annuler") } }
-            )
-        }
-
+        // GeneaPoche 4 : temoins et signature retires du bloc ; ils se
+        // saisissent uniquement par le formulaire d'acte.
         // Actes stockes pour cet evenement (images + transcriptions) :
         // chacun dans son SOUS-BLOC avec sources et recherche libre.
         if (actes.isNotEmpty()) {
@@ -1467,7 +1272,6 @@ fun SousBlocActe(
     onSupprimer: () -> Unit,
     onEnregistrer: () -> Unit
 ) {
-    var pageOuvert by remember { mutableStateOf(false) }
     var note by remember(acte.id) { mutableStateOf(piste?.enCours ?: "") }
     Card(
         Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -1481,8 +1285,7 @@ fun SousBlocActe(
             ) {
                 Text(
                     if (acte.titre.trim().isNotEmpty()) acte.titre.trim() else "(sans titre)",
-                    Modifier.weight(1f).combinedClickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte", onLongClick = { pageOuvert = true }, onLongClickLabel = "Voir les pages de l'acte"),
-                    style = MaterialTheme.typography.bodyMedium,
+                    Modifier.weight(1f).clickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte"),                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
                 if (acte.numPage.isNotEmpty()) {
@@ -1520,21 +1323,7 @@ fun SousBlocActe(
             }
         }
     }
-    if (pageOuvert) {
-        DialoguePageActe(
-            acte = acte,
-            onValider = { num, total, ref ->
-                acte.numPage = num
-                acte.totalPage = total
-                acte.reference = ref
-                onEnregistrer()
-                pageOuvert = false
-            },
-            onAnnuler = { pageOuvert = false }
-        )
-    }
 }
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LigneActe(
@@ -1543,15 +1332,12 @@ fun LigneActe(
     onSupprimer: () -> Unit,
     onEnregistrer: () -> Unit
 ) {
-    var pageOuvert by remember { mutableStateOf(false) }
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 2.dp),
+    Row(        Modifier.fillMaxWidth().padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             if (acte.titre.trim().isNotEmpty()) acte.titre.trim() else "(sans titre)",
-            Modifier.weight(1f).combinedClickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte", onLongClick = { pageOuvert = true }, onLongClickLabel = "Voir les pages de l'acte"),
-            style = MaterialTheme.typography.bodyMedium,
+            Modifier.weight(1f).clickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte"),            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary
         )
         if (acte.numPage.isNotEmpty()) {
@@ -1562,83 +1348,11 @@ fun LigneActe(
                 modifier = Modifier.padding(end = 4.dp)
             )
         }
-        TextButton(onClick = { pageOuvert = true }) { Text("Page") }
-        IconButton(onClick = onSupprimer) {
-            Icon(Icons.Filled.Close, contentDescription = "Supprimer")
+        IconButton(onClick = onSupprimer) {            Icon(Icons.Filled.Close, contentDescription = "Supprimer")
         }
     }
-    if (pageOuvert) {
-        DialoguePageActe(
-            acte = acte,
-            onValider = { num, total, ref ->
-                acte.numPage = num
-                acte.totalPage = total
-                acte.reference = ref
-                onEnregistrer()
-                pageOuvert = false
-            },
-            onAnnuler = { pageOuvert = false }
-        )
-    }
 }
-
-@Composable
-fun DialoguePageActe(
-    acte: Acte,
-    onValider: (String, String, String) -> Unit,
-    onAnnuler: () -> Unit
-) {
-    var num by remember { mutableStateOf(acte.numPage) }
-    var total by remember { mutableStateOf(acte.totalPage) }
-    var ref by remember { mutableStateOf(acte.reference) }
-    AlertDialog(
-        onDismissRequest = onAnnuler,
-        title = { Text("Page et r\u00E9f\u00E9rence de l'acte") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = num,
-                    onValueChange = { num = it },
-                    label = { Text("Num\u00E9ro de la page consult\u00E9e") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = total,
-                    onValueChange = { total = it },
-                    label = { Text("sur un total de ... pages (facultatif)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-                )
-                Text(
-                    "Ex : page 230 sur 487. Sert de rappel pour reprendre la recherche.",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 6.dp)
-                )
-                OutlinedTextField(
-                    value = ref,
-                    onValueChange = { ref = it },
-                    label = { Text("R\u00E9f\u00E9rence de l'acte (cote AD)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-                )
-                Text(
-                    "Cote aux Archives d\u00E9partementales, export\u00E9e vers Heredis (champ Source).",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 6.dp)
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onValider(num.trim(), total.trim(), ref.trim()) }) { Text("Enregistrer") }
-        },
-        dismissButton = {
-            TextButton(onClick = onAnnuler) { Text("Annuler") }
-        }
-    )
-}
-
-// Ligne masquee si vide (liens de la famille).
+// GeneaPoche 4 : ecran "Page et reference de l'acte" supprime.// Ligne masquee si vide (liens de la famille).
 @Composable
 fun Ligne(libelle: String, valeur: String) {
     if (valeur.isEmpty()) return

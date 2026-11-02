@@ -282,11 +282,10 @@ fun ArbreComplet(
         mere?.let { personneParId(personnes, it.pere) },
         mere?.let { personneParId(personnes, it.mere) }
     )
-    var gardeFou = 0
-    while (courante.any { it != null } && gardeFou < 10) {
-        gardeFou += 1
+    // GeneaPoche 4 : TOUTES les generations d'ancetres apparaissent
+    // (plus de plafond de rangees ni de cases).
+    while (courante.any { it != null }) {
         rangees.add(courante)
-        if (courante.size >= 64) break
         courante = slotsParents(courante)
     }
 
