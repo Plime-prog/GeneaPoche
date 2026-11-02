@@ -169,8 +169,10 @@ fun EcranPersonne(
     onModifierEvenementLibre: (EvenementLibre) -> Unit = {},
     onSupprimerEvenementLibre: (Long) -> Unit = {}
 ) {
-    // GeneaPoche 4 : blocs N, M et D ouverts par defaut.
-    var ouverts by remember { mutableStateOf(setOf("N", "M", "D")) }    // Dialogues : mariage, enfant, parent, temoin.
+    // GénéaPoche 5 : tous les cadres REPLIÉS sur une ligne à l'ouverture
+    // de la fiche ; le toucher d'un cadre le développe, l'appui long le modifie.
+    var ouverts by remember { mutableStateOf(setOf<String>()) }
+    // Dialogues : mariage, enfant, parent, temoin.
     var mariageOuvert by remember { mutableStateOf(false) }
     var parentRole by remember { mutableStateOf("") }    // G\u00E9n\u00E9aPoche 2 : formulaire de saisie d'acte ouvert en plein \u00E9cran
     // depuis la fiche. null = ferm\u00E9 ; "" = nouvel \u00E9v\u00E9nement ; "N"/"B"/"M"/"S"/"D"
@@ -301,7 +303,16 @@ fun EcranPersonne(
                         val eE = personneParId(personnes, idE)
                         entrees.add((eE?.let { anneeDe(it.dateNaissance) } ?: -1) to ("enf:" + idE.toString()))
                     }
-                    entrees.sortedBy { it.first }.forEach { entree ->
+                    // GénéaPoche 5 : le cadre NAISSANCE est TOUJOURS en
+                    // tête de la fiche, quelles que soient les dates ; le
+                    // reste suit l'ordre chronologique.
+                    val ordonnees = entrees.sortedBy { it.first }.toMutableList()
+                    val posN = ordonnees.indexOfFirst { it.second == "ev:N" }
+                    if (posN > 0) {
+                        val blocN = ordonnees.removeAt(posN)
+                        ordonnees.add(0, blocN)
+                    }
+                    ordonnees.forEach { entree ->
                         val cle = entree.second
                         when {
                             cle.startsWith("evl:") -> {
@@ -1458,6 +1469,7 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 
 
