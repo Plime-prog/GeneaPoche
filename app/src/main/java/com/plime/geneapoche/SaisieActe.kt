@@ -160,9 +160,11 @@ fun EcranSaisieActe(
     onFermer: (() -> Unit)? = null,
     // Actes existants : permet de PRE-REMPLIR avec l'acte deja saisi quand
     // on choisit une personne existante (aucun doublon, edition de l'acte).
-    actes: List<Acte> = emptyList()
+    actes: List<Acte> = emptyList(),
+    // GeneaPoche 4 : type impose par l'appui long sur un bloc de la fiche.
+    typeImpose: String? = null
 ) {
-    var type by remember { mutableStateOf(initial?.type ?: "N") }
+    var type by remember { mutableStateOf(typeImpose ?: initial?.type ?: "N") }
     var commune by remember { mutableStateOf(initial?.commune ?: "") }
     var dept by remember { mutableStateOf(initial?.dept ?: "") }
     var reference by remember { mutableStateOf(initial?.reference ?: "") }
@@ -273,17 +275,28 @@ fun EcranSaisieActe(
         }
 
         SectionTitre("Type d'acte")
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            listOf(
-                "N" to "Naissance", "B" to "Bapt\u00EAme", "M" to "Mariage",
-                "D" to "D\u00E9c\u00E8s", "S" to "S\u00E9pulture",
-                "E" to "\u00C9v\u00E9nement"
-            ).forEach { (t, l) ->
-                FilterChip(selected = type == t, onClick = { type = t; confirme = false }, label = { Text(l) })
+        // GeneaPoche 4 : si le type est impose (appui long sur un bloc),
+        // il ne peut pas etre change : seul le type concerne est modifiable.
+        if (typeImpose == null) {
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                listOf(
+                    "N" to "Naissance", "B" to "Bapt\u00EAme", "M" to "Mariage",
+                    "D" to "D\u00E9c\u00E8s", "S" to "S\u00E9pulture",
+                    "E" to "\u00C9v\u00E9nement"
+                ).forEach { (t, l) ->
+                    FilterChip(selected = type == t, onClick = { type = t; confirme = false }, label = { Text(l) })
+                }
             }
+        } else {
+            Text(
+                libelleType(type),
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = CouleurVertFonce
+            )
         }
         if (type == "E") {
             // \u00C9v\u00E9nement \u00E0 intitul\u00E9 libre : rang\u00E9 dans la chronologie.
