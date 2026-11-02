@@ -18,7 +18,8 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Rowimport androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,13 +47,15 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Cardimport androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButtonimport androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -1269,7 +1272,8 @@ fun SousBlocActe(
     onSupprimer: () -> Unit,
     onEnregistrer: () -> Unit
 ) {
-    var note by remember(acte.id) { mutableStateOf(piste?.enCours ?: "") }    Card(
+    var note by remember(acte.id) { mutableStateOf(piste?.enCours ?: "") }
+    Card(
         Modifier.fillMaxWidth().padding(top = 4.dp),
         colors = CardDefaults.cardColors(containerColor = CouleurCarte),
         border = BorderStroke(1.dp, CouleurBordVert)
