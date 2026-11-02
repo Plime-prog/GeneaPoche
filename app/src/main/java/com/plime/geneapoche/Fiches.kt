@@ -99,24 +99,26 @@ fun couleurPastille(sexe: String): Color = when (sexe) {
 // taille de police adapt\u00E9e aux num\u00E9ros d'Aboville longs.
 @Composable
 fun PastilleNumero(p: Personne, diametre: Int) {
+    // G\u00E9n\u00E9aPoche 5 : pastille VIDE si la personne n'est ni Sosa ni
+    // d'Aboville (plus de repli sur l'initiale).
     val num = p.numeroBrut()
-    val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
-    val vignette = num.ifEmpty { initiale.toString() }
     Box(
         Modifier.size(diametre.dp).clip(CircleShape).background(couleurPastille(p.sexe)),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            vignette,
-            color = CouleurVertFonce,
-            fontWeight = FontWeight.Bold,
-            fontSize = when {
-                vignette.length <= 3 -> (diametre * 15 / 40).sp
-                vignette.length <= 5 -> (diametre * 12 / 40).sp
-                else -> (diametre * 9 / 40).sp
-            },
-            maxLines = 1
-        )
+        if (num.isNotEmpty()) {
+            Text(
+                num,
+                color = CouleurVertFonce,
+                fontWeight = FontWeight.Bold,
+                fontSize = when {
+                    num.length <= 3 -> (diametre * 15 / 40).sp
+                    num.length <= 5 -> (diametre * 12 / 40).sp
+                    else -> (diametre * 9 / 40).sp
+                },
+                maxLines = 1
+            )
+        }
     }
 }
 
@@ -272,7 +274,9 @@ fun EcranPersonne(
         ) {
             stickyHeader(key = "tete") {
                 Column(Modifier.fillMaxWidth()) {
-                    CarteIdentite(p = p, onEditer = onEditerIdentite)
+                    // G\u00E9n\u00E9aPoche 5 : le cadre de la personne est
+                    // SUPPRIM\u00C9 (l'identit\u00E9 est dans la barre de titre) ;
+                    // seul le cadre des parents reste fig\u00E9 en t\u00EAte.
                     CarteParents(
                         p = p,
                         personnes = personnes,
@@ -547,7 +551,7 @@ fun EcranPersonne(
                         }
                     }
                     }
-                    // GeneaPoche 4 : bloc BIOGRAPHIE tout en bas de la fiche.
+                    // G\u00E9n\u00E9aPoche 5 : bloc NOTES tout en bas de la fiche.
                     Card(
                         Modifier.fillMaxWidth().padding(vertical = 3.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -559,7 +563,7 @@ fun EcranPersonne(
                                 value = libre,
                                 onValueChange = { libre = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("Biographie", style = MaterialTheme.typography.bodySmall) },
+                                placeholder = { Text("Notes", style = MaterialTheme.typography.bodySmall) },
                                 textStyle = MaterialTheme.typography.bodySmall
                             )
                             TextButton(onClick = { p.notesLibres = libre.trim(); enregistrer() }) {
@@ -730,6 +734,15 @@ fun CarteParents(
                             if (dP.isNotEmpty()) nd.add("D. " + dP)
                             if (nd.isNotEmpty()) {
                                 Text(nd.joinToString(" \u2013 "), style = MaterialTheme.typography.bodySmall)
+                            }
+                            // G\u00E9n\u00E9aPoche 5 : la PROFESSION du parent
+                            // appara\u00EEt sans \u00E9tiquette, rien si inconnue.
+                            if (q.profession.trim().isNotEmpty()) {
+                                Text(
+                                    q.profession.trim(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }
@@ -1118,6 +1131,9 @@ fun CarteEvenement(
                 onOuvrir = { onOuvrir(p.pere) }
             )
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                // G\u00E9n\u00E9aPoche 5 : la croix de retrait du p\u00E8re est
+                // SUPPRIM\u00C9E ; les boutons n'apparaissent que si le
+                // parent est inconnu.
                 if (p.pere == 0L) {
                     OutlinedButton(onClick = { onChoisir("pere") }, Modifier.height(32.dp)) {
                         Text("Choisir", fontSize = 12.sp)
@@ -1125,11 +1141,8 @@ fun CarteEvenement(
                     TextButton(onClick = { onOuvrirParent("pere") }) {
                         Text("Cr\u00E9er", fontSize = 12.sp)
                     }
-                } else {
-                    IconButton(onClick = { onRetirer("pere", 0L) }, Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer le p\u00E8re", Modifier.size(14.dp))
-                    }
-                }            }
+                }
+            }
             LignePersonneG(
                 libelle = "M\u00E8re",
                 q = personneParId(personnes, p.mere),
@@ -1138,16 +1151,14 @@ fun CarteEvenement(
                 onOuvrir = { onOuvrir(p.mere) }
             )
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                // G\u00E9n\u00E9aPoche 5 : la croix de retrait de la m\u00E8re est
+                // SUPPRIM\u00C9E.
                 if (p.mere == 0L) {
                     OutlinedButton(onClick = { onChoisir("mere") }, Modifier.height(32.dp)) {
                         Text("Choisir", fontSize = 12.sp)
                     }
                     TextButton(onClick = { onOuvrirParent("mere") }) {
                         Text("Cr\u00E9er", fontSize = 12.sp)
-                    }
-                } else {
-                    IconButton(onClick = { onRetirer("mere", 0L) }, Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer la m\u00E8re", Modifier.size(14.dp))
                     }
                 }
             }
@@ -1165,6 +1176,8 @@ fun CarteEvenement(
                 onOuvrir = { onOuvrir(p.conjoint) }
             )
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                // G\u00E9n\u00E9aPoche 5 : la croix de retrait du conjoint est
+                // SUPPRIM\u00C9E.
                 if (p.conjoint == 0L) {
                     OutlinedButton(onClick = { onChoisir("conjoint") }, Modifier.height(32.dp)) {
                         Text("Choisir", fontSize = 12.sp)
@@ -1172,34 +1185,12 @@ fun CarteEvenement(
                     TextButton(onClick = onOuvrirMariage) {
                         Text("Saisir", fontSize = 12.sp)
                     }
-                } else {
-                    IconButton(onClick = { onRetirer("conjoint", 0L) }, Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer le conjoint", Modifier.size(14.dp))
-                    }
                 }
             }
-            p.conjointsSupp.forEach { idC ->
-                LignePersonneG(
-                    libelle = "Autre conjoint(e)",
-                    q = personneParId(personnes, idC),
-                    anneeActe = anneeActe,
-                    ageActeContenu = null,
-                    onOuvrir = { onOuvrir(idC) }
-                )
-                Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { onRetirer("conjointsupp", idC) }, Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer ce conjoint", Modifier.size(14.dp))
-                    }
-                }
-            }
-            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
-                OutlinedButton(onClick = { onChoisir("conjointsupp") }, Modifier.weight(1f)) {
-                    Text("Autre conjoint", fontSize = 12.sp)
-                }
-                OutlinedButton(onClick = onOuvrirMariage, Modifier.weight(1f)) {
-                    Text("Saisir un mariage", fontSize = 12.sp)
-                }
-            }
+            // G\u00E9n\u00E9aPoche 5 : les autres conjoints et les boutons
+            // "Autre conjoint" / "Saisir un mariage" sont SUPPRIM\u00C9S du
+            // bloc ; tout se saisit par le menu de modification (appui
+            // long) ou le menu Saisie.
 
         }
         // GeneaPoche 4 : temoins et signature retires du bloc ; ils se
@@ -1215,258 +1206,3 @@ fun CarteEvenement(
             )
             actes.forEach { acte ->
                 SousBlocActe(
-                    acte = acte,
-                    piste = pisteEv,
-                    onVoir = { onVoirActe(acte) },
-                    onSupprimer = { onSupprimerActe(acte) },
-                    onEnregistrer = onEnregistrer
-                )
-            }
-        }
-    }
-}
-
-// Icone d'ajout d'une photo d'acte dans un bloc.
-@Composable
-fun AjoutActeIcone(typeActe: String, onAjouterActe: (Uri, String, String) -> Unit) {
-    var dialogueOuvert by remember { mutableStateOf(false) }
-    val lanceur = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) onAjouterActe(uri, typeActe, "")
-    }
-    IconButton(onClick = { dialogueOuvert = true }) {
-        Icon(Icons.Filled.Add, contentDescription = "Ajouter une photo d'acte")
-    }
-    if (dialogueOuvert) {
-        AlertDialog(
-            onDismissRequest = { dialogueOuvert = false },
-            title = { Text("Ajouter un acte : " + libelleType(typeActe)) },
-            text = {
-                Text(
-                    "L'image reste sur l'appareil, chiffr\u00E9e. Rien n'est transmis.\nChoisissez l'image \u00E0 associer \u00E0 cet \u00E9v\u00E9nement."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    dialogueOuvert = false
-                    lanceur.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }) { Text("Choisir l'image") }
-            },
-            dismissButton = {
-                TextButton(onClick = { dialogueOuvert = false }) { Text("Annuler") }
-            }
-        )
-    }
-}
-
-// Sous-bloc de detail d'un acte (v0.28) : titre (toucher = voir l'image,
-// appui long = pages/reference), reference de la cote, zone de recherche
-// libre, le tout regroupe au meme endroit.
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun SousBlocActe(
-    acte: Acte,
-    piste: Piste?,
-    onVoir: () -> Unit,
-    onSupprimer: () -> Unit,
-    onEnregistrer: () -> Unit
-) {
-    var note by remember(acte.id) { mutableStateOf(piste?.enCours ?: "") }
-    Card(
-        Modifier.fillMaxWidth().padding(top = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = CouleurCarte),
-        border = BorderStroke(1.dp, CouleurBordVert)
-    ) {
-        Column(Modifier.fillMaxWidth().padding(6.dp)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    if (acte.titre.trim().isNotEmpty()) acte.titre.trim() else "(sans titre)",
-                    Modifier.weight(1f).clickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte"),                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                if (acte.numPage.isNotEmpty()) {
-                    Text(
-                        "p. " + acte.numPage + "/" + acte.totalPage,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
-                }
-                IconButton(onClick = onSupprimer, Modifier.size(28.dp)) {
-                    Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(14.dp))
-                }
-            }
-            if (acte.reference.isNotBlank()) {
-                Text(
-                    "R\u00E9f. " + acte.reference.trim(),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            // Zone de saisie libre de la recherche en cours.
-            if (piste != null) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = note,
-                        onValueChange = { note = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Recherche : pages, cotes, notes...", style = MaterialTheme.typography.bodySmall) },
-                        textStyle = MaterialTheme.typography.bodySmall
-                    )
-                    TextButton(onClick = { piste.enCours = note.trim(); onEnregistrer() }) {
-                        Text("Enregistrer", fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-    }
-}
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun LigneActe(
-    acte: Acte,
-    onVoir: () -> Unit,
-    onSupprimer: () -> Unit,
-    onEnregistrer: () -> Unit
-) {
-    Row(        Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            if (acte.titre.trim().isNotEmpty()) acte.titre.trim() else "(sans titre)",
-            Modifier.weight(1f).clickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte"),            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        if (acte.numPage.isNotEmpty()) {
-            Text(
-                "p. " + acte.numPage + "/" + acte.totalPage,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(end = 4.dp)
-            )
-        }
-        IconButton(onClick = onSupprimer) {            Icon(Icons.Filled.Close, contentDescription = "Supprimer")
-        }
-    }
-}
-// GeneaPoche 4 : ecran "Page et reference de l'acte" supprime.// Ligne masquee si vide (liens de la famille).
-@Composable
-fun Ligne(libelle: String, valeur: String) {
-    if (valeur.isEmpty()) return
-    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-        Text(valeur, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
-
-// ---------------------------------------------------------------- Actes : image + zoom
-
-// Import d'une image (capture d'ecran ou photo) : redimensionnee puis compressee en JPEG.
-fun compresserVersJpeg(ctx: Context, uri: Uri): ByteArray? {
-    return try {
-        val donnees = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
-        val bornes = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(donnees, 0, donnees.size, bornes)
-        var ech = 1
-        while ((bornes.outWidth / (ech * 2)) >= 1200 || (bornes.outHeight / (ech * 2)) >= 1200) {
-            ech *= 2
-        }
-        val opts = BitmapFactory.Options().apply { inSampleSize = ech }
-        val brut = BitmapFactory.decodeByteArray(donnees, 0, donnees.size, opts) ?: return null
-        val sortie = java.io.ByteArrayOutputStream()
-        brut.compress(Bitmap.CompressFormat.JPEG, 85, sortie)
-        brut.recycle()
-        sortie.toByteArray()
-    } catch (e: Exception) {
-        null
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
-    val bmp = remember(acte.id) {
-        val octets = Stockage.lireImage(ctx, acte.id)
-        if (octets != null) BitmapFactory.decodeByteArray(octets, 0, octets.size) else null
-    }
-    var echelle by remember { mutableStateOf(1f) }
-    var decalage by remember { mutableStateOf(Offset.Zero) }
-    val etat = rememberTransformableState { zoom, pan, _ ->
-        echelle = (echelle * zoom).coerceIn(1f, 6f)
-        decalage = if (echelle > 1f) decalage + pan else Offset.Zero
-    }
-    Dialog(
-        onDismissRequest = onFermer,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(Modifier.fillMaxSize()) {
-            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(12.dp)) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val t = acte.titre.trim()
-                    Text(
-                        if (t.isNotEmpty()) libelleType(acte.type) + " \u2013 " + t else libelleType(acte.type),
-                        Modifier.weight(1f),
-                        fontWeight = FontWeight.Bold
-                    )
-                    IconButton(onClick = onFermer) {
-                        Icon(Icons.Filled.Close, contentDescription = "Fermer")
-                    }
-                }
-                if (bmp == null) {
-                    if (acte.contenu.isNotBlank()) {
-                        // Acte transcrit sans image : la transcription s'affiche ici.
-                        Text(
-                            "Transcription de l'acte",
-                            fontWeight = FontWeight.Bold,
-                            color = CouleurVertFonce
-                        )
-                        Column(
-                            Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())
-                        ) {
-                            acte.contenu.split("\n").forEach { ligne ->
-                                Text(
-                                    ligne,
-                                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-                    } else {
-                        Text("Image illisible.", color = CouleurRouge)
-                    }
-                } else {
-                    Text(
-                        "Pincez pour zoomer, glissez pour d\u00E9placer.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Image(
-                        bitmap = bmp.asImageBitmap(),
-                        contentDescription = "Image de l'acte " + acte.titre.trim(),
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .transformable(etat)
-                            .graphicsLayer {
-                                scaleX = echelle
-                                scaleY = echelle
-                                translationX = decalage.x
-                                translationY = decalage.y
-                            }
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-

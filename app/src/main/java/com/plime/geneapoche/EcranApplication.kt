@@ -279,8 +279,10 @@ fun EcranApplication(
                         }
                     },
                     actions = {
-                        TextButton(onClick = { menuGedcom = true }) {
-                            Text("GEDCOM", color = Color.White, fontWeight = FontWeight.Bold)
+                        // G\u00E9n\u00E9aPoche 5 : l'intitul\u00E9 "GEDCOM" est
+                        // remplac\u00E9 par une ic\u00F4ne de param\u00E9trages.
+                        IconButton(onClick = { menuGedcom = true }) {
+                            Icon(Icons.Filled.Settings, contentDescription = "Param\u00E9trages")
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -601,7 +603,9 @@ fun EcranApplication(
                 EcranArbre(
                     personnes = personnes,
                     idCentre = arbreCentre,
-                    onOuvrir = { onIdOuvert(it); onArbreCentre(it) },
+                    // G\u00E9n\u00E9aPoche 5 : toucher une carte = la personne
+                    // devient le CENTRE de l'arbre ; appui long = fiche.
+                    onOuvrir = { onIdOuvert(it) },
                     onCentrerSur = { onArbreCentre(it) }
                 )
                 }
@@ -1162,10 +1166,9 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
             Modifier.fillMaxWidth().padding(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Vignette : rond au NUMERO (Sosa ou d'Aboville) ; l'initiale
-            // du prenom sert de repli quand la personne n'a pas de numero.
-            val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
-            val vignette = p.numeroAffiche().ifEmpty { initiale.toString() }
+            // Vignette : rond au NUMERO (Sosa ou d'Aboville) ; PASTILLE
+            // VIDE si la personne n'est ni Sosa ni d'Aboville (G\u00E9n\u00E9aPoche 5).
+            val vignette = p.numeroAffiche()
             val couleurAvatar = when (p.sexe) {
                 "F" -> CouleurRose
                 "M" -> CouleurBleu
@@ -1175,17 +1178,19 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
                 Modifier.size(40.dp).clip(CircleShape).background(couleurAvatar),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    vignette,
-                    color = CouleurVertFonce,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = when {
-                        vignette.length <= 3 -> 15.sp
-                        vignette.length <= 5 -> 12.sp
-                        else -> 12.sp
-                    },
-                    maxLines = 1
-                )
+                if (vignette.isNotEmpty()) {
+                    Text(
+                        vignette,
+                        color = CouleurVertFonce,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = when {
+                            vignette.length <= 3 -> 15.sp
+                            vignette.length <= 5 -> 12.sp
+                            else -> 12.sp
+                        },
+                        maxLines = 1
+                    )
+                }
             }
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
@@ -1207,15 +1212,16 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
                     Text(morceaux.joinToString("  \u2013  "), style = MaterialTheme.typography.bodySmall)
                 }
             }
-            // G\u00E9n\u00E9aPoche 3 : compteur des renseignements n/4 (dates et
-            // lieux complets avec d\u00E9partement) tout \u00E0 droite, rouge \u00E0 vert.
-            val n4 = renseignementsN4(p)
+            // G\u00E9n\u00E9aPoche 5 : \u00E9tiquette des renseignements sur 6
+            // (N date compl\u00E8te, N commune, N d\u00E9partement, D date
+            // compl\u00E8te, D commune, D d\u00E9partement), rouge (0) \u00E0 vert (6).
+            val n6 = renseignementsN6(p)
             Surface(
                 shape = RoundedCornerShape(50),
-                color = couleurCompteur(n4, 4)
+                color = couleurCompteur(n6, 6)
             ) {
                 Text(
-                    "  " + n4.toString() + "/4  ",
+                    "  " + n6.toString() + "/6  ",
                     color = Color.White,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
@@ -1228,6 +1234,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 
 
 
