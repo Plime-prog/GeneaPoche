@@ -17,6 +17,63 @@ import org.json.JSONObject
 // "JEAN BAPTISTE" -> "Jean Baptiste").
 fun normaliserNom(s: String): String = s.trim().uppercase()
 
+// G\u00E9n\u00E9aPoche 5 : commune transcrite avec une initiale en MAJUSCULES
+// (norme fran\u00E7aise) : chaque mot est en minuscules sauf sa premiere
+// lettre, y compris apres un tiret ou une apostrophe
+// ("le havre" -> "Le Havre", "LA ROCHE-SUR-YON" -> "La Roche-sur-Yon").
+fun normaliserCommune(s: String): String {
+    val t = s.trim().lowercase()
+    if (t.isEmpty()) return ""
+    val sb = StringBuilder()
+    var capitale = true
+    t.forEach { c ->
+        if (c == ' ' || c == '-' || c == '\'') {
+            capitale = true
+            sb.append(c)
+        } else if (capitale) {
+            sb.append(c.uppercaseChar())
+            capitale = false
+        } else {
+            sb.append(c)
+        }
+    }
+    return sb.toString()
+}
+
+// G\u00E9n\u00E9aPoche 5 : d\u00E9partement au format NUM\u00C9RIQUE (norme GEDCOM),
+// 2 ou 3 chiffres : "5" -> "05", "Nord" -> "59", "971" -> "971".
+// Une valeur non identifiable est laiss\u00E9e telle quelle.
+fun normaliserDept(s: String): String {
+    val t = s.trim()
+    if (t.isEmpty()) return ""
+    val n = t.toIntOrNull()
+    if (n != null) {
+        if (NomsDepartements.containsKey(n)) {
+            return if (n < 10) "0" + n.toString() else n.toString()
+        }
+        return t
+    }
+    val num = numeroDepartement(t)
+    if (num != null) return num.toString()
+    return t
+}
+
+// G\u00E9n\u00E9aPoche 5 : applique les deux normes (communes, d\u00E9partements)
+// aux cinq \u00E9v\u00E9nements d'une personne. Appele a TOUTE construction
+// (chargement, import, creation) ET a chaque enregistrement.
+fun normaliserLieux(p: Personne) {
+    p.lieuNaissance = normaliserCommune(p.lieuNaissance)
+    p.deptNaissance = normaliserDept(p.deptNaissance)
+    p.lieuBapteme = normaliserCommune(p.lieuBapteme)
+    p.deptBapteme = normaliserDept(p.deptBapteme)
+    p.lieuMariage = normaliserCommune(p.lieuMariage)
+    p.deptMariage = normaliserDept(p.deptMariage)
+    p.lieuDeces = normaliserCommune(p.lieuDeces)
+    p.deptDeces = normaliserDept(p.deptDeces)
+    p.lieuSepulture = normaliserCommune(p.lieuSepulture)
+    p.deptSepulture = normaliserDept(p.deptSepulture)
+}
+
 fun normaliserPrenoms(s: String): String {
     val t = StringBuilder()
     var majuscule = true
@@ -209,6 +266,9 @@ data class Personne(
     init {
         nom = normaliserNom(nom)
         prenoms = normaliserPrenoms(prenoms)
+        // G\u00E9n\u00E9aPoche 5 : communes (initiale en majuscules) et
+        // d\u00E9partements (format num\u00E9rique) normalis\u00E9s partout.
+        normaliserLieux(this)
         dateNaissance = dateGreg(dateNaissance)
         dateBapteme = dateGreg(dateBapteme)
         dateMariage = dateGreg(dateMariage)
@@ -598,6 +658,7 @@ data class Acte(
         )
     }
 }
+
 
 
 

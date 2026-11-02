@@ -290,6 +290,10 @@ fun AppEcran(
             message = "Donn\u00E9es illisibles : enregistrement bloqu\u00E9 (restaurez la copie .bak)."
             return false
         }
+        // G\u00E9n\u00E9aPoche 5 : communes et d\u00E9partements normalis\u00E9s
+        // syst\u00E9matiquement \u00E0 chaque enregistrement (saisie, \u00E9dition,
+        // import : aucune \u00E9chapatoire).
+        personnes.forEach { normaliserLieux(it) }
         // Numerotation Sosa / d'Aboville recalculee seulement quand la
         // structure des liens peut avoir change (creation, rattachement,
         // suppression) : une simple coche n'est plus un recalcul complet (G5).
@@ -1993,5 +1997,6 @@ fun AppEcran(
         )
     }
 }
+
 
 

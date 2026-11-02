@@ -99,24 +99,26 @@ fun couleurPastille(sexe: String): Color = when (sexe) {
 // taille de police adapt\u00E9e aux num\u00E9ros d'Aboville longs.
 @Composable
 fun PastilleNumero(p: Personne, diametre: Int) {
+    // G\u00E9n\u00E9aPoche 5 : pastille VIDE si la personne n'est ni Sosa ni
+    // d'Aboville (plus de repli sur l'initiale).
     val num = p.numeroBrut()
-    val initiale = p.prenoms.trim().firstOrNull() ?: p.nom.trim().firstOrNull() ?: '?'
-    val vignette = num.ifEmpty { initiale.toString() }
     Box(
         Modifier.size(diametre.dp).clip(CircleShape).background(couleurPastille(p.sexe)),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            vignette,
-            color = CouleurVertFonce,
-            fontWeight = FontWeight.Bold,
-            fontSize = when {
-                vignette.length <= 3 -> (diametre * 15 / 40).sp
-                vignette.length <= 5 -> (diametre * 12 / 40).sp
-                else -> (diametre * 9 / 40).sp
-            },
-            maxLines = 1
-        )
+        if (num.isNotEmpty()) {
+            Text(
+                num,
+                color = CouleurVertFonce,
+                fontWeight = FontWeight.Bold,
+                fontSize = when {
+                    num.length <= 3 -> (diametre * 15 / 40).sp
+                    num.length <= 5 -> (diametre * 12 / 40).sp
+                    else -> (diametre * 9 / 40).sp
+                },
+                maxLines = 1
+            )
+        }
     }
 }
 
@@ -272,7 +274,9 @@ fun EcranPersonne(
         ) {
             stickyHeader(key = "tete") {
                 Column(Modifier.fillMaxWidth()) {
-                    CarteIdentite(p = p, onEditer = onEditerIdentite)
+                    // G\u00E9n\u00E9aPoche 5 : le cadre de la personne est
+                    // SUPPRIM\u00C9 (l'identit\u00E9 est dans la barre de titre) ;
+                    // seul le cadre des parents reste fig\u00E9 en t\u00EAte.
                     CarteParents(
                         p = p,
                         personnes = personnes,
@@ -547,7 +551,7 @@ fun EcranPersonne(
                         }
                     }
                     }
-                    // GeneaPoche 4 : bloc BIOGRAPHIE tout en bas de la fiche.
+                    // G\u00E9n\u00E9aPoche 5 : bloc NOTES tout en bas de la fiche.
                     Card(
                         Modifier.fillMaxWidth().padding(vertical = 3.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -559,7 +563,7 @@ fun EcranPersonne(
                                 value = libre,
                                 onValueChange = { libre = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("Biographie", style = MaterialTheme.typography.bodySmall) },
+                                placeholder = { Text("Notes", style = MaterialTheme.typography.bodySmall) },
                                 textStyle = MaterialTheme.typography.bodySmall
                             )
                             TextButton(onClick = { p.notesLibres = libre.trim(); enregistrer() }) {
@@ -730,6 +734,15 @@ fun CarteParents(
                             if (dP.isNotEmpty()) nd.add("D. " + dP)
                             if (nd.isNotEmpty()) {
                                 Text(nd.joinToString(" \u2013 "), style = MaterialTheme.typography.bodySmall)
+                            }
+                            // G\u00E9n\u00E9aPoche 5 : la PROFESSION du parent
+                            // appara\u00EEt sans \u00E9tiquette, rien si inconnue.
+                            if (q.profession.trim().isNotEmpty()) {
+                                Text(
+                                    q.profession.trim(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }
@@ -1118,6 +1131,9 @@ fun CarteEvenement(
                 onOuvrir = { onOuvrir(p.pere) }
             )
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                // G\u00E9n\u00E9aPoche 5 : la croix de retrait du p\u00E8re est
+                // SUPPRIM\u00C9E ; les boutons n'apparaissent que si le
+                // parent est inconnu.
                 if (p.pere == 0L) {
                     OutlinedButton(onClick = { onChoisir("pere") }, Modifier.height(32.dp)) {
                         Text("Choisir", fontSize = 12.sp)
@@ -1125,11 +1141,8 @@ fun CarteEvenement(
                     TextButton(onClick = { onOuvrirParent("pere") }) {
                         Text("Cr\u00E9er", fontSize = 12.sp)
                     }
-                } else {
-                    IconButton(onClick = { onRetirer("pere", 0L) }, Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer le p\u00E8re", Modifier.size(14.dp))
-                    }
-                }            }
+                }
+            }
             LignePersonneG(
                 libelle = "M\u00E8re",
                 q = personneParId(personnes, p.mere),
@@ -1138,16 +1151,14 @@ fun CarteEvenement(
                 onOuvrir = { onOuvrir(p.mere) }
             )
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                // G\u00E9n\u00E9aPoche 5 : la croix de retrait de la m\u00E8re est
+                // SUPPRIM\u00C9E.
                 if (p.mere == 0L) {
                     OutlinedButton(onClick = { onChoisir("mere") }, Modifier.height(32.dp)) {
                         Text("Choisir", fontSize = 12.sp)
                     }
                     TextButton(onClick = { onOuvrirParent("mere") }) {
                         Text("Cr\u00E9er", fontSize = 12.sp)
-                    }
-                } else {
-                    IconButton(onClick = { onRetirer("mere", 0L) }, Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer la m\u00E8re", Modifier.size(14.dp))
                     }
                 }
             }
@@ -1165,6 +1176,8 @@ fun CarteEvenement(
                 onOuvrir = { onOuvrir(p.conjoint) }
             )
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                // G\u00E9n\u00E9aPoche 5 : la croix de retrait du conjoint est
+                // SUPPRIM\u00C9E.
                 if (p.conjoint == 0L) {
                     OutlinedButton(onClick = { onChoisir("conjoint") }, Modifier.height(32.dp)) {
                         Text("Choisir", fontSize = 12.sp)
@@ -1172,34 +1185,12 @@ fun CarteEvenement(
                     TextButton(onClick = onOuvrirMariage) {
                         Text("Saisir", fontSize = 12.sp)
                     }
-                } else {
-                    IconButton(onClick = { onRetirer("conjoint", 0L) }, Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer le conjoint", Modifier.size(14.dp))
-                    }
                 }
             }
-            p.conjointsSupp.forEach { idC ->
-                LignePersonneG(
-                    libelle = "Autre conjoint(e)",
-                    q = personneParId(personnes, idC),
-                    anneeActe = anneeActe,
-                    ageActeContenu = null,
-                    onOuvrir = { onOuvrir(idC) }
-                )
-                Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { onRetirer("conjointsupp", idC) }, Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "Retirer ce conjoint", Modifier.size(14.dp))
-                    }
-                }
-            }
-            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
-                OutlinedButton(onClick = { onChoisir("conjointsupp") }, Modifier.weight(1f)) {
-                    Text("Autre conjoint", fontSize = 12.sp)
-                }
-                OutlinedButton(onClick = onOuvrirMariage, Modifier.weight(1f)) {
-                    Text("Saisir un mariage", fontSize = 12.sp)
-                }
-            }
+            // G\u00E9n\u00E9aPoche 5 : les autres conjoints et les boutons
+            // "Autre conjoint" / "Saisir un mariage" sont SUPPRIM\u00C9S du
+            // bloc ; tout se saisit par le menu de modification (appui
+            // long) ou le menu Saisie.
 
         }
         // GeneaPoche 4 : temoins et signature retires du bloc ; ils se
@@ -1467,6 +1458,7 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 
 
