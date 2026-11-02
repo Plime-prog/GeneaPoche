@@ -1206,3 +1206,259 @@ fun CarteEvenement(
             )
             actes.forEach { acte ->
                 SousBlocActe(
+                    acte = acte,
+                    piste = pisteEv,
+                    onVoir = { onVoirActe(acte) },
+                    onSupprimer = { onSupprimerActe(acte) },
+                    onEnregistrer = onEnregistrer
+                )
+            }
+        }
+    }
+}
+
+// Icone d'ajout d'une photo d'acte dans un bloc.
+@Composable
+fun AjoutActeIcone(typeActe: String, onAjouterActe: (Uri, String, String) -> Unit) {
+    var dialogueOuvert by remember { mutableStateOf(false) }
+    val lanceur = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) onAjouterActe(uri, typeActe, "")
+    }
+    IconButton(onClick = { dialogueOuvert = true }) {
+        Icon(Icons.Filled.Add, contentDescription = "Ajouter une photo d'acte")
+    }
+    if (dialogueOuvert) {
+        AlertDialog(
+            onDismissRequest = { dialogueOuvert = false },
+            title = { Text("Ajouter un acte : " + libelleType(typeActe)) },
+            text = {
+                Text(
+                    "L'image reste sur l'appareil, chiffr\u00E9e. Rien n'est transmis.\nChoisissez l'image \u00E0 associer \u00E0 cet \u00E9v\u00E9nement."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    dialogueOuvert = false
+                    lanceur.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }) { Text("Choisir l'image") }
+            },
+            dismissButton = {
+                TextButton(onClick = { dialogueOuvert = false }) { Text("Annuler") }
+            }
+        )
+    }
+}
+
+// Sous-bloc de detail d'un acte (v0.28) : titre (toucher = voir l'image,
+// appui long = pages/reference), reference de la cote, zone de recherche
+// libre, le tout regroupe au meme endroit.
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun SousBlocActe(
+    acte: Acte,
+    piste: Piste?,
+    onVoir: () -> Unit,
+    onSupprimer: () -> Unit,
+    onEnregistrer: () -> Unit
+) {
+    var note by remember(acte.id) { mutableStateOf(piste?.enCours ?: "") }
+    Card(
+        Modifier.fillMaxWidth().padding(top = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = CouleurCarte),
+        border = BorderStroke(1.dp, CouleurBordVert)
+    ) {
+        Column(Modifier.fillMaxWidth().padding(6.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    if (acte.titre.trim().isNotEmpty()) acte.titre.trim() else "(sans titre)",
+                    Modifier.weight(1f).clickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte"),                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (acte.numPage.isNotEmpty()) {
+                    Text(
+                        "p. " + acte.numPage + "/" + acte.totalPage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                }
+                IconButton(onClick = onSupprimer, Modifier.size(28.dp)) {
+                    Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(14.dp))
+                }
+            }
+            if (acte.reference.isNotBlank()) {
+                Text(
+                    "R\u00E9f. " + acte.reference.trim(),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            // Zone de saisie libre de la recherche en cours.
+            if (piste != null) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = note,
+                        onValueChange = { note = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Recherche : pages, cotes, notes...", style = MaterialTheme.typography.bodySmall) },
+                        textStyle = MaterialTheme.typography.bodySmall
+                    )
+                    TextButton(onClick = { piste.enCours = note.trim(); onEnregistrer() }) {
+                        Text("Enregistrer", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun LigneActe(
+    acte: Acte,
+    onVoir: () -> Unit,
+    onSupprimer: () -> Unit,
+    onEnregistrer: () -> Unit
+) {
+    Row(        Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            if (acte.titre.trim().isNotEmpty()) acte.titre.trim() else "(sans titre)",
+            Modifier.weight(1f).clickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte"),            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        if (acte.numPage.isNotEmpty()) {
+            Text(
+                "p. " + acte.numPage + "/" + acte.totalPage,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = 4.dp)
+            )
+        }
+        IconButton(onClick = onSupprimer) {            Icon(Icons.Filled.Close, contentDescription = "Supprimer")
+        }
+    }
+}
+// GeneaPoche 4 : ecran "Page et reference de l'acte" supprime.// Ligne masquee si vide (liens de la famille).
+@Composable
+fun Ligne(libelle: String, valeur: String) {
+    if (valeur.isEmpty()) return
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+        Text(valeur, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+
+// ---------------------------------------------------------------- Actes : image + zoom
+
+// Import d'une image (capture d'ecran ou photo) : redimensionnee puis compressee en JPEG.
+fun compresserVersJpeg(ctx: Context, uri: Uri): ByteArray? {
+    return try {
+        val donnees = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+        val bornes = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(donnees, 0, donnees.size, bornes)
+        var ech = 1
+        while ((bornes.outWidth / (ech * 2)) >= 1200 || (bornes.outHeight / (ech * 2)) >= 1200) {
+            ech *= 2
+        }
+        val opts = BitmapFactory.Options().apply { inSampleSize = ech }
+        val brut = BitmapFactory.decodeByteArray(donnees, 0, donnees.size, opts) ?: return null
+        val sortie = java.io.ByteArrayOutputStream()
+        brut.compress(Bitmap.CompressFormat.JPEG, 85, sortie)
+        brut.recycle()
+        sortie.toByteArray()
+    } catch (e: Exception) {
+        null
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
+    val bmp = remember(acte.id) {
+        val octets = Stockage.lireImage(ctx, acte.id)
+        if (octets != null) BitmapFactory.decodeByteArray(octets, 0, octets.size) else null
+    }
+    var echelle by remember { mutableStateOf(1f) }
+    var decalage by remember { mutableStateOf(Offset.Zero) }
+    val etat = rememberTransformableState { zoom, pan, _ ->
+        echelle = (echelle * zoom).coerceIn(1f, 6f)
+        decalage = if (echelle > 1f) decalage + pan else Offset.Zero
+    }
+    Dialog(
+        onDismissRequest = onFermer,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(12.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val t = acte.titre.trim()
+                    Text(
+                        if (t.isNotEmpty()) libelleType(acte.type) + " \u2013 " + t else libelleType(acte.type),
+                        Modifier.weight(1f),
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onFermer) {
+                        Icon(Icons.Filled.Close, contentDescription = "Fermer")
+                    }
+                }
+                if (bmp == null) {
+                    if (acte.contenu.isNotBlank()) {
+                        // Acte transcrit sans image : la transcription s'affiche ici.
+                        Text(
+                            "Transcription de l'acte",
+                            fontWeight = FontWeight.Bold,
+                            color = CouleurVertFonce
+                        )
+                        Column(
+                            Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())
+                        ) {
+                            acte.contenu.split("\n").forEach { ligne ->
+                                Text(
+                                    ligne,
+                                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    } else {
+                        Text("Image illisible.", color = CouleurRouge)
+                    }
+                } else {
+                    Text(
+                        "Pincez pour zoomer, glissez pour d\u00E9placer.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Image(
+                        bitmap = bmp.asImageBitmap(),
+                        contentDescription = "Image de l'acte " + acte.titre.trim(),
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .transformable(etat)
+                            .graphicsLayer {
+                                scaleX = echelle
+                                scaleY = echelle
+                                translationX = decalage.x
+                                translationY = decalage.y
+                            }
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+
+
