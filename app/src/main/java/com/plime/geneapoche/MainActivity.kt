@@ -818,10 +818,16 @@ fun AppEcran(
                 val exportables = if (exclureVivants) personnes.filter { !estVivante(it, annee) } else personnes
                 val sous = if (exclureVivants && sousEnsemble != null) sousEnsemble.filter { id -> exportables.any { it.id == id } }.toSet() else sousEnsemble
                 val texte = construireGedcom(exportables, sous, actes, format)
+                val n = if (sous == null) exportables.size else texte.split("\n").count { it.endsWith(" INDI") }
+                // v0.41 : JAMAIS de fichier GEDCOM vide (base vide, branche
+                // vide ou vivants exclus qui retirent tout) : export refuse.
+                if (n == 0) {
+                    withContext(Dispatchers.Main) { message = "Aucune personne \u00E0 exporter : export refus\u00E9, aucun fichier cr\u00E9\u00E9 (v\u00E9rifiez le menu \u00AB Restaurer la base d'avant import \u00BB)." }
+                    return@launch
+                }
                 ctx.contentResolver.openOutputStream(uri)?.use { sortie ->
                     sortie.write(texte.toByteArray(Charsets.UTF_8))
                 }
-                val n = if (sous == null) exportables.size else texte.split("\n").count { it.endsWith(" INDI") }
                 // v0.39 : avertissement si le fichier contient moins de
                 // personnes que la base (branche, vivants exclus...).
                 val alerte = if (n < personnes.size) " ATTENTION : seulement " + n.toString() + " sur " + personnes.size.toString() + " personnes de la base." else ""
@@ -1109,30 +1115,57 @@ fun AppEcran(
 
     // G1-09 : restauration de la base sauvegardee automatiquement avant un import GEDCOM.
     fun restaurerSauvegardeImport() {
-        if (!Stockage.aSauvegardeImport(ctx)) {
+        // v0.41 : RESCUE - les 5 sauvegardes d'avant import sont essayees de
+        // la plus recente a la plus ancienne ; la premiere qui rend une base
+        // NON VIDE est gardee (une sauvegarde vide est sautee).
+        val slots = Stockage.slotsImport(ctx)
+        if (slots.isEmpty() && !Stockage.aSauvegardeImport(ctx)) {
             message = "Aucune sauvegarde d'import disponible."
             return
         }
-        if (!Stockage.restaurerSauvegardeImport(ctx)) {
-            message = "\u00C9chec de la restauration."
+        for (s in slots) {
+            if (!Stockage.restaurerSauvegardeImportSlot(ctx, s)) continue
+            val essai = Stockage.charger(ctx)
+            if (essai.liste.isEmpty()) continue
+            derniersJson.clear()
+            personnes.clear()
+            pistes.clear()
+            actes.clear()
+            val rp = essai
+            val rj = Stockage.chargerJournal(ctx)
+            val ra = Stockage.chargerActes(ctx)
+            personnes.addAll(rp.liste)
+            pistes.addAll(rj.liste)
+            actes.addAll(ra.liste)
+            fichiersIllisibles = listOf(rp, rj, ra).filter { it.illisible }.map { it.nom }
+            pileFiches.clear()
+            idOuvert = 0L
+            verifierLiensEtRapporter()
+            message = "Base d'avant import restaur\u00E9e : " + personnes.size.toString() + " personne(s) (sauvegarde n\u00B0" + s.toString() + ")."
+            rafraichirTout()
             return
         }
-        derniersJson.clear()
-        personnes.clear()
-        pistes.clear()
-        actes.clear()
-        val rp = Stockage.charger(ctx)
-        val rj = Stockage.chargerJournal(ctx)
-        val ra = Stockage.chargerActes(ctx)
-        personnes.addAll(rp.liste)
-        pistes.addAll(rj.liste)
-        actes.addAll(ra.liste)
-        fichiersIllisibles = listOf(rp, rj, ra).filter { it.illisible }.map { it.nom }
-        pileFiches.clear()
-        idOuvert = 0L
-        verifierLiensEtRapporter()
-        message = "Base d'avant import restaur\u00E9e."
-        rafraichirTout()
+        // Aucun slot exploitable : repli sur l'ancienne sauvegarde plate.
+        if (Stockage.aSauvegardeImport(ctx) && Stockage.restaurerSauvegardeImport(ctx)) {
+            derniersJson.clear()
+            personnes.clear()
+            pistes.clear()
+            actes.clear()
+            val rp = Stockage.charger(ctx)
+            val rj = Stockage.chargerJournal(ctx)
+            val ra = Stockage.chargerActes(ctx)
+            personnes.addAll(rp.liste)
+            pistes.addAll(rj.liste)
+            actes.addAll(ra.liste)
+            fichiersIllisibles = listOf(rp, rj, ra).filter { it.illisible }.map { it.nom }
+            pileFiches.clear()
+            idOuvert = 0L
+            verifierLiensEtRapporter()
+            message = if (personnes.isEmpty()) "Aucune sauvegarde ne contient de personnes." else "Base d'avant import restaur\u00E9e : " + personnes.size.toString() + " personne(s)."
+            rafraichirTout()
+            return
+        }
+        message = "Aucune sauvegarde exploitable."
     }
 
     // ------------------------------------------------------------ Saisie par acte
