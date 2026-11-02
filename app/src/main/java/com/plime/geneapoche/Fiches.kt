@@ -202,12 +202,12 @@ fun EcranPersonne(
             { ordreNaturel.indexOf(it) }
         )
     ).toMutableList()
-    // GeneaPoche 4 : le bloc Naissance est TOUJOURS avant le bloc mariage.
-    val posM = triChronologique.indexOf("M")
+    // GeneaPoche 4 : ordre chronologique, et le bloc Naissance est
+    // TOUJOURS en tete de la frise, quelles que soient les dates.
     val posN = triChronologique.indexOf("N")
-    if (posM >= 0 && posN > posM) {
+    if (posN > 0) {
         triChronologique.removeAt(posN)
-        triChronologique.add(posM, "N")
+        triChronologique.add(0, "N")
     }
     val ordreTypes = triChronologique.toList()
     Scaffold(
@@ -479,26 +479,6 @@ fun EcranPersonne(
                     // enfants) dans la frise chronologique, sans bloc
                     // repliable (reponse utilisateur).
                     EvenementsFamille(p = p, personnes = personnes)
-                    // Bloc SANS TITRE : saisie libre (notes quelconques).
-                    Card(
-                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, CouleurGrisBord)
-                    ) {
-                        Column(Modifier.fillMaxWidth().padding(6.dp)) {
-                            var libre by remember(p.id) { mutableStateOf(p.notesLibres) }
-                            OutlinedTextField(
-                                value = libre,
-                                onValueChange = { libre = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("Notes libres", style = MaterialTheme.typography.bodySmall) },
-                                textStyle = MaterialTheme.typography.bodySmall
-                            )
-                            TextButton(onClick = { p.notesLibres = libre.trim(); enregistrer() }) {
-                                Text("Enregistrer", fontSize = 12.sp)
-                            }
-                        }
-                    }
                     // Bloc RECHERCHES : pistes ouvertes de cette personne,
                     // supprimables directement.
                     val pistesPers = pistes.filter { it.personneId == p.id && !it.faite }
@@ -566,6 +546,26 @@ fun EcranPersonne(
                             )
                         }
                     }
+                    }
+                    // GeneaPoche 4 : bloc BIOGRAPHIE tout en bas de la fiche.
+                    Card(
+                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, CouleurGrisBord)
+                    ) {
+                        Column(Modifier.fillMaxWidth().padding(6.dp)) {
+                            var libre by remember(p.id) { mutableStateOf(p.notesLibres) }
+                            OutlinedTextField(
+                                value = libre,
+                                onValueChange = { libre = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("Biographie", style = MaterialTheme.typography.bodySmall) },
+                                textStyle = MaterialTheme.typography.bodySmall
+                            )
+                            TextButton(onClick = { p.notesLibres = libre.trim(); enregistrer() }) {
+                                Text("Enregistrer", fontSize = 12.sp)
+                            }
+                        }
                     }
             }
             item { Spacer(Modifier.height(12.dp)) }
