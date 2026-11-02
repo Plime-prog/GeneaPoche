@@ -1,3 +1,9 @@
+## v0.39 (2 novembre 2026)
+
+- **Import/export GEDCOM fiabilisé** : sauvegardes d'avant import tournantes (les 5 dernières), avertissement avant tout export ou remplacement, dialogue d'import clarifié.
+- **Fiche** : le cadre NAISSANCE est TOUJOURS en tête ; tous les cadres sont REPLIÉS sur une ligne à l'ouverture (toucher = développer, appui long = modifier via la saisie pré-remplie).
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre et la vue (zoom/déplacement) se réinitialise : l'arbre se régénère nettement sur 4 générations. Appui long = fiche.
+
 ## v0.39 – Sécurité des imports et de l’export GEDCOM (2 novembre 2026)
 
 - **Sauvegardes d’avant import tournantes** : les 5 dernières bases d’avant import sont conservées (plus jamais écrasées par un import suivant), en copie vérifiée ; restauration depuis le menu des paramétrages.
