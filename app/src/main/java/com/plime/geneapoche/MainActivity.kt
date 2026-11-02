@@ -822,9 +822,12 @@ fun AppEcran(
                     sortie.write(texte.toByteArray(Charsets.UTF_8))
                 }
                 val n = if (sous == null) exportables.size else texte.split("\n").count { it.endsWith(" INDI") }
+                // v0.39 : avertissement si le fichier contient moins de
+                // personnes que la base (branche, vivants exclus...).
+                val alerte = if (n < personnes.size) " ATTENTION : seulement " + n.toString() + " sur " + personnes.size.toString() + " personnes de la base." else ""
                 // R1 : etat Compose JAMAIS modifie depuis le thread IO.
                 withContext(Dispatchers.Main) {
-                    message = "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "")
+                    message = "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "") + alerte
                 }
             } catch (e: Exception) {
                 // G2-05 : message distinct selon le type d'echec.
@@ -912,7 +915,7 @@ fun AppEcran(
         verifierLiensEtRapporter()
         derniersJson.clear()
         if (enregistrer()) idsActes.forEach { Stockage.supprimerImage(ctx, it) }
-        message = importees.size.toString() + " personnes import\u00E9es."
+        message = importees.size.toString() + " personnes import\u00E9es. Sauvegarde de la base pr\u00E9c\u00E9dente conserv\u00E9e (menu \u00AB Restaurer la base d'avant import \u00BB)."
     }
 
     // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres de la chronologie (intitul\u00E9
@@ -1963,7 +1966,7 @@ fun AppEcran(
             text = {
                 Column {
                     Text(
-                        "Importer ce fichier : REMPLACER toute la base (" + personnes.size.toString() + " personnes) par les " + importees.size.toString() + " personnes du fichier, ou FUSIONNER sans aucun doublon (les fiches existantes sont compl\u00E9t\u00E9es, jamais dupliqu\u00E9es). Une sauvegarde automatique sera cr\u00E9\u00E9e avant le remplacement.",
+                        "Importer ce fichier : REMPLACER toute la base (" + personnes.size.toString() + " personnes) par les " + importees.size.toString() + " personnes du fichier, ou FUSIONNER sans aucun doublon (les fiches existantes sont compl\u00E9t\u00E9es, jamais dupliqu\u00E9es). Une sauvegarde horodat\u00E9e sera cr\u00E9\u00E9e avant le remplacement (les 5 derni\u00E8res sont conserv\u00E9es et restaurables).",
                         style = MaterialTheme.typography.bodySmall
                     )
                     // G2-04 : avertissement listant ce que l import ignore.

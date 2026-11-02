@@ -54,6 +54,11 @@ object Stockage {
     private val DUREES_BLOCAGE = longArrayOf(30_000L, 120_000L, 600_000L, 3_600_000L)
     private const val ERREURS_AVANT_PALIER = 5
     private const val ITERATIONS_PIN = 600_000
+    // v0.39 : sauvegardes d'avant import TOURNANTES (5 dernieres conservees,
+    // plus jamais ecrasees par un import suivant).
+    private const val DOSSIER_IMPORTBAK = "import_bak"
+    private const val CLE_SLOT_IMPORT = "import_bak_slot"
+    private const val NB_SAUVEGARDES_IMPORT = 5
 
     // ------------------------------------------------------------ Preferences
 
@@ -549,17 +554,25 @@ object Stockage {
         return supprimees
     }
 
-    // G1-09 : sauvegarde automatique avant un import GEDCOM. Copies chiffrees
-    // (cle maitre) des trois fichiers, restaurables tant que le PIN est inchange.
+    // v0.39 : sauvegarde avant import GEDCOM en COPIE (jamais un deplacement :
+    // la base courante reste en place meme si l import est annule), dans un
+    // emplacement tournant : les NB_SAUVEGARDES_IMPORT dernieres sauvegardes
+    // sont conservees, plus jamais ecrasees par un import suivant.
     fun sauvegardeAvantImport(ctx: Context): Boolean {
         return try {
+            val racine = File(ctx.filesDir, DOSSIER_IMPORTBAK)
+            if (!racine.exists()) racine.mkdirs()
+            val p = prefs(ctx)
+            val slot = (p.getLong(CLE_SLOT_IMPORT, 0L) % NB_SAUVEGARDES_IMPORT) + 1L
+            p.edit().putLong(CLE_SLOT_IMPORT, slot).commit()
+            val dossier = File(racine, slot.toString())
+            if (dossier.exists()) dossier.deleteRecursively()
+            if (!dossier.mkdirs()) return false
             var ok = true
             listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
                 val src = File(ctx.filesDir, nom)
                 if (src.exists()) {
-                    val dst = File(ctx.filesDir, nom + ".importbak")
-                    if (dst.exists()) dst.delete()
-                    if (!src.renameTo(dst)) ok = false
+                    if (!copierFichier(src, File(dossier, nom))) ok = false
                 }
             }
             ok
@@ -568,21 +581,65 @@ object Stockage {
         }
     }
 
-    fun aSauvegardeImport(ctx: Context): Boolean =
-        File(ctx.filesDir, FICHIER_PERSONNES + ".importbak").exists()
+    // Copie durable verifiee (relecture identique) d un fichier chiffre.
+    private fun copierFichier(src: File, dst: File): Boolean {
+        return try {
+            val octets = src.readBytes()
+            if (!ecrireOctetsDurables(dst, octets)) return false
+            MessageDigest.isEqual(dst.readBytes(), octets)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun aSauvegardeImport(ctx: Context): Boolean {
+        val racine = File(ctx.filesDir, DOSSIER_IMPORTBAK)
+        if (racine.isDirectory) {
+            racine.listFiles()?.forEach { dossier ->
+                if (File(dossier, FICHIER_PERSONNES).exists()) return true
+            }
+        }
+        // Anciennes versions : sauvegarde unique a plat .importbak.
+        return File(ctx.filesDir, FICHIER_PERSONNES + ".importbak").exists()
+    }
 
     fun restaurerSauvegardeImport(ctx: Context): Boolean {
+        // Priorite au systeme v0.39 (dossiers tournants), repli sur l ancienne
+        // sauvegarde unique a plat des versions precedentes.
         return try {
-            var ok = true
-            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
-                val bak = File(ctx.filesDir, nom + ".importbak")
-                if (bak.exists()) {
-                    val principal = File(ctx.filesDir, nom)
-                    if (principal.exists()) principal.delete()
-                    if (!bak.renameTo(principal)) ok = false
+            val racine = File(ctx.filesDir, DOSSIER_IMPORTBAK)
+            if (racine.isDirectory) {
+                val dernier = prefs(ctx).getLong(CLE_SLOT_IMPORT, 0L)
+                val dossier = if (dernier >= 1L && dernier <= NB_SAUVEGARDES_IMPORT && File(racine, dernier.toString()).isDirectory) {
+                    File(racine, dernier.toString())
+                } else {
+                    racine.listFiles()?.firstOrNull { File(it, FICHIER_PERSONNES).exists() }
+                }
+                if (dossier != null) {
+                    var ok = true
+                    listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
+                        val bak = File(dossier, nom)
+                        if (bak.exists()) {
+                            if (!copierFichier(bak, File(ctx.filesDir, nom))) ok = false
+                        }
+                    }
+                    return ok
                 }
             }
-            ok
+            val platExiste = File(ctx.filesDir, FICHIER_PERSONNES + ".importbak").exists()
+            if (platExiste) {
+                var ok = true
+                listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
+                    val bak = File(ctx.filesDir, nom + ".importbak")
+                    if (bak.exists()) {
+                        val principal = File(ctx.filesDir, nom)
+                        if (principal.exists()) principal.delete()
+                        if (!bak.renameTo(principal)) ok = false
+                    }
+                }
+                return ok
+            }
+            false
         } catch (e: Exception) {
             false
         }
