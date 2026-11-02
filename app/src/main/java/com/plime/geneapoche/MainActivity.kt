@@ -1168,6 +1168,35 @@ fun AppEcran(
         message = "Aucune sauvegarde exploitable."
     }
 
+    // v0.42 : RESCUE .bak - restaure les copies de rotation des trois
+    // fichiers (personnes/journal/actes), dernier recours apres une base
+    // videe, meme si les fichiers actuels sont lisibles. Sans effet si la
+    // copie .bak est vide aussi : rien n'est perdu en l'essayant.
+    fun restaurerSecoursBak() {
+        listOf("personnes.bin", "journal.bin", "actes.bin").forEach { nom ->
+            Stockage.restaurerBak(ctx, nom)
+        }
+        derniersJson.clear()
+        personnes.clear()
+        pistes.clear()
+        actes.clear()
+        val rp = Stockage.charger(ctx)
+        val rj = Stockage.chargerJournal(ctx)
+        val ra = Stockage.chargerActes(ctx)
+        personnes.addAll(rp.liste)
+        pistes.addAll(rj.liste)
+        actes.addAll(ra.liste)
+        fichiersIllisibles = listOf(rp, rj, ra).filter { it.illisible }.map { it.nom }
+        if (personnes.isEmpty()) {
+            message = "La copie de secours ne contient aucune personne non plus."
+        } else {
+            verifierLiensEtRapporter()
+            completerJournal()
+            message = "Base restaur\u00E9e depuis la copie de secours : " + personnes.size.toString() + " personne(s)."
+        }
+        rafraichirTout()
+    }
+
     // ------------------------------------------------------------ Saisie par acte
     // Transcription d'un acte N/B/M/D/S : alimente la fiche Personne (dates, lieux,
     // professions, liens pere/mere/conjoint), cree les personnes absentes, et la
@@ -1671,6 +1700,7 @@ fun AppEcran(
                 sauvegarderBase = { uri, ph -> sauvegarderBase(uri, ph) },
                 restaurerSauvegarde = { uri, ph -> restaurerSauvegardeBase(uri, ph) },
                 restaurerImport = { restaurerSauvegardeImport() },
+                restaurerSecours = { restaurerSecoursBak() },
                 changerPin = { dialoguePin = true },
                 reglagesVerrouillage = { dialogueDelai = true },
                 reglagesTheme = { dialogueTheme = true },
