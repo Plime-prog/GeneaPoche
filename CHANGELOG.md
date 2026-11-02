@@ -1,5 +1,13 @@
 # Historique des versions — GénéaPoche
 
+## v0.37 (arbre épuré et illimité)
+
+- **Arbre : suppression des boutons « Centré sur… » et « Vue initiale »** : l'arbre s'affiche directement, la navigation reste au doigt (pincement = zoom, glissement = déplacement).
+- **Arbre : plus aucune limite** dans le plan des familles (fin du plafond de 25 générations de descendants) : toutes les personnes de l'arbre apparaissent, en plus de toutes les générations d'ascendants déjà affichées depuis la v0.36.
+- **Fiche : le bloc Naissance est toujours en tête** de la frise chronologique, quelles que soient les dates.
+- **Fiche : le bloc de saisie libre devient le bloc « Biographie »**, placé tout en bas de la fiche.
+- GEDCOM : version réelle 0.37.
+
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
 
 - **Fiche : N, M et D toujours regroupés**, même sans information (B et S apparaissent dès qu'une donnée existe) ; tous les blocs sont rangés dans l'**ordre chronologique** ; règle des 100 ans conservée pour le décès et la sépulture.
