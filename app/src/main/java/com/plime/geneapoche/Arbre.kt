@@ -80,8 +80,10 @@ fun EcranArbre(
 ) {
     val centre = personneParId(personnes, idCentre)
     // Zoom (pincement) et déplacement (glissement).
-    var echelleZoom by remember { mutableStateOf(1f) }
-    var deplacementZoom by remember { mutableStateOf(Offset.Zero) }
+    // GénéaPoche 5 : zoom et déplacement RÉINITIALISÉS à chaque nouvelle
+    // personne centrale : l'arbre se régénère nettement sur 4 générations.
+    var echelleZoom by remember(idCentre) { mutableStateOf(1f) }
+    var deplacementZoom by remember(idCentre) { mutableStateOf(Offset.Zero) }
     Box(
         Modifier
             .fillMaxSize()
@@ -291,3 +293,4 @@ fun CarteMiniArbre(
         }
     }
 }
+
