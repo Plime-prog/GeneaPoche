@@ -92,7 +92,8 @@ fun enfantsDuCouple(
 // Plan d'une sous-famille : la personne, son conjoint, ses sous-familles
 // (une par enfant) et la largeur du bloc en "unités" (1 par feuille).
 // La récursion s'arrête sur les personnes déjà développées (garde-fou
-// contre les liens circulaires) et au-delà de 25 générations.
+// contre les liens circulaires). GénéaPoche 4 : plus de plafond, TOUTES
+// les personnes et TOUTES les générations apparaissent.
 class PlanFamille(
     val personne: Personne,
     val conjoint: Personne?,
@@ -106,7 +107,7 @@ fun planFamille(
     vus: MutableSet<Long>,
     profondeur: Int
 ): PlanFamille {
-    if (p.id in vus || profondeur > 25) return PlanFamille(p, null, emptyList(), 1)
+    if (p.id in vus) return PlanFamille(p, null, emptyList(), 1)
     vus.add(p.id)
     val conjoint = personneParId(personnes, p.conjoint)
     val exclus = mutableSetOf(p.id)
@@ -175,7 +176,6 @@ fun EcranArbre(
     onCentrerSur: (Long) -> Unit
 ) {
     val centre = personneParId(personnes, idCentre)
-    var pickerOuvert by remember { mutableStateOf(false) }
     // Zoom (pincement) et déplacement (glissement) : l'arbre complet est
     // souvent plus large que l'écran, on navigue dedans au doigt.
     var echelleZoom by remember { mutableStateOf(1f) }
@@ -206,21 +206,8 @@ fun EcranArbre(
                 Spacer(Modifier.height(12.dp))
                 Text("Aucune personne : ajoutez la première personne (de cujus, n° 1) depuis l'onglet Personnes.")
             } else {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedButton(onClick = { pickerOuvert = true }) {
-                        Text("Centré sur : " + centre.titre(), maxLines = 1)
-                    }
-                    OutlinedButton(onClick = {
-                        echelleZoom = 1f
-                        deplacementZoom = Offset.Zero
-                    }) {
-                        Text("Vue initiale")
-                    }
-                }
+                // GeneaPoche 4 : les deux boutons du haut sont supprimes ;
+                // l'arbre s'affiche directement, navigation au doigt.
                 ArbreComplet(centre = centre, personnes = personnes, onOuvrir = onOuvrir)
                 Spacer(Modifier.height(24.dp))
                 Text(
@@ -231,25 +218,6 @@ fun EcranArbre(
                 Spacer(Modifier.height(24.dp))
             }
         }
-    }
-
-    if (pickerOuvert) {
-        AlertDialog(
-            onDismissRequest = { pickerOuvert = false },
-            title = { Text("Centrer l'arbre sur...") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    personnes.sortedBy { it.titre() }.forEach { c ->
-                        TextButton(onClick = { onCentrerSur(c.id); pickerOuvert = false }) {
-                            Text(c.titre())
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { pickerOuvert = false }) { Text("Fermer") }
-            }
-        )
     }
 }
 
