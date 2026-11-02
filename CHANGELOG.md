@@ -1,4 +1,19 @@
+## v0.39 – Sécurité des imports et de l’export GEDCOM (2 novembre 2026)
+
+- **Sauvegardes d’avant import tournantes** : les 5 dernières bases d’avant import sont conservées (plus jamais écrasées par un import suivant), en copie vérifiée ; restauration depuis le menu des paramétrages.
+- **Alerte à l’export GEDCOM** : message explicite si le fichier contient moins de personnes que la base (branche, vivants exclus).
+- Dialogue d’import clarifié ; message après « Remplacer » rappelle la restauration possible.
+
 # Historique des versions — GénéaPoche
+
+## v0.38 (« GénéaPoche 5 » : normes d'écriture, arbre 4 générations)
+
+- **Communes normalisées** : initiale en majuscules (norme française), automatiquement à la saisie, à l'édition, à l'import et au chargement (« le havre » → « Le Havre »).
+- **Départements au format numérique** (norme GEDCOM), 2 ou 3 chiffres : « Nord » → « 59 », « 5 » → « 05 ».
+- **Icône de paramétrages** : l'intitulé « GEDCOM » de la barre du haut est remplacé par une roue crantée.
+- **Personnes** : pastille VIDE si la personne n'est ni Sosa ni d'Aboville ; étiquette à droite n/6 (N date complète, N commune, N département, D date complète, D commune, D département), rouge (0) → vert (6).
+- **Fiche** : cadre de la personne supprimé (l'identité est dans la barre de titre) ; profession des parents sans étiquette dans le cadre des parents ; bloc Naissance toujours en tête, croix père/mère supprimées ; bloc Mariage allégé (plus de croix, ni « Autre conjoint », ni « Saisir un mariage ») ; le bloc « Biographie » devient **« Notes »** ; modification par appui long = le menu de Saisie pré-rempli (parents et conjoint inclus).
+- **Arbre : retour à 4 générations** (8 arrière-grands-parents → 4 grands-parents → parents → personne centrale + conjoint) ; toucher une carte la rend immédiatement centrale ; appui long ouvre la fiche ; zoom et déplacement conservés.
 
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
 
