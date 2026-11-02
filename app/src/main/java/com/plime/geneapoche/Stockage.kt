@@ -645,6 +645,46 @@ object Stockage {
         }
     }
 
+    // v0.41 : slots d'avant import, du PLUS RECENT au PLUS ANCIEN (le
+    // pointeur de slot donne l'ordre d'ecriture, puis les dossiers restants).
+    fun slotsImport(ctx: Context): List<Long> {
+        val res = mutableListOf<Long>()
+        val dernier = prefs(ctx).getLong(CLE_SLOT_IMPORT, 0L)
+        if (dernier >= 1L && dernier <= NB_SAUVEGARDES_IMPORT) {
+            var s = dernier
+            repeat(NB_SAUVEGARDES_IMPORT) {
+                res.add(s)
+                s = if (s == 1L) NB_SAUVEGARDES_IMPORT.toLong() else s - 1L
+            }
+        }
+        val racine = File(ctx.filesDir, DOSSIER_IMPORTBAK)
+        if (racine.isDirectory) {
+            racine.listFiles()?.forEach { d ->
+                val n = d.name.toLongOrNull() ?: return@forEach
+                if (!res.contains(n)) res.add(n)
+            }
+        }
+        return res.filter { s -> File(File(racine, s.toString()), FICHIER_PERSONNES).exists() }
+    }
+
+    // v0.41 : restauration d'un slot precis (les autres restent intacts).
+    fun restaurerSauvegardeImportSlot(ctx: Context, slot: Long): Boolean {
+        return try {
+            val dossier = File(File(ctx.filesDir, DOSSIER_IMPORTBAK), slot.toString())
+            if (!dossier.isDirectory) return false
+            var ok = true
+            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
+                val bak = File(dossier, nom)
+                if (bak.exists()) {
+                    if (!copierFichier(bak, File(ctx.filesDir, nom))) ok = false
+                }
+            }
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     // ------------------------------------------------------------ Fichiers chiffres generiques
 
     // Resultat d'une lecture chiffree : illisible = vrai si NI le fichier
