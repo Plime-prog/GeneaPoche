@@ -196,6 +196,8 @@ class ActionsApplication(
     val sauvegarderBase: (Uri, String) -> Unit,
     val restaurerSauvegarde: (Uri, String) -> Unit,
     val restaurerImport: () -> Unit,
+    // v0.42 : restauration des copies de rotation (.bak), secours base vide.
+    val restaurerSecours: () -> Unit,
     val changerPin: () -> Unit,
     val reglagesVerrouillage: () -> Unit,
     val reglagesTheme: () -> Unit,
@@ -858,6 +860,16 @@ fun EcranApplication(
                                     Icon(Icons.Filled.Refresh, contentDescription = null, Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text("Restaurer la base d'avant import")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; restaurerSecours() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Refresh, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Restaurer la copie de secours (.bak)")
                                 }
                             }
                             TextButton(
