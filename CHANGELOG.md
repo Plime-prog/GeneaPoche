@@ -1,5 +1,18 @@
 # Historique des versions — GénéaPoche
 
+## v0.36 (« GénéaPoche 4 » : fiche épurée et arbre complet)
+
+- **Fiche : le bloc Naissance est toujours affiché avant le bloc Mariage**, quelles que soient les dates.
+- **Plus d'âge à la naissance** dans la ligne de la frise (l'âge reste indiqué pour les autres événements).
+- **Bloc « Ajouter un enfant » supprimé** (doublon avec « Ajouter un événement » et le menu +Saisie).
+- **Blocs Naissance, Mariage et Décès ouverts par défaut** à l'ouverture de la fiche.
+- **Blocs épurés** : suppression de la case de validation, de l'icône + (photo), de la coche « Signe » et de la section des témoins — les témoins, signatures et photos se saisissent uniquement par le formulaire d'acte (appui long).
+- **Appui long sur un bloc = formulaire pré-rempli** (noms et prénoms des parents, date, heure, commune, département) et **limité à ce seul type d'acte** : modifier la ligne d'un décès n'ouvre que le formulaire décès.
+- **Écran « Page et référence de l'acte » supprimé**.
+- **Frise familiale** : « Mariage de… » remplace « Assiste au mariage de… » (plus de présomption de présence).
+- **Arbre : TOUTES les générations affichées**, sans plafond (fin de la limite de profondeur).
+- GEDCOM : version réelle 0.36.
+
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
 
 - **Fiche : N, M et D toujours regroupés**, même sans information (B et S apparaissent dès qu'une donnée existe) ; tous les blocs sont rangés dans l'**ordre chronologique** ; règle des 100 ans conservée pour le décès et la sépulture.
