@@ -38,7 +38,8 @@ import androidx.compose.ui.unit.dp
 //   - 8 arrière-grands-parents (rangée du haut) ;
 //   - 4 grands-parents ;
 //   - le père et la mère ;
-//   - la personne centrale et son conjoint.
+//   - la personne centrale et son conjoint ;
+//   - les enfants de la personne centrale (GénéaPoche 6).
 // TOUCHER une carte : la personne touchée devient immédiatement le CENTRE
 // de l'arbre (adaptation instantanée).
 // APPUI LONG sur une carte : ouverture de la fiche.
@@ -128,7 +129,8 @@ fun EcranArbre(
 //     inconnues, pour préserver l'alignement des couples) ;
 //   - rangée des 4 grands-parents ;
 //   - le couple des parents ;
-//   - la personne centrale et son conjoint.
+//   - la personne centrale et son conjoint ;
+//   - les enfants de la personne centrale (GénéaPoche 6).
 @Composable
 fun ArbreQuatre(
     centre: Personne,
@@ -205,6 +207,26 @@ fun ArbreQuatre(
             if (conjoint != null) {
                 Box(Modifier.width(14.dp).height(2.dp).background(CouleurLiaison))
                 CarteMiniArbre(conjoint, "", onOuvrir, onCentrerSur, modifier = Modifier.width(74.dp))
+            }
+        }
+        // ---- Les enfants de la personne centrale (GénéaPoche 6) :
+        // rangée sous le couple central, liaisons en T.
+        val enfants = centre.enfants.map { personneParId(personnes, it) }.filterNotNull()
+        if (enfants.isNotEmpty()) {
+            val k = enfants.size
+            Column(Modifier.width(UniteArbre * k)) {
+                // Descente depuis le couple central (au centre de la
+                // rangée) vers chaque enfant.
+                LiaisonsArbre(
+                    listOf(0.5f),
+                    if (k > 1) listOf(centres(k).first() to centres(k).last()) else emptyList(),
+                    centres(k)
+                )
+                Row(Modifier.fillMaxWidth()) {
+                    enfants.forEach { e ->
+                        CarteMiniArbre(e, "", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
