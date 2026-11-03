@@ -487,16 +487,17 @@ fun CarteRecherche(
             }
 
             // Zone de saisie libre unique pour la recherche en cours
-            var note by remember(piste.id) { mutableStateOf(piste.enCours) }
+            // GénéaPoche 9 : note LIÉE à la piste (piste.enCours),
+            // exactement celle de la fiche.
             OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
+                value = piste.enCours,
+                onValueChange = { piste.enCours = it },
                 label = { Text("Recherche : pages, c\u00F4tes, notes...") },
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth()
             )
             Row(Modifier.fillMaxWidth()) {
-                TextButton(onClick = { piste.enCours = note.trim(); onSauver() }) {
+                TextButton(onClick = { onSauver() }) {
                     Text("Enregistrer la note")
                 }
             }

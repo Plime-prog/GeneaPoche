@@ -168,10 +168,7 @@ fun EcranPersonne(
     // (intitul\u00E9 libre) de la chronologie.
     onEditerIdentite: () -> Unit = {},
     onModifierEvenementLibre: (EvenementLibre) -> Unit = {},
-    onSupprimerEvenementLibre: (Long) -> Unit = {},
-    // G\u00E9n\u00E9aPoche 6 : bouton Arbre de la fiche : cette personne
-    // devient le centre de l'arbre g\u00E9n\u00E9alogique.
-    onVoirArbre: () -> Unit = {}
+    onSupprimerEvenementLibre: (Long) -> Unit = {}
 ) {
     // GénéaPoche 5 : tous les cadres REPLIÉS sur une ligne à l'ouverture
     // de la fiche ; le toucher d'un cadre le développe, l'appui long le modifie.
@@ -263,12 +260,9 @@ fun EcranPersonne(
                     }
                 },
                 actions = {
-                    // G\u00E9n\u00E9aPoche 6 : bouton Arbre : la personne de la
-                    // fiche devient le centre de l'arbre (synchronisation
-                    // instantan\u00E9e).
-                    IconButton(onClick = onVoirArbre) {
-                        Icon(painterResource(R.drawable.ic_arbre), contentDescription = "Arbre")
-                    }
+                    // G\u00E9n\u00E9aPoche 9 : bouton Arbre SUPPRIM\u00E9 : l'arbre
+                    // (et la ligne de vie) se synchronisent automatiquement
+                    // avec la personne de la fiche ouverte.
                     // Pas de crayon : l'edition s'ouvre par appui long sur le
                     // bloc identite (v0.28).
                     IconButton(onClick = onSupprimer) {
@@ -528,7 +522,11 @@ fun EcranPersonne(
                     // d\u00E9sormais DANS la chronologie unique ci-dessus, plus de
                     // bloc s\u00E9par\u00E9.
                     // Bloc RECHERCHES : pistes ouvertes de cette personne,
-                    // supprimables directement.
+                    // supprimables directement. G\u00E9n\u00E9aPoche 9 : le texte est
+                    // recalcul\u00E9 comme dans le journal (m\u00EAme synchronisation),
+                    // chaque recherche est CLIQUABLE (elle ouvre la saisie ou
+                    // le picker correspondant) et la note de recherche est
+                    // la M\u00CAME que celle du journal.
                     val pistesPers = pistes.filter { it.personneId == p.id && !it.faite }
                     if (pistesPers.isNotEmpty()) {
                         Card(
@@ -547,21 +545,55 @@ fun EcranPersonne(
                                     // Reponse utilisateur : sur la FICHE, le nom de la
                                     // personne concernee ne se repete pas (dans le
                                     // journal, il reste affiche).
-                                    val texteFiche = ps.texte
+                                    val texteFiche = textePisteActuel(ps, personnes, actes)
                                         .replace(titreCourt(p), "")
                                         .replace(Regex("\\s+de\\s*$"), "")
                                         .replace(Regex("\\s{2,}"), " ")
                                         .trim()
-                                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            texteFiche.ifEmpty { ps.texte },
-                                            Modifier.weight(1f),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        IconButton(onClick = { onSupprimerPiste(ps) }, Modifier.size(28.dp)) {
-                                            Icon(Icons.Filled.Close, contentDescription = "Supprimer cette recherche", Modifier.size(14.dp))
+                                    // G\u00E9n\u00E9aPoche 9 : toucher une recherche ouvre
+                                    // directement la saisie correspondante.
+                                    val actionPiste: (() -> Unit)? = when {
+                                        ps.categorie.startsWith("naissance") -> { { saisieOuverte = "N" } }
+                                        ps.categorie.startsWith("bapteme") -> { { saisieOuverte = "B" } }
+                                        ps.categorie.startsWith("mariage") -> { { saisieOuverte = "M" } }
+                                        ps.categorie.startsWith("deces") -> { { saisieOuverte = "D" } }
+                                        ps.categorie.startsWith("sepulture") -> { { saisieOuverte = "S" } }
+                                        ps.categorie.startsWith("pere") -> { { onChoisir("pere") } }
+                                        ps.categorie.startsWith("mere") -> { { onChoisir("mere") } }
+                                        ps.categorie.startsWith("conjoint") -> { { saisieOuverte = "M" } }
+                                        ps.categorie.startsWith("enfants") -> { { menuEnfant = true } }
+                                        ps.categorie.startsWith("sexe") -> { { onModifier() } }
+                                        else -> null
+                                    }
+                                    Column(Modifier.fillMaxWidth()) {
+                                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                texteFiche.ifEmpty { ps.texte },
+                                                Modifier.weight(1f).then(
+                                                    if (actionPiste != null) Modifier.clickable { actionPiste() } else Modifier
+                                                ),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = if (actionPiste != null) CouleurVertFonce else Color.Unspecified,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            IconButton(onClick = { onSupprimerPiste(ps) }, Modifier.size(28.dp)) {
+                                                Icon(Icons.Filled.Close, contentDescription = "Supprimer cette recherche", Modifier.size(14.dp))
+                                            }
+                                        }
+                                        // G\u00E9n\u00E9aPoche 9 : la note saisie ici est la
+                                        // m\u00EAme que celle du journal (piste.enCours).
+                                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            OutlinedTextField(
+                                                value = ps.enCours,
+                                                onValueChange = { ps.enCours = it },
+                                                modifier = Modifier.weight(1f),
+                                                placeholder = { Text("Recherche : pages, cotes, notes...", style = MaterialTheme.typography.bodySmall) },
+                                                textStyle = MaterialTheme.typography.bodySmall
+                                            )
+                                            TextButton(onClick = { enregistrer() }) {
+                                                Text("Enregistrer", fontSize = 12.sp)
+                                            }
                                         }
                                     }
                                 }
@@ -1362,7 +1394,6 @@ fun SousBlocActe(
     onSupprimer: () -> Unit,
     onEnregistrer: () -> Unit
 ) {
-    var note by remember(acte.id) { mutableStateOf(piste?.enCours ?: "") }
     Card(
         Modifier.fillMaxWidth().padding(top = 4.dp),
         colors = CardDefaults.cardColors(containerColor = CouleurCarte),
@@ -1397,16 +1428,18 @@ fun SousBlocActe(
                 )
             }
             // Zone de saisie libre de la recherche en cours.
+            // G\u00E9n\u00E9aPoche 9 : note LI\u00C9E directement \u00E0 la piste
+            // (piste.enCours), synchronis\u00E9e avec le journal.
             if (piste != null) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
-                        value = note,
-                        onValueChange = { note = it },
+                        value = piste.enCours,
+                        onValueChange = { piste.enCours = it },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Recherche : pages, cotes, notes...", style = MaterialTheme.typography.bodySmall) },
                         textStyle = MaterialTheme.typography.bodySmall
                     )
-                    TextButton(onClick = { piste.enCours = note.trim(); onEnregistrer() }) {
+                    TextButton(onClick = { onEnregistrer() }) {
                         Text("Enregistrer", fontSize = 12.sp)
                     }
                 }
@@ -1557,6 +1590,7 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 
 
