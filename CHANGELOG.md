@@ -1,3 +1,11 @@
+## v0.47 – GénéaPoche 8 : onglet « Ligne de vie »
+
+- Le menu Frise est refondu intégralement et devient « Ligne de vie » : une ligne de vie horizontale par membre de la famille proche de la personne choisie (grands-parents, parents, frères et sœurs, enfants), sur un axe d'années commun — tout tient à l'écran, sans zoom ni déplacement.
+- Chaque trait va de la naissance au décès, ou jusqu'à aujourd'hui si la personne est vivante (règle des 100 ans respectée : un décès non certain n'est jamais tracé).
+- Un point marque chaque événement connu (N, B, M, S, D, événements libres) ; lignes fines par décennie et trait vert vertical à l'année en cours ; toucher une ligne ouvre la fiche.
+- Numéro de version désormais affiché dans l'application : sous le titre de la barre du haut et dans les paramétrages.
+- Version 0.47 (versionCode 47).
+
 # Historique des versions — GénéaPoche
 
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
