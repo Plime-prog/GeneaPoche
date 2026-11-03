@@ -148,9 +148,13 @@ jobs:
         run: |
           TAG="$GITHUB_REF_NAME"
           if [[ "$GITHUB_REF_NAME" == release-* ]]; then TAG="v${GITHUB_REF_NAME#release-}"; fi
+          VERSION="${TAG#v}"
+          # v0.45 : le numero de version figure dans le NOM du fichier telecharge.
+          cp app/build/outputs/apk/release/app-release.apk "GeneaPoche-v${VERSION}-release.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "GeneaPoche-v${VERSION}-debug.apk"
           gh release create "$TAG" \
             --target "$GITHUB_SHA" \
-            app/build/outputs/apk/release/app-release.apk#APK-release \
-            app/build/outputs/apk/debug/app-debug.apk#APK-debug \
-            --title "GeneaPoche $GITHUB_REF_NAME" \
+            "GeneaPoche-v${VERSION}-release.apk#APK release (a installer)" \
+            "GeneaPoche-v${VERSION}-debug.apk#APK debug" \
+            --title "GeneaPoche $TAG" \
             --generate-notes
