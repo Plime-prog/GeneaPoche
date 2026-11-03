@@ -73,6 +73,10 @@ import java.io.ByteArrayOutputStream
 class Verrou {
     var deverrouille by mutableStateOf(false)
     var dernierArret by mutableStateOf(0L)
+    // v0.43 : un selecteur de fichiers (GEDCOM, .gpbak) est ouvert : le
+    // retour dans l app NE REVERROUILLE PAS, sinon la purge memoire (G1-14)
+    // viderait la base et l export ecrirait un fichier a 0 personne.
+    var pickerOuvert = false
 }
 
 // ---------------------------------------------------------------- Activite
@@ -135,7 +139,9 @@ class MainActivity : ComponentActivity() {
         // G1-14 : delai de reverrouillage reglable (immediat par defaut).
         val delai = Stockage.lireDelaiVerrouillage(this)
         val d = verrou.dernierArret
-        if (delai == 0L || (d > 0L && System.currentTimeMillis() - d > delai)) {
+        if (!verrou.pickerOuvert &&
+            (delai == 0L || (d > 0L && System.currentTimeMillis() - d > delai))
+        ) {
             verrou.deverrouille = false
             // La cle maitre quitte la memoire des le verrouillage (G1-01).
             Stockage.verrouillerStockage()
@@ -822,7 +828,7 @@ fun AppEcran(
                 // v0.41 : JAMAIS de fichier GEDCOM vide (base vide, branche
                 // vide ou vivants exclus qui retirent tout) : export refuse.
                 if (n == 0) {
-                    withContext(Dispatchers.Main) { message = "Aucune personne \u00E0 exporter : export refus\u00E9, aucun fichier cr\u00E9\u00E9 (v\u00E9rifiez le menu \u00AB Restaurer la base d'avant import \u00BB)." }
+                    withContext(Dispatchers.Main) { message = "Aucune personne \u00E0 exporter : export refus\u00E9, aucun fichier cr\u00E9\u00E9 (base vide, ou liste effac\u00E9e de la m\u00E9moire par un verrouillage pendant le choix du fichier : d\u00E9verrouillez puis recommencez)." }
                     return@launch
                 }
                 ctx.contentResolver.openOutputStream(uri)?.use { sortie ->
@@ -871,8 +877,14 @@ fun AppEcran(
                     }
                     tampon.toByteArray()
                 }
-                if (octets == null || octets.isEmpty()) {
+                if (octets == null) {
                     withContext(Dispatchers.Main) { message = "Fichier GEDCOM illisible (ou trop volumineux)." }
+                    return@launch
+                }
+                // v0.43 : un fichier de 0 octet est presque toujours un ancien
+                // export refuse ou ecrase a vide : message explicite.
+                if (octets.isEmpty()) {
+                    withContext(Dispatchers.Main) { message = "Fichier vide (0 octet) : ancien export refus\u00E9 ou vide. Relancez un export depuis la base." }
                     return@launch
                 }
                 val resultat = importerGedcomRapporte(decoderGedcom(octets))
@@ -1701,6 +1713,7 @@ fun AppEcran(
                 restaurerSauvegarde = { uri, ph -> restaurerSauvegardeBase(uri, ph) },
                 restaurerImport = { restaurerSauvegardeImport() },
                 restaurerSecours = { restaurerSecoursBak() },
+                picker = { actif -> verrou.pickerOuvert = actif },
                 changerPin = { dialoguePin = true },
                 reglagesVerrouillage = { dialogueDelai = true },
                 reglagesTheme = { dialogueTheme = true },

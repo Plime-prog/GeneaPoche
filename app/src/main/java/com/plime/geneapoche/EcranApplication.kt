@@ -198,6 +198,9 @@ class ActionsApplication(
     val restaurerImport: () -> Unit,
     // v0.42 : restauration des copies de rotation (.bak), secours base vide.
     val restaurerSecours: () -> Unit,
+    // v0.43 : true quand un selecteur de fichiers est ouvert : suspend le
+    // reverrouillage automatique (sinon la purge memoire vide la base).
+    val picker: (Boolean) -> Unit,
     val changerPin: () -> Unit,
     val reglagesVerrouillage: () -> Unit,
     val reglagesTheme: () -> Unit,
@@ -315,22 +318,26 @@ fun EcranApplication(
             val lanceurGpbakExport = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
             ) { uri ->
+                picker(false)
                 if (uri != null) sauvegarderBase(uri, phraseEnAttente)
             }
             val lanceurGpbakImport = rememberLauncherForActivityResult(
                 ActivityResultContracts.OpenDocument()
             ) { uri ->
+                picker(false)
                 if (uri != null) restaurerSauvegarde(uri, phraseEnAttente)
             }
 
             val lanceurGedcom = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
             ) { uri ->
+                picker(false)
                 if (uri != null) exporterGedcom(uri, null, exclureVivants, formatGedcom)
             }
             val lanceurGedcomBranche = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
             ) { uri ->
+                picker(false)
                 if (uri != null) {
                     val sel = exportBrancheId
                     exporterGedcom(uri, if (sel != 0L) brancheDe(personnes, sel) else null, exclureVivants, formatGedcom)
@@ -339,6 +346,7 @@ fun EcranApplication(
             val lanceurImport = rememberLauncherForActivityResult(
                 ActivityResultContracts.OpenDocument()
             ) { uri ->
+                picker(false)
                 if (uri != null) importerGedcom(uri)
             }
             if (!charge) {
@@ -722,9 +730,15 @@ fun EcranApplication(
                     confirmButton = {
                         TextButton(onClick = {
                             exportDialogue = false
-                            if (exportTout) {
+                            // v0.43 : jamais de fichier cree par un export
+                            // lance depuis une base vide.
+                            if (personnes.isEmpty()) {
+                                onMessage("La base est vide : rien \u00E0 exporter.")
+                            } else if (exportTout) {
+                                picker(true)
                                 lanceurGedcom.launch("geneapoche.ged")
                             } else if (exportBrancheId != 0L) {
+                                picker(true)
                                 lanceurGedcomBranche.launch("geneapoche-branche.ged")
                             } else {
                                 onMessage("Choisissez une personne centrale.")
@@ -782,7 +796,7 @@ fun EcranApplication(
                                 }
                             }
                             TextButton(
-                                onClick = { menuGedcom = false; lanceurImport.launch(arrayOf("*/*")) },
+                                onClick = { menuGedcom = false; picker(true); lanceurImport.launch(arrayOf("*/*")) },
                                 Modifier.fillMaxWidth()
                             ) {
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -917,9 +931,11 @@ fun EcranApplication(
                                 phraseSecrete = ""
                                 if (demandePhraseExport) {
                                     demandePhraseExport = false
+                                    picker(true)
                                     lanceurGpbakExport.launch("geneapoche.gpbak")
                                 } else {
                                     demandePhraseImport = false
+                                    picker(true)
                                     lanceurGpbakImport.launch(arrayOf("*/*"))
                                 }
                             },
