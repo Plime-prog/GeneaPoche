@@ -1,3 +1,8 @@
+## v0.45 – APK de release nommés avec la version
+
+- Les fichiers téléchargeables d'une release s'appellent désormais **GeneaPoche-v0.45-release.apk** (a installer) et **GeneaPoche-v0.45-debug.apk**, le numéro de version étant déduit automatiquement du tag.
+- Aucun changement dans l'application elle-même (même code que la v0.44).
+
 # Historique des versions — GénéaPoche
 
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
