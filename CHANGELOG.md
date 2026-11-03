@@ -1,3 +1,13 @@
+## v0.46 – GénéaPoche 7 : chronologie unique de la fiche
+
+- 7.1 Bouton « Ajouter un enfant » sur la fiche : choisir une fiche existante ou saisir un nouvel enfant.
+- 7.2 Ordre STRICTEMENT chronologique de TOUS les événements de la fiche (N/B/M/S/D, événements libres, événements de la famille, naissances et décès des enfants) dans une seule et même frise.
+- 7.3 Âge entre parenthèses sur chaque événement (précision jours/mois/ans), y compris l'âge du parent pour les enfants.
+- 7.4 La date figure en TÊTE de chaque ligne, au format jj/mm/aaaa ; les événements de famille prennent le même format.
+- 7.5 Dates grégoriennes alignées : une année seule s'affiche «   /  /aaaa » ; les dates républicaines sont converties en grégorien avec l'original entre parenthèses.
+- Bloc séparé événements de famille supprimé (fusionné dans la chronologie).
+- Version 0.46 (versionCode 46).
+
 # Historique des versions — GénéaPoche
 
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
