@@ -122,13 +122,13 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
             icon = { Icon(Icons.Filled.Add, contentDescription = null) },
             label = { Text("Saisie") }
         )
-        // GénéaPoche 3 (v0.35) : frise chronologique verticale des
-        // vivantes de la branche.
+        // GénéaPoche 8 (v0.47) : onglet Ligne de vie, une ligne de vie
+        // horizontale par membre de la famille proche.
         NavigationBarItem(
             selected = onglet == 4,
             onClick = { onChoisir(4) },
             icon = { Icon(Icons.Filled.DateRange, contentDescription = null) },
-            label = { Text("Frise") }
+            label = { Text("Ligne de vie") }
         )
     }
 }
@@ -276,7 +276,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.47",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -644,8 +644,8 @@ fun EcranApplication(
                 }
                 }
             } else if (onglet == 4) {
-                // GénéaPoche 3 (v0.35) : frise chronologique verticale
-                // des vivantes de la branche, années de 10 en 10.
+                // GénéaPoche 8 (v0.47) : onglet Ligne de vie, lignes de vie
+                // horizontales de la famille proche de la personne choisie.
                 Box(Modifier.fillMaxSize().padding(marges)) {
                 EcranFrise(
                     personnes = personnes,
@@ -784,6 +784,8 @@ fun EcranApplication(
                         Text("GEDCOM (Heredis)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(2.dp))
+                        Text("Version 0.47", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
