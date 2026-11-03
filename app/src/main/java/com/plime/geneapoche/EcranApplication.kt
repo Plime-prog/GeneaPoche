@@ -276,7 +276,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.47",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.48",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -785,7 +785,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.47", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.48", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -972,6 +972,10 @@ fun EcranApplication(
         val p = ouverte
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.weight(1f)) {
+                // GénéaPoche 9 (v0.48) : l'arbre et la ligne de vie se
+                // synchronisent AUTOMATIQUEMENT avec la personne de la fiche
+                // ouverte.
+                LaunchedEffect(p.id) { onArbreCentre(p.id) }
                 EcranPersonne(
             personnes = personnes,
             actes = actes,
@@ -1004,9 +1008,8 @@ fun EcranApplication(
             onEditerIdentite = { onEditionCible(p); onEditionOuverte(true) },
             onModifierEvenementLibre = { ev -> majEvenementLibre(p, ev) },
             onSupprimerEvenementLibre = { idEv -> supprimerEvenementLibre(p, idEv) },
-            // G\u00E9n\u00E9aPoche 6 : le bouton Arbre de la fiche centre l'arbre
-            // sur cette personne et affiche l'onglet Arbre.
-            onVoirArbre = { onArbreCentre(p.id); onOnglet(2); onIdOuvert(0L) }
+            // G\u00E9n\u00E9aPoche 9 : plus de bouton Arbre sur la fiche ;
+            // l'arbre et la ligne de vie suivent la fiche ouverte.
         )
             }
             // Menus de l'application TOUJOURS visibles en bas, meme fiche ouverte.
