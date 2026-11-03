@@ -31,6 +31,22 @@ fun dateAffichee(s: String): String {
     return t
 }
 
+// G\u00E9n\u00E9aPoche 7 : date EN T\u00CATE de la ligne de chronologie.
+// jj/mm/aaaa tel quel ; date r\u00E9publicaine convertie en gr\u00E9gorien
+// D'ABORD, l'original entre parenth\u00E8ses ; ann\u00E9e seule ALIGN\u00C9E
+// sur l'ann\u00E9e : "  /  /aaaa" (le jour et le mois manquants restent
+// vides \u00E0 leur place).
+fun dateLigne(s: String): String {
+    val t = s.trim()
+    if (t.isEmpty()) return ""
+    Regex("^(\\d{1,2})[./\\- ](\\d{1,2})[./\\- ](\\d{4})$").find(t)?.let { m ->
+        return m.groupValues[1].padStart(2, '0') + "/" + m.groupValues[2].padStart(2, '0') + "/" + m.groupValues[3]
+    }
+    repubAGregorien(t)?.let { return it + " (" + t + ")" }
+    if (Regex("^\\d{4}$").matches(t)) return "  /  /" + t
+    return t
+}
+
 fun heureAffichee(s: String): String {
     val t = s.trim()
     Regex("^(\\d{1,2})[:hH](\\d{2})$").find(t)?.let { m ->
@@ -136,7 +152,32 @@ fun couleurCompteur(n: Int, total: Int): androidx.compose.ui.graphics.Color =
 
 // \u00C2ge de la personne \u00E0 la date de l'\u00E9v\u00E9nement, affich\u00E9 entre
 // parenth\u00E8ses dans la chronologie. Vide si incalculable.
+// G\u00E9n\u00E9aPoche 7 : pr\u00E9cision fine quand les deux dates sont compl\u00E8tes
+// ("(3 jours)", "(5 mois)") ; repli sur l'\u00E9cart d'ann\u00E9es sinon.
 fun ageAffiche(dateNaissance: String, dateEvenement: String): String {
+    fun versLocalDate(s: String): java.time.LocalDate? {
+        val t = s.trim()
+        Regex("^(\\d{1,2})[./\\- ](\\d{1,2})[./\\- ](\\d{4})$").find(t)?.let { m ->
+            return try {
+                java.time.LocalDate.of(m.groupValues[3].toInt(), m.groupValues[2].toInt(), m.groupValues[1].toInt())
+            } catch (e: Exception) { null }
+        }
+        val g = repubAGregorien(t) ?: return null
+        return try {
+            java.time.LocalDate.parse(g, java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy"))
+        } catch (e: Exception) { null }
+    }
+    val dn = versLocalDate(dateNaissance)
+    val de = versLocalDate(dateEvenement)
+    if (dn != null && de != null && !de.isBefore(dn)) {
+        val jours = java.time.temporal.ChronoUnit.DAYS.between(dn, de)
+        return when {
+            jours == 0L -> "(le jour m\u00EAme)"
+            jours < 60L -> "(" + jours.toString() + (if (jours == 1L) " jour)" else " jours)")
+            jours < 730L -> "(" + (jours / 30L).toString() + " mois)"
+            else -> "(" + (jours / 365L).toString() + " ans)"
+        }
+    }
     val an = anneeDe(dateNaissance) ?: return ""
     val ae = anneeDe(dateEvenement) ?: return ""
     val age = ae - an

@@ -184,6 +184,10 @@ fun EcranPersonne(
     var saisieOuverte by remember { mutableStateOf<String?>(null) }
     // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement libre en cours d'\u00E9dition (son id).
     var evLibreEdite by remember { mutableStateOf<String?>(null) }
+    // G\u00E9n\u00E9aPoche 7 : ajout d'un enfant depuis la fiche (choisir une
+    // fiche existante ou saisir un nouvel enfant).
+    var menuEnfant by remember { mutableStateOf(false) }
+    var enfantSaisie by remember { mutableStateOf(false) }
 
     // G\u00E9n\u00E9aPoche 2 : la fiche REGROUPE N, M et D (pr\u00E9sents m\u00EAme sans
     // information) ; B et S apparaissent d\u00E8s qu'une donn\u00E9e existe ; le tout
@@ -210,13 +214,8 @@ fun EcranPersonne(
             { ordreNaturel.indexOf(it) }
         )
     ).toMutableList()
-    // GeneaPoche 4 : ordre chronologique, et le bloc Naissance est
-    // TOUJOURS en tete de la frise, quelles que soient les dates.
-    val posN = triChronologique.indexOf("N")
-    if (posN > 0) {
-        triChronologique.removeAt(posN)
-        triChronologique.add(0, "N")
-    }
+    // G\u00E9n\u00E9aPoche 7 : ordre STRICTEMENT chronologique — le bloc
+    // Naissance n'est plus forc\u00E9 en t\u00EAte de la frise.
     val ordreTypes = triChronologique.toList()
     Scaffold(
         topBar = {
@@ -302,6 +301,7 @@ fun EcranPersonne(
             // par date. Chaque \u00E9v\u00E9nement affiche l'\u00E2ge entre parenth\u00E8ses.
             item {
                 Column(Modifier.fillMaxWidth()) {
+                    val evsFamille = evenementsFamille(p, personnes)
                     val entrees = mutableListOf<Pair<Int, String>>()
                     ordreTypes.forEach { t ->
                         entrees.add((anneeDe(champsEvenement(p, t).date) ?: -1) to ("ev:" + t))
@@ -313,15 +313,16 @@ fun EcranPersonne(
                         val eE = personneParId(personnes, idE)
                         entrees.add((eE?.let { anneeDe(it.dateNaissance) } ?: -1) to ("enf:" + idE.toString()))
                     }
-                    // GénéaPoche 5 : le cadre NAISSANCE est TOUJOURS en
-                    // tête de la fiche, quelles que soient les dates ; le
-                    // reste suit l'ordre chronologique.
-                    val ordonnees = entrees.sortedBy { it.first }.toMutableList()
-                    val posN = ordonnees.indexOfFirst { it.second == "ev:N" }
-                    if (posN > 0) {
-                        val blocN = ordonnees.removeAt(posN)
-                        ordonnees.add(0, blocN)
+                    // G\u00E9n\u00E9aPoche 7 : les \u00E9v\u00E9nements de la famille
+                    // (mariages et d\u00E9c\u00E8s des parents, de la fratrie et des
+                    // enfants) entrent dans la M\u00CAME chronologie, tri\u00E9s par
+                    // date avec tous les autres \u00E9v\u00E9nements.
+                    evsFamille.forEachIndexed { iFam, ef ->
+                        entrees.add(ef.first to ("fam:" + iFam.toString()))
                     }
+                    // G\u00E9n\u00E9aPoche 7 : ordre STRICTEMENT chronologique
+                    // (les \u00E9v\u00E9nements sans ann\u00E9e restent en haut).
+                    val ordonnees = entrees.sortedBy { it.first }
                     ordonnees.forEach { entree ->
                         val cle = entree.second
                         when {
@@ -344,20 +345,39 @@ fun EcranPersonne(
                                         ) {
                                             Box(Modifier.size(10.dp).clip(CircleShape).background(CouleurOrange))
                                             Spacer(Modifier.width(8.dp))
-                                            val morceauxEvl = mutableListOf<String>()
-                                            if (ev.date.trim().isNotEmpty()) morceauxEvl.add(dateAffichee(ev.date.trim()))
-                                            if (ev.lieu.trim().isNotEmpty()) morceauxEvl.add(ev.lieu.trim())
+                                            val dTxtEvl = dateLigne(ev.date.trim()).ifEmpty { "  /  /    " }
+                                            val aTxtEvl = ageAffiche(p.dateNaissance, ev.date)
+                                            val lTxtEvl = if (ev.lieu.trim().isNotEmpty()) " \u00E0 " + ev.lieu.trim() else ""
                                             Text(
-                                                ev.intitule.trim().ifEmpty { "\u00C9v\u00E9nement" } + ". " +
-                                                    (if (morceauxEvl.isEmpty()) "\u2014" else morceauxEvl.joinToString(" \u00E0 ")) +
-                                                    " " + ageAffiche(p.dateNaissance, ev.date),
+                                                dTxtEvl +
+                                                    (if (aTxtEvl.isNotEmpty()) " " + aTxtEvl else "") + " " +
+                                                    ev.intitule.trim().ifEmpty { "\u00C9v\u00E9nement" } + lTxtEvl,
                                                 Modifier.weight(1f),
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 fontWeight = FontWeight.Medium,
-                                                color = if (morceauxEvl.isEmpty()) GrisManquant else Color.Unspecified
+                                                color = if (ev.date.trim().isEmpty() && ev.lieu.trim().isEmpty()) GrisManquant else Color.Unspecified
                                             )
                                             Icon(Icons.Filled.Create, contentDescription = null, Modifier.size(14.dp), tint = GrisManquant)
                                         }
+                                    }
+                                }
+                            }
+                            cle.startsWith("fam:") -> {
+                                // G\u00E9n\u00E9aPoche 7 : \u00E9v\u00E9nement de la famille
+                                // (parents, fratrie, enfants) dans la chronologie.
+                                val iFam = cle.removePrefix("fam:").toIntOrNull() ?: 0
+                                val ef = evsFamille.getOrNull(iFam)
+                                if (ef != null) {
+                                    Card(
+                                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                                        border = BorderStroke(1.dp, CouleurBordVert)
+                                    ) {
+                                        Text(
+                                            ef.second,
+                                            Modifier.fillMaxWidth().padding(6.dp),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
                                     }
                                 }
                             }
@@ -402,15 +422,17 @@ fun EcranPersonne(
                                                 val lEnf = paire.second.second.trim()
                                                 val dpEnf = paire.second.third.trim()
                                                 val numEnf = dpEnf.toIntOrNull() ?: numeroDepartement(dpEnf) ?: numeroDepartement(lEnf)
-                                                val morceauxEnf = mutableListOf<String>()
-                                                if (dEnf.isNotEmpty()) morceauxEnf.add(dateAffichee(dEnf))
-                                                if (lEnf.isNotEmpty()) morceauxEnf.add(lEnf + (if (numEnf != null) " (" + numEnf.toString() + ")" else ""))
-                                                if (morceauxEnf.isNotEmpty()) {
-                                                    Text(
-                                                        tEnf + ". " + morceauxEnf.joinToString(" \u00E0 "),
+                                                val dTxtEnf = dateLigne(dEnf).ifEmpty { "  /  /    " }
+                                                val lTxtEnf = if (lEnf.isNotEmpty()) lEnf + (if (numEnf != null) " (" + numEnf.toString() + ")" else "") else ""
+                                                // G\u00E9n\u00E9aPoche 7 : l'\u00E2ge du PARENT \u00E0 la
+                                                // naissance ou au d\u00E9c\u00E8s de l'enfant.
+                                                val aTxtEnf = ageAffiche(p.dateNaissance, dEnf)
+                                                Text(
+                                                    dTxtEnf + " " + tEnf +
+                                                        (if (lTxtEnf.isNotEmpty()) " \u00E0 " + lTxtEnf else "") +
+                                                        (if (aTxtEnf.isNotEmpty()) " " + aTxtEnf else ""),
                                                         style = MaterialTheme.typography.bodySmall
-                                                    )
-                                                }
+                                                )
                                             }
                                         }
                                     }
@@ -453,14 +475,17 @@ fun EcranPersonne(
                                                 .background(couleurBlocEv)
                                         )
                                         Spacer(Modifier.width(8.dp))
-                                        val morceaux = mutableListOf<String>()
-                                        if (dEv.isNotEmpty()) morceaux.add(dateAffichee(dEv))
-                                        if (lEv.isNotEmpty()) morceaux.add(lEv + (if (numDept != null) " (" + numDept.toString() + ")" else ""))
+                                        val dTxt = dateLigne(dEv).ifEmpty { "  /  /    " }
+                                        val aTxt = if (t == "N") "" else ageAffiche(p.dateNaissance, dEv)
+                                        val lTxt = if (lEv.isNotEmpty()) lEv + (if (numDept != null) " (" + numDept.toString() + ")" else "") else ""
                                         Text(
-                                            t + ". " + (if (morceaux.isEmpty()) "\u2014" else morceaux.joinToString(" \u00E0 ")) + (if (t == "N") "" else " " + ageAffiche(p.dateNaissance, dEv)),                                            Modifier.weight(1f),
+                                            dTxt + (if (aTxt.isNotEmpty()) " " + aTxt else "") + " " + t +
+                                                (if (t == "M") conjointDeTxt(p, personnes) else "") +
+                                                (if (lTxt.isNotEmpty()) " \u00E0 " + lTxt else ""),
+                                            Modifier.weight(1f),
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.Medium,
-                                            color = if (morceaux.isEmpty()) GrisManquant else Color.Unspecified
+                                            color = if (dEv.isEmpty() && lEv.isEmpty()) GrisManquant else Color.Unspecified
                                         )
                                         // G3-11 : le remplissage n'est pas signale par
                                         // la couleur seule, un mot l'explicite.
@@ -499,11 +524,9 @@ fun EcranPersonne(
                                 }
                             }
                         }
-                    // GeneaPoche 4 : bloc "Ajouter un enfant" supprime
-                    // (doublon avec "Ajouter un evenement" et le menu Saisie).                    // Evenements de la famille (ascendants, fratrie,
-                    // enfants) dans la frise chronologique, sans bloc
-                    // repliable (reponse utilisateur).
-                    EvenementsFamille(p = p, personnes = personnes)
+                    // G\u00E9n\u00E9aPoche 7 : les \u00E9v\u00E9nements de la famille figurent
+                    // d\u00E9sormais DANS la chronologie unique ci-dessus, plus de
+                    // bloc s\u00E9par\u00E9.
                     // Bloc RECHERCHES : pistes ouvertes de cette personne,
                     // supprimables directement.
                     val pistesPers = pistes.filter { it.personneId == p.id && !it.faite }
@@ -566,6 +589,29 @@ fun EcranPersonne(
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 "Ajouter un \u00E9v\u00E9nement",
+                                color = CouleurVertFonce,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    // G\u00E9n\u00E9aPoche 7 : bouton Ajouter un enfant (7.1).
+                    Card(
+                        Modifier.fillMaxWidth().padding(top = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, CouleurBordVert)
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(8.dp)
+                                .clickable { menuEnfant = true },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.Person, contentDescription = null,
+                                Modifier.size(16.dp), tint = CouleurVertFonce
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                "Ajouter un enfant",
                                 color = CouleurVertFonce,
                                 fontWeight = FontWeight.Bold
                             )
@@ -659,6 +705,35 @@ fun EcranPersonne(
                 parentRole = ""
             },
             onAnnuler = { parentRole = "" }
+        )
+    }
+
+    // G\u00E9n\u00E9aPoche 7 : ajout d'un enfant (7.1). Deux chemins :
+    // choisir une fiche existante (picker) ou saisir un nouvel enfant.
+    if (menuEnfant) {
+        AlertDialog(
+            onDismissRequest = { menuEnfant = false },
+            title = { Text("Ajouter un enfant") },
+            text = { Text("Choisir une fiche existante ou saisir un nouvel enfant\u2026") },
+            confirmButton = {
+                TextButton(onClick = { menuEnfant = false; onChoisir("enfant") }) {
+                    Text("Choisir une fiche")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { menuEnfant = false; enfantSaisie = true }) {
+                    Text("Saisir un enfant")
+                }
+            }
+        )
+    }
+    if (enfantSaisie) {
+        DialogueNouvelEnfant(
+            onValider = { nom, prenoms, sexe, date ->
+                onNouvelEnfant(nom, prenoms, sexe, date)
+                enfantSaisie = false
+            },
+            onAnnuler = { enfantSaisie = false }
         )
     }
 
@@ -933,7 +1008,10 @@ fun evenementsFamille(p: Personne, personnes: List<Personne>): List<Pair<Int, St
         if (d.isEmpty()) return null
         val an = anneeDe(d) ?: return null
         val lt = lieuAvecDept(lieu, dept)
-        return an to (dateAffichee(d) + " " + texte + (if (lt.isNotEmpty()) " \u00E0 " + lt else ""))
+        // G\u00E9n\u00E9aPoche 7 : date en t\u00EAte + \u00E2ge de la personne
+        // centrale entre parenth\u00E8ses (7.3 et 7.5).
+        val a = ageAffiche(p.dateNaissance, d)
+        return an to (dateLigne(d) + (if (a.isNotEmpty()) " " + a else "") + " " + texte + (if (lt.isNotEmpty()) " \u00E0 " + lt else ""))
     }
     val res = mutableListOf<Pair<Int, String>>()
     fun decesRelatif(r: Personne, lien: String) {
