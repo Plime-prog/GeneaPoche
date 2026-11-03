@@ -76,6 +76,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -167,7 +168,10 @@ fun EcranPersonne(
     // (intitul\u00E9 libre) de la chronologie.
     onEditerIdentite: () -> Unit = {},
     onModifierEvenementLibre: (EvenementLibre) -> Unit = {},
-    onSupprimerEvenementLibre: (Long) -> Unit = {}
+    onSupprimerEvenementLibre: (Long) -> Unit = {},
+    // G\u00E9n\u00E9aPoche 6 : bouton Arbre de la fiche : cette personne
+    // devient le centre de l'arbre g\u00E9n\u00E9alogique.
+    onVoirArbre: () -> Unit = {}
 ) {
     // GénéaPoche 5 : tous les cadres REPLIÉS sur une ligne à l'ouverture
     // de la fiche ; le toucher d'un cadre le développe, l'appui long le modifie.
@@ -260,6 +264,12 @@ fun EcranPersonne(
                     }
                 },
                 actions = {
+                    // G\u00E9n\u00E9aPoche 6 : bouton Arbre : la personne de la
+                    // fiche devient le centre de l'arbre (synchronisation
+                    // instantan\u00E9e).
+                    IconButton(onClick = onVoirArbre) {
+                        Icon(painterResource(R.drawable.ic_arbre), contentDescription = "Arbre")
+                    }
                     // Pas de crayon : l'edition s'ouvre par appui long sur le
                     // bloc identite (v0.28).
                     IconButton(onClick = onSupprimer) {
@@ -1469,6 +1479,7 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 
 

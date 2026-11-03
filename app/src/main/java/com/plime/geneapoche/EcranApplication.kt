@@ -1001,7 +1001,10 @@ fun EcranApplication(
             onValider = { section, valide -> validerInfo(p, section, valide) },
             onEditerIdentite = { onEditionCible(p); onEditionOuverte(true) },
             onModifierEvenementLibre = { ev -> majEvenementLibre(p, ev) },
-            onSupprimerEvenementLibre = { idEv -> supprimerEvenementLibre(p, idEv) }
+            onSupprimerEvenementLibre = { idEv -> supprimerEvenementLibre(p, idEv) },
+            // G\u00E9n\u00E9aPoche 6 : le bouton Arbre de la fiche centre l'arbre
+            // sur cette personne et affiche l'onglet Arbre.
+            onVoirArbre = { onArbreCentre(p.id); onOnglet(2); onIdOuvert(0L) }
         )
             }
             // Menus de l'application TOUJOURS visibles en bas, meme fiche ouverte.
@@ -1262,6 +1265,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 
 
 
