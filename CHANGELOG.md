@@ -1,3 +1,26 @@
+# GeneaPoche - Historique des versions
+
+## v0.43 - Export GEDCOM verrouillé par le sélecteur de fichiers (fix export à 0 personne)
+- **Correctif majeur** : lancer un export GEDCOM ouvrait le sélecteur de fichiers, ce qui verrouillait l'app et vidait la mémoire (purge de sécurité) ; l'export s'exécutait alors sur une liste VIDE : « Aucune personne à exporter » et fichier créé vide (0 Ko). Un sélecteur de fichiers ouvert (GEDCOM, .gpbak) suspend désormais le re-verrouillage automatique.
+- Export : refus AVANT d'ouvrir le sélecteur si la base est vide (plus jamais de fichier 0 Ko créé) ; message de refus explicite.
+- Import : message distinct « Fichier vide (0 octet) : ancien export refusé ou vide » au lieu d'« illisible ».
+- Version 0.43 (versionCode 43).
+
+## v0.42 - Secours copie de secours (.bak)
+- Nouveau menu « Restaurer la copie de secours (.bak) » : dernier recours quand la base est vide — restaure les copies de rotation personnes.bin.bak / journal.bin.bak / actes.bin.bak, sans aucun risque pour les fichiers actuels.
+- Version 0.42 (versionCode 42).
+
+## v0.41 - Secours base vide
+- Restauration RESCUE : « Restaurer la base d’avant import » essaie les 5 sauvegardes tournantes de la plus récente à la plus ancienne et garde la première qui contient des personnes.
+- Export GEDCOM : plus jamais de fichier vide — un export de 0 personne est refusé avec un message explicite.
+- Version 0.41 (versionCode 41).
+
+## v0.40 – Fiche et arbre corrigés (2 novembre 2026)
+
+- **Fiche** : le cadre **NAISSANCE est TOUJOURS en tête**, quelles que soient les dates (la chronologie générale le re-triait par année).
+- **Fiche** : **tous les cadres sont REPLIÉS sur une ligne** à l'ouverture de la fiche ; toucher un cadre le développe, l'appui long ouvre la saisie pré-remplie.
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre ET la vue (zoom/déplacement) se réinitialise — l'arbre se régénère nettement sur 4 générations. Appui long = ouverture de la fiche.
+
 # Historique des versions — GénéaPoche
 
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
