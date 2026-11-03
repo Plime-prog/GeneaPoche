@@ -1,3 +1,9 @@
+## v0.44 – GénéaPoche 6 : l'arbre montre les enfants
+
+- **Arbre** : rangée des enfants sous le couple central (liaisons en T), la même présentation que les autres rangées.
+- Toujours 4 générations (arrière-grands-parents, grands-parents, parents, couple central) + les enfants ; toucher une carte la rend centrale immédiatement (zoom/pan réinitialisés), appui long = fiche.
+- **Nouveau bouton Arbre** dans la barre du haut de la fiche : la personne devient le centre de l'arbre et l'onglet Arbre s'ouvre, synchronisation instantanée.
+
 # Historique des versions — GénéaPoche
 
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
