@@ -1,3 +1,12 @@
+## v0.48 – GénéaPoche 9 : synchronisation fiche / arbre / recherches
+
+- 9.1 L'icône Arbre est supprimée de la fiche.
+- 9.2 L'arbre généalogique (et la ligne de vie) se synchronisent AUTOMATIQUEMENT avec la personne de la fiche ouverte : plus besoin d'aucun bouton.
+- 9.3 Le bloc Recherches de la fiche est synchronisé avec le journal : le texte de chaque recherche est recalculé exactement comme dans le journal.
+- 9.4 Chaque recherche de la fiche est CLIQUABLE : toucher « Compléter le lieu de mariage » ouvre directement la saisie du mariage ; « Rechercher son père » ouvre le choix du père ; « Rechercher les enfants » ouvre « Ajouter un enfant », etc.
+- 9.5 La note de recherche saisie dans la fiche (bloc Recherches et sous-blocs d'actes) est la MÊME que celle du journal : liaison directe, toute saisie d'un côté se retrouve de l'autre après enregistrement.
+- Version 0.48 (versionCode 48).
+
 # Historique des versions — GénéaPoche
 
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
