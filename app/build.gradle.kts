@@ -64,7 +64,7 @@ dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.08.00")
     implementation(composeBom)
     // G2-14 : dependances alignees sur le BOM Compose 2026.08.00 (bump Dependabot).
-    implementation("androidx.core:core-ktx:1.19.0")
+    implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
     // G2-07 : viewModel() pour porter l etat (survit a la rotation).
