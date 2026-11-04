@@ -368,7 +368,7 @@ fun EcranJournal(
     onOuvrirPersonne: (Long) -> Unit,
     onSauver: () -> Unit,
     // G\u00E9n\u00E9aPoche 11 (11.2) : fusion guid\u00E9e d'un doublon (garder A / garder B).
-    onFusionner: (Long, Long) -> Unit = {}
+    onFusionner: (Long, Long) -> Unit = { _, _ -> }
 ) {
     val ouvertes = pistes.filter { !it.faite }
     // REGLE DES 75 ANS : seules les recherches dont l'\u00E9v\u00E9nement vis\u00E9 est
