@@ -122,6 +122,11 @@ fun anomaliesPour(personnes: List<Personne>): List<Anomalie> {
         if (n != null && m != null && m < n) {
             l.add(Anomalie(t + " : mariage (" + m + ") avant la naissance (" + n + ").", p.id))
         }
+        // G\u00E9n\u00E9aPoche 10 : la s\u00E9pulture est APR\u00C8S le d\u00E9c\u00E8s.
+        val s = anneeDe(p.dateSepulture)
+        if (d != null && s != null && s < d) {
+            l.add(Anomalie(t + " : s\u00E9pulture (" + s + ") avant le d\u00E9c\u00E8s (" + d + ").", p.id))
+        }
         if (n != null && d != null && d - n > 110) {
             l.add(Anomalie(t + " : " + (d - n) + " ans au d\u00E9c\u00E8s, \u00E0 v\u00E9rifier.", p.id))
         }
@@ -140,6 +145,13 @@ fun anomaliesPour(personnes: List<Personne>): List<Anomalie> {
             }
             if (nm != null && n - nm < 13) {
                 l.add(Anomalie(t + " : m\u00E8re \u00E2g\u00E9e de " + (n - nm) + " ans \u00E0 la naissance, \u00E0 v\u00E9rifier.", p.id))
+            }
+            // G\u00E9n\u00E9aPoche 10 : un enfant ne na\u00EEt JAMAIS avant ses parents.
+            if (np != null && n < np) {
+                l.add(Anomalie(t + " : n\u00E9(e) en " + n + ", AVANT son p\u00E8re (" + np + ").", p.id))
+            }
+            if (nm != null && n < nm) {
+                l.add(Anomalie(t + " : n\u00E9(e) en " + n + ", AVANT sa m\u00E8re (" + nm + ").", p.id))
             }
             if (nm != null && n - nm > 55) {
                 l.add(Anomalie(t + " : m\u00E8re \u00E2g\u00E9e de " + (n - nm) + " ans \u00E0 la naissance, \u00E0 v\u00E9rifier.", p.id))

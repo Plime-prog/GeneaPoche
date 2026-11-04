@@ -63,6 +63,9 @@ data class ActeSaisie(
     // Id de l'acte modifi\u00E9 (0 = nouvel acte). Depuis la fiche, le formulaire
     // est pr\u00E9-rempli et l'enregistrement MET A JOUR l'acte existant.
     val acteId: Long = 0L,
+    // GénéaPoche 10 : ouvert par appui long sur une ligne NBMDS de la
+    // fiche = EDITION des champs de la personne (même sans acte stocké).
+    val editionFiche: Boolean = false,
     val type: String = "N",
     val commune: String = "",
     val dept: String = "",
@@ -253,7 +256,7 @@ fun EcranSaisieActe(
         add("Concerne(e)")
         if (pere.nom.isNotBlank()) add("P\u00E8re")
         if (mere.nom.isNotBlank()) add("M\u00E8re")
-        if (type == "M" && (marieeNom.isNotBlank() || marieeId != 0L)) add("Mari\u00E9e")
+        if (marieeNom.isNotBlank() || marieeId != 0L) add(if (type == "M") "Mari\u00E9e" else "Conjoint(e)")
         temoins.forEachIndexed { i, t -> if (t.nom.isNotBlank()) add("T\u00E9moin " + (i + 1).toString()) }
     }
 
@@ -341,8 +344,8 @@ fun EcranSaisieActe(
         BlocParent("P\u00E8re", pere, date)
         BlocParent("M\u00E8re", mere, date)
 
-        if (type == "M") {
-            SectionTitre("Mari\u00E9e")
+        if (type == "M" || marieeId != 0L || marieeNom.isNotBlank()) {
+            SectionTitre(if (type == "M") "Mari\u00E9e" else "Conjoint(e)")
             if (exMariee != null) {
                 Text(
                     "Personne existante : " + exMariee.titre(),
@@ -356,8 +359,8 @@ fun EcranSaisieActe(
             Champ("Nom", marieeNom, { marieeNom = it })
             Champ("Pr\u00E9noms", marieePrenoms, { marieePrenoms = it })
             Champ("Profession", marieeProf, { marieeProf = it })
-            BlocParent("P\u00E8re de la mari\u00E9e", pereMariee, date)
-            BlocParent("M\u00E8re de la mari\u00E9e", mereMariee, date)
+            BlocParent(if (type == "M") "P\u00E8re de la mari\u00E9e" else "P\u00E8re du conjoint", pereMariee, date)
+            BlocParent(if (type == "M") "M\u00E8re de la mari\u00E9e" else "M\u00E8re du conjoint", mereMariee, date)
         }
 
         SectionTitre("T\u00E9moins")
