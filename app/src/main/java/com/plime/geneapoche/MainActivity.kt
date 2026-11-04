@@ -496,6 +496,14 @@ fun AppEcran(
                 }
             }
             "enfant" -> {
+                // G\u00E9n\u00E9aPoche 10 : COH\u00C9RENCE, l'enfant ne na\u00EEt pas avant son parent.
+                val anneeEnfantL = anneeDe(cible.dateNaissance)
+                val anneeParentL = anneeDe(p.dateNaissance)
+                if (anneeEnfantL != null && anneeParentL != null && anneeEnfantL < anneeParentL) {
+                    message = "Lien refus\u00E9 : " + cible.titre() + " est n\u00E9(e) en " + anneeEnfantL + ", avant " + p.titre() + " (" + anneeParentL + ")."
+                    pickerRole = ""
+                    return
+                }
                 p.enfants.add(cibleId)
                 if (p.sexe == "F") {
                     if (cible.mere == 0L) cible.mere = p.id
@@ -592,6 +600,15 @@ fun AppEcran(
             )
             personnes.add(enfant)
         }
+        if (enfant.dateNaissance.isBlank() && dateNaissance.isNotBlank()) enfant.dateNaissance = dateGreg(dateNaissance)
+        // G\u00E9n\u00E9aPoche 10 : COH\u00C9RENCE, un enfant ne na\u00EEt pas avant son parent.
+        val anneeEnfantAj = anneeDe(enfant.dateNaissance)
+        val anneeParentAj = anneeDe(p.dateNaissance)
+        if (anneeEnfantAj != null && anneeParentAj != null && anneeEnfantAj < anneeParentAj) {
+            if (existant == null) personnes.remove(enfant)
+            message = "Enfant non ajout\u00E9 : n\u00E9(e) en " + anneeEnfantAj + ", avant la naissance de " + p.titre() + " (" + anneeParentAj + ")."
+            return
+        }
         if (!p.enfants.contains(enfant.id)) p.enfants.add(enfant.id)
         if (p.sexe == "F") {
             if (enfant.mere == 0L) enfant.mere = p.id
@@ -600,7 +617,6 @@ fun AppEcran(
             if (enfant.pere == 0L) enfant.pere = p.id
             if (enfant.mere == 0L && p.conjoint != 0L) enfant.mere = p.conjoint
         }
-        if (enfant.dateNaissance.isBlank() && dateNaissance.isNotBlank()) enfant.dateNaissance = dateGreg(dateNaissance)
         // L'autre parent (conjoint connu) voit aussi l'enfant dans sa fiche.
         val autre = personneParId(personnes, if (p.sexe == "F") enfant.pere else enfant.mere)
         if (autre != null && autre.id != p.id && !autre.enfants.contains(enfant.id)) {
@@ -1288,7 +1304,7 @@ fun AppEcran(
         // Le formulaire etait pre-rempli ; on MET A JOUR l'acte et les champs
         // de la fiche (un champ laisse vide = effac\\u00E9 volontairement).
         val acteExistant = if (a.acteId != 0L) actes.firstOrNull { it.id == a.acteId } else null
-        val edition = acteExistant != null
+        val edition = acteExistant != null || a.editionFiche  // G\u00E9n\u00E9aPoche 10 : appui long = edition des champs
         val ancienContenu = acteExistant?.contenu ?: ""
 
         // Trouve une personne existante (par id ou nom+premoms), sinon la cree.
@@ -1380,15 +1396,22 @@ fun AppEcran(
         if (a.type == "N" && a.parentPourEnfant != 0L) {
             val parentChoisi = personneParId(personnes, a.parentPourEnfant)
             if (parentChoisi != null && parentChoisi.id != p.id) {
-                if (parentChoisi.sexe == "F") {
-                    if (p.mere == 0L) p.mere = parentChoisi.id
+                // G\u00E9n\u00E9aPoche 10 : COH\u00C9RENCE, l'enfant ne na\u00EEt pas avant son parent.
+                val anneeEnfantN = anneeDe(p.dateNaissance)
+                val anneeParentN = anneeDe(parentChoisi.dateNaissance)
+                if (anneeEnfantN != null && anneeParentN != null && anneeEnfantN < anneeParentN) {
+                    message = "Lien refus\u00E9 : " + p.titre() + " est n\u00E9(e) en " + anneeEnfantN + ", avant " + parentChoisi.titre() + " (" + anneeParentN + ")."
                 } else {
-                    if (p.pere == 0L) p.pere = parentChoisi.id
-                }
-                if (!parentChoisi.enfants.contains(p.id)) parentChoisi.enfants.add(p.id)
-                val conjointDuParent = personneParId(personnes, parentChoisi.conjoint)
-                if (conjointDuParent != null && !conjointDuParent.enfants.contains(p.id)) {
-                    conjointDuParent.enfants.add(p.id)
+                    if (parentChoisi.sexe == "F") {
+                        if (p.mere == 0L) p.mere = parentChoisi.id
+                    } else {
+                        if (p.pere == 0L) p.pere = parentChoisi.id
+                    }
+                    if (!parentChoisi.enfants.contains(p.id)) parentChoisi.enfants.add(p.id)
+                    val conjointDuParent = personneParId(personnes, parentChoisi.conjoint)
+                    if (conjointDuParent != null && !conjointDuParent.enfants.contains(p.id)) {
+                        conjointDuParent.enfants.add(p.id)
+                    }
                 }
             }
         }
@@ -1464,6 +1487,7 @@ fun AppEcran(
                 l == "P\u00E8re" -> (a.pereNom + " " + a.perePrenoms).trim().ifEmpty { pere?.titre() }
                 l == "M\u00E8re" -> (a.mereNom + " " + a.merePrenoms).trim().ifEmpty { mere?.titre() }
                 l == "Mari\u00E9e" -> (a.marieeNom + " " + a.marieePrenoms).trim().ifEmpty { mariee?.titre() }
+                l == "Conjoint(e)" -> (a.marieeNom + " " + a.marieePrenoms).trim().ifEmpty { personneParId(personnes, a.marieeId)?.titre() ?: "" }
                 l.startsWith("T\u00E9moin ") -> {
                     val i = l.removePrefix("T\u00E9moin ").toIntOrNull() ?: return@mapNotNull null
                     val t = a.temoins.getOrNull(i - 1) ?: return@mapNotNull null

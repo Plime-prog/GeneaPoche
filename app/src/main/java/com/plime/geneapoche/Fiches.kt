@@ -194,20 +194,29 @@ fun EcranPersonne(
     // que si la personne peut avoir plus de 100 ans \u00E0 la date du jour (ou si
     // son d\u00E9c\u00E8s est d\u00E9j\u00E0 connu).
     val decesAffiche = decesAffichable(p, actes)
-    val ordreNaturel = listOf("N", "B", "M", "S", "D")
-    val typesPresents = mutableListOf("N", "M")
-    if (p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || actes.any { it.personneId == p.id && it.type == "B" }) {
-        typesPresents.add("B")
-    }
+    // GénéaPoche 10 : ordre NBMDS TOUJOURS respecté, même si les
+    // informations sont vides : N, B, M, D puis S (la sépulture est APRÈS
+    // le décès, le mariage APRÈS la naissance, même sans dates).
+    val ordreNaturel = listOf("N", "B", "M", "D", "S")
+    val typesPresents = mutableListOf("N", "B", "M")
     if (decesAffiche) {
         typesPresents.add("D")
-        if (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || actes.any { it.personneId == p.id && it.type == "S" }) {
-            typesPresents.add("S")
+        typesPresents.add("S")
+    }
+    // GénéaPoche 10 : année effective d'un événement, pour garantir
+    // B et M jamais avant N, S jamais avant D.
+    fun anneeEffective(t: String): Int? {
+        val a = anneeDe(champsEvenement(p, t).date)
+        return when (t) {
+            "B" -> listOfNotNull(a, anneeDe(p.dateNaissance)).maxOrNull()
+            "M" -> listOfNotNull(a, anneeDe(p.dateNaissance)).maxOrNull()
+            "S" -> listOfNotNull(a, anneeDe(p.dateDeces)).maxOrNull()
+            else -> a
         }
     }
     val triChronologique = typesPresents.sortedWith(
         compareBy(
-            { anneeDe(champsEvenement(p, it).date) ?: ordreNaturel.indexOf(it) },
+            { anneeEffective(it) ?: ordreNaturel.indexOf(it) },
             { ordreNaturel.indexOf(it) }
         )
     ).toMutableList()
@@ -298,7 +307,7 @@ fun EcranPersonne(
                     val evsFamille = evenementsFamille(p, personnes)
                     val entrees = mutableListOf<Pair<Int, String>>()
                     ordreTypes.forEach { t ->
-                        entrees.add((anneeDe(champsEvenement(p, t).date) ?: -1) to ("ev:" + t))
+                        entrees.add((anneeEffective(t) ?: -1) to ("ev:" + t))
                     }
                     p.evenementsLibres.forEach { ev ->
                         entrees.add((anneeDe(ev.date) ?: -1) to ("evl:" + ev.id.toString()))
@@ -690,7 +699,7 @@ fun EcranPersonne(
             Surface(Modifier.fillMaxSize()) {
                 EcranSaisieActe(
                     personnes = personnes,
-                    initial = prefillActe(p, personnes, actes, tPre.ifEmpty { null }),
+                    initial = prefillActe(p, personnes, actes, tPre.ifEmpty { null }, editionFiche = tPre.isNotEmpty()),
                     // GeneaPoche 4 : appui long sur un bloc = SEUL ce type d'acte.
                     typeImpose = tPre.ifEmpty { null },
                     onEnregistrer = { a ->                        onEnregistrerActe(a)
@@ -947,14 +956,16 @@ data class EvChamps(val date: String, val heure: String, val lieu: String, val d
 // parents, conjoint, t\u00E9moins, signataires) et de l'\u00E9v\u00E9nement demand\u00E9.
 // t = null (nouvel \u00E9v\u00E9nement depuis le bloc vert) : identit\u00E9 seule.
 
-fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: String?): ActeSaisie {
+fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: String?, editionFiche: Boolean = false): ActeSaisie {
     val type = t ?: "N"
     val c = if (t == null || type == "E") null else champsEvenement(p, type)
     val acteEdit = actes.filter { it.personneId == p.id && it.type == type }
         .maxByOrNull { it.creation }
     val pere = personneParId(personnes, p.pere)
     val mere = personneParId(personnes, p.mere)
-    val conj = if (type == "M") personneParId(personnes, p.conjoint) else null
+    // GénéaPoche 10 : le conjoint (et ses parents) sont proposés pour
+    // TOUS les types d'acte, pas seulement le mariage.
+    val conj = personneParId(personnes, p.conjoint)
     val pConj = if (conj != null) personneParId(personnes, conj.pere) else null
     val mConj = if (conj != null) personneParId(personnes, conj.mere) else null
     val temoinsIds = p.temoinsDe(type)
@@ -972,6 +983,7 @@ fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: St
     }
     return ActeSaisie(
         acteId = acteEdit?.id ?: 0L,
+        editionFiche = editionFiche,
         type = type,
         commune = c?.lieu?.trim() ?: "",
         dept = c?.dept?.trim() ?: "",
