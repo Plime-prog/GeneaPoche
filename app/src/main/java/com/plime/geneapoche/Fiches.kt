@@ -37,6 +37,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.DateRange
@@ -163,6 +164,9 @@ fun EcranPersonne(
     // et suppression directe d'une recherche.
     pistes: List<Piste> = emptyList(),
     onSupprimerPiste: (Piste) -> Unit = {},
+    // G\u00E9n\u00E9aPoche 11 (11.0) : coche de certification de l'identit\u00E9
+    // (\u00E9tat "auto" / "coche" / "croix").
+    onValiderIdentite: (String) -> Unit = {},
     // G\u00E9n\u00E9aPoche 3 : \u00E9dition directe de l'identit\u00E9 (nom, pr\u00E9noms,
     // profession) depuis la fiche, et gestion des \u00E9v\u00E9nements libres
     // (intitul\u00E9 libre) de la chronologie.
@@ -254,6 +258,38 @@ fun EcranPersonne(
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold
                             )
+                        }
+                        // G\u00E9n\u00E9aPoche 11 (11.0) : coche de certification
+                        // de l'identit\u00E9, \u00E0 droite du n/6. Toucher = choix
+                        // manuel (auto -> coche -> croix -> auto).
+                        Spacer(Modifier.width(6.dp))
+                        IconButton(
+                            onClick = {
+                                onValiderIdentite(
+                                    when (p.identiteVerifiee) {
+                                        "auto" -> "coche"
+                                        "coche" -> "croix"
+                                        else -> "auto"
+                                    }
+                                )
+                            },
+                            Modifier.size(30.dp)
+                        ) {
+                            if (identiteCertifiee(p)) {
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = "Identit\u00E9 certifi\u00E9e",
+                                    Modifier.size(18.dp),
+                                    tint = Color.White
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Filled.Close,
+                                    contentDescription = "Identit\u00E9 non certifi\u00E9e",
+                                    Modifier.size(18.dp),
+                                    tint = CouleurRouge
+                                )
+                            }
                         }
                     }
                 },
@@ -988,6 +1024,9 @@ fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: St
         commune = c?.lieu?.trim() ?: "",
         dept = c?.dept?.trim() ?: "",
         reference = acteEdit?.reference?.trim() ?: "",
+        depot = acteEdit?.depot?.trim() ?: "",
+        dateConsultation = acteEdit?.dateConsultation?.trim() ?: "",
+        fiabilite = acteEdit?.fiabilite ?: -1,
         date = c?.date?.trim() ?: "",
         heure = c?.heure?.trim() ?: "",
         personneId = p.id,
@@ -1441,6 +1480,25 @@ fun SousBlocActe(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+            // G\u00E9n\u00E9aPoche 11 (11.4) : source et niveau de preuve.
+            if (acte.depot.isNotBlank()) {
+                Text(
+                    "D\u00E9p\u00F4t : " + acte.depot.trim(),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            if (acte.dateConsultation.isNotBlank()) {
+                Text(
+                    "Consult\u00E9 le " + acte.dateConsultation.trim(),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            if (acte.fiabilite >= 0) {
+                Text(
+                    "Preuve : " + libelleFiabilite(acte.fiabilite) + " (" + acte.fiabilite + "/3)",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             // Zone de saisie libre de la recherche en cours.
             // G\u00E9n\u00E9aPoche 9 : note LI\u00C9E directement \u00E0 la piste
             // (piste.enCours), synchronis\u00E9e avec le journal.
@@ -1606,6 +1664,7 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 
 

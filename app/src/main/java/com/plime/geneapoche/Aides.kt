@@ -142,6 +142,24 @@ fun renseignementsN6(p: Personne): Int {
     return n
 }
 
+// G\u00E9n\u00E9aPoche 11 (11.0) : \u00E9tat R\u00C9EL de la coche de certification.
+// "auto" = coche automatique si au moins 1 renseignement sur 6, croix rouge
+// sinon ; "coche" / "croix" = choix manuel (laiss\u00E9 m\u00EAme si incomplet).
+fun identiteCertifiee(p: Personne): Boolean = when (p.identiteVerifiee) {
+    "coche" -> true
+    "croix" -> false
+    else -> renseignementsN6(p) >= 1
+}
+
+// G\u00E9n\u00E9aPoche 11 (11.4) : libell\u00E9 du niveau de preuve (\u00E9chelle QUAY).
+fun libelleFiabilite(n: Int): String = when (n) {
+    0 -> "source indirecte ou incertaine"
+    1 -> "donn\u00E9e plausible"
+    2 -> "source fiable (registre)"
+    3 -> "acte original"
+    else -> "non renseign\u00E9e"
+}
+
 // Couleur du compteur : interpolation du rouge (0) au vert (total).
 fun couleurCompteur(n: Int, total: Int): androidx.compose.ui.graphics.Color =
     androidx.compose.ui.graphics.lerp(
@@ -270,3 +288,4 @@ fun avertissementCoherence(
     }
     return ""
 }
+

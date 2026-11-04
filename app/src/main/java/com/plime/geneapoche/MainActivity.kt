@@ -59,6 +59,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlin.reflect.KMutableProperty1
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -806,6 +807,94 @@ fun AppEcran(
         enregistrer(false, setOf(p.id))
     }
 
+    // G\u00E9n\u00E9aPoche 11 (11.0) : coche de certification de l'identit\u00E9.
+    // Etats : "auto" (1/6 minimum = coche, sinon croix), "coche", "croix".
+    fun validerIdentite(p: Personne, etat: String) {
+        p.identiteVerifiee = etat
+        enregistrer(false, setOf(p.id))
+        message = when (etat) {
+            "coche" -> "Identit\u00E9 certifi\u00E9e : " + p.titre()
+            "croix" -> "Identit\u00E9 marqu\u00E9e \u00E0 v\u00E9rifier : " + p.titre()
+            else -> "Certification automatique (coche si 1/6 minimum) : " + p.titre()
+        }
+    }
+
+    // G\u00E9n\u00E9aPoche 11 (11.2) : FUSION GUID\u00C9E d'un doublon. Toutes les
+    // informations et tous les liens de [supprime] sont report\u00E9s sur
+    // [garde] (sans jamais \u00E9craser une donn\u00E9e d\u00E9j\u00E0 pr\u00E9sente), puis la
+    // fiche [supprime] dispara\u00EEt de la base.
+    fun fusionnerPersonnes(gardeId: Long, supprimeId: Long) {
+        if (gardeId == supprimeId) return
+        val garde = personnes.firstOrNull { it.id == gardeId } ?: return
+        val supprime = personnes.firstOrNull { it.id == supprimeId } ?: return
+        // 1. Champs texte : recopi\u00E9s seulement s'ils sont vides chez garde.
+        fun recopier(prop: KMutableProperty1<Personne, String>) {
+            if (prop.get(garde).isBlank() && prop.get(supprime).isNotBlank()) {
+                prop.set(garde, prop.get(supprime))
+            }
+        }
+        listOf(
+            Personne::profession, Personne::sexe, Personne::notesLibres,
+            Personne::dateNaissance, Personne::heureNaissance, Personne::lieuNaissance, Personne::deptNaissance,
+            Personne::dateBapteme, Personne::heureBapteme, Personne::lieuBapteme, Personne::deptBapteme,
+            Personne::dateMariage, Personne::heureMariage, Personne::lieuMariage, Personne::deptMariage,
+            Personne::dateDeces, Personne::heureDeces, Personne::lieuDeces, Personne::deptDeces,
+            Personne::dateSepulture, Personne::heureSepulture, Personne::lieuSepulture, Personne::deptSepulture
+        ).forEach { recopier(it) }
+        // 2. Listes : union sans doublon.
+        fun union(dest: MutableList<Long>, src: MutableList<Long>) {
+            src.filterNot { it == supprimeId || dest.contains(it) }.forEach { dest.add(it) }
+        }
+        union(garde.enfants, supprime.enfants)
+        union(garde.conjointsSupp, supprime.conjointsSupp)
+        listOf("N", "B", "M", "D", "S").forEach { t ->
+            union(garde.temoinsDe(t), supprime.temoinsDe(t))
+            union(garde.signatairesDe(t), supprime.signatairesDe(t))
+        }
+        supprime.evenementsLibres.filterNot { ev -> garde.evenementsLibres.any { it.id == ev.id } }
+            .forEach { garde.evenementsLibres.add(it) }
+        supprime.blocsOuverts.filterNot { garde.blocsOuverts.contains(it) }.forEach { garde.blocsOuverts.add(it) }
+        // 3. R\u00F4les : pris seulement s'ils sont inconnus chez garde.
+        if (garde.pere == 0L && supprime.pere != 0L) garde.pere = supprime.pere
+        if (garde.mere == 0L && supprime.mere != 0L) garde.mere = supprime.mere
+        if (garde.conjoint == 0L && supprime.conjoint != 0L) garde.conjoint = supprime.conjoint
+        // 4. Partout dans la base : toute r\u00E9f\u00E9rence au doublon vise garde.
+        personnes.filter { it.id != supprimeId }.forEach { q ->
+            fun remplace(v: Long): Long = if (v == supprimeId) gardeId else v
+            q.pere = remplace(q.pere)
+            q.mere = remplace(q.mere)
+            q.conjoint = remplace(q.conjoint)
+            q.conjointsSupp.replaceAll { remplace(it) }
+            q.enfants.replaceAll { remplace(it) }
+            listOf("N", "B", "M", "D", "S").forEach { t ->
+                q.temoinsDe(t).replaceAll { remplace(it) }
+                q.signatairesDe(t).replaceAll { remplace(it) }
+            }
+        }
+        // D\u00E9doublonnage des listes de garde apr\u00E8s remplacement.
+        fun dedupe(l: MutableList<Long>) {
+            val vus = mutableSetOf<Long>()
+            l.removeAll { !vus.add(it) }
+        }
+        dedupe(garde.enfants); dedupe(garde.conjointsSupp)
+        listOf("N", "B", "M", "D", "S").forEach { t ->
+            dedupe(garde.temoinsDe(t)); dedupe(garde.signatairesDe(t))
+        }
+        // 5. Actes et recherches du doublon : rattach\u00E9s \u00E0 garde.
+        actes.filter { it.personneId == supprimeId }.forEach { it.personneId = gardeId }
+        pistes.filter { it.personneId == supprimeId }.forEach { it.personneId = gardeId }
+        // 6. Suppression effective du doublon.
+        personnes.remove(supprime)
+        pileFiches.removeAll { it == supprimeId }
+        if (idOuvert == supprimeId) idOuvert = gardeId
+        if (arbreCentre == supprimeId) arbreCentre = gardeId
+        if (Stockage.lireIdCujus(ctx) == supprimeId) {
+            Stockage.definirCujus(ctx, gardeId, sosaCujus)
+        }
+        enregistrer()
+        message = "Fusion effectu\u00E9e : " + supprime.titre() + " a \u00E9t\u00E9 regroup\u00E9(e) avec " + garde.titre() + "."
+    }
+
     // Definit le de cujus et son n Sosa (pas forcement 1) : toute la numerotation
     // Sosa et d'Aboville en decoule automatiquement.
     fun definirCujus(p: Personne, sosa: Long) {
@@ -1506,6 +1595,9 @@ fun AppEcran(
             acteExistant.titre = entete
             acteExistant.contenu = contenu
             acteExistant.reference = a.reference.trim()
+            acteExistant.depot = a.depot.trim()
+            acteExistant.dateConsultation = a.dateConsultation.trim()
+            acteExistant.fiabilite = a.fiabilite
             if (mariee != null) {
                 val jumeau = actes.firstOrNull {
                     it.personneId == mariee.id && it.type == a.type &&
@@ -1515,12 +1607,18 @@ fun AppEcran(
                     jumeau.titre = entete
                     jumeau.contenu = contenu
                     jumeau.reference = a.reference.trim()
+                    jumeau.depot = a.depot.trim()
+                    jumeau.dateConsultation = a.dateConsultation.trim()
+                    jumeau.fiabilite = a.fiabilite
                 } else {
                     actes.add(
                         Acte(
                             id = Stockage.prochainId(ctx), personneId = mariee.id, type = a.type,
                             titre = entete, creation = System.currentTimeMillis(),
-                            contenu = contenu, reference = a.reference.trim()
+                            contenu = contenu, reference = a.reference.trim(),
+                depot = a.depot.trim(),
+                dateConsultation = a.dateConsultation.trim(),
+                fiabilite = a.fiabilite
                         )
                     )
                 }
@@ -1531,7 +1629,10 @@ fun AppEcran(
             Acte(
                 id = idActe, personneId = p.id, type = a.type, titre = entete,
                 creation = System.currentTimeMillis(), contenu = contenu,
-                reference = a.reference.trim()
+                reference = a.reference.trim(),
+                depot = a.depot.trim(),
+                dateConsultation = a.dateConsultation.trim(),
+                fiabilite = a.fiabilite
             )
         )
         if (mariee != null) {
@@ -1540,7 +1641,10 @@ fun AppEcran(
                 Acte(
                     id = idActe, personneId = mariee.id, type = a.type, titre = entete,
                     creation = System.currentTimeMillis(), contenu = contenu,
-                    reference = a.reference.trim()
+                    reference = a.reference.trim(),
+                depot = a.depot.trim(),
+                dateConsultation = a.dateConsultation.trim(),
+                fiabilite = a.fiabilite
                 )
             )
         }
@@ -1743,6 +1847,9 @@ fun AppEcran(
                 reglagesTheme = { dialogueTheme = true },
                 prochainId = { Stockage.prochainId(ctx) },
                 validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) },
+                // G\u00E9n\u00E9aPoche 11 : coche de certification + fusion guid\u00E9e.
+                validerIdentite = { pers, etat -> validerIdentite(pers, etat) },
+                fusionner = { gardeId, supprimeId -> fusionnerPersonnes(gardeId, supprimeId) },
                 // G3-19 : annulation d'une suppression via le Snackbar.
                 onAnnulerSuppression = { annulerSuppression() },
                 onPurgerAnnulation = { modele.annulation = null }
@@ -2100,6 +2207,7 @@ fun AppEcran(
         )
     }
 }
+
 
 
 
