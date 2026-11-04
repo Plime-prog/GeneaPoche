@@ -584,14 +584,16 @@ fun EcranPersonne(
                                         // G\u00E9n\u00E9aPoche 9 : la note saisie ici est la
                                         // m\u00EAme que celle du journal (piste.enCours).
                                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            var notePiste by remember(ps.id) { mutableStateOf(ps.enCours) }
+                                            // v0.49 : etat local, la liaison directe ne rafraichissait pas le cadre.
                                             OutlinedTextField(
-                                                value = ps.enCours,
-                                                onValueChange = { ps.enCours = it },
+                                                value = notePiste,
+                                                onValueChange = { notePiste = it },
                                                 modifier = Modifier.weight(1f),
                                                 placeholder = { Text("Recherche : pages, cotes, notes...", style = MaterialTheme.typography.bodySmall) },
                                                 textStyle = MaterialTheme.typography.bodySmall
                                             )
-                                            TextButton(onClick = { enregistrer() }) {
+                                            TextButton(onClick = { ps.enCours = notePiste; enregistrer() }) {
                                                 Text("Enregistrer", fontSize = 12.sp)
                                             }
                                         }
@@ -1432,14 +1434,16 @@ fun SousBlocActe(
             // (piste.enCours), synchronis\u00E9e avec le journal.
             if (piste != null) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    var noteSousBloc by remember(piste.id) { mutableStateOf(piste.enCours) }
+                    // v0.49 : etat local, la liaison directe ne rafraichissait pas le cadre.
                     OutlinedTextField(
-                        value = piste.enCours,
-                        onValueChange = { piste.enCours = it },
+                        value = noteSousBloc,
+                        onValueChange = { noteSousBloc = it },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Recherche : pages, cotes, notes...", style = MaterialTheme.typography.bodySmall) },
                         textStyle = MaterialTheme.typography.bodySmall
                     )
-                    TextButton(onClick = { onEnregistrer() }) {
+                    TextButton(onClick = { piste.enCours = noteSousBloc; onEnregistrer() }) {
                         Text("Enregistrer", fontSize = 12.sp)
                     }
                 }
