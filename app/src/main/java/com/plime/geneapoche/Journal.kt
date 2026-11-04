@@ -489,15 +489,17 @@ fun CarteRecherche(
             // Zone de saisie libre unique pour la recherche en cours
             // GénéaPoche 9 : note LIÉE à la piste (piste.enCours),
             // exactement celle de la fiche.
+            // v0.49 : etat local, la liaison directe piste.enCours ne rafraichissait pas le cadre.
+            var noteJournal by remember(piste.id) { mutableStateOf(piste.enCours) }
             OutlinedTextField(
-                value = piste.enCours,
-                onValueChange = { piste.enCours = it },
+                value = noteJournal,
+                onValueChange = { noteJournal = it },
                 label = { Text("Recherche : pages, c\u00F4tes, notes...") },
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth()
             )
             Row(Modifier.fillMaxWidth()) {
-                TextButton(onClick = { onSauver() }) {
+                TextButton(onClick = { piste.enCours = noteJournal; onSauver() }) {
                     Text("Enregistrer la note")
                 }
             }
