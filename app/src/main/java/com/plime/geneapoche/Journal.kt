@@ -144,7 +144,7 @@ fun anomaliesPour(personnes: List<Personne>): List<Anomalie> {
             if (dp != null && dp < n) {
                 l.add(Anomalie(t + " : p\u00E8re " + nom(p.pere) + " d\u00E9c\u00E9d\u00E9 (" + dp + ") avant la naissance de l'enfant (" + n + ").", p.id))
             }
-            if (nm != null && n - nm < 13) {
+            if (nm != null && n >= nm && n - nm < 13) {
                 l.add(Anomalie(t + " : m\u00E8re \u00E2g\u00E9e de " + (n - nm) + " ans \u00E0 la naissance, \u00E0 v\u00E9rifier.", p.id))
             }
             // G\u00E9n\u00E9aPoche 10 : un enfant ne na\u00EEt JAMAIS avant ses parents.

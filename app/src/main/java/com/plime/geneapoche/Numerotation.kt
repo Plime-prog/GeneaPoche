@@ -189,3 +189,19 @@ fun verifierLiens(personnes: MutableList<Personne>): List<String> {
     }
     return rapports.distinct()
 }
+
+// ---------------------------------------------------------------- Coherence parent/enfant
+// GeneaPoche 11 (bug "enfant ne avant son parent") : UNE SEULE regle,
+// appliquee par TOUTES les voies d'ajout (saisie d'enfant, choix de fiche,
+// nouveau parent, acte de naissance rattache, import fusionne).
+// Renvoie un message si l'enfant serait ne avant son parent, sinon null.
+// Compare les annees (dates partielles ou republicaines comprises, via
+// anneeDe) ; une date inconnue ne bloque jamais rien.
+fun incoherenceParente(parent: Personne, dateEnfant: String): String? {
+    val an = anneeDe(dateEnfant) ?: return null
+    val ap = anneeDe(parent.dateNaissance) ?: return null
+    return if (an < ap)
+        "Impossible : l'enfant (" + an + ") serait n\u00E9 avant " +
+        parent.titre().trim() + " (" + ap + ")."
+    else null
+}
