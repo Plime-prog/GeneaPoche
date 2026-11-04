@@ -498,13 +498,11 @@ fun AppEcran(
             }
             "enfant" -> {
                 // G\u00E9n\u00E9aPoche 10 : COH\u00C9RENCE, l'enfant ne na\u00EEt pas avant son parent.
-                val anneeEnfantL = anneeDe(cible.dateNaissance)
-                val anneeParentL = anneeDe(p.dateNaissance)
-                if (anneeEnfantL != null && anneeParentL != null && anneeEnfantL < anneeParentL) {
-                    message = "Lien refus\u00E9 : " + cible.titre() + " est n\u00E9(e) en " + anneeEnfantL + ", avant " + p.titre() + " (" + anneeParentL + ")."
-                    pickerRole = ""
-                    return
-                }
+                // GeneaPoche 11 : UNE SEULE regle (incoherenceParente),
+                // le conjoint connu est teste au meme titre.
+                incoherenceParente(p, cible.dateNaissance)?.let { message = it; pickerRole = ""; return }
+                val conjointL = personneParId(personnes, p.conjoint)
+                if (conjointL != null) incoherenceParente(conjointL, cible.dateNaissance)?.let { message = it; pickerRole = ""; return }
                 p.enfants.add(cibleId)
                 if (p.sexe == "F") {
                     if (cible.mere == 0L) cible.mere = p.id
@@ -585,6 +583,14 @@ fun AppEcran(
             q.nom.trim().uppercase() == n.uppercase() &&
             q.prenoms.trim().uppercase() == pr.uppercase()
         }
+        // GeneaPoche 11 (bug enfant ne avant parent) : coherence verifiee
+        // AVANT toute creation - aucun refus ne laisse de fiche orpheline,
+        // l'enfant EXISTANT deja date avant le parent est refuse aussi,
+        // et le CONJOINT connu est teste au meme titre que la personne.
+        val dateEff = existant?.dateNaissance?.takeIf { it.isNotBlank() } ?: dateGreg(dateNaissance)
+        incoherenceParente(p, dateEff)?.let { message = it; return }
+        val autreParentAj = personneParId(personnes, p.conjoint)
+        if (autreParentAj != null) incoherenceParente(autreParentAj, dateEff)?.let { message = it; return }
         val enfant: Personne
         if (existant != null) {
             if (p.enfants.contains(existant.id)) {
@@ -602,14 +608,6 @@ fun AppEcran(
             personnes.add(enfant)
         }
         if (enfant.dateNaissance.isBlank() && dateNaissance.isNotBlank()) enfant.dateNaissance = dateGreg(dateNaissance)
-        // G\u00E9n\u00E9aPoche 10 : COH\u00C9RENCE, un enfant ne na\u00EEt pas avant son parent.
-        val anneeEnfantAj = anneeDe(enfant.dateNaissance)
-        val anneeParentAj = anneeDe(p.dateNaissance)
-        if (anneeEnfantAj != null && anneeParentAj != null && anneeEnfantAj < anneeParentAj) {
-            if (existant == null) personnes.remove(enfant)
-            message = "Enfant non ajout\u00E9 : n\u00E9(e) en " + anneeEnfantAj + ", avant la naissance de " + p.titre() + " (" + anneeParentAj + ")."
-            return
-        }
         if (!p.enfants.contains(enfant.id)) p.enfants.add(enfant.id)
         if (p.sexe == "F") {
             if (enfant.mere == 0L) enfant.mere = p.id
@@ -664,6 +662,9 @@ fun AppEcran(
             q.nom.trim().uppercase() == n.uppercase() &&
             q.prenoms.trim().uppercase() == pr.uppercase()
         }
+        // GeneaPoche 11 : coherence AVANT rattachement (et avant toute
+        // creation de fiche) - un parent ne apres son enfant est refuse.
+        if (existante != null) incoherenceParente(existante, p.dateNaissance)?.let { message = it; return }
         var cible: Personne
         if (existante != null) {
             cible = existante
@@ -1128,7 +1129,10 @@ fun AppEcran(
             if (q.conjoint == 0L && imp.conjoint != 0L) q.conjoint = cible(imp.conjoint)
             imp.enfants.forEach { idEnf ->
                 val idCible = cible(idEnf)
-                if (idCible != 0L && !q.enfants.contains(idCible)) q.enfants.add(idCible)
+                if (idCible != 0L && !q.enfants.contains(idCible)) {
+                    val enfImp = personneParId(personnes, idCible)
+                    if (enfImp == null || incoherenceParente(q, enfImp.dateNaissance) == null) q.enfants.add(idCible)
+                }
             }
         }
         verifierLiensEtRapporter()
@@ -1433,7 +1437,7 @@ fun AppEcran(
             } else {
                 if (enfant.pere == 0L) enfant.pere = parent.id
             }
-            if (!parent.enfants.contains(enfant.id)) parent.enfants.add(enfant.id)
+            if (!parent.enfants.contains(enfant.id) && incoherenceParente(parent, enfant.dateNaissance) == null) parent.enfants.add(enfant.id)
         }
 
         val p = trouverOuCreer(a.personneId, a.nom, a.prenoms, a.sexe)
@@ -1486,10 +1490,12 @@ fun AppEcran(
             val parentChoisi = personneParId(personnes, a.parentPourEnfant)
             if (parentChoisi != null && parentChoisi.id != p.id) {
                 // G\u00E9n\u00E9aPoche 10 : COH\u00C9RENCE, l'enfant ne na\u00EEt pas avant son parent.
-                val anneeEnfantN = anneeDe(p.dateNaissance)
-                val anneeParentN = anneeDe(parentChoisi.dateNaissance)
-                if (anneeEnfantN != null && anneeParentN != null && anneeEnfantN < anneeParentN) {
-                    message = "Lien refus\u00E9 : " + p.titre() + " est n\u00E9(e) en " + anneeEnfantN + ", avant " + parentChoisi.titre() + " (" + anneeParentN + ")."
+                // GeneaPoche 11 : UNE SEULE regle (incoherenceParente),
+                // le conjoint du parent est teste au meme titre.
+                val refusN = incoherenceParente(parentChoisi, p.dateNaissance)
+                    ?: personneParId(personnes, parentChoisi.conjoint)?.let { co -> incoherenceParente(co, p.dateNaissance) }
+                if (refusN != null) {
+                    message = refusN
                 } else {
                     if (parentChoisi.sexe == "F") {
                         if (p.mere == 0L) p.mere = parentChoisi.id
@@ -1498,7 +1504,7 @@ fun AppEcran(
                     }
                     if (!parentChoisi.enfants.contains(p.id)) parentChoisi.enfants.add(p.id)
                     val conjointDuParent = personneParId(personnes, parentChoisi.conjoint)
-                    if (conjointDuParent != null && !conjointDuParent.enfants.contains(p.id)) {
+                    if (conjointDuParent != null && !conjointDuParent.enfants.contains(p.id) && incoherenceParente(conjointDuParent, p.dateNaissance) == null) {
                         conjointDuParent.enfants.add(p.id)
                     }
                 }
