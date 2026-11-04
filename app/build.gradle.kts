@@ -12,8 +12,8 @@ android {
         applicationId = "com.plime.geneapoche"
         minSdk = 26
         targetSdk = 36
-        versionCode = 50
-        versionName = "0.50"
+        versionCode = 51
+        versionName = "0.51"
     }
 
     signingConfigs {
@@ -35,7 +35,7 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // G1-03 : cle de signature dans les secrets GitHub (GP_KEYSTORE...).
-            // Tant que les secrets n'existent pas, repli sur la cle debug (APK installable, non debuggable).
+            // Tant que les secrets n existent pas, repli sur la cle debug (APK installable, non debuggable).
             signingConfig = if (System.getenv("GP_KEYSTORE") != null) {
                 signingConfigs.getByName("release")
             } else {
@@ -67,7 +67,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.19.0")
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
-    // G2-07 : viewModel() pour porter l'etat (survit a la rotation).
+    // G2-07 : viewModel() pour porter l etat (survit a la rotation).
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -75,11 +75,10 @@ dependencies {
     // G3-17 : classes de taille de fenetre (paysage, tablettes).
     implementation("androidx.compose.material3:material3-window-size-class")
     implementation("androidx.compose.material:material-icons-core")
-    // G3-05 : ecran de demarrage aux couleurs de l'application.
+    // G3-05 : ecran de demarrage aux couleurs de l application.
     implementation("androidx.core:core-splashscreen:1.2.0")
     // G2-10 : tests unitaires JVM.
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 }
-
 

@@ -210,7 +210,11 @@ class ActionsApplication(
     // G2-18 residuel : identifiants strictement croissants aussi pour les
     // nouvelles personnes creees par le dialogue d'edition.
     val prochainId: () -> Long,
-    val validerInfo: (Personne, String, Boolean) -> Unit
+    val validerInfo: (Personne, String, Boolean) -> Unit,
+    // G\u00E9n\u00E9aPoche 11 : coche de certification de l'identit\u00E9
+    // ("auto"/"coche"/"croix") et fusion guid\u00E9e d'un doublon.
+    val validerIdentite: (Personne, String) -> Unit,
+    val fusionner: (Long, Long) -> Unit
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -276,7 +280,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.50",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.51",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -662,7 +666,8 @@ fun EcranApplication(
                     actes = actes,
                     onSupprimer = { supprimerPiste(it) },
                     onOuvrirPersonne = { onIdOuvert(it) },
-                    onSauver = enregistrer
+                    onSauver = enregistrer,
+                    onFusionner = { gardeId, supprimeId -> fusionner(gardeId, supprimeId) }
                 )
                 }
             }
@@ -785,7 +790,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.50", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.51", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1005,6 +1010,7 @@ fun EcranApplication(
             onSupprimerActe = { onSupprimerActe(it) },
             onVoirActe = { onVoirActe(it) },
             onValider = { section, valide -> validerInfo(p, section, valide) },
+            onValiderIdentite = { etat -> validerIdentite(p, etat) },
             onEditerIdentite = { onEditionCible(p); onEditionOuverte(true) },
             onModifierEvenementLibre = { ev -> majEvenementLibre(p, ev) },
             onSupprimerEvenementLibre = { idEv -> supprimerEvenementLibre(p, idEv) },
@@ -1270,6 +1276,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 
 
 

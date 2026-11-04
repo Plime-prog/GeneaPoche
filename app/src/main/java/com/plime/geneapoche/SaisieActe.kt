@@ -71,6 +71,10 @@ data class ActeSaisie(
     val dept: String = "",
     // R\u00E9f\u00E9rence de l'acte aux Archives d\u00E9partementales (cote)
     val reference: String = "",
+    // G\u00E9n\u00E9aPoche 11 (11.4) : source et niveau de preuve.
+    val depot: String = "",
+    val dateConsultation: String = "",
+    val fiabilite: Int = -1,
     val date: String = "",
     val heure: String = "",
     // G\u00E9n\u00E9aPoche 3 : intitul\u00E9 libre d'un \u00E9v\u00E9nement (type "E").
@@ -171,6 +175,9 @@ fun EcranSaisieActe(
     var commune by remember { mutableStateOf(initial?.commune ?: "") }
     var dept by remember { mutableStateOf(initial?.dept ?: "") }
     var reference by remember { mutableStateOf(initial?.reference ?: "") }
+    var depot by remember { mutableStateOf(initial?.depot ?: "") }
+    var dateConsultation by remember { mutableStateOf(initial?.dateConsultation ?: "") }
+    var fiabilite by remember { mutableStateOf(initial?.fiabilite ?: -1) }
     var date by remember { mutableStateOf(initial?.date ?: "") }
     var heure by remember { mutableStateOf(initial?.heure ?: "") }
     var intitule by remember { mutableStateOf(initial?.intitule ?: "") }
@@ -226,6 +233,9 @@ fun EcranSaisieActe(
         commune = a.commune
         dept = a.dept
         reference = a.reference
+        depot = a.depot
+        dateConsultation = a.dateConsultation
+        fiabilite = a.fiabilite
         date = a.date
         heure = a.heure
         if (a.intitule.isNotEmpty()) intitule = a.intitule
@@ -309,6 +319,25 @@ fun EcranSaisieActe(
         Champ("Commune", commune, { commune = it })
         Champ("D\u00E9partement (ex 59)", dept, { dept = it })
         Champ("R\u00E9f\u00E9rence de l'acte (cote AD)", reference, { reference = it })
+        // G\u00E9n\u00E9aPoche 11 (11.4) : citation structur\u00E9e fa\u00E7on
+        // Heredis/Gramps : d\u00E9p\u00F4t, date de consultation, fiabilit\u00E9.
+        Champ("D\u00E9p\u00F4t (ex : Archives d\u00E9partementales du Nord)", depot, { depot = it })
+        Champ("Consult\u00E9 le (jj/mm/aaaa)", dateConsultation, { dateConsultation = it })
+        Text(
+            "Niveau de preuve :",
+            fontSize = 13.sp,
+            modifier = Modifier.padding(top = 6.dp)
+        )
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
+            listOf(0, 1, 2, 3).forEach { n ->
+                FilterChip(
+                    selected = fiabilite == n,
+                    onClick = { fiabilite = if (fiabilite == n) -1 else n },
+                    label = { Text(n.toString() + " \u00B7 " + libelleFiabilite(n), fontSize = 11.sp) },
+                    modifier = Modifier.padding(end = 6.dp)
+                )
+            }
+        }
         Champ(
             "Date (jj/mm/aaaa ou republicain)", date, { date = it; confirme = false },
             aide = periodeRealisteTxt(type, exPersonne)
@@ -418,6 +447,9 @@ fun EcranSaisieActe(
                     commune = commune.trim(),
                     dept = dept.trim(),
                     reference = reference.trim(),
+                    depot = depot.trim(),
+                    dateConsultation = dateConsultation.trim(),
+                    fiabilite = fiabilite,
                     date = date.trim(),
                     heure = heure.trim(),
                     intitule = intitule.trim(),
@@ -654,3 +686,4 @@ fun EcranSaisie(
         )
     }
 }
+

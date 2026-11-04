@@ -176,7 +176,7 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.50") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
+    lignes.add("2 VERS 0.51") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
@@ -210,6 +210,11 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
                 lignes.add("2 SOUR " + xrefSour(a.id))
                 if (a.numPage.isNotEmpty()) {
                     lignes.add("3 PAGE p. " + a.numPage + "/" + a.totalPage)
+                }
+                // G\u00E9n\u00E9aPoche 11 (11.4) : niveau de preuve, \u00E9chelle QUAY
+                // (0 indirecte \u00E0 3 acte original), standard Heredis/Gramps.
+                if (a.fiabilite in 0..3) {
+                    lignes.add("3 QUAY " + a.fiabilite)
                 }
             }
         }
@@ -283,6 +288,10 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
                 if (sa.numPage.isNotEmpty()) {
                     lignes.add("3 PAGE p. " + sa.numPage + "/" + sa.totalPage)
                 }
+                // G\u00E9n\u00E9aPoche 11 (11.4) : niveau de preuve QUAY.
+                if (sa.fiabilite in 0..3) {
+                    lignes.add("3 QUAY " + sa.fiabilite)
+                }
             }
         }
         enfants.forEach { e -> if (personnes.any { it.id == e }) lignes.add("1 CHIL " + xrefIndi(e)) }
@@ -297,6 +306,14 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
         lignes.add("1 TITL " + texteGedcom(if (t.isNotEmpty()) t else libelleType(a.type) + (if (pers != null) " de " + pers.titre() else "")))
         if (a.reference.trim().isNotEmpty()) {
             lignes.add("1 REFN " + texteGedcom(a.reference.trim()))
+        }
+        // G\u00E9n\u00E9aPoche 11 (11.4) : d\u00E9p\u00F4t de conservation (AGNC) et
+        // date de consultation de la source.
+        if (a.depot.trim().isNotEmpty()) {
+            lignes.add("1 AGNC " + texteGedcom(a.depot.trim()))
+        }
+        if (a.dateConsultation.trim().isNotEmpty()) {
+            ajouterNote(lignes, 1, "NOTE", "Consult\u00E9 le " + a.dateConsultation.trim())
         }
         if (pers != null) {
             val ch = champsEvenement(pers, a.type)
@@ -650,6 +667,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
 }
 
 fun importerGedcom(texte: String): List<Personne> = importerGedcomRapporte(texte).personnes
+
 
 
 

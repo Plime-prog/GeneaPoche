@@ -210,6 +210,10 @@ data class Personne(
     var profession: String = "",
     // Bloc sans titre de saisie libre sur la fiche (notes personnelles).
     var notesLibres: String = "",
+    // G\u00E9n\u00E9aPoche 11 (11.0) : certification de l'identit\u00E9.
+    // "auto" = coche si au moins 1 renseignement sur 6, croix sinon ;
+    // "coche" / "croix" = choix manuel (possible m\u00EAme si incomplet).
+    var identiteVerifiee: String = "auto",
     var dateNaissance: String = "",
     var heureNaissance: String = "",
     var lieuNaissance: String = "",
@@ -355,6 +359,7 @@ data class Personne(
         o.put("sexe", sexe)
         o.put("profession", profession)
         o.put("notesLibres", notesLibres)
+        o.put("identiteVerifiee", identiteVerifiee)
         o.put("dateNaissance", dateNaissance)
         o.put("heureNaissance", heureNaissance)
         o.put("lieuNaissance", lieuNaissance)
@@ -438,6 +443,7 @@ data class Personne(
                 sexe = o.optString("sexe", ""),
                 profession = o.optString("profession", ""),
                 notesLibres = o.optString("notesLibres", ""),
+                identiteVerifiee = o.optString("identiteVerifiee", "auto"),
                 dateNaissance = o.optString("dateNaissance", ""),
                 heureNaissance = o.optString("heureNaissance", ""),
                 lieuNaissance = o.optString("lieuNaissance", ancienneNaissance),
@@ -628,7 +634,16 @@ data class Acte(
     // Transcription integrale (saisie par acte) : ages, temoins, signataires.
     var contenu: String = "",
     // Reference de l'acte aux Archives departementales (cote, ex "1890-N-123").
-    var reference: String = ""
+    var reference: String = "",
+    // G\u00E9n\u00E9aPoche 11 (11.4) : source et niveau de preuve structures.
+    // Depot = lieu de conservation (ex "Archives d\u00E9partementales du Nord").
+    var depot: String = "",
+    // Date de consultation de la source (jj/mm/aaaa, saisie libre).
+    var dateConsultation: String = "",
+    // Fiabilit\u00E9 / niveau de preuve, \u00E9chelle GEDCOM QUAY :
+    // -1 = non renseign\u00E9e, 0 = indirecte/incertaine, 1 = plausible,
+    // 2 = fiable (registre), 3 = acte original.
+    var fiabilite: Int = -1
 ) {
     fun versJson(): JSONObject {
         val o = JSONObject()
@@ -641,6 +656,9 @@ data class Acte(
         o.put("totalPage", totalPage)
         o.put("contenu", contenu)
         o.put("reference", reference)
+        o.put("depot", depot)
+        o.put("dateConsultation", dateConsultation)
+        o.put("fiabilite", fiabilite)
         return o
     }
 
@@ -654,10 +672,14 @@ data class Acte(
             numPage = o.optString("numPage", ""),
             totalPage = o.optString("totalPage", ""),
             contenu = o.optString("contenu", ""),
-            reference = o.optString("reference", "")
+            reference = o.optString("reference", ""),
+            depot = o.optString("depot", ""),
+            dateConsultation = o.optString("dateConsultation", ""),
+            fiabilite = o.optInt("fiabilite", -1)
         )
     }
 }
+
 
 
 

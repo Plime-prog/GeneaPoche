@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -172,6 +173,37 @@ fun anomaliesPour(personnes: List<Personne>): List<Anomalie> {
     }
     return l
 }
+
+// ---------------------------------------------------------------- Diagnostic de l'arbre
+// G\u00E9n\u00E9aPoche 11 (11.2) : doublons, branches isol\u00E9es, identit\u00E9s \u00E0 certifier.
+
+// Doublon possible : m\u00EAme nom ET m\u00EAmes pr\u00E9noms (normalis\u00E9s), fusion guid\u00E9e
+// propos\u00E9e dans le journal.
+data class Doublon(val idA: Long, val idB: Long, val nom: String)
+
+fun doublonsPotentiels(personnes: List<Personne>): List<Doublon> {
+    val l = mutableListOf<Doublon>()
+    personnes.forEach { p ->
+        personnes.filter { it.id > p.id }.forEach { q ->
+            if (p.nom.trim().isNotEmpty() &&
+                p.nom.trim() == q.nom.trim() && p.prenoms.trim() == q.prenoms.trim()) {
+                l.add(Doublon(p.id, q.id, p.titre()))
+            }
+        }
+    }
+    return l
+}
+
+// Branche isol\u00E9e : personne sans aucun lien de parent\u00E9 dans la base
+// (ni parents, ni conjoint, ni enfants, ni r\u00E9f\u00E9renc\u00E9e par quiconque).
+fun brancheIsolee(p: Personne, personnes: List<Personne>): Boolean =
+    p.pere == 0L && p.mere == 0L && p.conjoint == 0L &&
+        p.conjointsSupp.isEmpty() && p.enfants.isEmpty() &&
+        personnes.none {
+            it.id != p.id && (it.pere == p.id || it.mere == p.id ||
+                it.conjoint == p.id || it.conjointsSupp.contains(p.id) ||
+                it.enfants.contains(p.id))
+        }
 
 // Un acte du type avec une IMAGE (les actes transcrits sans image ont un contenu).
 fun aUneImage(actes: List<Acte>, personneId: Long, type: String): Boolean {
@@ -334,7 +366,9 @@ fun EcranJournal(
     actes: List<Acte>,
     onSupprimer: (Piste) -> Unit,
     onOuvrirPersonne: (Long) -> Unit,
-    onSauver: () -> Unit
+    onSauver: () -> Unit,
+    // G\u00E9n\u00E9aPoche 11 (11.2) : fusion guid\u00E9e d'un doublon (garder A / garder B).
+    onFusionner: (Long, Long) -> Unit = { _, _ -> }
 ) {
     val ouvertes = pistes.filter { !it.faite }
     // REGLE DES 75 ANS : seules les recherches dont l'\u00E9v\u00E9nement vis\u00E9 est
@@ -350,9 +384,17 @@ fun EcranJournal(
         .sortedWith { a, b -> comparerNumeros(numeroDePiste(a, personnes), numeroDePiste(b, personnes)) }
         .take(10)
     val anomalies = anomaliesPour(personnes)
+    // G\u00E9n\u00E9aPoche 11 (11.2) : diagnostic complet de l'arbre.
+    val doublons = doublonsPotentiels(personnes)
+    val isolees = personnes.filter { brancheIsolee(it, personnes) }
+    val nonCertifiees = personnes.filterNot { identiteCertifiee(it) }
+    val diagnostic = anomalies.isNotEmpty() || doublons.isNotEmpty() || isolees.isNotEmpty()
+    // G\u00E9n\u00E9aPoche 11 : fusion guid\u00E9e en attente de confirmation.
+    var fusionEnCours by remember { mutableStateOf<Pair<Long, Long>?>(null) }
+    fun nomDe(id: Long): String = personnes.firstOrNull { it.id == id }?.titre() ?: "?"
 
     LazyColumn(Modifier.fillMaxSize().padding(12.dp)) {
-        if (anomalies.isNotEmpty()) {
+        if (diagnostic) {
             item {
                 Card(
                     Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -361,9 +403,19 @@ fun EcranJournal(
                 ) {
                     Column(Modifier.fillMaxWidth().padding(12.dp)) {
                         Text(
-                            "Coh\u00E9rence : " + anomalies.size + " anomalie(s)",
+                            "Diagnostic de l'arbre : " +
+                                (anomalies.size + doublons.size + isolees.size).toString() +
+                                " point(s) \u00E0 examiner",
                             fontWeight = FontWeight.Bold, color = Color(0xFF9C5A00)
                         )
+                        if (anomalies.isNotEmpty()) {
+                            Text(
+                                "Coh\u00E9rence : " + anomalies.size + " anomalie(s)",
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF9C5A00),
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                        }
                         anomalies.take(5).forEach { an ->
                             // Touchez l'anomalie : la fiche a corriger s'ouvre directement.
                             Text(
@@ -377,11 +429,95 @@ fun EcranJournal(
                         }
                         if (anomalies.size > 5) {
                             Text(
-                                "+ " + (anomalies.size - 5) + " autre(s), dans la suite du journal.",
+                                "+ " + (anomalies.size - 5) + " autre(s) anomalie(s).",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 4.dp)
                             )
+                        }
+                        // Doublons : fusion guid\u00E9e (garder l'une des deux fiches).
+                        if (doublons.isNotEmpty()) {
+                            Text(
+                                "Doublons : " + doublons.size,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF9C5A00),
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                            doublons.take(4).forEach { d ->
+                                Text(
+                                    "M\u00EAme nom : " + d.nom,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                                Row {
+                                    TextButton(onClick = { fusionEnCours = d.idA to d.idB }) {
+                                        Text("Garder " + nomDe(d.idA), fontSize = 12.sp)
+                                    }
+                                    TextButton(onClick = { fusionEnCours = d.idB to d.idA }) {
+                                        Text("Garder " + nomDe(d.idB), fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                            if (doublons.size > 4) {
+                                Text(
+                                    "+ " + (doublons.size - 4) + " autre(s) doublon(s).",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        // Branches isol\u00E9es : personne sans aucun lien.
+                        if (isolees.isNotEmpty()) {
+                            Text(
+                                "Branches isol\u00E9es : " + isolees.size + " personne(s) sans lien",
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF9C5A00),
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                            isolees.take(4).forEach { iso ->
+                                Text(
+                                    iso.titre() + " (aucun lien de parent\u00E9)",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = CouleurVertFonce,
+                                    modifier = Modifier
+                                        .padding(top = 4.dp)
+                                        .clickable { onOuvrirPersonne(iso.id) }
+                                )
+                            }
+                            if (isolees.size > 4) {
+                                Text(
+                                    "+ " + (isolees.size - 4) + " autre(s).",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        // G\u00E9n\u00E9aPoche 11 (11.0) : identit\u00E9s non certifi\u00E9es
+                        // (la coche sert aussi aux recherches).
+                        if (nonCertifiees.isNotEmpty()) {
+                            Text(
+                                "Identit\u00E9 non certifi\u00E9e : " + nonCertifiees.size + " personne(s)",
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF9C5A00),
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                            nonCertifiees.take(4).forEach { nc ->
+                                Text(
+                                    nc.titre() + " \u2013 \u00E0 certifier depuis sa fiche",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = CouleurVertFonce,
+                                    modifier = Modifier
+                                        .padding(top = 4.dp)
+                                        .clickable { onOuvrirPersonne(nc.id) }
+                                )
+                            }
+                            if (nonCertifiees.size > 4) {
+                                Text(
+                                    "+ " + (nonCertifiees.size - 4) + " autre(s).",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
@@ -423,6 +559,33 @@ fun EcranJournal(
         // Une recherche effectuee est supprimee sans archive ni historique.
 
         item { Spacer(Modifier.height(24.dp)) }
+    }
+
+    // G\u00E9n\u00E9aPoche 11 (11.2) : confirmation de la fusion guid\u00E9e.
+    if (fusionEnCours != null) {
+        val gardeId = fusionEnCours!!.first
+        val supprimeId = fusionEnCours!!.second
+        AlertDialog(
+            onDismissRequest = { fusionEnCours = null },
+            title = { Text("Fusionner les deux fiches ?") },
+            text = {
+                Text(
+                    "Toutes les informations et tous les liens de " + nomDe(supprimeId) +
+                        " seront report\u00E9s sur " + nomDe(gardeId) +
+                        " (aucune donn\u00E9e d\u00E9j\u00E0 pr\u00E9sente ne sera \u00E9cras\u00E9e), puis la fiche " +
+                        nomDe(supprimeId) + " dispara\u00EEtra."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    fusionEnCours = null
+                    onFusionner(gardeId, supprimeId)
+                }) { Text("Fusionner", color = CouleurVertFonce, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { fusionEnCours = null }) { Text("Annuler") }
+            }
+        )
     }
 }
 
@@ -518,5 +681,6 @@ fun CarteRecherche(
         }
     }
 }
+
 
 
