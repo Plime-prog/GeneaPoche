@@ -143,18 +143,27 @@ fun SectionTitre(t: String) {
 @Composable
 fun BlocParent(libelle: String, e: ChampsParent, dateActe: String) {
     SectionTitre(libelle)
-    Champ("Nom", e.nom, { e.nom = it })
-    Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it })
     val age = ageActe(dateActe, e.ne)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Champ("Nom", e.nom, { e.nom = it }, modifier = Modifier.weight(1f))
+        Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it }, modifier = Modifier.weight(1f))
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
     Champ(
         "N\u00E9(e) le (jj/mm/aaaa)", e.ne, { e.ne = it },
-        aide = if (age.isNotEmpty()) "\u00C2ge \u00E0 l'acte : " + age else "\u00C2ge calcul\u00E9 automatiquement"
+        aide = if (age.isNotEmpty()) "\u00C2ge \u00E0 l'acte : " + age else "\u00C2ge calcul\u00E9 automatiquement",
+        modifier = Modifier.weight(1f)
     )
-    Champ("Lieu de naissance", e.lieu, { e.lieu = it })
-    Champ("D\u00E9partement (ex 59)", e.dept, { e.dept = it })
-    Champ("Profession", e.profession, { e.profession = it })
-    Champ("D\u00E9c\u00E9d\u00E9(e) le", e.deces, { e.deces = it })
-    Champ("Lieu de d\u00E9c\u00E8s", e.lieuDeces, { e.lieuDeces = it })
+    Champ("Lieu de naissance", e.lieu, { e.lieu = it }, modifier = Modifier.weight(1f))
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Champ("D\u00E9partement (ex 59)", e.dept, { e.dept = it }, modifier = Modifier.weight(1f))
+        Champ("Profession", e.profession, { e.profession = it }, modifier = Modifier.weight(1f))
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Champ("D\u00E9c\u00E9d\u00E9(e) le", e.deces, { e.deces = it }, modifier = Modifier.weight(1f))
+        Champ("Lieu de d\u00E9c\u00E8s", e.lieuDeces, { e.lieuDeces = it }, modifier = Modifier.weight(1f))
+    }
 }
 
 @Composable
@@ -171,50 +180,50 @@ fun EcranSaisieActe(
     // GeneaPoche 4 : type impose par l'appui long sur un bloc de la fiche.
     typeImpose: String? = null
 ) {
-    var type by remember { mutableStateOf(typeImpose ?: initial?.type ?: "N") }
-    var commune by remember { mutableStateOf(initial?.commune ?: "") }
-    var dept by remember { mutableStateOf(initial?.dept ?: "") }
-    var reference by remember { mutableStateOf(initial?.reference ?: "") }
-    var depot by remember { mutableStateOf(initial?.depot ?: "") }
-    var dateConsultation by remember { mutableStateOf(initial?.dateConsultation ?: "") }
-    var fiabilite by remember { mutableStateOf(initial?.fiabilite ?: -1) }
-    var date by remember { mutableStateOf(initial?.date ?: "") }
-    var heure by remember { mutableStateOf(initial?.heure ?: "") }
-    var intitule by remember { mutableStateOf(initial?.intitule ?: "") }
-    var acteId by remember { mutableStateOf(initial?.acteId ?: 0L) }
+    var type by remember(initial) { mutableStateOf(typeImpose ?: initial?.type ?: "N") }
+    var commune by remember(initial) { mutableStateOf(initial?.commune ?: "") }
+    var dept by remember(initial) { mutableStateOf(initial?.dept ?: "") }
+    var reference by remember(initial) { mutableStateOf(initial?.reference ?: "") }
+    var depot by remember(initial) { mutableStateOf(initial?.depot ?: "") }
+    var dateConsultation by remember(initial) { mutableStateOf(initial?.dateConsultation ?: "") }
+    var fiabilite by remember(initial) { mutableStateOf(initial?.fiabilite ?: -1) }
+    var date by remember(initial) { mutableStateOf(initial?.date ?: "") }
+    var heure by remember(initial) { mutableStateOf(initial?.heure ?: "") }
+    var intitule by remember(initial) { mutableStateOf(initial?.intitule ?: "") }
+    var acteId by remember(initial) { mutableStateOf(initial?.acteId ?: 0L) }
     // Parent choisi pour la naissance d'un enfant (menu Saisie).
-    var parentPourEnfantId by remember { mutableStateOf(initial?.parentPourEnfant ?: 0L) }
-    var personneId by remember { mutableStateOf(initial?.personneId ?: 0L) }
-    var nom by remember { mutableStateOf(initial?.nom ?: "") }
-    var prenoms by remember { mutableStateOf(initial?.prenoms ?: "") }
-    var sexe by remember { mutableStateOf(initial?.sexe ?: "") }
-    var profession by remember { mutableStateOf(initial?.profession ?: "") }
-    val pere = remember {
+    var parentPourEnfantId by remember(initial) { mutableStateOf(initial?.parentPourEnfant ?: 0L) }
+    var personneId by remember(initial) { mutableStateOf(initial?.personneId ?: 0L) }
+    var nom by remember(initial) { mutableStateOf(initial?.nom ?: "") }
+    var prenoms by remember(initial) { mutableStateOf(initial?.prenoms ?: "") }
+    var sexe by remember(initial) { mutableStateOf(initial?.sexe ?: "") }
+    var profession by remember(initial) { mutableStateOf(initial?.profession ?: "") }
+    val pere = remember(initial) {
         ChampsParent().apply {
             initial?.let { a -> nom = a.pereNom; prenoms = a.perePrenoms; ne = a.pereNe; lieu = a.pereLieu; dept = a.pereDept; profession = a.pereProf; deces = a.pereDeces; lieuDeces = a.pereLieuDeces }
         }
     }
-    val mere = remember {
+    val mere = remember(initial) {
         ChampsParent().apply {
             initial?.let { a -> nom = a.mereNom; prenoms = a.merePrenoms; ne = a.mereNe; lieu = a.mereLieu; dept = a.mereDept; profession = a.mereProf; deces = a.mereDeces; lieuDeces = a.mereLieuDeces }
         }
     }
-    var marieeId by remember { mutableStateOf(initial?.marieeId ?: 0L) }
-    var marieeNom by remember { mutableStateOf(initial?.marieeNom ?: "") }
-    var marieePrenoms by remember { mutableStateOf(initial?.marieePrenoms ?: "") }
-    var marieeProf by remember { mutableStateOf(initial?.marieeProf ?: "") }
-    val pereMariee = remember {
+    var marieeId by remember(initial) { mutableStateOf(initial?.marieeId ?: 0L) }
+    var marieeNom by remember(initial) { mutableStateOf(initial?.marieeNom ?: "") }
+    var marieePrenoms by remember(initial) { mutableStateOf(initial?.marieePrenoms ?: "") }
+    var marieeProf by remember(initial) { mutableStateOf(initial?.marieeProf ?: "") }
+    val pereMariee = remember(initial) {
         ChampsParent().apply {
             initial?.let { a -> nom = a.pMarieeNom; prenoms = a.pMarieePrenoms; ne = a.pMarieeNe; lieu = a.pMarieeLieu; dept = a.pMarieeDept; profession = a.pMarieeProf; deces = a.pMarieeDeces; lieuDeces = a.pMarieeLieuDeces }
         }
     }
-    val mereMariee = remember {
+    val mereMariee = remember(initial) {
         ChampsParent().apply {
             initial?.let { a -> nom = a.mMarieeNom; prenoms = a.mMarieePrenoms; ne = a.mMarieeNe; lieu = a.mMarieeLieu; dept = a.mMarieeDept; profession = a.mMarieeProf; deces = a.mMarieeDeces; lieuDeces = a.mMarieeLieuDeces }
         }
     }
-    val temoins = remember { mutableStateListOf<TemoinSaisie>().also { l -> initial?.temoins?.forEach { l.add(it) } } }
-    val signataires = remember { mutableStateListOf<String>().also { l -> initial?.signataires?.forEach { l.add(it) } } }
+    val temoins = remember(initial) { mutableStateListOf<TemoinSaisie>().also { l -> initial?.temoins?.forEach { l.add(it) } } }
+    val signataires = remember(initial) { mutableStateListOf<String>().also { l -> initial?.signataires?.forEach { l.add(it) } } }
     var pickerCible by remember { mutableStateOf(0) } // 0 = personne concernee, 1 = mariee
     var pickerOuvert by remember { mutableStateOf(false) }
     // G\u00E9n\u00E9aPoche 3 : confirmation d'une date hors p\u00E9riode r\u00E9aliste.
@@ -270,9 +279,12 @@ fun EcranSaisieActe(
         temoins.forEachIndexed { i, t -> if (t.nom.isNotBlank()) add("T\u00E9moin " + (i + 1).toString()) }
     }
 
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)
-    ) {
+    // v0.58 : formulaire COMPACT. Le contenu defile, mais le bouton
+    // Enregistrer reste TOUJOURS visible en bas, hors du defilement.
+    Column(Modifier.fillMaxSize()) {
+        Column(
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(12.dp)
+        ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (onFermer != null) {
                 IconButton(onClick = onFermer) {
@@ -316,13 +328,16 @@ fun EcranSaisieActe(
             Champ("Intitul\u00E9 (profession, d\u00E9m\u00E9nagement\u2026)", intitule, { intitule = it })
         }
 
-        Champ("Commune", commune, { commune = it })
-        Champ("D\u00E9partement (ex 59)", dept, { dept = it })
-        Champ("R\u00E9f\u00E9rence de l'acte (cote AD)", reference, { reference = it })
-        // G\u00E9n\u00E9aPoche 11 (11.4) : citation structur\u00E9e fa\u00E7on
-        // Heredis/Gramps : d\u00E9p\u00F4t, date de consultation, fiabilit\u00E9.
+        // v0.58 : champs compactes, deux par ligne.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Champ("Commune", commune, { commune = it }, modifier = Modifier.weight(1f))
+            Champ("D\u00E9partement (ex 59)", dept, { dept = it }, modifier = Modifier.weight(1f))
+        }
         Champ("D\u00E9p\u00F4t (ex : Archives d\u00E9partementales du Nord)", depot, { depot = it })
-        Champ("Consult\u00E9 le (jj/mm/aaaa)", dateConsultation, { dateConsultation = it })
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Champ("R\u00E9f. (cote AD)", reference, { reference = it }, modifier = Modifier.weight(1f))
+            Champ("Consult\u00E9 le (jj/mm/aaaa)", dateConsultation, { dateConsultation = it }, modifier = Modifier.weight(1f))
+        }
         Text(
             "Niveau de preuve :",
             fontSize = 13.sp,
@@ -338,12 +353,15 @@ fun EcranSaisieActe(
                 )
             }
         }
-        Champ(
-            "Date (jj/mm/aaaa ou republicain)", date, { date = it; confirme = false },
-            erreur = !dateValide(date),
-            aide = periodeRealisteTxt(type, exPersonne)
-        )
-        Champ("Heure (hh:mm)", heure, { heure = it })
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Champ(
+                "Date (jj/mm/aaaa ou republicain)", date, { date = it; confirme = false },
+                erreur = !dateValide(date),
+                aide = periodeRealisteTxt(type, exPersonne),
+                modifier = Modifier.weight(1f)
+            )
+            Champ("Heure (hh:mm)", heure, { heure = it }, modifier = Modifier.weight(1f))
+        }
 
         SectionTitre("Personne concern\u00E9e")
         if (exPersonne != null) {
@@ -363,13 +381,15 @@ fun EcranSaisieActe(
                 fontSize = 13.sp
             )
         }
-        Champ("Nom", nom, { nom = it })
-        Champ("Pr\u00E9noms", prenoms, { prenoms = it })
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Champ("Nom", nom, { nom = it }, modifier = Modifier.weight(1f))
+            Champ("Pr\u00E9noms", prenoms, { prenoms = it }, modifier = Modifier.weight(1f))
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("M") })
             FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("F") })
+            Champ("Profession", profession, { profession = it }, modifier = Modifier.weight(1f))
         }
-        Champ("Profession", profession, { profession = it })
 
         BlocParent("P\u00E8re", pere, date)
         BlocParent("M\u00E8re", mere, date)
@@ -386,8 +406,10 @@ fun EcranSaisieActe(
             OutlinedButton(onClick = { pickerCible = 1; pickerOuvert = true }) {
                 Text("Choisir la mari\u00E9e parmi les personnes")
             }
-            Champ("Nom", marieeNom, { marieeNom = it })
-            Champ("Pr\u00E9noms", marieePrenoms, { marieePrenoms = it })
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Champ("Nom", marieeNom, { marieeNom = it }, modifier = Modifier.weight(1f))
+                Champ("Pr\u00E9noms", marieePrenoms, { marieePrenoms = it }, modifier = Modifier.weight(1f))
+            }
             Champ("Profession", marieeProf, { marieeProf = it })
             BlocParent(if (type == "M") "P\u00E8re de la mari\u00E9e" else "P\u00E8re du conjoint", pereMariee, date)
             BlocParent(if (type == "M") "M\u00E8re de la mari\u00E9e" else "M\u00E8re du conjoint", mereMariee, date)
@@ -400,9 +422,11 @@ fun EcranSaisieActe(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Champ("Nom du t\u00E9moin", t.nom, { temoins[i] = t.copy(nom = it) })
-                    Champ("Pr\u00E9noms du t\u00E9moin", t.prenoms, { temoins[i] = t.copy(prenoms = it) })
-                    Champ("Profession du t\u00E9moin", t.profession, { temoins[i] = t.copy(profession = it) })
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Champ("Nom du t\u00E9moin", t.nom, { temoins[i] = t.copy(nom = it) }, modifier = Modifier.weight(1f))
+                        Champ("Pr\u00E9noms", t.prenoms, { temoins[i] = t.copy(prenoms = it) }, modifier = Modifier.weight(1f))
+                        Champ("Profession", t.profession, { temoins[i] = t.copy(profession = it) }, modifier = Modifier.weight(1f))
+                    }
                 }
                 IconButton(onClick = {
                     signataires.remove("T\u00E9moin " + (i + 1).toString())
@@ -439,7 +463,8 @@ fun EcranSaisieActe(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        }
+        // v0.58 : bouton TOUJOURS visible en bas, hors du defilement.
         Button(
             onClick = {
                 val acte = ActeSaisie(
@@ -490,9 +515,9 @@ fun EcranSaisieActe(
                 }
             },
             enabled = (personneId != 0L || nom.isNotBlank()) && dateValide(date) && heureValide(heure),
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Enregistrer l'acte") }
-        Spacer(Modifier.height(24.dp))
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
+        ) { Text("Enregistrer") }
+        Spacer(Modifier.height(12.dp))
     }
 
     if (avertissement != null && acteEnAttente != null) {
@@ -687,5 +712,6 @@ fun EcranSaisie(
         )
     }
 }
+
 
 
