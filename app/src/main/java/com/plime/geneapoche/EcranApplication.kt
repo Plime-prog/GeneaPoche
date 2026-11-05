@@ -1034,8 +1034,8 @@ fun EcranApplication(
     if (editionOuverte) {
         // G2-18 residuel : identifiant alloue UNE seule fois par ouverture du
         // dialogue, strictement croissant (compteur persistant).
-        key(editionCible?.id ?: idNouvellePersonne) {
         val idNouvellePersonne = remember { prochainId() }
+        key(editionCible?.id ?: idNouvellePersonne) {
         DialogueEdition(
             cible = editionCible,
             idNouvelle = idNouvellePersonne,
@@ -1074,8 +1074,8 @@ fun EcranApplication(
                 editionCible?.let { onConfirmSuppression(it) }
                 onEditionOuverte(false)
             }
-        }
         )
+        }
     }
 
     if (pickerRole.isNotEmpty() && ouverte != null) {
@@ -1222,3 +1222,101 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         ) {
             // Vignette : rond au NUMERO (Sosa ou d'Aboville) ; PASTILLE
             // VIDE si la personne n'est ni Sosa ni d'Aboville (G\u00E9n\u00E9aPoche 5).
+            val vignette = p.numeroAffiche()
+            val couleurAvatar = when (p.sexe) {
+                "F" -> CouleurRose
+                "M" -> CouleurBleu
+                else -> CouleurNeutreDoux
+            }
+            Box(
+                Modifier.size(40.dp).clip(CircleShape).background(couleurAvatar),
+                contentAlignment = Alignment.Center
+            ) {
+                if (vignette.isNotEmpty()) {
+                    Text(
+                        vignette,
+                        color = CouleurVertFonce,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = when {
+                            vignette.length <= 3 -> 15.sp
+                            vignette.length <= 5 -> 12.sp
+                            else -> 12.sp
+                        },
+                        maxLines = 1
+                    )
+                }
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    p.titre(),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                val n = dateAffichee(p.dateNaissance.trim())
+                val m = dateAffichee(p.dateMariage.trim())
+                val d = dateAffichee(p.dateDeces.trim())
+                if (n.isNotEmpty() || m.isNotEmpty() || d.isNotEmpty()) {
+                    val morceaux = mutableListOf<String>()
+                    if (n.isNotEmpty()) morceaux.add("N. " + n)
+                    if (m.isNotEmpty()) morceaux.add("M. " + m)
+                    if (d.isNotEmpty() && decesAffichable(p)) morceaux.add("D. " + d)
+                    Text(morceaux.joinToString("  \u2013  "), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            // G\u00E9n\u00E9aPoche 12 : coche (identit\u00E9 certifi\u00E9e) ou croix
+            // (\u00E0 v\u00E9rifier) rappel\u00E9e directement sur le nom de la liste.
+            if (identiteCertifiee(p)) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = "Identit\u00E9 certifi\u00E9e",
+                    Modifier.size(20.dp),
+                    tint = CouleurVertFonce
+                )
+            } else {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = "Identit\u00E9 \u00E0 v\u00E9rifier",
+                    Modifier.size(16.dp),
+                    tint = CouleurRouge
+                )
+            }
+            Spacer(Modifier.width(6.dp))
+            // G\u00E9n\u00E9aPoche 5 : \u00E9tiquette des renseignements sur 6
+            // (N date compl\u00E8te, N commune, N d\u00E9partement, D date
+            // compl\u00E8te, D commune, D d\u00E9partement), rouge (0) \u00E0 vert (6).
+            val n6 = renseignementsN6(p)
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = couleurCompteur(n6, 6)
+            ) {
+                Text(
+                    "  " + n6.toString() + "/6  ",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(Modifier.width(6.dp))
+            IconButton(onClick = onSupprimer, Modifier.size(30.dp)) {
+                Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(16.dp))
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

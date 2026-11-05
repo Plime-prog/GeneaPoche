@@ -98,7 +98,6 @@ fun DialogueEdition(
         listOf(dateNaissance, dateBapteme, dateMariage, dateDeces, dateSepulture).all { dateValide(it) } &&
         listOf(heureNaissance, heureBapteme, heureMariage, heureDeces, heureSepulture).all { heureValide(it) }
 
-
     AlertDialog(
         onDismissRequest = onAnnuler,
         title = { Text(if (cible == null) "Ajouter une personne" else "Modifier la personne") },
