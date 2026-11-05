@@ -275,20 +275,20 @@ fun EcranPersonne(
                                     }
                                 )
                             },
-                            Modifier.size(30.dp)
+                            Modifier.size(36.dp)
                         ) {
                             if (identiteCertifiee(p)) {
                                 Icon(
                                     Icons.Filled.Check,
                                     contentDescription = "Identit\u00E9 certifi\u00E9e",
-                                    Modifier.size(18.dp),
+                                    Modifier.size(24.dp),
                                     tint = Color.White
                                 )
                             } else {
                                 Icon(
                                     Icons.Filled.Close,
                                     contentDescription = "Identit\u00E9 non certifi\u00E9e",
-                                    Modifier.size(18.dp),
+                                    Modifier.size(24.dp),
                                     tint = CouleurRouge
                                 )
                             }
@@ -1682,6 +1682,7 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 
 

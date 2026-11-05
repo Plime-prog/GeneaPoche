@@ -36,6 +36,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
@@ -280,7 +281,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.53",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.54",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -369,7 +370,8 @@ fun EcranApplication(
                 } else {
                     // Onglet PERSONNES : compteur, tri A-Z / Aboville / Branches, index, cartes.
                     // triPersonnes : 0 = A-Z, 1 = Aboville (n croissant), 2 = Branches.
-                    var triPersonnes by remember { mutableStateOf(0) }
+                    // G\u00E9n\u00E9aPoche 12 : ABOVILLE par d\u00E9faut, Branches puis A-Z.
+                    var triPersonnes by remember { mutableStateOf(1) }
                     val triees = personnes.sortedWith(
                         compareBy(
                             { it.nom.trim().uppercase() },
@@ -476,12 +478,6 @@ fun EcranApplication(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 FilterChip(
-                                    selected = triPersonnes == 0,
-                                    onClick = { triPersonnes = 0 },
-                                    label = { Text("A\u2013Z") }
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                FilterChip(
                                     selected = triPersonnes == 1,
                                     onClick = { triPersonnes = 1 },
                                     label = { Text("Aboville") }
@@ -491,6 +487,12 @@ fun EcranApplication(
                                     selected = triPersonnes == 2,
                                     onClick = { triPersonnes = 2 },
                                     label = { Text("Branches") }
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                FilterChip(
+                                    selected = triPersonnes == 0,
+                                    onClick = { triPersonnes = 0 },
+                                    label = { Text("A\u2013Z") }
                                 )
                         }
                         // Index alphabetique ou 4 branches : FIGE aussi.
@@ -790,7 +792,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.53", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.54", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1255,6 +1257,24 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
                     Text(morceaux.joinToString("  \u2013  "), style = MaterialTheme.typography.bodySmall)
                 }
             }
+            // G\u00E9n\u00E9aPoche 12 : coche (identit\u00E9 certifi\u00E9e) ou croix
+            // (\u00E0 v\u00E9rifier) rappel\u00E9e directement sur le nom de la liste.
+            if (identiteCertifiee(p)) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = "Identit\u00E9 certifi\u00E9e",
+                    Modifier.size(20.dp),
+                    tint = CouleurVertFonce
+                )
+            } else {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = "Identit\u00E9 \u00E0 v\u00E9rifier",
+                    Modifier.size(16.dp),
+                    tint = CouleurRouge
+                )
+            }
+            Spacer(Modifier.width(6.dp))
             // G\u00E9n\u00E9aPoche 5 : \u00E9tiquette des renseignements sur 6
             // (N date compl\u00E8te, N commune, N d\u00E9partement, D date
             // compl\u00E8te, D commune, D d\u00E9partement), rouge (0) \u00E0 vert (6).
@@ -1277,6 +1297,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 
 
 
