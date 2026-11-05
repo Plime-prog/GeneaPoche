@@ -1,8 +1,9 @@
-## v0.58 – Correctif : saisie d'acte (personne erronée) + formulaire compact
+## v0.59 – Correctif : liens parentaux et corrections enfin enregistrées (saisie d'acte)
 
-- **Correctif important** : lors d'une correction via « Saisie d'un acte », le formulaire pouvait réutiliser les états d'une saisie précédente (intitulé, personne, département… appartenant à une autre fiche), et la modification était enregistrée sur le mauvais acte. Les états sont désormais resynchronisés à chaque ouverture, et une instance neuve du formulaire est créée à chaque saisie (compteur d'ouverture).
-- **Formulaire compact** : bouton « Enregistrer » toujours visible en bas, hors défilement ; champs regroupés deux par ligne (commune + département, date + heure, nom + prénoms, profession, conjoint, parents, témoins).
-- versionCode 58.
+- **Bug corrigé** : corriger la naissance d'une personne via la saisie d'acte montrait parfois un mauvais parent (ex la belle-mère) avec son département, et la correction ne s'enregistrait jamais.
+- **Corrections désormais enregistrées** : en édition d'un acte, les valeurs saisies pour le père et la mère (département, lieu, dates, profession) REMPLACENT celles de la fiche du parent (un champ laissé vide ne change rien).
+- **Réparation des liens erronés** : en édition, le nom saisi pour le père ou la mère est la référence — s'il correspond à une autre fiche, le lien de parenté est REMPLACÉ (l'ancien parent perd l'enfant, le nouveau le gagne, cohérence des dates vérifiée) ; un nom vidé retire le lien.
+- versionCode 59.
 
 ## v0.58 – Correctif : saisie d'acte (personne erronée) + formulaire compact
 
