@@ -282,7 +282,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.59",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche u2013 v0.60",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -642,10 +642,15 @@ fun EcranApplication(
                         personnes = personnes,
                         actes = actes,
                         onEnregistrer = enregistrerActe,
-                        initial = ActeSaisie(
-                            type = saisieType ?: "N",
-                            parentPourEnfant = saisieParentEnfant
-                        ),
+                        // v0.60 : l'onglet Saisie demarre sur la derniere
+                        // fiche ouverte (pre-remplissage) au lieu d'un
+                        // formulaire vierge.
+                        initial = if (saisieParentEnfant == 0L && idOuvert != 0L && saisieType != "E") {
+                            personneParId(personnes, idOuvert)?.let { cand -> prefillActe(cand, personnes, actes, saisieType) }
+                                ?: ActeSaisie(type = saisieType ?: "N")
+                        } else {
+                            ActeSaisie(type = saisieType ?: "N", parentPourEnfant = saisieParentEnfant)
+                        },
                         onFermer = { saisieType = null }
                     )
                 }
@@ -793,7 +798,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.59", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.60", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1306,6 +1311,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 
 
 

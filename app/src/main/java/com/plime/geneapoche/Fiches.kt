@@ -746,7 +746,7 @@ fun EcranPersonne(
                 key(p.id, tPre, saisieCompteur) {
                 EcranSaisieActe(
                     personnes = personnes,
-                    initial = prefillActe(p, personnes, actes, tPre.ifEmpty { null }, editionFiche = tPre.isNotEmpty()),
+                    initial = remember(saisieCompteur, tPre, p.id) { prefillActe(p, personnes, actes, tPre.ifEmpty { null }, editionFiche = tPre.isNotEmpty()) },
                     // GeneaPoche 4 : appui long sur un bloc = SEUL ce type d'acte.
                     typeImpose = tPre.ifEmpty { null },
                     onEnregistrer = { a ->                        onEnregistrerActe(a)
@@ -1343,6 +1343,10 @@ fun CarteEvenement(
                     TextButton(onClick = { onOuvrirParent("pere") }) {
                         Text("Cr\u00E9er", fontSize = 12.sp)
                     }
+                } else {
+                    TextButton(onClick = { onRetirer("pere", p.pere) }) {
+                        Text("Retirer ce lien", fontSize = 12.sp)
+                    }
                 }
             }
             LignePersonneG(
@@ -1361,6 +1365,10 @@ fun CarteEvenement(
                     }
                     TextButton(onClick = { onOuvrirParent("mere") }) {
                         Text("Cr\u00E9er", fontSize = 12.sp)
+                    }
+                } else {
+                    TextButton(onClick = { onRetirer("mere", p.mere) }) {
+                        Text("Retirer ce lien", fontSize = 12.sp)
                     }
                 }
             }

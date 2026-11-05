@@ -627,8 +627,14 @@ fun AppEcran(
     fun delier(role: String, enfantId: Long) {
         val p = personneParId(personnes, idOuvert) ?: return
         when (role) {
-            "pere" -> p.pere = 0L
-            "mere" -> p.mere = 0L
+            "pere" -> {
+                personneParId(personnes, p.pere)?.enfants?.remove(p.id)
+                p.pere = 0L
+            }
+            "mere" -> {
+                personneParId(personnes, p.mere)?.enfants?.remove(p.id)
+                p.mere = 0L
+            }
             "conjoint" -> {
                 val c = personneParId(personnes, p.conjoint)
                 p.conjoint = 0L
@@ -1419,26 +1425,16 @@ fun AppEcran(
             return np
         }
 
-        // Renseigne un champ seulement s'il est encore vide (l'acte complete la fiche).
-        // v0.59 : en EDITION, une valeur saisie REMPLACE celle de la fiche du
-        // parent (le formulaire pre-rempli est la reference ; vide = inchange).
+        // Renseigne les champs du parent : toute valeur saisie non vide
+        // REMPLACE celle de la fiche (v0.60 : synchronisation totale).
         fun renseigner(c: Personne?, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String) {
             if (c == null) return
-            if (edition) {
-                if (ne.isNotBlank()) c.dateNaissance = dateGreg(ne)
-                if (lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
-                if (dept.isNotBlank()) c.deptNaissance = dept.trim()
-                if (prof.isNotBlank()) c.profession = prof.trim()
-                if (dec.isNotBlank()) c.dateDeces = dateGreg(dec)
-                if (lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
-            } else {
-                if (c.dateNaissance.isBlank() && ne.isNotBlank()) c.dateNaissance = dateGreg(ne)
-                if (c.lieuNaissance.isBlank() && lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
-                if (c.deptNaissance.isBlank() && dept.isNotBlank()) c.deptNaissance = dept.trim()
-                if (c.profession.isBlank() && prof.isNotBlank()) c.profession = prof.trim()
-                if (c.dateDeces.isBlank() && dec.isNotBlank()) c.dateDeces = dateGreg(dec)
-                if (c.lieuDeces.isBlank() && lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
-            }
+            if (ne.isNotBlank()) c.dateNaissance = dateGreg(ne)
+            if (lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
+            if (dept.isNotBlank()) c.deptNaissance = dept.trim()
+            if (prof.isNotBlank()) c.profession = prof.trim()
+            if (dec.isNotBlank()) c.dateDeces = dateGreg(dec)
+            if (lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
         }
 
         fun lierParent(enfant: Personne, parent: Personne?, estMere: Boolean) {
@@ -1457,43 +1453,47 @@ fun AppEcran(
             return
         }
 
+
+        // v0.60 : synchronisation TOTALE - le formulaire est la reference
+        // pour tout champ non vide, identite comprise.
+        if (a.nom.isNotBlank()) p.nom = a.nom.trim()
+        if (a.prenoms.isNotBlank()) p.prenoms = a.prenoms.trim()
         // Date, heure et lieu de l'acte selon son type (fiche de la personne concernee).
         // Nouvel acte : ne remplit que les champs encore vides. Edition : le
         // formulaire pre-rempli devient la reference (champ vide = efface).
         when (a.type) {
             "N" -> {
-                if (edition || p.dateNaissance.isBlank()) p.dateNaissance = dateGreg(a.date)
-                if (edition || p.heureNaissance.isBlank()) p.heureNaissance = a.heure
-                if (edition || p.lieuNaissance.isBlank()) p.lieuNaissance = a.commune
-                if (edition || p.deptNaissance.isBlank()) p.deptNaissance = a.dept
+                if (a.date.isNotBlank()) p.dateNaissance = dateGreg(a.date)
+                if (a.heure.isNotBlank()) p.heureNaissance = a.heure
+                if (a.commune.isNotBlank()) p.lieuNaissance = a.commune
+                if (a.dept.isNotBlank()) p.deptNaissance = a.dept
             }
             "B" -> {
-                if (edition || p.dateBapteme.isBlank()) p.dateBapteme = dateGreg(a.date)
-                if (edition || p.heureBapteme.isBlank()) p.heureBapteme = a.heure
-                if (edition || p.lieuBapteme.isBlank()) p.lieuBapteme = a.commune
-                if (edition || p.deptBapteme.isBlank()) p.deptBapteme = a.dept
+                if (a.date.isNotBlank()) p.dateBapteme = dateGreg(a.date)
+                if (a.heure.isNotBlank()) p.heureBapteme = a.heure
+                if (a.commune.isNotBlank()) p.lieuBapteme = a.commune
+                if (a.dept.isNotBlank()) p.deptBapteme = a.dept
             }
             "M" -> {
-                if (edition || p.dateMariage.isBlank()) p.dateMariage = dateGreg(a.date)
-                if (edition || p.heureMariage.isBlank()) p.heureMariage = a.heure
-                if (edition || p.lieuMariage.isBlank()) p.lieuMariage = a.commune
-                if (edition || p.deptMariage.isBlank()) p.deptMariage = a.dept
+                if (a.date.isNotBlank()) p.dateMariage = dateGreg(a.date)
+                if (a.heure.isNotBlank()) p.heureMariage = a.heure
+                if (a.commune.isNotBlank()) p.lieuMariage = a.commune
+                if (a.dept.isNotBlank()) p.deptMariage = a.dept
             }
             "D" -> {
-                if (edition || p.dateDeces.isBlank()) p.dateDeces = dateGreg(a.date)
-                if (edition || p.heureDeces.isBlank()) p.heureDeces = a.heure
-                if (edition || p.lieuDeces.isBlank()) p.lieuDeces = a.commune
-                if (edition || p.deptDeces.isBlank()) p.deptDeces = a.dept
+                if (a.date.isNotBlank()) p.dateDeces = dateGreg(a.date)
+                if (a.heure.isNotBlank()) p.heureDeces = a.heure
+                if (a.commune.isNotBlank()) p.lieuDeces = a.commune
+                if (a.dept.isNotBlank()) p.deptDeces = a.dept
             }
             "S" -> {
-                if (edition || p.dateSepulture.isBlank()) p.dateSepulture = dateGreg(a.date)
-                if (edition || p.heureSepulture.isBlank()) p.heureSepulture = a.heure
-                if (edition || p.lieuSepulture.isBlank()) p.lieuSepulture = a.commune
-                if (edition || p.deptSepulture.isBlank()) p.deptSepulture = a.dept
+                if (a.date.isNotBlank()) p.dateSepulture = dateGreg(a.date)
+                if (a.heure.isNotBlank()) p.heureSepulture = a.heure
+                if (a.commune.isNotBlank()) p.lieuSepulture = a.commune
+                if (a.dept.isNotBlank()) p.deptSepulture = a.dept
             }
         }
-        if (edition) p.profession = a.profession
-        else if (p.profession.isBlank() && a.profession.isNotBlank()) p.profession = a.profession
+        if (a.profession.isNotBlank()) p.profession = a.profession.trim()
 
         // G\u00E9n\u00E9aPoche 3 : "Enfant" du menu Saisie : la naissance est
         // rattach\u00E9e au parent choisi (et \u00E0 son conjoint). Aucun doublon.
@@ -1534,28 +1534,30 @@ fun AppEcran(
         renseigner(mere, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces)
         lierParent(p, mere, true)
 
-        // v0.59 : EDITION - les noms saisis pour les parents sont la REFERENCE.
-        // Si le nom matche une AUTRE fiche que le lien actuel, le lien est
-        // REMPLACE (reparation des liens errones, ex une mere pointant sur
-        // la belle-mere a cause d'un ancien bug) ; nom laisse vide = lien
-        // RETIRE. Le remplacement respecte la coherence des dates.
-        if (edition) {
-            val ancienPere = personneParId(personnes, p.pere)
-            if (pere == null) {
+        // v0.60 : le nom saisi pour un parent est TOUJOURS la reference :
+        // s'il correspond a une AUTRE fiche que le lien actuel, le lien de
+        // parente est REMPLACE (reparation des liens errones, ex une mere
+        // pointant sur la belle-mere). En EDITION seulement, un nom laisse
+        // vide RETIRE le lien. La coherence des dates est respectee.
+        val ancienPere = personneParId(personnes, p.pere)
+        if (pere == null) {
+            if (edition) {
                 ancienPere?.enfants?.remove(p.id)
                 p.pere = 0L
-            } else if (pere.id != p.pere && incoherenceParente(pere, p.dateNaissance) == null) {
-                ancienPere?.enfants?.remove(p.id)
-                p.pere = pere.id
             }
-            val ancienneMere = personneParId(personnes, p.mere)
-            if (mere == null) {
+        } else if (pere.id != p.pere && incoherenceParente(pere, p.dateNaissance) == null) {
+            ancienPere?.enfants?.remove(p.id)
+            p.pere = pere.id
+        }
+        val ancienneMere = personneParId(personnes, p.mere)
+        if (mere == null) {
+            if (edition) {
                 ancienneMere?.enfants?.remove(p.id)
                 p.mere = 0L
-            } else if (mere.id != p.mere && incoherenceParente(mere, p.dateNaissance) == null) {
-                ancienneMere?.enfants?.remove(p.id)
-                p.mere = mere.id
             }
+        } else if (mere.id != p.mere && incoherenceParente(mere, p.dateNaissance) == null) {
+            ancienneMere?.enfants?.remove(p.id)
+            p.mere = mere.id
         }
 
         // Mariee et ses parents (mariage uniquement).
@@ -1563,16 +1565,11 @@ fun AppEcran(
         if (a.type == "M") {
             mariee = trouverOuCreer(a.marieeId, a.marieeNom, a.marieePrenoms, "F")
             if (mariee != null) {
-                if (mariee.dateMariage.isBlank()) mariee.dateMariage = dateGreg(a.date)
-                if (mariee.heureMariage.isBlank()) mariee.heureMariage = a.heure
-                if (mariee.lieuMariage.isBlank()) mariee.lieuMariage = a.commune
-                if (mariee.deptMariage.isBlank()) mariee.deptMariage = a.dept
-                if (mariee.profession.isBlank() && a.marieeProf.isNotBlank()) mariee.profession = a.marieeProf
-                if (p.conjoint == 0L) p.conjoint = mariee.id
-                if (mariee.conjoint == 0L) mariee.conjoint = p.id
-                val pMar = trouverOuCreer(0L, a.pMarieeNom, a.pMarieePrenoms, "M")
-                renseigner(pMar, a.pMarieeNe, a.pMarieeLieu, a.pMarieeDept, a.pMarieeProf, a.pMarieeDeces, a.pMarieeLieuDeces)
-                lierParent(mariee, pMar, false)
+                if (a.date.isNotBlank()) mariee.dateMariage = dateGreg(a.date)
+                if (a.heure.isNotBlank()) mariee.heureMariage = a.heure
+                if (a.commune.isNotBlank()) mariee.lieuMariage = a.commune
+                if (a.dept.isNotBlank()) mariee.deptMariage = a.dept
+                if (a.marieeProf.isNotBlank()) mariee.profession = a.marieeProf.trim()
                 val mMar = trouverOuCreer(0L, a.mMarieeNom, a.mMarieePrenoms, "F")
                 renseigner(mMar, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
                 lierParent(mariee, mMar, true)
@@ -2279,6 +2276,7 @@ fun AppEcran(
         )
     }
 }
+
 
 
 
