@@ -1486,6 +1486,10 @@ fun AppEcran(
 
         // G\u00E9n\u00E9aPoche 3 : "Enfant" du menu Saisie : la naissance est
         // rattach\u00E9e au parent choisi (et \u00E0 son conjoint). Aucun doublon.
+        // GeneaPoche 12 : BUG CORRIGE - le refus de lien ne peut plus etre
+        // ecrase par le message final "Acte enregistre" (trompeur) : le
+        // refus est memorise et rappele a la fin de l'enregistrement.
+        var refusLienTxt = ""
         if (a.type == "N" && a.parentPourEnfant != 0L) {
             val parentChoisi = personneParId(personnes, a.parentPourEnfant)
             if (parentChoisi != null && parentChoisi.id != p.id) {
@@ -1495,7 +1499,7 @@ fun AppEcran(
                 val refusN = incoherenceParente(parentChoisi, p.dateNaissance)
                     ?: personneParId(personnes, parentChoisi.conjoint)?.let { co -> incoherenceParente(co, p.dateNaissance) }
                 if (refusN != null) {
-                    message = refusN
+                    refusLienTxt = refusN
                 } else {
                     if (parentChoisi.sexe == "F") {
                         if (p.mere == 0L) p.mere = parentChoisi.id
@@ -1657,8 +1661,15 @@ fun AppEcran(
         }
 
         enregistrer()
-        message = (if (edition) "Acte modifi\u00E9 : " else "Acte enregistr\u00E9 : ") + libelleType(a.type) +
-            (if (crees > 0) " ; " + crees.toString() + " personne(s) cr\u00E9\u00E9e(s)" else "")
+        // GeneaPoche 12 : message final EXACT - le lien refuse est rappele
+        // (l'acte est conserve, SANS le lien de parente).
+        message =
+            if (refusLienTxt.isNotEmpty()) {
+                refusLienTxt + " L'acte reste enregistr\u00E9, SANS le lien de parent\u00E9."
+            } else {
+                (if (edition) "Acte modifi\u00E9 : " else "Acte enregistr\u00E9 : ") + libelleType(a.type) +
+                    (if (crees > 0) " ; " + crees.toString() + " personne(s) cr\u00E9\u00E9e(s)" else "")
+            }
     }
 
     fun ajouterActe(personneId: Long, uri: Uri, type: String, titre: String) {
@@ -1746,6 +1757,15 @@ fun AppEcran(
         if (charge && verrou.deverrouille && !cujasOuvert) {
             cujasOuvert = true
             idDuCujus().takeIf { it != 0L }?.let { idOuvert = it }
+            // GeneaPoche 12 : diagnostic de l'arbre annonce a l'ouverture de
+            // l'application (anomalies + doublons + branches isolees).
+            val nbDiag = anomaliesPour(personnes).size +
+                doublonsPotentiels(personnes).size +
+                personnes.filter { brancheIsolee(it, personnes) }.size
+            if (nbDiag > 0) {
+                message = "Diagnostic de l'arbre : " + nbDiag.toString() +
+                    " point(s) \u00E0 examiner (onglet Journal)."
+            }
         }
     }
 
