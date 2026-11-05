@@ -38,30 +38,30 @@ fun DialogueEdition(
     onAnnuler: () -> Unit,
     onSupprimer: (() -> Unit)? = null
 ) {
-    var nom by remember { mutableStateOf(cible?.nom ?: "") }
-    var prenoms by remember { mutableStateOf(cible?.prenoms ?: "") }
-    var sexe by remember { mutableStateOf(cible?.sexe ?: "") }
-    var profession by remember { mutableStateOf(cible?.profession ?: "") }
-    var dateNaissance by remember { mutableStateOf(cible?.dateNaissance ?: "") }
-    var heureNaissance by remember { mutableStateOf(cible?.heureNaissance ?: "") }
-    var lieuNaissance by remember { mutableStateOf(cible?.lieuNaissance ?: "") }
-    var deptNaissance by remember { mutableStateOf(cible?.deptNaissance ?: "") }
-    var dateBapteme by remember { mutableStateOf(cible?.dateBapteme ?: "") }
-    var heureBapteme by remember { mutableStateOf(cible?.heureBapteme ?: "") }
-    var lieuBapteme by remember { mutableStateOf(cible?.lieuBapteme ?: "") }
-    var deptBapteme by remember { mutableStateOf(cible?.deptBapteme ?: "") }
-    var dateMariage by remember { mutableStateOf(cible?.dateMariage ?: "") }
-    var heureMariage by remember { mutableStateOf(cible?.heureMariage ?: "") }
-    var lieuMariage by remember { mutableStateOf(cible?.lieuMariage ?: "") }
-    var deptMariage by remember { mutableStateOf(cible?.deptMariage ?: "") }
-    var dateDeces by remember { mutableStateOf(cible?.dateDeces ?: "") }
-    var heureDeces by remember { mutableStateOf(cible?.heureDeces ?: "") }
-    var lieuDeces by remember { mutableStateOf(cible?.lieuDeces ?: "") }
-    var deptDeces by remember { mutableStateOf(cible?.deptDeces ?: "") }
-    var dateSepulture by remember { mutableStateOf(cible?.dateSepulture ?: "") }
-    var heureSepulture by remember { mutableStateOf(cible?.heureSepulture ?: "") }
-    var lieuSepulture by remember { mutableStateOf(cible?.lieuSepulture ?: "") }
-    var deptSepulture by remember { mutableStateOf(cible?.deptSepulture ?: "") }
+    var nom by remember(cible) { mutableStateOf(cible?.nom ?: "") }
+    var prenoms by remember(cible) { mutableStateOf(cible?.prenoms ?: "") }
+    var sexe by remember(cible) { mutableStateOf(cible?.sexe ?: "") }
+    var profession by remember(cible) { mutableStateOf(cible?.profession ?: "") }
+    var dateNaissance by remember(cible) { mutableStateOf(cible?.dateNaissance ?: "") }
+    var heureNaissance by remember(cible) { mutableStateOf(cible?.heureNaissance ?: "") }
+    var lieuNaissance by remember(cible) { mutableStateOf(cible?.lieuNaissance ?: "") }
+    var deptNaissance by remember(cible) { mutableStateOf(cible?.deptNaissance ?: "") }
+    var dateBapteme by remember(cible) { mutableStateOf(cible?.dateBapteme ?: "") }
+    var heureBapteme by remember(cible) { mutableStateOf(cible?.heureBapteme ?: "") }
+    var lieuBapteme by remember(cible) { mutableStateOf(cible?.lieuBapteme ?: "") }
+    var deptBapteme by remember(cible) { mutableStateOf(cible?.deptBapteme ?: "") }
+    var dateMariage by remember(cible) { mutableStateOf(cible?.dateMariage ?: "") }
+    var heureMariage by remember(cible) { mutableStateOf(cible?.heureMariage ?: "") }
+    var lieuMariage by remember(cible) { mutableStateOf(cible?.lieuMariage ?: "") }
+    var deptMariage by remember(cible) { mutableStateOf(cible?.deptMariage ?: "") }
+    var dateDeces by remember(cible) { mutableStateOf(cible?.dateDeces ?: "") }
+    var heureDeces by remember(cible) { mutableStateOf(cible?.heureDeces ?: "") }
+    var lieuDeces by remember(cible) { mutableStateOf(cible?.lieuDeces ?: "") }
+    var deptDeces by remember(cible) { mutableStateOf(cible?.deptDeces ?: "") }
+    var dateSepulture by remember(cible) { mutableStateOf(cible?.dateSepulture ?: "") }
+    var heureSepulture by remember(cible) { mutableStateOf(cible?.heureSepulture ?: "") }
+    var lieuSepulture by remember(cible) { mutableStateOf(cible?.lieuSepulture ?: "") }
+    var deptSepulture by remember(cible) { mutableStateOf(cible?.deptSepulture ?: "") }
 
     fun construire(): Personne {
         val base = cible ?: Personne(id = idNouvelle)
@@ -303,11 +303,11 @@ fun DialogueEditionBloc(
     onValider: (String, String, String, String, String) -> Unit,
     onAnnuler: () -> Unit
 ) {
-    var date by remember { mutableStateOf(dateInit) }
-    var heure by remember { mutableStateOf(heureInit) }
-    var commune by remember { mutableStateOf(communeInit) }
-    var dept by remember { mutableStateOf(deptInit) }
-    var ref by remember { mutableStateOf(refInit) }
+    var date by remember(titre, dateInit, heureInit, communeInit, deptInit, refInit) { mutableStateOf(dateInit) }
+    var heure by remember(titre, dateInit, heureInit, communeInit, deptInit, refInit) { mutableStateOf(heureInit) }
+    var commune by remember(titre, dateInit, heureInit, communeInit, deptInit, refInit) { mutableStateOf(communeInit) }
+    var dept by remember(titre, dateInit, heureInit, communeInit, deptInit, refInit) { mutableStateOf(deptInit) }
+    var ref by remember(titre, dateInit, heureInit, communeInit, deptInit, refInit) { mutableStateOf(refInit) }
 
     AlertDialog(
         onDismissRequest = onAnnuler,
@@ -462,3 +462,4 @@ fun DialogueNouveauTemoin(
         }
     )
 }
+

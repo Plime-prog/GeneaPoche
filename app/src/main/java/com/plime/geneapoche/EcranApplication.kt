@@ -123,7 +123,7 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
             icon = { Icon(Icons.Filled.Add, contentDescription = null) },
             label = { Text("Saisie") }
         )
-        // GénéaPoche 8 (v0.47) : onglet Ligne de vie, une ligne de vie
+        // GÃ©nÃ©aPoche 8 (v0.47) : onglet Ligne de vie, une ligne de vie
         // horizontale par membre de la famille proche.
         NavigationBarItem(
             selected = onglet == 4,
@@ -281,7 +281,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.55",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.56",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -650,7 +650,7 @@ fun EcranApplication(
                 }
                 }
             } else if (onglet == 4) {
-                // GénéaPoche 8 (v0.47) : onglet Ligne de vie, lignes de vie
+                // GÃ©nÃ©aPoche 8 (v0.47) : onglet Ligne de vie, lignes de vie
                 // horizontales de la famille proche de la personne choisie.
                 Box(Modifier.fillMaxSize().padding(marges)) {
                 EcranFrise(
@@ -792,7 +792,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.55", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.56", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -979,7 +979,7 @@ fun EcranApplication(
         val p = ouverte
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.weight(1f)) {
-                // GénéaPoche 9 (v0.50) : l'arbre et la ligne de vie se
+                // GÃ©nÃ©aPoche 9 (v0.50) : l'arbre et la ligne de vie se
                 // synchronisent AUTOMATIQUEMENT avec la personne de la fiche
                 // ouverte.
                 LaunchedEffect(p.id) { onArbreCentre(p.id) }
@@ -1055,6 +1055,7 @@ fun EcranApplication(
                     (personnes as? MutableList<Personne>)?.add(p2)
                     if (pickerRole.isNotEmpty()) {
                         lier(pickerRole, p2.id)
+                        onEditionOuverte(false)
                         return@DialogueEdition
                     }
                 }
@@ -1297,6 +1298,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 
 
 
