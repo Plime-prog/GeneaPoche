@@ -65,6 +65,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
@@ -176,8 +177,8 @@ fun EcranPersonne(
     onModifierEvenementLibre: (EvenementLibre) -> Unit = {},
     onSupprimerEvenementLibre: (Long) -> Unit = {}
 ) {
-    // GénéaPoche 5 : tous les cadres REPLIÉS sur une ligne à l'ouverture
-    // de la fiche ; le toucher d'un cadre le développe, l'appui long le modifie.
+    // GÃ©nÃ©aPoche 5 : tous les cadres REPLIÃS sur une ligne Ã  l'ouverture
+    // de la fiche ; le toucher d'un cadre le dÃ©veloppe, l'appui long le modifie.
     var ouverts by remember { mutableStateOf(setOf<String>()) }
     // Dialogues : mariage, enfant, parent, temoin.
     var mariageOuvert by remember { mutableStateOf(false) }
@@ -200,16 +201,16 @@ fun EcranPersonne(
     // que si la personne peut avoir plus de 100 ans \u00E0 la date du jour (ou si
     // son d\u00E9c\u00E8s est d\u00E9j\u00E0 connu).
     val decesAffiche = decesAffichable(p, actes)
-    // GénéaPoche 10 : ordre NBMDS TOUJOURS respecté, même si les
-    // informations sont vides : N, B, M, D puis S (la sépulture est APRÈS
-    // le décès, le mariage APRÈS la naissance, même sans dates).
+    // GÃ©nÃ©aPoche 10 : ordre NBMDS TOUJOURS respectÃ©, mÃªme si les
+    // informations sont vides : N, B, M, D puis S (la sÃ©pulture est APRÃS
+    // le dÃ©cÃ¨s, le mariage APRÃS la naissance, mÃªme sans dates).
     val ordreNaturel = listOf("N", "B", "M", "D", "S")
     val typesPresents = mutableListOf("N", "B", "M")
     if (decesAffiche) {
         typesPresents.add("D")
         typesPresents.add("S")
     }
-    // GénéaPoche 10 : année effective d'un événement, pour garantir
+    // GÃ©nÃ©aPoche 10 : annÃ©e effective d'un Ã©vÃ©nement, pour garantir
     // B et M jamais avant N, S jamais avant D.
     fun anneeEffective(t: String): Int? {
         val a = anneeDe(champsEvenement(p, t).date)
@@ -226,7 +227,7 @@ fun EcranPersonne(
             { ordreNaturel.indexOf(it) }
         )
     ).toMutableList()
-    // G\u00E9n\u00E9aPoche 7 : ordre STRICTEMENT chronologique — le bloc
+    // G\u00E9n\u00E9aPoche 7 : ordre STRICTEMENT chronologique â le bloc
     // Naissance n'est plus forc\u00E9 en t\u00EAte de la frise.
     val ordreTypes = triChronologique.toList()
     Scaffold(
@@ -737,6 +738,7 @@ fun EcranPersonne(
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Surface(Modifier.fillMaxSize()) {
+                key(p.id, tPre) {
                 EcranSaisieActe(
                     personnes = personnes,
                     initial = prefillActe(p, personnes, actes, tPre.ifEmpty { null }, editionFiche = tPre.isNotEmpty()),
@@ -747,6 +749,7 @@ fun EcranPersonne(
                     },
                     onFermer = { saisieOuverte = null }
                 )
+                }
             }
         }
     }
@@ -943,11 +946,11 @@ fun DialogueEvenementLibre(
     onSupprimer: () -> Unit,
     onAnnuler: () -> Unit
 ) {
-    var intitule by remember { mutableStateOf(initial.intitule) }
-    var date by remember { mutableStateOf(initial.date) }
-    var heure by remember { mutableStateOf(initial.heure) }
-    var lieu by remember { mutableStateOf(initial.lieu) }
-    var dept by remember { mutableStateOf(initial.dept) }
+    var intitule by remember(initial) { mutableStateOf(initial.intitule) }
+    var date by remember(initial) { mutableStateOf(initial.date) }
+    var heure by remember(initial) { mutableStateOf(initial.heure) }
+    var lieu by remember(initial) { mutableStateOf(initial.lieu) }
+    var dept by remember(initial) { mutableStateOf(initial.dept) }
     AlertDialog(
         onDismissRequest = onAnnuler,
         title = { Text("\u00C9v\u00E9nement") },
@@ -1003,7 +1006,7 @@ fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: St
         .maxByOrNull { it.creation }
     val pere = personneParId(personnes, p.pere)
     val mere = personneParId(personnes, p.mere)
-    // GénéaPoche 10 : le conjoint (et ses parents) sont proposés pour
+    // GÃ©nÃ©aPoche 10 : le conjoint (et ses parents) sont proposÃ©s pour
     // TOUS les types d'acte, pas seulement le mariage.
     val conj = personneParId(personnes, p.conjoint)
     val pConj = if (conj != null) personneParId(personnes, conj.pere) else null
@@ -1682,6 +1685,7 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 
 
