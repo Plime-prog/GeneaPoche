@@ -79,6 +79,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -281,7 +282,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.56",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.57",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -792,7 +793,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.56", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.57", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1034,6 +1035,7 @@ fun EcranApplication(
         // G2-18 residuel : identifiant alloue UNE seule fois par ouverture du
         // dialogue, strictement croissant (compteur persistant).
         val idNouvellePersonne = remember { prochainId() }
+        key(editionCible?.id ?: idNouvellePersonne) {
         DialogueEdition(
             cible = editionCible,
             idNouvelle = idNouvellePersonne,
@@ -1058,6 +1060,11 @@ fun EcranApplication(
                         onEditionOuverte(false)
                         return@DialogueEdition
                     }
+                } else {
+                    (personnes as? MutableList<Personne>)?.let { l ->
+                        val i = l.indexOfFirst { q -> q.id == p2.id }
+                        if (i >= 0) l[i] = p2
+                    }
                 }
                 enregistrer()
                 onEditionOuverte(false)
@@ -1068,6 +1075,7 @@ fun EcranApplication(
                 onEditionOuverte(false)
             }
         )
+        }
     }
 
     if (pickerRole.isNotEmpty() && ouverte != null) {
@@ -1298,6 +1306,7 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         }
     }
 }
+
 
 
 

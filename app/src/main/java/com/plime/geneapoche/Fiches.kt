@@ -957,14 +957,14 @@ fun DialogueEvenementLibre(
         text = {
             Column {
                 OutlinedTextField(value = intitule, onValueChange = { intitule = it }, label = { Text("Intitul\u00E9") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = date, onValueChange = { date = it }, label = { Text("Date (jj/mm/aaaa)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = date, onValueChange = { date = it }, label = { Text("Date (jj/mm/aaaa)") }, isError = !dateValide(date), supportingText = { if (!dateValide(date)) Text("jj/mm/aaaa ou aaaa", style = MaterialTheme.typography.bodySmall) }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = heure, onValueChange = { heure = it }, label = { Text("Heure") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = lieu, onValueChange = { lieu = it }, label = { Text("Commune") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = dept, onValueChange = { dept = it }, label = { Text("D\u00E9partement") }, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
-            TextButton(onClick = { onValider(intitule, date, heure, lieu, dept) }) { Text("Enregistrer") }
+            TextButton(onClick = { onValider(intitule, date, heure, lieu, dept) }, enabled = dateValide(date)) { Text("Enregistrer") }
         },
         dismissButton = {
             Row {
@@ -1685,6 +1685,7 @@ fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
         }
     }
 }
+
 
 
 
