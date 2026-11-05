@@ -355,7 +355,7 @@ fun EcranSaisieActe(
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Champ(
-                "Date (jj/mm/aaaa ou republicain)", date, { date = it; confirme = false },
+                "Date (jj/mm/aaaa, aaaa ou r\u00E9publicain)", date, { date = it; confirme = false },
                 erreur = !dateValide(date),
                 aide = periodeRealisteTxt(type, exPersonne),
                 modifier = Modifier.weight(1f)
@@ -617,21 +617,21 @@ fun EcranSaisie(
         ).chunked(2).forEach { ligne ->
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 ligne.forEach { (t, l, coul) ->
                     Card(
-                        Modifier.weight(1f).padding(vertical = 5.dp)
+                        Modifier.weight(1f).padding(vertical = 2.dp)
                             .clickable { onOuvrir(t) },
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         border = BorderStroke(1.dp, CouleurBordVert)
                     ) {
                         Row(
-                            Modifier.fillMaxWidth().padding(10.dp),
+                            Modifier.fillMaxWidth().padding(6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                Modifier.size(34.dp).clip(CircleShape).background(coul),
+                                Modifier.size(24.dp).clip(CircleShape).background(coul),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
@@ -640,8 +640,8 @@ fun EcranSaisie(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
-                            Spacer(Modifier.width(8.dp))
-                            Text(l, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+                            Spacer(Modifier.width(6.dp))
+                            Text(l, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
                         }
                     }
                 }
@@ -650,23 +650,23 @@ fun EcranSaisie(
         }
         // ENFANT : choisir le parent existant puis saisir sa naissance.
         Card(
-            Modifier.fillMaxWidth().padding(vertical = 5.dp)
+            Modifier.fillMaxWidth().padding(vertical = 2.dp)
                 .clickable { pickerParent = true },
             colors = CardDefaults.cardColors(containerColor = Color.White),
             border = BorderStroke(1.dp, CouleurBordVert)
         ) {
             Row(
-                Modifier.fillMaxWidth().padding(10.dp),
+                Modifier.fillMaxWidth().padding(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
-                    Modifier.size(34.dp).clip(CircleShape).background(CouleurVertFonce),
+                    Modifier.size(24.dp).clip(CircleShape).background(CouleurVertFonce),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(18.dp), tint = Color.White)
+                    Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(14.dp), tint = Color.White)
                 }
-                Spacer(Modifier.width(8.dp))
-                Text("Enfant", fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+                Spacer(Modifier.width(6.dp))
+                Text("Enfant", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
             }
         }
         Text(
@@ -675,7 +675,7 @@ fun EcranSaisie(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 6.dp)
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
     }
 
     if (pickerParent) {
