@@ -429,7 +429,7 @@ fun EcranJournal(
                     Column(Modifier.fillMaxWidth().padding(12.dp)) {
                         Text(
                             "Diagnostic de l'arbre : " +
-                                (anomalies.size + doublons.size + isolees.size).toString() +
+                                (anomalies.size + doublons.size + isolees.size + nonCertifiees.size).toString() +
                                 " point(s) \u00E0 examiner",
                             fontWeight = FontWeight.Bold, color = Color(0xFF9C5A00)
                         )
@@ -707,6 +707,7 @@ fun CarteRecherche(
         }
     }
 }
+
 
 
 
