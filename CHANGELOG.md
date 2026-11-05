@@ -1,3 +1,59 @@
+## v0.54 – GénéaPoche 12 (2e salve)
+
+- Coche et croix de certification d'identité PLUS GRANDES sur la fiche (barre du haut).
+- Liste Personnes : coche verte ✔ (identité certifiée) ou croix rouge (à vérifier) rappelée directement sur le nom de chaque personne.
+- Tris réordonnés : Aboville à gauche et PAR DÉFAUT, puis Branches, puis A–Z à droite.
+- Diagnostic de l'arbre : le compteur « N point(s) à examiner » inclut désormais aussi les identités non certifiées (fini le « 0 point(s) » alors qu'il restait des identités à certifier).
+
+## v0.53 – GénéaPoche 12 : correctifs et diagnostic à la demande
+
+- **Sélecteur d'images réparé** : l'icône « + photo d'acte » est de retour dans l'en-tête de chaque bloc d'événement de la fiche ; le sélecteur ne re-verrouille plus l'application au retour (garde-fou picker réparé).
+- **Message « Lien refusé » complet** : quand un acte de naissance est refusé pour incohérence de parenté, le message complet s'affiche désormais (« Impossible : l'enfant… L'acte reste enregistré, SANS le lien de parenté. ») au lieu d'être écrasé par « Acte enregistré ».
+- **Diagnostic de l'arbre corrigé** : l'encadré du journal ne disparaît plus alors qu'il reste des points à corriger — les identités non certifiées sont désormais comptées comme les anomalies, doublons et branches isolées.
+- **Bouton « Actualiser le diagnostic »** en tête du journal : le diagnostic complet de l'arbre se refait à la demande.
+- **Annonce à l'ouverture** : si l'arbre compte des points à examiner, un message « Diagnostic de l'arbre : N point(s) à examiner (onglet Journal). » s'affiche au démarrage de l'application.
+- Version 0.53 (versionCode 53).
+
+## v0.52 - Correctif : un enfant ne peut plus etre ne avant son parent
+
+- Bug reproduit : un enfant ne avant la naissance de la personne selectionnee pouvait encore etre ajoute.
+- UNE SEULE regle anti-incoherence : incoherenceParente(parent, dateEnfant) dans Numerotation.kt. Annees seules et dates republicaines comprises (anneeDe) ; une date inconnue ne bloque jamais rien ; meme annee acceptee.
+- Toutes les voies d'ajout couvertes : saisie d'un enfant (verifie AVANT toute creation : aucun refus ne laisse de fiche orpheline, l'enfant EXISTANT deja date est couvert), choix d'une fiche existante, nouveau parent (refuse s'il serait ne apres l'enfant), acte de naissance rattache au parent (et au conjoint du parent), import GEDCOM fusionne, rattachement pere/mere d'un acte.
+- Le CONJOINT connu est teste au meme titre que la personne dans chaque voie d'ajout.
+- Journal - Diagnostic de l'arbre : l'age negatif de la mere n'affiche plus "agee de -5 ans, a verifier" (condition n >= nm) ; les anomalies "ne(e) avant son pere / sa mere" restent signalees pour les dates modifiees apres coup.
+- Version 0.52 (versionCode 52).
+
+## v0.51 – GénéaPoche 11 : coche d'identité, diagnostic de l'arbre, sources et preuves
+
+- **11.0 Vérification identité** : coche sur chaque fiche, à droite du nom et du score n/6. Coche automatique si au moins 1 renseignement sur 6, croix rouge sinon ; le choix manuel reste possible (auto → coche → croix en touchant l'icône), même si l'acte est incomplet. Le journal liste les identités non certifiées : la coche sert aussi aux recherches.
+- **11.2 Diagnostic complet de l'arbre** : nouvel encadré « Diagnostic de l'arbre » dans le journal — anomalies de cohérence (décès avant naissance, âges impossibles…), **doublons** (même nom et mêmes prénoms) avec **fusion guidée** : garder l'une ou l'autre fiche, toutes les informations et tous les liens (parents, conjoints, enfants, témoins, actes, recherches) sont reportés sans jamais écraser une donnée déjà présente ; **branches isolées** (personnes sans aucun lien de parenté) ; tout est cliquable vers la fiche.
+- **11.4 Sources et niveaux de preuve** : sur chaque acte, en plus de la côte AD — dépôt de conservation, date de consultation et niveau de preuve 0–3 (échelle QUAY standard, comme Heredis et Gramps : 0 indirecte, 1 plausible, 2 fiable, 3 acte original). Affichés dans le sous-bloc de l'acte sur la fiche et exportés en GEDCOM (`AGNC` dépôt, NOTE date de consultation, `QUAY` sur chaque citation).
+
+Les chantiers 11.1 (rappels et notifications), 11.3 (carte), 11.5 (vues étendues), 11.6 (retouche d'images), 11.7 (séance aux archives), 11.8 (statistiques) et 11.9 (sauvegarde planifiée) restent au programme des prochaines salves.
+
+## v0.50 – GénéaPoche 10 : cohérence NBMDS, pré-remplissage complet, édition corrigée
+
+- **Cohérence enfant/parent** : impossible d'ajouter ou de lier un enfant né avant la naissance de son parent (message explicite, personne non créée si nécessaire).
+- **Ordre NBMDS toujours respecté** : correction du bug qui classait la Sépulture AVANT le Décès ; ordre N, B, M, D, S même si les informations sont vides ; B/M jamais avant N, S jamais après... jamais avant D.
+- **Journal** : nouvelles anomalies “né(e) avant son père / sa mère” et “sépulture avant le décès”.
+- **Pré-remplissage complet** : depuis une ligne NBMDS de la fiche, la saisie propose désormais toutes les informations connues, y compris le conjoint (et les parents du conjoint) pour N et D, pas seulement pour M.
+- **Correction** : l'édition par appui long d'une ligne NBMDS reste maintenant sur la ligne après Enregistrer (mode édition forcé même sans acte stocké).
+
+## v0.49 – Correction : la saisie revient dans les cadres Recherche
+
+- Correction du bug de la v0.48 : rien ne s'écrivait dans les cadres Recherche (bloc Recherches de la fiche, sous-bloc de chaque acte, carte du journal). La liaison directe au texte de la piste ne rafraîchissait pas l'écran.
+- La saisie est de nouveau immédiate dans les trois endroits ; le bouton Enregistrer conserve la note dans la recherche, qui reste partagée entre la fiche et le journal.
+- Version 0.49 (versionCode 49).
+
+## v0.48 – GénéaPoche 9 : synchronisation fiche / arbre / recherches
+
+- 9.1 L'icône Arbre est supprimée de la fiche.
+- 9.2 L'arbre généalogique (et la ligne de vie) se synchronisent AUTOMATIQUEMENT avec la personne de la fiche ouverte : plus besoin d'aucun bouton.
+- 9.3 Le bloc Recherches de la fiche est synchronisé avec le journal : le texte de chaque recherche est recalculé exactement comme dans le journal.
+- 9.4 Chaque recherche de la fiche est CLIQUABLE : toucher « Compléter le lieu de mariage » ouvre directement la saisie du mariage ; « Rechercher son père » ouvre le choix du père ; « Rechercher les enfants » ouvre « Ajouter un enfant », etc.
+- 9.5 La note de recherche saisie dans la fiche (bloc Recherches et sous-blocs d'actes) est la MÊME que celle du journal : liaison directe, toute saisie d'un côté se retrouve de l'autre après enregistrement.
+- Version 0.48 (versionCode 48).
+
 # Historique des versions — GénéaPoche
 
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
