@@ -186,6 +186,11 @@ fun EcranPersonne(
     // depuis la fiche. null = ferm\u00E9 ; "" = nouvel \u00E9v\u00E9nement ; "N"/"B"/"M"/"S"/"D"
     // = bloc de la frise \u00E9dit\u00E9 par appui long (formulaire pr\u00E9-rempli).
     var saisieOuverte by remember { mutableStateOf<String?>(null) }
+    // v0.58 : chaque ouverture du formulaire crée une instance NEUVE
+    // (compteur dans la clé key) : plus aucun état fantôme d'une saisie
+    // précédente (belle-mère ou autre).
+    var saisieCompteur by remember { mutableStateOf(0) }
+    fun ouvrirSaisie(t: String?) { saisieCompteur++; saisieOuverte = t }
     // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement libre en cours d'\u00E9dition (son id).
     var evLibreEdite by remember { mutableStateOf<String?>(null) }
     // G\u00E9n\u00E9aPoche 7 : ajout d'un enfant depuis la fiche (choisir une
@@ -507,7 +512,7 @@ fun EcranPersonne(
                                                 .combinedClickable(
                                                     onClick = { ouverts = if (ouverts.contains(t)) ouverts - t else ouverts + t },
                                                     onClickLabel = "Ouvrir ou replier ce bloc",
-                                                    onLongClick = { saisieOuverte = t },
+                                                    onLongClick = { ouvrirSaisie(t) },
                                                     onLongClickLabel = "Modifier ce bloc"
                                                 ),
                                             verticalAlignment = Alignment.CenterVertically
@@ -603,14 +608,14 @@ fun EcranPersonne(
                                     // G\u00E9n\u00E9aPoche 9 : toucher une recherche ouvre
                                     // directement la saisie correspondante.
                                     val actionPiste: (() -> Unit)? = when {
-                                        ps.categorie.startsWith("naissance") -> { { saisieOuverte = "N" } }
-                                        ps.categorie.startsWith("bapteme") -> { { saisieOuverte = "B" } }
-                                        ps.categorie.startsWith("mariage") -> { { saisieOuverte = "M" } }
-                                        ps.categorie.startsWith("deces") -> { { saisieOuverte = "D" } }
-                                        ps.categorie.startsWith("sepulture") -> { { saisieOuverte = "S" } }
+                                        ps.categorie.startsWith("naissance") -> { { ouvrirSaisie("N") } }
+                                        ps.categorie.startsWith("bapteme") -> { { ouvrirSaisie("B") } }
+                                        ps.categorie.startsWith("mariage") -> { { ouvrirSaisie("M") } }
+                                        ps.categorie.startsWith("deces") -> { { ouvrirSaisie("D") } }
+                                        ps.categorie.startsWith("sepulture") -> { { ouvrirSaisie("S") } }
                                         ps.categorie.startsWith("pere") -> { { onChoisir("pere") } }
                                         ps.categorie.startsWith("mere") -> { { onChoisir("mere") } }
-                                        ps.categorie.startsWith("conjoint") -> { { saisieOuverte = "M" } }
+                                        ps.categorie.startsWith("conjoint") -> { { ouvrirSaisie("M") } }
                                         ps.categorie.startsWith("enfants") -> { { menuEnfant = true } }
                                         ps.categorie.startsWith("sexe") -> { { onModifier() } }
                                         else -> null
@@ -663,7 +668,7 @@ fun EcranPersonne(
                     ) {
                         Row(
                             Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(8.dp)
-                                .clickable { saisieOuverte = "" },
+                                .clickable { ouvrirSaisie("") },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
@@ -738,7 +743,7 @@ fun EcranPersonne(
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Surface(Modifier.fillMaxSize()) {
-                key(p.id, tPre) {
+                key(p.id, tPre, saisieCompteur) {
                 EcranSaisieActe(
                     personnes = personnes,
                     initial = prefillActe(p, personnes, actes, tPre.ifEmpty { null }, editionFiche = tPre.isNotEmpty()),
