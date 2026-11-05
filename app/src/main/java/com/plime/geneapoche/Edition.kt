@@ -275,7 +275,8 @@ fun Champ(
     valeur: String,
     onChange: (String) -> Unit,
     erreur: Boolean = false,
-    aide: String = ""
+    aide: String = "",
+    modifier: Modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
 ) {
     OutlinedTextField(
         value = valeur,
@@ -284,7 +285,7 @@ fun Champ(
         isError = erreur,
         singleLine = true,
         supportingText = if (aide.isNotEmpty()) { { Text(aide, style = MaterialTheme.typography.bodySmall) } } else null,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+        modifier = modifier
     )
 }
 
