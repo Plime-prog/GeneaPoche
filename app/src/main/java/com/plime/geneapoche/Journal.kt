@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -370,6 +372,12 @@ fun EcranJournal(
     // G\u00E9n\u00E9aPoche 11 (11.2) : fusion guid\u00E9e d'un doublon (garder A / garder B).
     onFusionner: (Long, Long) -> Unit = { _, _ -> }
 ) {
+    // GeneaPoche 12 : bouton d'actualisation du diagnostic A LA DEMANDE.
+    // key(rafraichir) force le recalcul complet des listes du diagnostic
+    // (les corrections de fiche modifient des champs SANS invalidation
+    // automatique de la composition).
+    var rafraichir by remember { mutableStateOf(0) }
+    key(rafraichir) {
     val ouvertes = pistes.filter { !it.faite }
     // REGLE DES 75 ANS : seules les recherches dont l'\u00E9v\u00E9nement vis\u00E9 est
     // survenu il y a PLUS de 75 ans \u00E0 la date du jour sont affich\u00E9es (actes
@@ -388,12 +396,29 @@ fun EcranJournal(
     val doublons = doublonsPotentiels(personnes)
     val isolees = personnes.filter { brancheIsolee(it, personnes) }
     val nonCertifiees = personnes.filterNot { identiteCertifiee(it) }
-    val diagnostic = anomalies.isNotEmpty() || doublons.isNotEmpty() || isolees.isNotEmpty()
+    // GeneaPoche 12 : BUG CORRIGE - les identites non certifiees comptaient
+    // AUSSI dans l'encadre : il ne doit pas disparaitre tant qu'il reste
+    // quelque chose a examiner (anomalie, doublon, branche isolee, identite).
+    val diagnostic = anomalies.isNotEmpty() || doublons.isNotEmpty() ||
+        isolees.isNotEmpty() || nonCertifiees.isNotEmpty()
     // G\u00E9n\u00E9aPoche 11 : fusion guid\u00E9e en attente de confirmation.
     var fusionEnCours by remember { mutableStateOf<Pair<Long, Long>?>(null) }
     fun nomDe(id: Long): String = personnes.firstOrNull { it.id == id }?.titre() ?: "?"
 
     LazyColumn(Modifier.fillMaxSize().padding(12.dp)) {
+        // GeneaPoche 12 : actualisation du diagnostic a la demande.
+        item {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { rafraichir++ }, Modifier.size(30.dp)) {
+                    Icon(Icons.Filled.Refresh, contentDescription = "Actualiser le diagnostic", Modifier.size(16.dp))
+                }
+                Text(
+                    "Actualiser le diagnostic",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
         if (diagnostic) {
             item {
                 Card(
@@ -586,6 +611,7 @@ fun EcranJournal(
                 TextButton(onClick = { fusionEnCours = null }) { Text("Annuler") }
             }
         )
+    }
     }
 }
 

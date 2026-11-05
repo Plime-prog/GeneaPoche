@@ -155,6 +155,8 @@ fun EcranPersonne(
     // (bloc \u00C9v\u00E9nement ou appui long sur un bloc N/B/M/S/D).
     onEnregistrerActe: (ActeSaisie) -> Unit,
     onAjouterActe: (Uri, String, String) -> Unit,
+    // GeneaPoche 12 : le selecteur d'images ne reverrouille plus l'app.
+    picker: (Boolean) -> Unit = {},
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
     // Coche de validation d'une information : (section, valide).
@@ -552,6 +554,8 @@ fun EcranPersonne(
                                             onRetirer = onRetirer,
                                             onOuvrirMariage = { mariageOuvert = true },
                                             onOuvrirParent = { parentRole = it },
+                                            onAjouterActe = onAjouterActe,
+                                            picker = picker,
                                             onSupprimerActe = onSupprimerActe,
                                             onVoirActe = onVoirActe,
                                             onEnregistrer = enregistrer,
@@ -1251,6 +1255,9 @@ fun CarteEvenement(
     onOuvrirParent: (String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
+    // GeneaPoche 12 : photo d'acte remise dans l'en-tete du bloc.
+    onAjouterActe: (Uri, String, String) -> Unit = { _, _, _ -> },
+    picker: (Boolean) -> Unit = {},
     onEnregistrer: () -> Unit,    // Recherches ouvertes (la premiere de la section alimente le sous-bloc).
     pistes: List<Piste> = emptyList(),
     modifier: Modifier = Modifier
@@ -1274,6 +1281,9 @@ fun CarteEvenement(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            // GeneaPoche 12 : icone photo d'acte remise dans l'en-tete du
+            // bloc (perdue lors d'une refonte) + garde anti-reverrouillage.
+            AjoutActeIcone(typeActe, onAjouterActe, picker)
         }
         // Date et heure sur la meme ligne.
         Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1403,11 +1413,18 @@ fun CarteEvenement(
 
 // Icone d'ajout d'une photo d'acte dans un bloc.
 @Composable
-fun AjoutActeIcone(typeActe: String, onAjouterActe: (Uri, String, String) -> Unit) {
+fun AjoutActeIcone(
+    typeActe: String,
+    onAjouterActe: (Uri, String, String) -> Unit,
+    // GeneaPoche 12 : BUG reverrouillage au retour du selecteur CORRIGE,
+    // le drapeau verrou.pickerOuvert couvre AUSSI le selecteur d'images.
+    picker: (Boolean) -> Unit = {}
+) {
     var dialogueOuvert by remember { mutableStateOf(false) }
     val lanceur = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
+        picker(false)
         if (uri != null) onAjouterActe(uri, typeActe, "")
     }
     IconButton(onClick = { dialogueOuvert = true }) {
@@ -1425,6 +1442,7 @@ fun AjoutActeIcone(typeActe: String, onAjouterActe: (Uri, String, String) -> Uni
             confirmButton = {
                 TextButton(onClick = {
                     dialogueOuvert = false
+                    picker(true)
                     lanceur.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 }) { Text("Choisir l'image") }
             },
