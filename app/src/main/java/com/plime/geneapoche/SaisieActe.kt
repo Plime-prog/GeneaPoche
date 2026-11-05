@@ -238,7 +238,7 @@ fun EcranSaisieActe(
         fiabilite = a.fiabilite
         date = a.date
         heure = a.heure
-        if (a.intitule.isNotEmpty()) intitule = a.intitule
+        intitule = a.intitule
         personneId = a.personneId
         nom = a.nom
         prenoms = a.prenoms
@@ -340,6 +340,7 @@ fun EcranSaisieActe(
         }
         Champ(
             "Date (jj/mm/aaaa ou republicain)", date, { date = it; confirme = false },
+            erreur = !dateValide(date),
             aide = periodeRealisteTxt(type, exPersonne)
         )
         Champ("Heure (hh:mm)", heure, { heure = it })
@@ -488,7 +489,7 @@ fun EcranSaisieActe(
                     onFermer?.invoke()
                 }
             },
-            enabled = personneId != 0L || nom.isNotBlank(),
+            enabled = (personneId != 0L || nom.isNotBlank()) && dateValide(date) && heureValide(heure),
             modifier = Modifier.fillMaxWidth()
         ) { Text("Enregistrer l'acte") }
         Spacer(Modifier.height(24.dp))
@@ -686,4 +687,5 @@ fun EcranSaisie(
         )
     }
 }
+
 

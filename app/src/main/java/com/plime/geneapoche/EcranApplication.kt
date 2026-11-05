@@ -79,6 +79,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -281,7 +282,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.56",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.57",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -367,7 +368,7 @@ fun EcranApplication(
                         Text("Aucune personne pour le moment.")
                         Text("Touchez le bouton + pour ajouter la premi\u00E8re personne (de cujus, n\u00B0 1).")
                     }
-                } else {
+            } else {
                     // Onglet PERSONNES : compteur, tri A-Z / Aboville / Branches, index, cartes.
                     // triPersonnes : 0 = A-Z, 1 = Aboville (n croissant), 2 = Branches.
                     // G\u00E9n\u00E9aPoche 12 : ABOVILLE par d\u00E9faut, Branches puis A-Z.
@@ -417,12 +418,12 @@ fun EcranApplication(
                     val entrees: List<Any> = if (triPersonnes == 0) {
                         if (lettreChoisie == null) {
                             triees.toList()
-                        } else {
+                    } else {
                             triees.filter { (it.nom.trim().uppercase().firstOrNull() ?: '?') == lettreChoisie }
                         }
                     } else if (triPersonnes == 1) {
                         parAboville
-                    } else {
+                } else {
                         val membres = brancheChoisie?.let { b -> brancheDe(b, personnes) } ?: emptySet()
                         if (brancheChoisie == null) parAboville else parAboville.filter { it.id in membres }
                     }
@@ -447,7 +448,7 @@ fun EcranApplication(
                             resultat.add(pers)
                         }
                         resultat
-                    } else {
+                } else {
                         entreesFiltrees
                     }
 
@@ -567,7 +568,7 @@ fun EcranApplication(
                                     }
                                 }
                             }
-                        } else {
+                    } else {
                         LazyColumn(
                             Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp),
                             state = etatListe
@@ -636,7 +637,7 @@ fun EcranApplication(
                         onOuvrir = { t -> saisieType = t; saisieParentEnfant = 0L },
                         onEnfant = { idParent -> saisieType = "N"; saisieParentEnfant = idParent }
                     )
-                } else {
+            } else {
                     EcranSaisieActe(
                         personnes = personnes,
                         actes = actes,
@@ -747,7 +748,7 @@ fun EcranApplication(
                             } else if (exportBrancheId != 0L) {
                                 picker(true)
                                 lanceurGedcomBranche.launch("geneapoche-branche.ged")
-                            } else {
+                        } else {
                                 onMessage("Choisissez une personne centrale.")
                             }
                         }) { Text("Exporter") }
@@ -792,7 +793,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.56", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.57", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -942,7 +943,7 @@ fun EcranApplication(
                                     demandePhraseExport = false
                                     picker(true)
                                     lanceurGpbakExport.launch("geneapoche.gpbak")
-                                } else {
+                            } else {
                                     demandePhraseImport = false
                                     picker(true)
                                     lanceurGpbakImport.launch(arrayOf("*/*"))
@@ -1034,6 +1035,7 @@ fun EcranApplication(
         // G2-18 residuel : identifiant alloue UNE seule fois par ouverture du
         // dialogue, strictement croissant (compteur persistant).
         val idNouvellePersonne = remember { prochainId() }
+        key(editionCible?.id ?: idNouvellePersonne) {
         DialogueEdition(
             cible = editionCible,
             idNouvelle = idNouvellePersonne,
@@ -1059,6 +1061,12 @@ fun EcranApplication(
                         return@DialogueEdition
                     }
                 }
+            } else {
+                (personnes as? MutableList<Personne>)?.let { l ->
+                    val i = l.indexOfFirst { q -> q.id == p2.id }
+                    if (i >= 0) l[i] = p2
+                    }
+                }
                 enregistrer()
                 onEditionOuverte(false)
             },
@@ -1068,6 +1076,7 @@ fun EcranApplication(
                 onEditionOuverte(false)
             }
         )
+        }
     }
 
     if (pickerRole.isNotEmpty() && ouverte != null) {
@@ -1115,7 +1124,7 @@ fun EcranApplication(
                     }
                     if (candidats.isEmpty()) {
                         Text("Aucune autre personne disponible. Cr\u00E9ez-la avec le bouton + de la liste.")
-                    } else {
+                } else {
                         candidats.forEach { c ->
                             Row(
                                 Modifier.fillMaxWidth()
@@ -1149,8 +1158,6 @@ fun EcranApplication(
             },
             dismissButton = {
                 TextButton(onClick = { onConfirmSuppression(null) }) { Text("Annuler") }
-            }
-        )
     }
     }
     }
@@ -1215,99 +1222,3 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
             // Vignette : rond au NUMERO (Sosa ou d'Aboville) ; PASTILLE
             // VIDE si la personne n'est ni Sosa ni d'Aboville (G\u00E9n\u00E9aPoche 5).
             val vignette = p.numeroAffiche()
-            val couleurAvatar = when (p.sexe) {
-                "F" -> CouleurRose
-                "M" -> CouleurBleu
-                else -> CouleurNeutreDoux
-            }
-            Box(
-                Modifier.size(40.dp).clip(CircleShape).background(couleurAvatar),
-                contentAlignment = Alignment.Center
-            ) {
-                if (vignette.isNotEmpty()) {
-                    Text(
-                        vignette,
-                        color = CouleurVertFonce,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = when {
-                            vignette.length <= 3 -> 15.sp
-                            vignette.length <= 5 -> 12.sp
-                            else -> 12.sp
-                        },
-                        maxLines = 1
-                    )
-                }
-            }
-            Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    p.titre(),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                val n = dateAffichee(p.dateNaissance.trim())
-                val m = dateAffichee(p.dateMariage.trim())
-                val d = dateAffichee(p.dateDeces.trim())
-                if (n.isNotEmpty() || m.isNotEmpty() || d.isNotEmpty()) {
-                    val morceaux = mutableListOf<String>()
-                    if (n.isNotEmpty()) morceaux.add("N. " + n)
-                    if (m.isNotEmpty()) morceaux.add("M. " + m)
-                    if (d.isNotEmpty() && decesAffichable(p)) morceaux.add("D. " + d)
-                    Text(morceaux.joinToString("  \u2013  "), style = MaterialTheme.typography.bodySmall)
-                }
-            }
-            // G\u00E9n\u00E9aPoche 12 : coche (identit\u00E9 certifi\u00E9e) ou croix
-            // (\u00E0 v\u00E9rifier) rappel\u00E9e directement sur le nom de la liste.
-            if (identiteCertifiee(p)) {
-                Icon(
-                    Icons.Filled.Check,
-                    contentDescription = "Identit\u00E9 certifi\u00E9e",
-                    Modifier.size(20.dp),
-                    tint = CouleurVertFonce
-                )
-            } else {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = "Identit\u00E9 \u00E0 v\u00E9rifier",
-                    Modifier.size(16.dp),
-                    tint = CouleurRouge
-                )
-            }
-            Spacer(Modifier.width(6.dp))
-            // G\u00E9n\u00E9aPoche 5 : \u00E9tiquette des renseignements sur 6
-            // (N date compl\u00E8te, N commune, N d\u00E9partement, D date
-            // compl\u00E8te, D commune, D d\u00E9partement), rouge (0) \u00E0 vert (6).
-            val n6 = renseignementsN6(p)
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = couleurCompteur(n6, 6)
-            ) {
-                Text(
-                    "  " + n6.toString() + "/6  ",
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Spacer(Modifier.width(6.dp))
-            IconButton(onClick = onSupprimer, Modifier.size(30.dp)) {
-                Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(16.dp))
-            }
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-

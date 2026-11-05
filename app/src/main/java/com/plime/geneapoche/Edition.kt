@@ -38,33 +38,33 @@ fun DialogueEdition(
     onAnnuler: () -> Unit,
     onSupprimer: (() -> Unit)? = null
 ) {
-    var nom by remember(cible) { mutableStateOf(cible?.nom ?: "") }
-    var prenoms by remember(cible) { mutableStateOf(cible?.prenoms ?: "") }
-    var sexe by remember(cible) { mutableStateOf(cible?.sexe ?: "") }
-    var profession by remember(cible) { mutableStateOf(cible?.profession ?: "") }
-    var dateNaissance by remember(cible) { mutableStateOf(cible?.dateNaissance ?: "") }
-    var heureNaissance by remember(cible) { mutableStateOf(cible?.heureNaissance ?: "") }
-    var lieuNaissance by remember(cible) { mutableStateOf(cible?.lieuNaissance ?: "") }
-    var deptNaissance by remember(cible) { mutableStateOf(cible?.deptNaissance ?: "") }
-    var dateBapteme by remember(cible) { mutableStateOf(cible?.dateBapteme ?: "") }
-    var heureBapteme by remember(cible) { mutableStateOf(cible?.heureBapteme ?: "") }
-    var lieuBapteme by remember(cible) { mutableStateOf(cible?.lieuBapteme ?: "") }
-    var deptBapteme by remember(cible) { mutableStateOf(cible?.deptBapteme ?: "") }
-    var dateMariage by remember(cible) { mutableStateOf(cible?.dateMariage ?: "") }
-    var heureMariage by remember(cible) { mutableStateOf(cible?.heureMariage ?: "") }
-    var lieuMariage by remember(cible) { mutableStateOf(cible?.lieuMariage ?: "") }
-    var deptMariage by remember(cible) { mutableStateOf(cible?.deptMariage ?: "") }
-    var dateDeces by remember(cible) { mutableStateOf(cible?.dateDeces ?: "") }
-    var heureDeces by remember(cible) { mutableStateOf(cible?.heureDeces ?: "") }
-    var lieuDeces by remember(cible) { mutableStateOf(cible?.lieuDeces ?: "") }
-    var deptDeces by remember(cible) { mutableStateOf(cible?.deptDeces ?: "") }
-    var dateSepulture by remember(cible) { mutableStateOf(cible?.dateSepulture ?: "") }
-    var heureSepulture by remember(cible) { mutableStateOf(cible?.heureSepulture ?: "") }
-    var lieuSepulture by remember(cible) { mutableStateOf(cible?.lieuSepulture ?: "") }
-    var deptSepulture by remember(cible) { mutableStateOf(cible?.deptSepulture ?: "") }
+    var nom by remember(cible?.id) { mutableStateOf(cible?.nom ?: "") }
+    var prenoms by remember(cible?.id) { mutableStateOf(cible?.prenoms ?: "") }
+    var sexe by remember(cible?.id) { mutableStateOf(cible?.sexe ?: "") }
+    var profession by remember(cible?.id) { mutableStateOf(cible?.profession ?: "") }
+    var dateNaissance by remember(cible?.id) { mutableStateOf(cible?.dateNaissance ?: "") }
+    var heureNaissance by remember(cible?.id) { mutableStateOf(cible?.heureNaissance ?: "") }
+    var lieuNaissance by remember(cible?.id) { mutableStateOf(cible?.lieuNaissance ?: "") }
+    var deptNaissance by remember(cible?.id) { mutableStateOf(cible?.deptNaissance ?: "") }
+    var dateBapteme by remember(cible?.id) { mutableStateOf(cible?.dateBapteme ?: "") }
+    var heureBapteme by remember(cible?.id) { mutableStateOf(cible?.heureBapteme ?: "") }
+    var lieuBapteme by remember(cible?.id) { mutableStateOf(cible?.lieuBapteme ?: "") }
+    var deptBapteme by remember(cible?.id) { mutableStateOf(cible?.deptBapteme ?: "") }
+    var dateMariage by remember(cible?.id) { mutableStateOf(cible?.dateMariage ?: "") }
+    var heureMariage by remember(cible?.id) { mutableStateOf(cible?.heureMariage ?: "") }
+    var lieuMariage by remember(cible?.id) { mutableStateOf(cible?.lieuMariage ?: "") }
+    var deptMariage by remember(cible?.id) { mutableStateOf(cible?.deptMariage ?: "") }
+    var dateDeces by remember(cible?.id) { mutableStateOf(cible?.dateDeces ?: "") }
+    var heureDeces by remember(cible?.id) { mutableStateOf(cible?.heureDeces ?: "") }
+    var lieuDeces by remember(cible?.id) { mutableStateOf(cible?.lieuDeces ?: "") }
+    var deptDeces by remember(cible?.id) { mutableStateOf(cible?.deptDeces ?: "") }
+    var dateSepulture by remember(cible?.id) { mutableStateOf(cible?.dateSepulture ?: "") }
+    var heureSepulture by remember(cible?.id) { mutableStateOf(cible?.heureSepulture ?: "") }
+    var lieuSepulture by remember(cible?.id) { mutableStateOf(cible?.lieuSepulture ?: "") }
+    var deptSepulture by remember(cible?.id) { mutableStateOf(cible?.deptSepulture ?: "") }
 
     fun construire(): Personne {
-        val base = cible ?: Personne(id = idNouvelle)
+        val base = cible?.copy() ?: Personne(id = idNouvelle)
         // Sosa et lateral ne sont jamais saisis : calcules a partir du de cujus.
         base.nom = normaliserNom(nom)
         base.prenoms = normaliserPrenoms(prenoms)
@@ -94,7 +94,10 @@ fun DialogueEdition(
     }
 
     val formulaireValide =
-        (nom.isNotBlank() || prenoms.isNotBlank())
+        (nom.isNotBlank() || prenoms.isNotBlank()) &&
+        listOf(dateNaissance, dateBapteme, dateMariage, dateDeces, dateSepulture).all { dateValide(it) } &&
+        listOf(heureNaissance, heureBapteme, heureMariage, heureDeces, heureSepulture).all { heureValide(it) }
+
 
     AlertDialog(
         onDismissRequest = onAnnuler,
@@ -120,36 +123,36 @@ fun DialogueEdition(
 
                 Spacer(Modifier.height(10.dp))
                 Text("Naissance", fontWeight = FontWeight.Bold)
-                Champ("Date (JJ/MM/AAAA)", dateNaissance, { dateNaissance = it })
-                Champ("Heure (HH:mm)", heureNaissance, { heureNaissance = it })
+                Champ("Date (JJ/MM/AAAA)", dateNaissance, { dateNaissance = it }, erreur = !dateValide(dateNaissance), aide = "jj/mm/aaaa, aaaa ou date republicaine")
+                Champ("Heure (HH:mm)", heureNaissance, { heureNaissance = it }, erreur = !heureValide(heureNaissance), aide = "hh:mm")
                 Champ("Lieu (commune)", lieuNaissance, { lieuNaissance = it })
                 Champ("D\u00E9partement (ex 59)", deptNaissance, { deptNaissance = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("Bapt\u00EAme", fontWeight = FontWeight.Bold)
-                Champ("Date", dateBapteme, { dateBapteme = it })
-                Champ("Heure", heureBapteme, { heureBapteme = it })
+                Champ("Date", dateBapteme, { dateBapteme = it }, erreur = !dateValide(dateBapteme), aide = "jj/mm/aaaa, aaaa ou date republicaine")
+                Champ("Heure", heureBapteme, { heureBapteme = it }, erreur = !heureValide(heureBapteme), aide = "hh:mm")
                 Champ("Lieu", lieuBapteme, { lieuBapteme = it })
                 Champ("D\u00E9partement", deptBapteme, { deptBapteme = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("Mariage", fontWeight = FontWeight.Bold)
-                Champ("Date", dateMariage, { dateMariage = it })
-                Champ("Heure", heureMariage, { heureMariage = it })
+                Champ("Date", dateMariage, { dateMariage = it }, erreur = !dateValide(dateMariage), aide = "jj/mm/aaaa, aaaa ou date republicaine")
+                Champ("Heure", heureMariage, { heureMariage = it }, erreur = !heureValide(heureMariage), aide = "hh:mm")
                 Champ("Lieu", lieuMariage, { lieuMariage = it })
                 Champ("D\u00E9partement", deptMariage, { deptMariage = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("D\u00E9c\u00E8s", fontWeight = FontWeight.Bold)
-                Champ("Date", dateDeces, { dateDeces = it })
-                Champ("Heure", heureDeces, { heureDeces = it })
+                Champ("Date", dateDeces, { dateDeces = it }, erreur = !dateValide(dateDeces), aide = "jj/mm/aaaa, aaaa ou date republicaine")
+                Champ("Heure", heureDeces, { heureDeces = it }, erreur = !heureValide(heureDeces), aide = "hh:mm")
                 Champ("Lieu", lieuDeces, { lieuDeces = it })
                 Champ("D\u00E9partement", deptDeces, { deptDeces = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("S\u00E9pulture", fontWeight = FontWeight.Bold)
-                Champ("Date", dateSepulture, { dateSepulture = it })
-                Champ("Heure", heureSepulture, { heureSepulture = it })
+                Champ("Date", dateSepulture, { dateSepulture = it }, erreur = !dateValide(dateSepulture), aide = "jj/mm/aaaa, aaaa ou date republicaine")
+                Champ("Heure", heureSepulture, { heureSepulture = it }, erreur = !heureValide(heureSepulture), aide = "hh:mm")
                 Champ("Lieu", lieuSepulture, { lieuSepulture = it })
                 Champ("D\u00E9partement", deptSepulture, { deptSepulture = it })
             }
@@ -462,4 +465,5 @@ fun DialogueNouveauTemoin(
         }
     )
 }
+
 
