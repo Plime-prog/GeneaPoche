@@ -1420,14 +1420,25 @@ fun AppEcran(
         }
 
         // Renseigne un champ seulement s'il est encore vide (l'acte complete la fiche).
+        // v0.59 : en EDITION, une valeur saisie REMPLACE celle de la fiche du
+        // parent (le formulaire pre-rempli est la reference ; vide = inchange).
         fun renseigner(c: Personne?, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String) {
             if (c == null) return
-            if (c.dateNaissance.isBlank() && ne.isNotBlank()) c.dateNaissance = dateGreg(ne)
-            if (c.lieuNaissance.isBlank() && lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
-            if (c.deptNaissance.isBlank() && dept.isNotBlank()) c.deptNaissance = dept.trim()
-            if (c.profession.isBlank() && prof.isNotBlank()) c.profession = prof.trim()
-            if (c.dateDeces.isBlank() && dec.isNotBlank()) c.dateDeces = dateGreg(dec)
-            if (c.lieuDeces.isBlank() && lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
+            if (edition) {
+                if (ne.isNotBlank()) c.dateNaissance = dateGreg(ne)
+                if (lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
+                if (dept.isNotBlank()) c.deptNaissance = dept.trim()
+                if (prof.isNotBlank()) c.profession = prof.trim()
+                if (dec.isNotBlank()) c.dateDeces = dateGreg(dec)
+                if (lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
+            } else {
+                if (c.dateNaissance.isBlank() && ne.isNotBlank()) c.dateNaissance = dateGreg(ne)
+                if (c.lieuNaissance.isBlank() && lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
+                if (c.deptNaissance.isBlank() && dept.isNotBlank()) c.deptNaissance = dept.trim()
+                if (c.profession.isBlank() && prof.isNotBlank()) c.profession = prof.trim()
+                if (c.dateDeces.isBlank() && dec.isNotBlank()) c.dateDeces = dateGreg(dec)
+                if (c.lieuDeces.isBlank() && lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
+            }
         }
 
         fun lierParent(enfant: Personne, parent: Personne?, estMere: Boolean) {
@@ -1522,6 +1533,30 @@ fun AppEcran(
         val mere = trouverOuCreer(0L, a.mereNom, a.merePrenoms, "F")
         renseigner(mere, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces)
         lierParent(p, mere, true)
+
+        // v0.59 : EDITION - les noms saisis pour les parents sont la REFERENCE.
+        // Si le nom matche une AUTRE fiche que le lien actuel, le lien est
+        // REMPLACE (reparation des liens errones, ex une mere pointant sur
+        // la belle-mere a cause d'un ancien bug) ; nom laisse vide = lien
+        // RETIRE. Le remplacement respecte la coherence des dates.
+        if (edition) {
+            val ancienPere = personneParId(personnes, p.pere)
+            if (pere == null) {
+                ancienPere?.enfants?.remove(p.id)
+                p.pere = 0L
+            } else if (pere.id != p.pere && incoherenceParente(pere, p.dateNaissance) == null) {
+                ancienPere?.enfants?.remove(p.id)
+                p.pere = pere.id
+            }
+            val ancienneMere = personneParId(personnes, p.mere)
+            if (mere == null) {
+                ancienneMere?.enfants?.remove(p.id)
+                p.mere = 0L
+            } else if (mere.id != p.mere && incoherenceParente(mere, p.dateNaissance) == null) {
+                ancienneMere?.enfants?.remove(p.id)
+                p.mere = mere.id
+            }
+        }
 
         // Mariee et ses parents (mariage uniquement).
         var mariee: Personne? = null
@@ -2244,6 +2279,7 @@ fun AppEcran(
         )
     }
 }
+
 
 
 
