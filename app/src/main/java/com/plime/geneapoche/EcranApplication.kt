@@ -368,7 +368,7 @@ fun EcranApplication(
                         Text("Aucune personne pour le moment.")
                         Text("Touchez le bouton + pour ajouter la premi\u00E8re personne (de cujus, n\u00B0 1).")
                     }
-            } else {
+                } else {
                     // Onglet PERSONNES : compteur, tri A-Z / Aboville / Branches, index, cartes.
                     // triPersonnes : 0 = A-Z, 1 = Aboville (n croissant), 2 = Branches.
                     // G\u00E9n\u00E9aPoche 12 : ABOVILLE par d\u00E9faut, Branches puis A-Z.
@@ -418,12 +418,12 @@ fun EcranApplication(
                     val entrees: List<Any> = if (triPersonnes == 0) {
                         if (lettreChoisie == null) {
                             triees.toList()
-                    } else {
+                        } else {
                             triees.filter { (it.nom.trim().uppercase().firstOrNull() ?: '?') == lettreChoisie }
                         }
                     } else if (triPersonnes == 1) {
                         parAboville
-                } else {
+                    } else {
                         val membres = brancheChoisie?.let { b -> brancheDe(b, personnes) } ?: emptySet()
                         if (brancheChoisie == null) parAboville else parAboville.filter { it.id in membres }
                     }
@@ -448,7 +448,7 @@ fun EcranApplication(
                             resultat.add(pers)
                         }
                         resultat
-                } else {
+                    } else {
                         entreesFiltrees
                     }
 
@@ -568,7 +568,7 @@ fun EcranApplication(
                                     }
                                 }
                             }
-                    } else {
+                        } else {
                         LazyColumn(
                             Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp),
                             state = etatListe
@@ -637,7 +637,7 @@ fun EcranApplication(
                         onOuvrir = { t -> saisieType = t; saisieParentEnfant = 0L },
                         onEnfant = { idParent -> saisieType = "N"; saisieParentEnfant = idParent }
                     )
-            } else {
+                } else {
                     EcranSaisieActe(
                         personnes = personnes,
                         actes = actes,
@@ -748,7 +748,7 @@ fun EcranApplication(
                             } else if (exportBrancheId != 0L) {
                                 picker(true)
                                 lanceurGedcomBranche.launch("geneapoche-branche.ged")
-                        } else {
+                            } else {
                                 onMessage("Choisissez une personne centrale.")
                             }
                         }) { Text("Exporter") }
@@ -943,7 +943,7 @@ fun EcranApplication(
                                     demandePhraseExport = false
                                     picker(true)
                                     lanceurGpbakExport.launch("geneapoche.gpbak")
-                            } else {
+                                } else {
                                     demandePhraseImport = false
                                     picker(true)
                                     lanceurGpbakImport.launch(arrayOf("*/*"))
@@ -1034,8 +1034,8 @@ fun EcranApplication(
     if (editionOuverte) {
         // G2-18 residuel : identifiant alloue UNE seule fois par ouverture du
         // dialogue, strictement croissant (compteur persistant).
-        val idNouvellePersonne = remember { prochainId() }
         key(editionCible?.id ?: idNouvellePersonne) {
+        val idNouvellePersonne = remember { prochainId() }
         DialogueEdition(
             cible = editionCible,
             idNouvelle = idNouvellePersonne,
@@ -1060,11 +1060,10 @@ fun EcranApplication(
                         onEditionOuverte(false)
                         return@DialogueEdition
                     }
-                }
-            } else {
-                (personnes as? MutableList<Personne>)?.let { l ->
-                    val i = l.indexOfFirst { q -> q.id == p2.id }
-                    if (i >= 0) l[i] = p2
+                } else {
+                    (personnes as? MutableList<Personne>)?.let { l ->
+                        val i = l.indexOfFirst { q -> q.id == p2.id }
+                        if (i >= 0) l[i] = p2
                     }
                 }
                 enregistrer()
@@ -1075,8 +1074,8 @@ fun EcranApplication(
                 editionCible?.let { onConfirmSuppression(it) }
                 onEditionOuverte(false)
             }
-        )
         }
+        )
     }
 
     if (pickerRole.isNotEmpty() && ouverte != null) {
@@ -1124,7 +1123,7 @@ fun EcranApplication(
                     }
                     if (candidats.isEmpty()) {
                         Text("Aucune autre personne disponible. Cr\u00E9ez-la avec le bouton + de la liste.")
-                } else {
+                    } else {
                         candidats.forEach { c ->
                             Row(
                                 Modifier.fillMaxWidth()
@@ -1158,6 +1157,8 @@ fun EcranApplication(
             },
             dismissButton = {
                 TextButton(onClick = { onConfirmSuppression(null) }) { Text("Annuler") }
+            }
+        )
     }
     }
     }
@@ -1221,4 +1222,3 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
         ) {
             // Vignette : rond au NUMERO (Sosa ou d'Aboville) ; PASTILLE
             // VIDE si la personne n'est ni Sosa ni d'Aboville (G\u00E9n\u00E9aPoche 5).
-            val vignette = p.numeroAffiche()
