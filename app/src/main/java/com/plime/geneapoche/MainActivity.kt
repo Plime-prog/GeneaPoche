@@ -1766,6 +1766,17 @@ fun AppEcran(
                 message = "Diagnostic de l'arbre : " + nbDiag.toString() +
                     " point(s) \u00E0 examiner (onglet Journal)."
             }
+            // G\u00E9n\u00E9aPoche 11 (11.1) : rappels de recherches \u00E0 faire,
+            // annonc\u00E9s \u00E0 l'ouverture comme le diagnostic (r\u00E8gle des 75 ans).
+            val limiteAlertes = anneeCourante() - 75
+            val nbRech = pistes.count { ps ->
+                !ps.faite && (anneeCiblePiste(ps) == null || anneeCiblePiste(ps)!! <= limiteAlertes)
+            }
+            if (nbRech > 0) {
+                val alerte = "Rappels : " + nbRech.toString() +
+                    " recherche(s) prioritaire(s) \u00E0 faire (onglet Journal)."
+                message = if (nbDiag > 0) message + " " + alerte else alerte
+            }
         }
     }
 
