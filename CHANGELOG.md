@@ -1,3 +1,9 @@
+## v0.58 – Correctif : saisie d'acte (personne erronée) + formulaire compact
+
+- **Correctif important** : lors d'une correction via « Saisie d'un acte », le formulaire pouvait réutiliser les états d'une saisie précédente (intitulé, personne, département… appartenant à une autre fiche), et la modification était enregistrée sur le mauvais acte. Les états sont désormais resynchronisés à chaque ouverture, et une instance neuve du formulaire est créée à chaque saisie (compteur d'ouverture).
+- **Formulaire compact** : bouton « Enregistrer » toujours visible en bas, hors défilement ; champs regroupés deux par ligne (commune + département, date + heure, nom + prénoms, profession, conjoint, parents, témoins).
+- versionCode 58.
+
 # Historique des versions — GénéaPoche
 
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
