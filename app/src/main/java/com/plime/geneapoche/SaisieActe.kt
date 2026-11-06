@@ -177,30 +177,49 @@ fun TitrePastille(t: String, rempli: Boolean) {
     }
 }
 
-// Bloc Pere / Mere : naissance (age calcule), lieu, profession, deces.
+// v0.67 : REVUE NBMDS — chaque type d'acte ne porte pas les m\u00EAmes
+// renseignements. N/B : identit\u00E9 des parents seulement (une ligne) ;
+// M : tout ; D/S : ni naissance ni naissance des parents, d\u00E9c\u00E8s oui ;
+// E : tout. avecNaissance/avecDeces s\u00E9lectionnent les lignes r\u00E9elles.
 @Composable
-fun BlocParent(libelle: String, e: ChampsParent, dateActe: String) {
-    // v0.66 : pastille d'etat (verte = bloc rempli) + bloc CONDENSE,
-    // 3 lignes de champs au lieu de 4, libelles courts.
+fun BlocParent(
+    libelle: String, e: ChampsParent, dateActe: String,
+    avecNaissance: Boolean = true, avecDeces: Boolean = true
+) {
     TitrePastille(libelle, e.nom.isNotBlank())
     val age = ageActe(dateActe, e.ne)
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Champ("Nom", e.nom, { e.nom = it }, modifier = Modifier.weight(1f))
-        Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it }, modifier = Modifier.weight(1f))
-    }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Champ(
-            "N\u00E9(e) le", e.ne, { e.ne = it },
-            aide = if (age.isNotEmpty()) "\u00C2ge \u00E0 l'acte : " + age else "\u00C2ge calcul\u00E9 automatiquement",
-            modifier = Modifier.weight(1.1f)
-        )
-        Champ("Lieu", e.lieu, { e.lieu = it }, modifier = Modifier.weight(1f))
-        Champ("D\u00E9p.", e.dept, { e.dept = it }, modifier = Modifier.weight(0.6f))
-    }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Champ("Profession", e.profession, { e.profession = it }, modifier = Modifier.weight(1.2f))
-        Champ("D\u00E9c. le", e.deces, { e.deces = it }, modifier = Modifier.weight(1f))
-        Champ("Lieu d\u00E9c\u00E8s", e.lieuDeces, { e.lieuDeces = it }, modifier = Modifier.weight(1f))
+    if (!avecNaissance && !avecDeces) {
+        // Acte N/B : une seule ligne, ce que la d\u00E9claration dit des parents.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Champ("Nom", e.nom, { e.nom = it }, modifier = Modifier.weight(1f))
+            Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it }, modifier = Modifier.weight(1f))
+            Champ("Profession", e.profession, { e.profession = it }, modifier = Modifier.weight(1f))
+        }
+    } else {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Champ("Nom", e.nom, { e.nom = it }, modifier = Modifier.weight(1f))
+            Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it }, modifier = Modifier.weight(1f))
+        }
+        if (avecNaissance) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Champ(
+                    "N\u00E9(e) le", e.ne, { e.ne = it },
+                    aide = if (age.isNotEmpty()) "\u00C2ge \u00E0 l'acte : " + age else "\u00C2ge calcul\u00E9 automatiquement",
+                    modifier = Modifier.weight(1.1f)
+                )
+                Champ("Lieu", e.lieu, { e.lieu = it }, modifier = Modifier.weight(1f))
+                Champ("D\u00E9p.", e.dept, { e.dept = it }, modifier = Modifier.weight(0.6f))
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (avecNaissance) {
+                Champ("Profession", e.profession, { e.profession = it }, modifier = Modifier.weight(1.2f))
+            }
+            if (avecDeces) {
+                Champ("D\u00E9c. le", e.deces, { e.deces = it }, modifier = Modifier.weight(1f))
+                Champ("Lieu d\u00E9c\u00E8s", e.lieuDeces, { e.lieuDeces = it }, modifier = Modifier.weight(1f))
+            }
+        }
     }
 }
 
@@ -466,11 +485,18 @@ fun EcranSaisieActe(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("M") })
             FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("F") })
-            Champ("Profession", profession, { profession = it }, modifier = Modifier.weight(1f))
+            // v0.67 : un nouveau-n\u00E9 n'a pas de profession (N/B).
+            if (type != "N" && type != "B") {
+                Champ("Profession", profession, { profession = it }, modifier = Modifier.weight(1f))
+            }
         }
 
-        BlocParent("P\u00E8re", pere, date)
-        BlocParent("M\u00E8re", mere, date)
+        // v0.67 : N/B = parents en une ligne ; D/S = sans naissance des
+        // parents ; M/E = tout. Le formulaire ne montre que ce que l'acte porte.
+        val parentsNaissance = type == "M" || type == "E"
+        val parentsDeces = type != "N" && type != "B"
+        BlocParent("P\u00E8re", pere, date, parentsNaissance, parentsDeces)
+        BlocParent("M\u00E8re", mere, date, parentsNaissance, parentsDeces)
         // v0.64 : liens ACTUELS de la fiche en clair. Si la fiche porte un
         // lien errone (ex une mere qui pointe sur la belle-mere), c'est ICI
         // qu'on le voit : le formulaire recopie la fiche.
@@ -485,7 +511,10 @@ fun EcranSaisieActe(
             )
         }
 
-        if (type == "M" || marieeId != 0L || marieeNom.isNotBlank()) {
+        // v0.67 : le conjoint et ses parents n'existent que sur un acte de
+        // MARIAGE. Un acte de naissance n'a ni conjoint ni beaux-parents :
+        // la section ne s'affiche plus pour N/B/D/S.
+        if (type == "M" || type == "E") {
             TitrePastille(if (type == "M") "Mari\u00E9e" else "Conjoint(e)", marieeNom.isNotBlank() || marieeId != 0L)
             if (exMariee != null) {
                 Text(
