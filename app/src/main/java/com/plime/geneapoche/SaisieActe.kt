@@ -299,6 +299,38 @@ fun EcranSaisieActe(
             )
         }
 
+        // v0.63 : la personne CONCERNÉE s'affiche en TÊTE du formulaire,
+        // impossible à manquer, et se change en une touche. Si le
+        // pré-remplissage part de la mauvaise fiche, « Changer » recharge
+        // tout le formulaire sur la bonne personne.
+        Card(
+            Modifier.fillMaxWidth().padding(top = 6.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (exPersonne != null) CouleurCarte else Color.White
+            ),
+            border = BorderStroke(1.dp, if (exPersonne != null) CouleurBordVert else CouleurOrange)
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    if (exPersonne != null)
+                        (if (acteId != 0L) "Modification : " else "Pour : ") +
+                            libelleType(type) + " de " + exPersonne.titre()
+                    else
+                        "Aucune personne s\u00E9lectionn\u00E9e",
+                    Modifier.weight(1f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = if (exPersonne != null) CouleurVertFonce else CouleurRouge
+                )
+                TextButton(onClick = { pickerCible = 0; pickerOuvert = true }) {
+                    Text(if (exPersonne == null) "Choisir" else "Changer", fontSize = 12.sp)
+                }
+            }
+        }
+
         SectionTitre("Type d'acte")
         // GeneaPoche 4 : si le type est impose (appui long sur un bloc),
         // il ne peut pas etre change : seul le type concerne est modifiable.
@@ -370,13 +402,16 @@ fun EcranSaisieActe(
             // DISPARAIT : impossible de saisir ou corriger l'acte au nom
             // de quelqu'un d'autre sans s'en rendre compte.
             Text(
-                if (acteId != 0L)
-                    "Modification : " + libelleType(type) + " de " + exPersonne.titre()
-                else
-                    "Saisie pour : " + exPersonne.titre(),
+                (if (acteId != 0L) "Modification : " else "Saisie pour : ") +
+                    libelleType(type) + " de " + exPersonne.titre(),
                 color = CouleurVertFonce, fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
+            // v0.63 : voie de réparation directe — changer de personne
+            // recharge le formulaire (remplirDepuis) sur la bonne fiche.
+            TextButton(onClick = { pickerCible = 0; pickerOuvert = true }) {
+                Text("Ce n'est pas la bonne personne ? Changer", fontSize = 11.sp)
+            }
         } else {
             OutlinedButton(onClick = { pickerCible = 0; pickerOuvert = true }) {
                 Text("Choisir une personne existante")

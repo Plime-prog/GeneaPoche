@@ -750,6 +750,7 @@ fun EcranPersonne(
                 key(p.id, tPre, saisieCompteur) {
                 EcranSaisieActe(
                     personnes = personnes,
+                    actes = actes,
                     initial = remember(saisieCompteur, tPre, p.id) { prefillActe(p, personnes, actes, tPre.ifEmpty { null }, editionFiche = tPre.isNotEmpty()) },
                     // GeneaPoche 4 : appui long sur un bloc = SEUL ce type d'acte.
                     typeImpose = tPre.ifEmpty { null },
