@@ -1,5 +1,6 @@
 package com.plime.geneapoche
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
@@ -23,8 +26,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 // ---------------------------------------------------------------- Dialogue d'edition d'une personne
 // Sert a la creation et a la modification (appui long sur un bloc de la fiche).
@@ -276,18 +281,38 @@ fun Champ(
     onChange: (String) -> Unit,
     erreur: Boolean = false,
     aide: String = "",
-    // v0.69 : interligne reduit - formulaires plus compacts partout.
-    modifier: Modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+    // v0.70 : champ ULTRA-COMPACT - cadre mince de ~36 dp au lieu du grand
+    // OutlinedTextField (~64 dp) : la saisie tient enfin sur une page.
+    modifier: Modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp)
 ) {
-    OutlinedTextField(
-        value = valeur,
-        onValueChange = onChange,
-        label = { Text(libelle) },
-        isError = erreur,
-        singleLine = true,
-        supportingText = if (aide.isNotEmpty()) { { Text(aide, style = MaterialTheme.typography.bodySmall) } } else null,
-        modifier = modifier
-    )
+    Column(modifier) {
+        Text(
+            libelle,
+            fontSize = 10.sp,
+            color = if (erreur) CouleurRouge else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        BasicTextField(
+            value = valeur,
+            onValueChange = onChange,
+            singleLine = true,
+            textStyle = TextStyle(fontSize = 14.sp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(
+                    1.dp,
+                    if (erreur) CouleurRouge else MaterialTheme.colorScheme.outline,
+                    RoundedCornerShape(6.dp)
+                )
+                .padding(horizontal = 8.dp, vertical = 5.dp)
+        )
+        if (aide.isNotEmpty()) {
+            Text(
+                aide,
+                fontSize = 9.sp,
+                color = if (erreur) CouleurRouge else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 
