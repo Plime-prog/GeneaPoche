@@ -162,7 +162,7 @@ fun EcranPersonne(
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
     // v0.62 : réattribution d'un acte stocké à une autre fiche.
-    onReattribuerActe: (Acte, Long) -> Unit = {},
+    onReattribuerActe: (Acte, Long) -> Unit = { _, _ -> },
     // Coche de validation d'une information : (section, valide).
     // Une coche negative cree automatiquement une recherche dans le journal.
     onValider: (String, Boolean) -> Unit,
@@ -1268,7 +1268,7 @@ fun CarteEvenement(
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
     // v0.62 : réattribution d'un acte stocké à une autre personne.
-    onReattribuer: (Acte, Long) -> Unit = {},
+    onReattribuer: (Acte, Long) -> Unit = { _, _ -> },
     // GeneaPoche 12 : photo d'acte remise dans l'en-tete du bloc.
     onAjouterActe: (Uri, String, String) -> Unit = { _, _, _ -> },
     picker: (Boolean) -> Unit = {},
@@ -1491,7 +1491,7 @@ fun SousBlocActe(
     // v0.62 : réparation des actes mal rattachés — cet acte peut être
     // réattribué à une autre fiche depuis la fiche où il s'affiche.
     personnes: List<Personne> = emptyList(),
-    onReattribuer: (Acte, Long) -> Unit = {}
+    onReattribuer: (Acte, Long) -> Unit = { _, _ -> }
 ) {
     Card(
         Modifier.fillMaxWidth().padding(top = 4.dp),
