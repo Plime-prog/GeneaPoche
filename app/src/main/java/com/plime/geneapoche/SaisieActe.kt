@@ -436,6 +436,19 @@ fun EcranSaisieActe(
 
         BlocParent("P\u00E8re", pere, date)
         BlocParent("M\u00E8re", mere, date)
+        // v0.64 : liens ACTUELS de la fiche en clair. Si la fiche porte un
+        // lien errone (ex une mere qui pointe sur la belle-mere), c'est ICI
+        // qu'on le voit : le formulaire recopie la fiche.
+        if (exPersonne != null) {
+            val pereFiche = personnes.firstOrNull { it.id == exPersonne.pere }
+            val mereFiche = personnes.firstOrNull { it.id == exPersonne.mere }
+            Text(
+                "Liens de la fiche \u2014 P\u00E8re : " + (pereFiche?.titre() ?: "aucun") +
+                    " \u00B7 M\u00E8re : " + (mereFiche?.titre() ?: "aucune"),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         if (type == "M" || marieeId != 0L || marieeNom.isNotBlank()) {
             SectionTitre(if (type == "M") "Mari\u00E9e" else "Conjoint(e)")

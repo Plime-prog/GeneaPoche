@@ -1551,25 +1551,44 @@ fun AppEcran(
         // parente est REMPLACE (reparation des liens errones, ex une mere
         // pointant sur la belle-mere). En EDITION seulement, un nom laisse
         // vide RETIRE le lien. La coherence des dates est respectee.
+        // v0.64 : plus AUCUN remplacement de lien silencieux. Un refus
+        // (incoherenceParente) est EXPLIQUE a l'utilisateur, un remplacement
+        // ou un retrait est CONFIRME en clair dans le message final.
+        var retourLiens = ""
+        var refusParentTxt = ""
         val ancienPere = personneParId(personnes, p.pere)
         if (pere == null) {
             if (edition) {
                 ancienPere?.enfants?.remove(p.id)
                 p.pere = 0L
+                retourLiens += "Lien du p\u00E8re retir\u00E9. "
             }
-        } else if (pere.id != p.pere && incoherenceParente(pere, p.dateNaissance) == null) {
-            ancienPere?.enfants?.remove(p.id)
-            p.pere = pere.id
+        } else if (pere.id != p.pere) {
+            val motifP = incoherenceParente(pere, p.dateNaissance)
+            if (motifP == null) {
+                ancienPere?.enfants?.remove(p.id)
+                p.pere = pere.id
+                retourLiens += "P\u00E8re de la fiche remplac\u00E9 : " + (ancienPere?.titre() ?: "aucun") + " \u2192 " + pere.titre() + ". "
+            } else {
+                refusParentTxt += "P\u00E8re NON remplac\u00E9 : " + motifP + " "
+            }
         }
         val ancienneMere = personneParId(personnes, p.mere)
         if (mere == null) {
             if (edition) {
                 ancienneMere?.enfants?.remove(p.id)
                 p.mere = 0L
+                retourLiens += "Lien de la m\u00E8re retir\u00E9. "
             }
-        } else if (mere.id != p.mere && incoherenceParente(mere, p.dateNaissance) == null) {
-            ancienneMere?.enfants?.remove(p.id)
-            p.mere = mere.id
+        } else if (mere.id != p.mere) {
+            val motifM = incoherenceParente(mere, p.dateNaissance)
+            if (motifM == null) {
+                ancienneMere?.enfants?.remove(p.id)
+                p.mere = mere.id
+                retourLiens += "M\u00E8re de la fiche remplac\u00E9e : " + (ancienneMere?.titre() ?: "aucune") + " \u2192 " + mere.titre() + ". "
+            } else {
+                refusParentTxt += "M\u00E8re NON remplac\u00E9e : " + motifM + " "
+            }
         }
 
         // Mariee et ses parents (mariage uniquement).
@@ -1707,13 +1726,16 @@ fun AppEcran(
         enregistrer()
         // GeneaPoche 12 : message final EXACT - le lien refuse est rappele
         // (l'acte est conserve, SANS le lien de parente).
+        // v0.64 : message COMPLET - refus parentPourEnfant, refus ou
+        // remplacement de lien pere/mere, puis le resume de l'acte.
+        val resumeActe =
+            (if (edition) "Acte modifi\u00E9 : " else "Acte enregistr\u00E9 : ") + libelleType(a.type) +
+                (if (crees > 0) " ; " + crees.toString() + " personne(s) cr\u00E9\u00E9e(s)" else "")
         message =
-            if (refusLienTxt.isNotEmpty()) {
-                refusLienTxt + " L'acte reste enregistr\u00E9, SANS le lien de parent\u00E9."
-            } else {
-                (if (edition) "Acte modifi\u00E9 : " else "Acte enregistr\u00E9 : ") + libelleType(a.type) +
-                    (if (crees > 0) " ; " + crees.toString() + " personne(s) cr\u00E9\u00E9e(s)" else "")
-            }
+            (if (refusLienTxt.isNotEmpty()) refusLienTxt + " L'acte reste enregistr\u00E9, SANS le lien de parent\u00E9. " else "") +
+            refusParentTxt +
+            (if (retourLiens.isNotEmpty()) retourLiens.trim() + " " else "") +
+            resumeActe
     }
 
     fun ajouterActe(personneId: Long, uri: Uri, type: String, titre: String) {
