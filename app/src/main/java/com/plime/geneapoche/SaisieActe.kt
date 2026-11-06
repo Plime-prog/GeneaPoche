@@ -606,68 +606,31 @@ fun EcranSaisie(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(Modifier.height(10.dp))
-        listOf(
-            Triple("N", "Naissance", CouleurVert),
-            Triple("B", "Bapt\u00EAme", CouleurBleu),
-            Triple("M", "Mariage", CouleurRose),
-            Triple("D", "D\u00E9c\u00E8s", CouleurNeutreDoux),
-            Triple("S", "S\u00E9pulture", GrisManquant),
-            Triple("E", "\u00C9v\u00E9nement", CouleurOrange)
-        ).chunked(2).forEach { ligne ->
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                ligne.forEach { (t, l, coul) ->
-                    Card(
-                        Modifier.weight(1f).padding(vertical = 2.dp)
-                            .clickable { onOuvrir(t) },
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, CouleurBordVert)
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                Modifier.size(24.dp).clip(CircleShape).background(coul),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    t,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Spacer(Modifier.width(6.dp))
-                            Text(l, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
-                        }
-                    }
-                }
-                if (ligne.size == 1) Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(6.dp))
+        // v0.61 : menu en PUCES compactes (meme gabarit que le niveau de
+        // preuve) - une seule ligne deroulante au lieu des grandes cartes.
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
+            listOf(
+                "N" to "Naissance",
+                "B" to "Bapt\u00EAme",
+                "M" to "Mariage",
+                "D" to "D\u00E9c\u00E8s",
+                "S" to "S\u00E9pulture",
+                "E" to "\u00C9v\u00E9nement"
+            ).forEach { (t, l) ->
+                FilterChip(
+                    selected = false,
+                    onClick = { onOuvrir(t) },
+                    label = { Text(t + " \u00B7 " + l, fontSize = 11.sp) },
+                    modifier = Modifier.padding(end = 6.dp)
+                )
             }
-        }
-        // ENFANT : choisir le parent existant puis saisir sa naissance.
-        Card(
-            Modifier.fillMaxWidth().padding(vertical = 2.dp)
-                .clickable { pickerParent = true },
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.dp, CouleurBordVert)
-        ) {
-            Row(
-                Modifier.fillMaxWidth().padding(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    Modifier.size(24.dp).clip(CircleShape).background(CouleurVertFonce),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(14.dp), tint = Color.White)
-                }
-                Spacer(Modifier.width(6.dp))
-                Text("Enfant", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
-            }
+            // ENFANT : choisir le parent existant puis saisir sa naissance.
+            FilterChip(
+                selected = false,
+                onClick = { pickerParent = true },
+                label = { Text("Enfant", fontSize = 11.sp) }
+            )
         }
         Text(
             "Une personne existante est syst\u00E9matiquement propos\u00E9e : si son acte existe d\u00E9j\u00E0, il est \u00E9dit\u00E9, jamais dupliqu\u00E9.",
