@@ -213,11 +213,15 @@ fun EcranPersonne(
     // informations sont vides : N, B, M, D puis S (la sÃ©pulture est APRÃS
     // le dÃ©cÃ¨s, le mariage APRÃS la naissance, mÃªme sans dates).
     val ordreNaturel = listOf("N", "B", "M", "D", "S")
-    val typesPresents = mutableListOf("N", "B", "M")
-    if (decesAffiche) {
-        typesPresents.add("D")
-        typesPresents.add("S")
-    }
+    // v0.70 : B et S n'apparaissent PLUS par defaut sur la fiche - ils
+    // s'affichent seulement si l'acte porte une donnee (bapteme celebre,
+    // sepulture datee).
+    val baptemePresent = listOf(p.dateBapteme, p.heureBapteme, p.lieuBapteme, p.deptBapteme).any { it.isNotBlank() }
+    val sepulturePresente = listOf(p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture).any { it.isNotBlank() }
+    val typesPresents = mutableListOf("N", "M")
+    if (baptemePresent) typesPresents.add("B")
+    if (decesAffiche) typesPresents.add("D")
+    if (sepulturePresente) typesPresents.add("S")
     // GÃ©nÃ©aPoche 10 : annÃ©e effective d'un Ã©vÃ©nement, pour garantir
     // B et M jamais avant N, S jamais avant D.
     fun anneeEffective(t: String): Int? {

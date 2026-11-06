@@ -295,6 +295,9 @@ fun EcranSaisieActe(
     val signataires = remember(initial) { mutableStateListOf<String>().also { l -> initial?.signataires?.forEach { l.add(it) } } }
     var pickerCible by remember { mutableStateOf(0) } // 0 = personne concernee, 1 = mariee
     var pickerOuvert by remember { mutableStateOf(false) }
+    // v0.70 : le conjoint du defunt est-il ENCORE EN VIE (declarant de
+    // l'acte) ou deja DECEDE avant lui (veuf/veuve) ?
+    var conjointEnVie by remember { mutableStateOf(true) }
     // G\u00E9n\u00E9aPoche 3 : confirmation d'une date hors p\u00E9riode r\u00E9aliste.
     var confirme by remember { mutableStateOf(false) }
     var avertissement by remember { mutableStateOf<String?>(null) }
@@ -335,7 +338,9 @@ fun EcranSaisieActe(
     val parties: List<String> = buildList {
         add("Concerne(e)")
         if (pere.nom.isNotBlank()) add("P\u00E8re")
-        if (mere.nom.isNotBlank()) add("M\u00E8re")
+        // v0.70 : sur un acte de NAISSANCE, la mere ne signe jamais l'acte
+        // (declarant = pere, sage-femme ou tiers) : pas de puce Mere.
+        if (mere.nom.isNotBlank() && type != "N") add("M\u00E8re")
         if (marieeNom.isNotBlank() || marieeId != 0L) add(if (type == "M") "Mari\u00E9e" else "Conjoint(e)")
         temoins.forEachIndexed { i, t -> if (t.nom.isNotBlank()) add("T\u00E9moin " + (i + 1).toString()) }
     }
@@ -362,7 +367,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.69",
+                "  v0.70",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -527,9 +532,19 @@ fun EcranSaisieActe(
         // v0.68 : acte de d\u00E9c\u00E8s/s\u00E9pulture — le conjoint survivant
         // (\u00AB veuf/veuve de X \u00BB) tient sur une seule ligne.
         if (type == "D" || type == "S") {
-            TitrePastille("Conjoint survivant", marieeNom.isNotBlank())
+            // v0.70 : le conjoint peut etre ENCORE EN VIE (declarant) ou
+            // deja decede avant le defunt ("veuf/veuve de X") : l'acte
+            // porte l'un ou l'autre, pas seulement un survivant.
+            TitrePastille("Conjoint", marieeNom.isNotBlank())
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Champ("Nom", marieeNom, { marieeNom = it }, modifier = Modifier.weight(1f))
+                FilterChip(selected = conjointEnVie, onClick = { conjointEnVie = true }, label = { Text("En vie") })
+                FilterChip(selected = !conjointEnVie, onClick = { conjointEnVie = false }, label = { Text("D\u00E9c\u00E9d\u00E9 avant (veuf/veuve)") })
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Champ(
+                    if (conjointEnVie) "Nom du conjoint survivant" else "Nom du conjoint d\u00E9c\u00E9d\u00E9",
+                    marieeNom, { marieeNom = it }, modifier = Modifier.weight(1f)
+                )
                 Champ("Pr\u00E9noms", marieePrenoms, { marieePrenoms = it }, modifier = Modifier.weight(1f))
             }
         }
@@ -645,7 +660,7 @@ fun EcranSaisieActe(
                     mMarieeNe = mereMariee.ne.trim(), mMarieeLieu = mereMariee.lieu.trim(), mMarieeDept = normaliserDept(mereMariee.dept),
                     mMarieeProf = mereMariee.profession.trim(), mMarieeDeces = mereMariee.deces.trim(), mMarieeLieuDeces = mereMariee.lieuDeces.trim(),
                     temoins = temoins.toList(),
-                    signataires = signataires.toList()
+                    signataires = if (type == "N") signataires.filter { it != "M\u00E8re" } else signataires.toList()
                 )
                 // Contr\u00F4le de coh\u00E9rence : AVERTISSEMENT non bloquant,
                 // l'utilisateur peut confirmer ("Enregistrer quand m\u00EAme").
