@@ -83,6 +83,15 @@ data class ActeSaisie(
     val parentPourEnfant: Long = 0L,
     // Personne concern\u00E9e
     val personneId: Long = 0L,
+    // v0.65 : identifiants des parents lies sur la fiche (fiabilit\u00E9 des
+    // liens : un homonyme ne peut plus d\u00E9router le lien, une correction
+    // de nom ne force pas l'ancienne fiche).
+    val pereId: Long = 0L,
+    val mereId: Long = 0L,
+    // v0.65 : noms pr\u00E9sents \u00E0 l'OUVERTURE du formulaire : un lien de
+    // parent\u00E9 n'est retir\u00E9 que si un nom rempli \u00E0 l'ouverture a \u00E9t\u00E9 vid\u00E9.
+    val pereNomInit: String = "",
+    val mereNomInit: String = "",
     val nom: String = "",
     val prenoms: String = "",
     val sexe: String = "",
@@ -111,6 +120,7 @@ data class ActeSaisie(
 
 // Champs d'un parent (pere ou mere), observes par Compose.
 class ChampsParent {
+    var id: Long = 0L
     var nom by mutableStateOf("")
     var prenoms by mutableStateOf("")
     var ne by mutableStateOf("")
@@ -119,6 +129,15 @@ class ChampsParent {
     var profession by mutableStateOf("")
     var deces by mutableStateOf("")
     var lieuDeces by mutableStateOf("")
+}
+
+// v0.65 (diagnostic externe) : UN SEUL endroit remplit les champs d'un
+// parent. Extension top-level testable : remplir un parent ne peut plus
+// toucher les champs d'un autre bloc.
+fun ChampsParent.remplir(nom: String, prenoms: String, ne: String, lieu: String,
+    dept: String, profession: String, deces: String, lieuDeces: String) {
+    this.nom = nom; this.prenoms = prenoms; this.ne = ne; this.lieu = lieu
+    this.dept = dept; this.profession = profession; this.deces = deces; this.lieuDeces = lieuDeces
 }
 
 // Age au moment de l'acte (calcule a partir des annees).
@@ -199,13 +218,19 @@ fun EcranSaisieActe(
     var sexe by remember(initial) { mutableStateOf(initial?.sexe ?: "") }
     var profession by remember(initial) { mutableStateOf(initial?.profession ?: "") }
     val pere = remember(initial) {
-        ChampsParent().apply {
-            initial?.let { a -> nom = a.pereNom; prenoms = a.perePrenoms; ne = a.pereNe; lieu = a.pereLieu; dept = a.pereDept; profession = a.pereProf; deces = a.pereDeces; lieuDeces = a.pereLieuDeces }
+        ChampsParent().also { c ->
+            initial?.let { a ->
+                c.remplir(a.pereNom, a.perePrenoms, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces)
+                c.id = a.pereId
+            }
         }
     }
     val mere = remember(initial) {
-        ChampsParent().apply {
-            initial?.let { a -> nom = a.mereNom; prenoms = a.merePrenoms; ne = a.mereNe; lieu = a.mereLieu; dept = a.mereDept; profession = a.mereProf; deces = a.mereDeces; lieuDeces = a.mereLieuDeces }
+        ChampsParent().also { c ->
+            initial?.let { a ->
+                c.remplir(a.mereNom, a.merePrenoms, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces)
+                c.id = a.mereId
+            }
         }
     }
     var marieeId by remember(initial) { mutableStateOf(initial?.marieeId ?: 0L) }
@@ -213,13 +238,17 @@ fun EcranSaisieActe(
     var marieePrenoms by remember(initial) { mutableStateOf(initial?.marieePrenoms ?: "") }
     var marieeProf by remember(initial) { mutableStateOf(initial?.marieeProf ?: "") }
     val pereMariee = remember(initial) {
-        ChampsParent().apply {
-            initial?.let { a -> nom = a.pMarieeNom; prenoms = a.pMarieePrenoms; ne = a.pMarieeNe; lieu = a.pMarieeLieu; dept = a.pMarieeDept; profession = a.pMarieeProf; deces = a.pMarieeDeces; lieuDeces = a.pMarieeLieuDeces }
+        ChampsParent().also { c ->
+            initial?.let { a ->
+                c.remplir(a.pMarieeNom, a.pMarieePrenoms, a.pMarieeNe, a.pMarieeLieu, a.pMarieeDept, a.pMarieeProf, a.pMarieeDeces, a.pMarieeLieuDeces)
+            }
         }
     }
     val mereMariee = remember(initial) {
-        ChampsParent().apply {
-            initial?.let { a -> nom = a.mMarieeNom; prenoms = a.mMarieePrenoms; ne = a.mMarieeNe; lieu = a.mMarieeLieu; dept = a.mMarieeDept; profession = a.mMarieeProf; deces = a.mMarieeDeces; lieuDeces = a.mMarieeLieuDeces }
+        ChampsParent().also { c ->
+            initial?.let { a ->
+                c.remplir(a.mMarieeNom, a.mMarieePrenoms, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
+            }
         }
     }
     val temoins = remember(initial) { mutableStateListOf<TemoinSaisie>().also { l -> initial?.temoins?.forEach { l.add(it) } } }
@@ -253,20 +282,12 @@ fun EcranSaisieActe(
         prenoms = a.prenoms
         sexe = a.sexe
         profession = a.profession
-        pere.nom = a.pereNom; pere.prenoms = a.perePrenoms; pere.ne = a.pereNe
-        pere.lieu = a.pereLieu; pere.dept = a.pereDept; pere.profession = a.pereProf
-        pere.deces = a.pereDeces; pere.lieuDeces = a.pereLieuDeces
-        mere.nom = a.mereNom; mere.prenoms = a.merePrenoms; mere.ne = a.mereNe
-        mere.lieu = a.mereLieu; mere.dept = a.mereDept; mere.profession = a.mereProf
-        mere.deces = a.mereDeces; mere.lieuDeces = a.mereLieuDeces
+        pere.remplir(a.pereNom, a.perePrenoms, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces); pere.id = a.pereId
+        mere.remplir(a.mereNom, a.merePrenoms, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces); mere.id = a.mereId
         marieeId = a.marieeId
         marieeNom = a.marieeNom; marieePrenoms = a.marieePrenoms; marieeProf = a.marieeProf
-        pereMariee.nom = a.pMarieeNom; pereMariee.prenoms = a.pMarieePrenoms; pereMariee.ne = a.pMarieeNe
-        pereMariee.lieu = a.pMarieeLieu; pereMariee.dept = a.pMarieeDept; pereMariee.profession = a.pMarieeProf
-        pereMariee.deces = a.pMarieeDeces; pereMariee.lieuDeces = a.pMarieeLieuDeces
-        mereMariee.nom = a.mMarieeNom; mereMariee.prenoms = a.mMarieePrenoms; mereMariee.ne = a.mMarieeNe
-        mereMariee.lieu = a.mMarieeLieu; mereMariee.dept = a.mMarieeDept; mereMariee.profession = a.mMarieeProf
-        mereMariee.deces = a.mMarieeDeces; mereMariee.lieuDeces = a.mMarieeLieuDeces
+        pereMariee.remplir(a.pMarieeNom, a.pMarieePrenoms, a.pMarieeNe, a.pMarieeLieu, a.pMarieeDept, a.pMarieeProf, a.pMarieeDeces, a.pMarieeLieuDeces)
+        mereMariee.remplir(a.mMarieeNom, a.mMarieePrenoms, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
         temoins.clear(); a.temoins.forEach { temoins.add(it) }
         signataires.clear(); a.signataires.forEach { signataires.add(it) }
     }
@@ -537,6 +558,10 @@ fun EcranSaisieActe(
                     intitule = intitule.trim(),
                     parentPourEnfant = parentPourEnfantId,
                     personneId = personneId,
+                    pereId = pere.id,
+                    mereId = mere.id,
+                    pereNomInit = initial?.pereNom ?: "",
+                    mereNomInit = initial?.mereNom ?: "",
                     nom = nom.trim(),
                     prenoms = prenoms.trim(),
                     sexe = sexe,
