@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -160,6 +161,8 @@ fun EcranPersonne(
     picker: (Boolean) -> Unit = {},
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
+    // v0.62 : réattribution d'un acte stocké à une autre fiche.
+    onReattribuerActe: (Acte, Long) -> Unit = {},
     // Coche de validation d'une information : (section, valide).
     // Une coche negative cree automatiquement une recherche dans le journal.
     onValider: (String, Boolean) -> Unit,
@@ -564,6 +567,7 @@ fun EcranPersonne(
                                             picker = picker,
                                             onSupprimerActe = onSupprimerActe,
                                             onVoirActe = onVoirActe,
+                                            onReattribuer = onReattribuerActe,
                                             onEnregistrer = enregistrer,
                                             pistes = pistes,                                            modifier = Modifier
                                         )
@@ -1263,6 +1267,8 @@ fun CarteEvenement(
     onOuvrirParent: (String) -> Unit,
     onSupprimerActe: (Acte) -> Unit,
     onVoirActe: (Acte) -> Unit,
+    // v0.62 : réattribution d'un acte stocké à une autre personne.
+    onReattribuer: (Acte, Long) -> Unit = {},
     // GeneaPoche 12 : photo d'acte remise dans l'en-tete du bloc.
     onAjouterActe: (Uri, String, String) -> Unit = { _, _, _ -> },
     picker: (Boolean) -> Unit = {},
@@ -1420,7 +1426,9 @@ fun CarteEvenement(
                     piste = pisteEv,
                     onVoir = { onVoirActe(acte) },
                     onSupprimer = { onSupprimerActe(acte) },
-                    onEnregistrer = onEnregistrer
+                    onEnregistrer = onEnregistrer,
+                    personnes = personnes.filter { it.id != p.id }.sortedBy { it.titre() },
+                    onReattribuer = onReattribuer
                 )
             }
         }
@@ -1479,7 +1487,11 @@ fun SousBlocActe(
     piste: Piste?,
     onVoir: () -> Unit,
     onSupprimer: () -> Unit,
-    onEnregistrer: () -> Unit
+    onEnregistrer: () -> Unit,
+    // v0.62 : réparation des actes mal rattachés — cet acte peut être
+    // réattribué à une autre fiche depuis la fiche où il s'affiche.
+    personnes: List<Personne> = emptyList(),
+    onReattribuer: (Acte, Long) -> Unit = {}
 ) {
     Card(
         Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -1550,6 +1562,37 @@ fun SousBlocActe(
                     TextButton(onClick = { piste.enCours = noteSousBloc; onEnregistrer() }) {
                         Text("Enregistrer", fontSize = 12.sp)
                     }
+                }
+            }
+            // v0.62 : outil de réparation — rattacher cet acte stocké à une
+            // autre fiche (cas des actes saisis autrefois sur la mauvaise
+            // personne).
+            if (personnes.isNotEmpty()) {
+                var reattribueOuvert by remember { mutableStateOf(false) }
+                TextButton(onClick = { reattribueOuvert = true }) {
+                    Text("Cet acte concerne une autre personne", fontSize = 11.sp)
+                }
+                if (reattribueOuvert) {
+                    AlertDialog(
+                        onDismissRequest = { reattribueOuvert = false },
+                        title = { Text("Rattacher cet acte à :") },
+                        text = {
+                            LazyColumn {
+                                items(personnes) { cand ->
+                                    TextButton(onClick = {
+                                        reattribueOuvert = false
+                                        onReattribuer(acte, cand.id)
+                                    }) { Text(cand.titre(), fontSize = 13.sp) }
+                                }
+                            }
+                        },
+                        confirmButton = {},
+                        dismissButton = {
+                            TextButton(onClick = { reattribueOuvert = false }) {
+                                Text("Annuler")
+                            }
+                        }
+                    )
                 }
             }
         }

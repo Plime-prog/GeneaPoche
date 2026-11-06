@@ -365,14 +365,22 @@ fun EcranSaisieActe(
 
         SectionTitre("Personne concern\u00E9e")
         if (exPersonne != null) {
+            // v0.62 : en modification d'un acte rattaché à une fiche, la
+            // personne concernée est AFFICHÉE en clair et le bouton de choix
+            // DISPARAIT : impossible de saisir ou corriger l'acte au nom
+            // de quelqu'un d'autre sans s'en rendre compte.
             Text(
-                "Personne existante : " + exPersonne.titre(),
+                if (acteId != 0L)
+                    "Modification : " + libelleType(type) + " de " + exPersonne.titre()
+                else
+                    "Saisie pour : " + exPersonne.titre(),
                 color = CouleurVertFonce, fontWeight = FontWeight.Bold,
-                fontSize = 13.sp
+                fontSize = 14.sp
             )
-        }
-        OutlinedButton(onClick = { pickerCible = 0; pickerOuvert = true }) {
-            Text("Choisir une personne existante")
+        } else {
+            OutlinedButton(onClick = { pickerCible = 0; pickerOuvert = true }) {
+                Text("Choisir une personne existante")
+            }
         }
         if (parentEnfant != null && type == "N") {
             Text(

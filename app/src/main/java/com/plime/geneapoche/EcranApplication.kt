@@ -282,7 +282,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche u2013 v0.61",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.62",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -798,7 +798,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.61", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.62", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1023,6 +1023,12 @@ fun EcranApplication(
             onEditerIdentite = { onEditionCible(p); onEditionOuverte(true) },
             onModifierEvenementLibre = { ev -> majEvenementLibre(p, ev) },
             onSupprimerEvenementLibre = { idEv -> supprimerEvenementLibre(p, idEv) },
+            // v0.62 : réparation des actes mal rattachés.
+            onReattribuerActe = { acte, id ->
+                acte.personneId = id
+                enregistrer()
+                onMessage("Acte rattach\u00E9 \u00E0 " + (personneParId(personnes, id)?.titre() ?: ""))
+            },
             // G\u00E9n\u00E9aPoche 9 : plus de bouton Arbre sur la fiche ;
             // l'arbre et la ligne de vie suivent la fiche ouverte.
         )
