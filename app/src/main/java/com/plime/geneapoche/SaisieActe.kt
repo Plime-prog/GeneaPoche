@@ -514,6 +514,15 @@ fun EcranSaisieActe(
         // v0.67 : le conjoint et ses parents n'existent que sur un acte de
         // MARIAGE. Un acte de naissance n'a ni conjoint ni beaux-parents :
         // la section ne s'affiche plus pour N/B/D/S.
+        // v0.68 : acte de d\u00E9c\u00E8s/s\u00E9pulture — le conjoint survivant
+        // (\u00AB veuf/veuve de X \u00BB) tient sur une seule ligne.
+        if (type == "D" || type == "S") {
+            TitrePastille("Conjoint survivant", marieeNom.isNotBlank())
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Champ("Nom", marieeNom, { marieeNom = it }, modifier = Modifier.weight(1f))
+                Champ("Pr\u00E9noms", marieePrenoms, { marieePrenoms = it }, modifier = Modifier.weight(1f))
+            }
+        }
         if (type == "M" || type == "E") {
             TitrePastille(if (type == "M") "Mari\u00E9e" else "Conjoint(e)", marieeNom.isNotBlank() || marieeId != 0L)
             if (exMariee != null) {
@@ -535,7 +544,8 @@ fun EcranSaisieActe(
             BlocParent(if (type == "M") "M\u00E8re de la mari\u00E9e" else "M\u00E8re du conjoint", mereMariee, date)
         }
 
-        TitrePastille("T\u00E9moins", temoins.any { it.nom.isNotBlank() })
+        // v0.68 : sur un bapt\u00EAme, les t\u00E9moins sont le parrain et la marraine.
+        TitrePastille(if (type == "B") "Parrain et marraine" else "T\u00E9moins", temoins.any { it.nom.isNotBlank() })
         temoins.forEachIndexed { i, t ->
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 2.dp),
