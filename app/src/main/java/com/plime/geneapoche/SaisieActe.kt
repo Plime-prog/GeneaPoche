@@ -152,7 +152,8 @@ fun ageActe(dateActe: String, naissance: String): String {
 fun SectionTitre(t: String) {
     Text(
         t,
-        Modifier.padding(top = 12.dp),
+        // v0.69 : formulaire compact - sections resserrees.
+        Modifier.padding(top = 6.dp),
         fontWeight = FontWeight.Bold,
         color = CouleurVertFonce
     )
@@ -163,7 +164,7 @@ fun SectionTitre(t: String) {
 @Composable
 fun TitrePastille(t: String, rempli: Boolean) {
     Row(
-        Modifier.padding(top = 12.dp),
+        Modifier.padding(top = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -204,6 +205,7 @@ fun BlocParent(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Champ(
                     "N\u00E9(e) le", e.ne, { e.ne = it },
+                    erreur = !dateValide(e.ne),
                     aide = if (age.isNotEmpty()) "\u00C2ge \u00E0 l'acte : " + age else "\u00C2ge calcul\u00E9 automatiquement",
                     modifier = Modifier.weight(1.1f)
                 )
@@ -216,7 +218,7 @@ fun BlocParent(
                 Champ("Profession", e.profession, { e.profession = it }, modifier = Modifier.weight(1.2f))
             }
             if (avecDeces) {
-                Champ("D\u00E9c. le", e.deces, { e.deces = it }, modifier = Modifier.weight(1f))
+                Champ("D\u00E9c. le", e.deces, { e.deces = it }, erreur = !dateValide(e.deces), modifier = Modifier.weight(1f))
                 Champ("Lieu d\u00E9c\u00E8s", e.lieuDeces, { e.lieuDeces = it }, modifier = Modifier.weight(1f))
             }
         }
@@ -342,7 +344,7 @@ fun EcranSaisieActe(
     // Enregistrer reste TOUJOURS visible en bas, hors du defilement.
     Column(Modifier.fillMaxSize()) {
         Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(12.dp)
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(8.dp)
         ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (onFermer != null) {
@@ -355,6 +357,14 @@ fun EcranSaisieActe(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = CouleurVertFonce
+            )
+            // v0.69 : preuve de version VISIBLE en tete du formulaire.
+            // Si ce numero n'apparait pas, l'application installee n'est
+            // pas la derniere build : reinstallater le dernier APK.
+            Text(
+                "  v0.69",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -427,7 +437,7 @@ fun EcranSaisieActe(
         Champ("D\u00E9p\u00F4t (ex AD du Nord)", depot, { depot = it })
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Champ("R\u00E9f. AD", reference, { reference = it }, modifier = Modifier.weight(1f))
-            Champ("Consult\u00E9 le", dateConsultation, { dateConsultation = it }, modifier = Modifier.weight(1f))
+            Champ("Consult\u00E9 le", dateConsultation, { dateConsultation = it }, erreur = !dateValide(dateConsultation), modifier = Modifier.weight(1f))
         }
         Text(
             "Niveau de preuve :",
@@ -601,7 +611,7 @@ fun EcranSaisieActe(
                     acteId = acteId,
                     type = type,
                     commune = commune.trim(),
-                    dept = dept.trim(),
+                    dept = normaliserDept(dept),
                     reference = reference.trim(),
                     depot = depot.trim(),
                     dateConsultation = dateConsultation.trim(),
@@ -620,19 +630,19 @@ fun EcranSaisieActe(
                     sexe = sexe,
                     profession = profession.trim(),
                     pereNom = pere.nom.trim(), perePrenoms = pere.prenoms.trim(),
-                    pereNe = pere.ne.trim(), pereLieu = pere.lieu.trim(), pereDept = pere.dept.trim(),
+                    pereNe = pere.ne.trim(), pereLieu = pere.lieu.trim(), pereDept = normaliserDept(pere.dept),
                     pereProf = pere.profession.trim(), pereDeces = pere.deces.trim(), pereLieuDeces = pere.lieuDeces.trim(),
                     mereNom = mere.nom.trim(), merePrenoms = mere.prenoms.trim(),
-                    mereNe = mere.ne.trim(), mereLieu = mere.lieu.trim(), mereDept = mere.dept.trim(),
+                    mereNe = mere.ne.trim(), mereLieu = mere.lieu.trim(), mereDept = normaliserDept(mere.dept),
                     mereProf = mere.profession.trim(), mereDeces = mere.deces.trim(), mereLieuDeces = mere.lieuDeces.trim(),
                     marieeId = marieeId,
                     marieeNom = marieeNom.trim(), marieePrenoms = marieePrenoms.trim(),
                     marieeProf = marieeProf.trim(),
                     pMarieeNom = pereMariee.nom.trim(), pMarieePrenoms = pereMariee.prenoms.trim(),
-                    pMarieeNe = pereMariee.ne.trim(), pMarieeLieu = pereMariee.lieu.trim(), pMarieeDept = pereMariee.dept.trim(),
+                    pMarieeNe = pereMariee.ne.trim(), pMarieeLieu = pereMariee.lieu.trim(), pMarieeDept = normaliserDept(pereMariee.dept),
                     pMarieeProf = pereMariee.profession.trim(), pMarieeDeces = pereMariee.deces.trim(), pMarieeLieuDeces = pereMariee.lieuDeces.trim(),
                     mMarieeNom = mereMariee.nom.trim(), mMarieePrenoms = mereMariee.prenoms.trim(),
-                    mMarieeNe = mereMariee.ne.trim(), mMarieeLieu = mereMariee.lieu.trim(), mMarieeDept = mereMariee.dept.trim(),
+                    mMarieeNe = mereMariee.ne.trim(), mMarieeLieu = mereMariee.lieu.trim(), mMarieeDept = normaliserDept(mereMariee.dept),
                     mMarieeProf = mereMariee.profession.trim(), mMarieeDeces = mereMariee.deces.trim(), mMarieeLieuDeces = mereMariee.lieuDeces.trim(),
                     temoins = temoins.toList(),
                     signataires = signataires.toList()
