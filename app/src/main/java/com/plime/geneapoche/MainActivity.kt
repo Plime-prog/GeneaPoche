@@ -1441,12 +1441,23 @@ fun AppEcran(
         // REMPLACE celle de la fiche (v0.60 : synchronisation totale).
         fun renseigner(c: Personne?, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String) {
             if (c == null) return
-            if (ne.isNotBlank()) c.dateNaissance = dateGreg(ne)
-            if (lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
-            if (dept.isNotBlank()) c.deptNaissance = dept.trim()
-            if (prof.isNotBlank()) c.profession = prof.trim()
-            if (dec.isNotBlank()) c.dateDeces = dateGreg(dec)
-            if (lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
+            if (edition) {
+                // v0.65 : en EDITION, le formulaire est la r\u00E9f\u00E9rence
+                // compl\u00E8te : une valeur vide EFFACE le champ du parent.
+                c.dateNaissance = dateGreg(ne)
+                c.lieuNaissance = lieu.trim()
+                c.deptNaissance = dept.trim()
+                c.profession = prof.trim()
+                c.dateDeces = dateGreg(dec)
+                c.lieuDeces = lieuDec.trim()
+            } else {
+                if (ne.isNotBlank()) c.dateNaissance = dateGreg(ne)
+                if (lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
+                if (dept.isNotBlank()) c.deptNaissance = dept.trim()
+                if (prof.isNotBlank()) c.profession = prof.trim()
+                if (dec.isNotBlank()) c.dateDeces = dateGreg(dec)
+                if (lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
+            }
         }
 
         fun lierParent(enfant: Personne, parent: Personne?, estMere: Boolean) {
@@ -1468,6 +1479,15 @@ fun AppEcran(
 
         // v0.60 : synchronisation TOTALE - le formulaire est la reference
         // pour tout champ non vide, identite comprise.
+        // v0.65 : tout changement d'IDENTITE est signal\u00E9 dans le message
+        // final (un m\u00E9lange de champs ne peut plus passer inaper\u00E7u).
+        var identiteTxt = ""
+        if (a.nom.isNotBlank() && cle(p.nom) != cle(a.nom.trim()))
+            identiteTxt += "Nom modifi\u00E9 : " + p.nom + " \u2192 " + a.nom.trim() + ". "
+        if (a.prenoms.isNotBlank() && clePrenoms(p.prenoms) != clePrenoms(a.prenoms.trim()))
+            identiteTxt += "Pr\u00E9noms modifi\u00E9s : " + p.prenoms + " \u2192 " + a.prenoms.trim() + ". "
+        if (a.profession.isNotBlank() && p.profession.trim() != a.profession.trim())
+            identiteTxt += "Profession modifi\u00E9e : " + p.profession + " \u2192 " + a.profession.trim() + ". "
         if (a.nom.isNotBlank()) p.nom = a.nom.trim()
         if (a.prenoms.isNotBlank()) p.prenoms = a.prenoms.trim()
         // Date, heure et lieu de l'acte selon son type (fiche de la personne concernee).
@@ -1539,10 +1559,21 @@ fun AppEcran(
         }
 
         // Pere et mere de la personne concernee.
-        val pere = trouverOuCreer(0L, a.pereNom, a.perePrenoms, "M")
+        // v0.65 : l'identifiant du parent li\u00E9 n'est gard\u00E9 QUE si le nom
+        // saisi est rest\u00E9 le sien : un homonyme ne d\u00E9route plus le lien,
+        // une correction de nom ne force plus l'ancienne fiche.
+        val pereLie = personneParId(personnes, p.pere)
+        val idPere = if (pereLie != null && a.pereNom.isNotBlank() &&
+            cle(pereLie.nom) == cle(a.pereNom) &&
+            clePrenoms(pereLie.prenoms) == clePrenoms(a.perePrenoms)) pereLie.id else 0L
+        val pere = trouverOuCreer(idPere, a.pereNom, a.perePrenoms, "M")
         renseigner(pere, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces)
         lierParent(p, pere, false)
-        val mere = trouverOuCreer(0L, a.mereNom, a.merePrenoms, "F")
+        val mereLie = personneParId(personnes, p.mere)
+        val idMere = if (mereLie != null && a.mereNom.isNotBlank() &&
+            cle(mereLie.nom) == cle(a.mereNom) &&
+            clePrenoms(mereLie.prenoms) == clePrenoms(a.merePrenoms)) mereLie.id else 0L
+        val mere = trouverOuCreer(idMere, a.mereNom, a.merePrenoms, "F")
         renseigner(mere, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces)
         lierParent(p, mere, true)
 
@@ -1558,7 +1589,9 @@ fun AppEcran(
         var refusParentTxt = ""
         val ancienPere = personneParId(personnes, p.pere)
         if (pere == null) {
-            if (edition) {
+            // v0.65 : le lien n'est retir\u00E9 que si un nom rempli \u00E0
+            // l'ouverture a \u00E9t\u00E9 vid\u00E9 (action explicite).
+            if (edition && a.pereNomInit.isNotBlank()) {
                 ancienPere?.enfants?.remove(p.id)
                 p.pere = 0L
                 retourLiens += "Lien du p\u00E8re retir\u00E9. "
@@ -1575,7 +1608,9 @@ fun AppEcran(
         }
         val ancienneMere = personneParId(personnes, p.mere)
         if (mere == null) {
-            if (edition) {
+            // v0.65 : le lien n'est retir\u00E9 que si un nom rempli \u00E0
+            // l'ouverture a \u00E9t\u00E9 vid\u00E9 (action explicite).
+            if (edition && a.mereNomInit.isNotBlank()) {
                 ancienneMere?.enfants?.remove(p.id)
                 p.mere = 0L
                 retourLiens += "Lien de la m\u00E8re retir\u00E9. "
@@ -1734,6 +1769,7 @@ fun AppEcran(
         message =
             (if (refusLienTxt.isNotEmpty()) refusLienTxt + " L'acte reste enregistr\u00E9, SANS le lien de parent\u00E9. " else "") +
             refusParentTxt +
+            identiteTxt +
             (if (retourLiens.isNotEmpty()) retourLiens.trim() + " " else "") +
             resumeActe
     }
