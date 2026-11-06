@@ -522,6 +522,18 @@ fun AppEcran(
     // CONTROLE ANTI-DOUBLON : si le nom + pr\u00E9noms matchent une fiche
     // existante (insensible \u00E0 la casse), elle est synchronis\u00E9e, jamais
     // recr\u00E9\u00E9e ; si le conjoint est d\u00E9j\u00E0 li\u00E9, rien ne se duplique.
+    // v0.61 : cle de comparaison d'un nom - insensible a la casse, aux
+    // accents et aux separateurs (espace, tiret, apostrophe). FINI les
+    // doublons crees par une simple correction d'orthographe.
+    fun cle(s: String): String =
+        java.text.Normalizer.normalize(s.trim().uppercase(), java.text.Normalizer.Form.NFD)
+            .replace(Regex("[\\p{Mn}\\p{Cf}']"), " ")
+            .replace("-", " ")
+            .split(Regex("\\s+")).filter { it.isNotEmpty() }.joinToString(" ")
+
+    // Prenoms compares SANS ORDRE ("Marie Jeanne" = "Jeanne Marie").
+    fun clePrenoms(s: String): String = cle(s).split(" ").filter { it.isNotEmpty() }.sorted().joinToString(" ")
+
     fun ajouterMariage(nom: String, prenoms: String, date: String, commune: String, dept: String) {
         val p = personneParId(personnes, idOuvert) ?: return
         if (!p.blocsOuverts.contains("mariage")) p.blocsOuverts.add("mariage")
@@ -536,8 +548,8 @@ fun AppEcran(
         }
         val existante = personnes.firstOrNull { q ->
             q.id != p.id &&
-            q.nom.trim().uppercase() == n.uppercase() &&
-            q.prenoms.trim().uppercase() == pr.uppercase()
+            cle(q.nom) == cle(n) &&
+            clePrenoms(q.prenoms) == clePrenoms(pr)
         }
         var cible: Personne
         if (existante != null) {
@@ -580,8 +592,8 @@ fun AppEcran(
         if (n.isEmpty() && pr.isEmpty()) return
         val existant = personnes.firstOrNull { q ->
             q.id != p.id &&
-            q.nom.trim().uppercase() == n.uppercase() &&
-            q.prenoms.trim().uppercase() == pr.uppercase()
+            cle(q.nom) == cle(n) &&
+            clePrenoms(q.prenoms) == clePrenoms(pr)
         }
         // GeneaPoche 11 (bug enfant ne avant parent) : coherence verifiee
         // AVANT toute creation - aucun refus ne laisse de fiche orpheline,
@@ -665,8 +677,8 @@ fun AppEcran(
         val pr = prenoms.trim()
         if (n.isEmpty() && pr.isEmpty()) return
         val existante = personnes.firstOrNull { q ->
-            q.nom.trim().uppercase() == n.uppercase() &&
-            q.prenoms.trim().uppercase() == pr.uppercase()
+            cle(q.nom) == cle(n) &&
+            clePrenoms(q.prenoms) == clePrenoms(pr)
         }
         // GeneaPoche 11 : coherence AVANT rattachement (et avant toute
         // creation de fiche) - un parent ne apres son enfant est refuse.
@@ -707,8 +719,8 @@ fun AppEcran(
             return
         } else {
             cible = personnes.firstOrNull { q ->
-                q.nom.trim().uppercase() == n.uppercase() &&
-                q.prenoms.trim().uppercase() == pr.uppercase()
+                cle(q.nom) == cle(n) &&
+                clePrenoms(q.prenoms) == clePrenoms(pr)
             }
         }
         if (cible == null) {
@@ -1336,8 +1348,8 @@ fun AppEcran(
         val pr = prenomsSaisis.trim()
         if (n.isEmpty() && pr.isEmpty()) return true
         return personnes.any {
-            it.nom.trim().uppercase() == n.uppercase() &&
-            it.prenoms.trim().uppercase() == pr.uppercase()
+            cle(it.nom) == cle(n) &&
+            clePrenoms(it.prenoms) == clePrenoms(pr)
         }
     }
 
@@ -1413,8 +1425,8 @@ fun AppEcran(
             val pr = prenomsSaisis.trim()
             if (n.isEmpty() && pr.isEmpty()) return null
             personnes.firstOrNull {
-                it.nom.trim().uppercase() == n.uppercase() &&
-                it.prenoms.trim().uppercase() == pr.uppercase()
+                cle(it.nom) == cle(n) &&
+                clePrenoms(it.prenoms) == clePrenoms(pr)
             }?.let { return it }
             val np = Personne(
                 id = Stockage.prochainId(ctx),
@@ -2276,6 +2288,7 @@ fun AppEcran(
         )
     }
 }
+
 
 
 
