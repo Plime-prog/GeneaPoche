@@ -158,30 +158,49 @@ fun SectionTitre(t: String) {
     )
 }
 
+// v0.66 : titre de bloc avec PASTILLE d'etat — verte si le bloc est
+// rempli, grise s'il est vide : lecture immediate du formulaire.
+@Composable
+fun TitrePastille(t: String, rempli: Boolean) {
+    Row(
+        Modifier.padding(top = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier
+                .padding(end = 6.dp)
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(if (rempli) CouleurVert else MaterialTheme.colorScheme.onSurfaceVariant)
+        )
+        Text(t, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+    }
+}
+
 // Bloc Pere / Mere : naissance (age calcule), lieu, profession, deces.
 @Composable
 fun BlocParent(libelle: String, e: ChampsParent, dateActe: String) {
-    SectionTitre(libelle)
+    // v0.66 : pastille d'etat (verte = bloc rempli) + bloc CONDENSE,
+    // 3 lignes de champs au lieu de 4, libelles courts.
+    TitrePastille(libelle, e.nom.isNotBlank())
     val age = ageActe(dateActe, e.ne)
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Champ("Nom", e.nom, { e.nom = it }, modifier = Modifier.weight(1f))
         Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it }, modifier = Modifier.weight(1f))
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-    Champ(
-        "N\u00E9(e) le (jj/mm/aaaa)", e.ne, { e.ne = it },
-        aide = if (age.isNotEmpty()) "\u00C2ge \u00E0 l'acte : " + age else "\u00C2ge calcul\u00E9 automatiquement",
-        modifier = Modifier.weight(1f)
-    )
-    Champ("Lieu de naissance", e.lieu, { e.lieu = it }, modifier = Modifier.weight(1f))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Champ(
+            "N\u00E9(e) le", e.ne, { e.ne = it },
+            aide = if (age.isNotEmpty()) "\u00C2ge \u00E0 l'acte : " + age else "\u00C2ge calcul\u00E9 automatiquement",
+            modifier = Modifier.weight(1.1f)
+        )
+        Champ("Lieu", e.lieu, { e.lieu = it }, modifier = Modifier.weight(1f))
+        Champ("D\u00E9p.", e.dept, { e.dept = it }, modifier = Modifier.weight(0.6f))
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Champ("D\u00E9partement (ex 59)", e.dept, { e.dept = it }, modifier = Modifier.weight(1f))
-        Champ("Profession", e.profession, { e.profession = it }, modifier = Modifier.weight(1f))
-    }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Champ("D\u00E9c\u00E9d\u00E9(e) le", e.deces, { e.deces = it }, modifier = Modifier.weight(1f))
-        Champ("Lieu de d\u00E9c\u00E8s", e.lieuDeces, { e.lieuDeces = it }, modifier = Modifier.weight(1f))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Champ("Profession", e.profession, { e.profession = it }, modifier = Modifier.weight(1.2f))
+        Champ("D\u00E9c. le", e.deces, { e.deces = it }, modifier = Modifier.weight(1f))
+        Champ("Lieu d\u00E9c\u00E8s", e.lieuDeces, { e.lieuDeces = it }, modifier = Modifier.weight(1f))
     }
 }
 
@@ -346,8 +365,8 @@ fun EcranSaisieActe(
                     fontSize = 15.sp,
                     color = if (exPersonne != null) CouleurVertFonce else CouleurRouge
                 )
-                TextButton(onClick = { pickerCible = 0; pickerOuvert = true }) {
-                    Text(if (exPersonne == null) "Choisir" else "Changer", fontSize = 12.sp)
+                if (exPersonne == null) TextButton(onClick = { pickerCible = 0; pickerOuvert = true }) {
+                    Text("Choisir", fontSize = 12.sp)
                 }
             }
         }
@@ -384,12 +403,12 @@ fun EcranSaisieActe(
         // v0.58 : champs compactes, deux par ligne.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Champ("Commune", commune, { commune = it }, modifier = Modifier.weight(1f))
-            Champ("D\u00E9partement (ex 59)", dept, { dept = it }, modifier = Modifier.weight(1f))
+            Champ("D\u00E9p.", dept, { dept = it }, modifier = Modifier.weight(0.6f))
         }
-        Champ("D\u00E9p\u00F4t (ex : Archives d\u00E9partementales du Nord)", depot, { depot = it })
+        Champ("D\u00E9p\u00F4t (ex AD du Nord)", depot, { depot = it })
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Champ("R\u00E9f. (cote AD)", reference, { reference = it }, modifier = Modifier.weight(1f))
-            Champ("Consult\u00E9 le (jj/mm/aaaa)", dateConsultation, { dateConsultation = it }, modifier = Modifier.weight(1f))
+            Champ("R\u00E9f. AD", reference, { reference = it }, modifier = Modifier.weight(1f))
+            Champ("Consult\u00E9 le", dateConsultation, { dateConsultation = it }, modifier = Modifier.weight(1f))
         }
         Text(
             "Niveau de preuve :",
@@ -408,15 +427,15 @@ fun EcranSaisieActe(
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Champ(
-                "Date (jj/mm/aaaa, aaaa ou r\u00E9publicain)", date, { date = it; confirme = false },
+                "Date (jj/mm/aaaa)", date, { date = it; confirme = false },
                 erreur = !dateValide(date),
                 aide = periodeRealisteTxt(type, exPersonne),
                 modifier = Modifier.weight(1f)
             )
-            Champ("Heure (hh:mm)", heure, { heure = it }, modifier = Modifier.weight(1f))
+            Champ("Heure", heure, { heure = it }, modifier = Modifier.weight(0.6f))
         }
 
-        SectionTitre("Personne concern\u00E9e")
+        TitrePastille("Personne concern\u00E9e", exPersonne != null || nom.isNotBlank())
         if (exPersonne != null) {
             // v0.62 : en modification d'un acte rattaché à une fiche, la
             // personne concernée est AFFICHÉE en clair et le bouton de choix
@@ -428,11 +447,6 @@ fun EcranSaisieActe(
                 color = CouleurVertFonce, fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
-            // v0.63 : voie de réparation directe — changer de personne
-            // recharge le formulaire (remplirDepuis) sur la bonne fiche.
-            TextButton(onClick = { pickerCible = 0; pickerOuvert = true }) {
-                Text("Ce n'est pas la bonne personne ? Changer", fontSize = 11.sp)
-            }
         } else {
             OutlinedButton(onClick = { pickerCible = 0; pickerOuvert = true }) {
                 Text("Choisir une personne existante")
@@ -472,7 +486,7 @@ fun EcranSaisieActe(
         }
 
         if (type == "M" || marieeId != 0L || marieeNom.isNotBlank()) {
-            SectionTitre(if (type == "M") "Mari\u00E9e" else "Conjoint(e)")
+            TitrePastille(if (type == "M") "Mari\u00E9e" else "Conjoint(e)", marieeNom.isNotBlank() || marieeId != 0L)
             if (exMariee != null) {
                 Text(
                     "Personne existante : " + exMariee.titre(),
@@ -492,7 +506,7 @@ fun EcranSaisieActe(
             BlocParent(if (type == "M") "M\u00E8re de la mari\u00E9e" else "M\u00E8re du conjoint", mereMariee, date)
         }
 
-        SectionTitre("T\u00E9moins")
+        TitrePastille("T\u00E9moins", temoins.any { it.nom.isNotBlank() })
         temoins.forEachIndexed { i, t ->
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 2.dp),
