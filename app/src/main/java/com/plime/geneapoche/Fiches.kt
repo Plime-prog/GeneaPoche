@@ -346,6 +346,27 @@ fun EcranPersonne(
                     )
                 }
             }
+            // v0.69 : BANDEAU ROUGE si une date de la fiche est hors format
+            // (ancien GEDCOM ou champ libre) : la liste precise ce qu'il
+            // faut corriger et ou.
+            item {
+                val datesKO = datesInvalides(p)
+                if (datesKO.isNotEmpty()) {
+                    Surface(
+                        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = CouleurRouge
+                    ) {
+                        Text(
+                            "Date \u00E0 corriger : " + datesKO.joinToString(", "),
+                            Modifier.padding(6.dp),
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
             // G\u00E9n\u00E9aPoche 3 : chronologie UNIQUE. Tous les \u00E9v\u00E9nements
             // (N/B/M/S/D et \u00E9v\u00E9nements libres) ET les enfants sont rang\u00E9s
             // par date. Chaque \u00E9v\u00E9nement affiche l'\u00E2ge entre parenth\u00E8ses.

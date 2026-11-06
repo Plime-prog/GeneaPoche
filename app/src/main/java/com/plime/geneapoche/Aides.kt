@@ -289,3 +289,17 @@ fun avertissementCoherence(
     return ""
 }
 
+
+// v0.69 : dates d'une fiche qui ne respectent pas le format défini
+// (jj/mm/aaaa, aaaa seul ou républicain) - ancien GEDCOM, champ libre.
+// Retourne les libellés des blocs à corriger ; vide si tout va bien.
+fun datesInvalides(p: Personne): List<String> {
+    val res = mutableListOf<String>()
+    if (!dateValide(p.dateNaissance)) res.add("naissance")
+    if (!dateValide(p.dateBapteme)) res.add("baptême")
+    if (!dateValide(p.dateMariage)) res.add("mariage")
+    if (!dateValide(p.dateDeces)) res.add("décès")
+    if (!dateValide(p.dateSepulture)) res.add("sépulture")
+    p.evenementsLibres.forEach { ev -> if (!dateValide(ev.date)) res.add("événement : " + ev.intitule) }
+    return res
+}

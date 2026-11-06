@@ -276,7 +276,8 @@ fun Champ(
     onChange: (String) -> Unit,
     erreur: Boolean = false,
     aide: String = "",
-    modifier: Modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+    // v0.69 : interligne reduit - formulaires plus compacts partout.
+    modifier: Modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
 ) {
     OutlinedTextField(
         value = valeur,
@@ -345,7 +346,7 @@ fun DialogueEditionBloc(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onValider(date.trim(), heure.trim(), commune.trim(), dept.trim(), ref.trim())
+                    onValider(date.trim(), heure.trim(), commune.trim(), normaliserDept(dept), ref.trim())
                 },
                 enabled = dateValide(date) && heureValide(heure)
             ) { Text("Enregistrer") }

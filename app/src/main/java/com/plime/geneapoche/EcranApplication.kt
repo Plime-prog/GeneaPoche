@@ -282,7 +282,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.68",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.69",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -798,7 +798,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.68", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.69", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1309,6 +1309,20 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
+            }
+            // v0.69 : pastille rouge "Date !" si la fiche porte une date hors format
+            // (ancien GEDCOM, champ libre) : a corriger au plus vite.
+            if (datesInvalides(p).isNotEmpty()) {
+                Surface(shape = RoundedCornerShape(50), color = CouleurRouge) {
+                    Text(
+                        "  Date !  ",
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
+                }
+                Spacer(Modifier.width(6.dp))
             }
             Spacer(Modifier.width(6.dp))
             IconButton(onClick = onSupprimer, Modifier.size(30.dp)) {
