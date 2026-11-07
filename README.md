@@ -16,7 +16,7 @@ Périmètre : France uniquement, actes N/B/M/D/S.
 
 Principales fonctions : numérotation Sosa-Stradonitz et d'Aboville entièrement automatique (rien ne se saisit), fiche par événements (N/B/M/D/S regroupés dans l'ordre généalogique NBMDS) éditable par appui long via la saisie d'acte pré-remplie, saisie par acte d'état civil (témoins, coche « Signe » derrière chaque personne citée — père, mère, parrain et marraine sur deux lignes fixes au baptême, prêtre (nom et prénoms, sans profession), officier d'état civil (naissance, mariage et décès, avec sa profession), époux, parents, témoins —, transcription), ordre NBMDS prioritaire sur le classement chronologique de la frise, un acte enregistré (B/D/S) restant toujours visible même si sa date n'est pas reportée, tout comme les baptêmes où la personne est parrain ou marraine sur la fiche, cohérence étendue aux témoins (un homonyme (même nom et mêmes prénoms) est proposé dans une fenêtre de choix, avec ses dates, pour reprendre la fiche existante ou en créer une nouvelle : deux homonymes ne partagent la même fiche que si leur date de naissance est identique), calendrier républicain converti, contrôle de cohérence étendu à toutes les voies d'ajout (un enfant né avant son parent est refusé partout : saisie, choix de fiche, nouveau parent, acte de naissance, import fusionné — aucune fiche orpheline), arbre 3 générations, recherche par nom et lieu, mode sombre, mise en page adaptative tablette/paysage.
 
-GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque fiche (indicateur automatique sur 6 renseignements, sur 4 pour une personne supposée en vie — naissance et mariage —, sur 2 pour un mineur, synchronisé entre la fiche et la liste des noms ; ✘ si rien, choix manuel possible au toucher), diagnostic de l'arbre dans le journal (anomalies, doublons avec fusion guidée « Garder A / Garder B » sans aucune perte, branches isolées, identités non certifiées), sources et preuves sur chaque acte (dépôt d'archives, date de consultation, fiabilité 0-3 échelle QUAY) exportées en GEDCOM (AGNC, NOTE, QUAY).
+GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque fiche (indicateur automatique sur 6 renseignements, sur 4 pour une personne supposée en vie — naissance et mariage —, sur 2 pour un mineur, synchronisé entre la fiche et la liste des noms ; ✘ si rien, choix manuel possible au toucher), diagnostic de l'arbre dans le journal (anomalies, doublons comparables côte à côte — dates de naissance et de décès des deux fiches affichées dans le journal avant de décider — avec fusion guidée « Garder A / Garder B » sans aucune perte ou décision définitive de garder les deux fiches, branches isolées, identités non certifiées), sources et preuves sur chaque acte (dépôt d'archives, date de consultation, fiabilité 0-3 échelle QUAY) exportées en GEDCOM (AGNC, NOTE, QUAY).
 
 ## Modèle de sécurité — exact, avec ses limites
 
@@ -36,7 +36,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.77)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.77-release.apk` (signé) ou `GeneaPoche-v0.77-debug.apk`.
+**Téléchargement direct de la dernière version (v0.78)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.78-release.apk` (signé) ou `GeneaPoche-v0.78-debug.apk`.
 
 Sinon, depuis les sources :
 
