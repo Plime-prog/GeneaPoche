@@ -282,7 +282,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.72",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.73",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -798,7 +798,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.72", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.73", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1298,13 +1298,16 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
             // G\u00E9n\u00E9aPoche 5 : \u00E9tiquette des renseignements sur 6
             // (N date compl\u00E8te, N commune, N d\u00E9partement, D date
             // compl\u00E8te, D commune, D d\u00E9partement), rouge (0) \u00E0 vert (6).
-            val n6 = renseignementsN6(p)
+            // v0.73 : indicateur SYNCHRONISE avec la fiche (sur 4 pour
+            // une personne supposee en vie, sur 2 pour un mineur, sur 6
+            // sinon).
+            val (nInd, totalInd) = indicateurPersonne(p)
             Surface(
                 shape = RoundedCornerShape(50),
-                color = couleurCompteur(n6, 6)
+                color = couleurCompteur(nInd, totalInd)
             ) {
                 Text(
-                    "  " + n6.toString() + "/6  ",
+                    "  " + nInd.toString() + "/" + totalInd.toString() + "  ",
                     color = Color.White,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold

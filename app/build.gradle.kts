@@ -12,8 +12,8 @@ android {
         applicationId = "com.plime.geneapoche"
         minSdk = 26
         targetSdk = 36
-        versionCode = 72
-        versionName = "0.72"
+        versionCode = 73
+        versionName = "0.73"
     }
 
     signingConfigs {

@@ -397,11 +397,23 @@ fun EcranPersonne(
                     // d\u00E9c\u00E8s (s'il est connu) disparaissent.
                     val anneeN = anneeDe(p.dateNaissance)
                     val anneeD = anneeDe(p.dateDeces)
-                    val ordonnees = entrees.sortedBy { it.first }.filter { e ->
+                    // v0.73 : l'ordre NBMDS PREVAUT ENFIN - le tri
+                    // chronologique de la v0.72 DEFERAIT les cinq blocs
+                    // d'acte des la premiere date divergente. Les blocs
+                    // N, B, M, D, S s'affichent TOUJOURS dans cet ordre ;
+                    // les evenements libres et de famille restent tries
+                    // par date (antecedents a la naissance et posterieurs
+                    // au deces toujours exclus).
+                    val filtreParasites = { e: Pair<Int, String> ->
                         if (!e.second.startsWith("fam:") && !e.second.startsWith("enf:")) true
                         else (anneeN == null || e.first < 0 || e.first >= anneeN) &&
                             (anneeD == null || e.first < 0 || e.first <= anneeD)
                     }
+                    val blocsActe = entrees.filter { it.second.startsWith("ev:") }
+                        .sortedBy { ordreNaturel.indexOf(it.second.removePrefix("ev:")) }
+                    val autres = entrees.filter { !it.second.startsWith("ev:") }
+                        .filter(filtreParasites).sortedBy { it.first }
+                    val ordonnees = blocsActe + autres
                     ordonnees.forEach { entree ->
                         val cle = entree.second
                         when {
@@ -1060,8 +1072,15 @@ fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: St
             pConj != null && id == pConj.id -> "P\u00E8re de la mari\u00E9e"
             mConj != null && id == mConj.id -> "M\u00E8re de la mari\u00E9e"
             else -> {
+                // v0.73 : sur un bapt\u00EAme, les coches de signature sont
+                // PARRAIN et MARRAINE (pas "T\u00E9moin 1/2").
                 val i = temoinsIds.indexOf(id)
-                if (i >= 0) "T\u00E9moin " + (i + 1).toString() else null
+                when {
+                    i < 0 -> null
+                    type == "B" && i == 0 -> "Parrain"
+                    type == "B" && i == 1 -> "Marraine"
+                    else -> "T\u00E9moin " + (i + 1).toString()
+                }
             }
         }
     }
