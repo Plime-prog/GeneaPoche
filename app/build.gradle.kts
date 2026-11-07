@@ -61,7 +61,7 @@ kotlin {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.08.00")
+    val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
     implementation(composeBom)
     // G2-14 : dependances alignees sur le BOM Compose 2026.08.00 (bump Dependabot).
     implementation("androidx.core:core-ktx:1.19.0")
