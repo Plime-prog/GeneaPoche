@@ -79,7 +79,7 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.2.0")
     // G2-10 : tests unitaires JVM.
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.json:json:20240303")
+    testImplementation("org.json:json:20260814")
 }
 
 
