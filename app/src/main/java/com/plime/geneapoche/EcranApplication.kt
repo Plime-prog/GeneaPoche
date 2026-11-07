@@ -156,7 +156,9 @@ class EtatApplication(
     val deuxColonnes: Boolean = false,
     // G3-19 : une suppression de personne vient d'avoir lieu (Snackbar
     // avec "Annuler").
-    val annulationPossible: Boolean = false
+    val annulationPossible: Boolean = false,
+    // v0.78 : paires de doublons "gard\u00E9es les deux" (diagnostic).
+    val doublonsGardes: Set<String> = emptySet()
 )
 
 // G2-09 : toutes les actions de l'ecran regroupees en une seule classe.
@@ -216,7 +218,9 @@ class ActionsApplication(
     // G\u00E9n\u00E9aPoche 11 : coche de certification de l'identit\u00E9
     // ("auto"/"coche"/"croix") et fusion guid\u00E9e d'un doublon.
     val validerIdentite: (Personne, String) -> Unit,
-    val fusionner: (Long, Long) -> Unit
+    val fusionner: (Long, Long) -> Unit,
+    // v0.78 : garder les deux fiches d'une paire de doublons (d\u00E9finitif).
+    val garderDoublon: (Long, Long) -> Unit
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -282,7 +286,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.77",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.78",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -675,7 +679,9 @@ fun EcranApplication(
                     onSupprimer = { supprimerPiste(it) },
                     onOuvrirPersonne = { onIdOuvert(it) },
                     onSauver = enregistrer,
-                    onFusionner = { gardeId, supprimeId -> fusionner(gardeId, supprimeId) }
+                    onFusionner = { gardeId, supprimeId -> fusionner(gardeId, supprimeId) },
+                    gardes = doublonsGardes,
+                    onGarderDeux = { a, b -> garderDoublon(a, b) }
                 )
                 }
             }
@@ -798,7 +804,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.77", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.78", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },

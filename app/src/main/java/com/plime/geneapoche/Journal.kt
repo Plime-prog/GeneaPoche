@@ -183,12 +183,17 @@ fun anomaliesPour(personnes: List<Personne>): List<Anomalie> {
 // propos\u00E9e dans le journal.
 data class Doublon(val idA: Long, val idB: Long, val nom: String)
 
-fun doublonsPotentiels(personnes: List<Personne>): List<Doublon> {
+// Cle stable d'une paire de doublons (ids tries), pour "garder les deux".
+fun cleDoublon(idA: Long, idB: Long): String =
+    minOf(idA, idB).toString() + "-" + maxOf(idA, idB).toString()
+
+fun doublonsPotentiels(personnes: List<Personne>, gardes: Set<String> = emptySet()): List<Doublon> {
     val l = mutableListOf<Doublon>()
     personnes.forEach { p ->
         personnes.filter { it.id > p.id }.forEach { q ->
             if (p.nom.trim().isNotEmpty() &&
                 p.nom.trim() == q.nom.trim() && p.prenoms.trim() == q.prenoms.trim()) {
+                if (gardes.contains(cleDoublon(p.id, q.id))) return@forEach
                 l.add(Doublon(p.id, q.id, p.titre()))
             }
         }
@@ -370,7 +375,10 @@ fun EcranJournal(
     onOuvrirPersonne: (Long) -> Unit,
     onSauver: () -> Unit,
     // G\u00E9n\u00E9aPoche 11 (11.2) : fusion guid\u00E9e d'un doublon (garder A / garder B).
-    onFusionner: (Long, Long) -> Unit = { _, _ -> }
+    onFusionner: (Long, Long) -> Unit = { _, _ -> },
+    // v0.78 : paires "gard\u00E9es les deux" (d\u00E9cision d\u00E9finitive de l'utilisateur).
+    gardes: Set<String> = emptySet(),
+    onGarderDeux: (Long, Long) -> Unit = { _, _ -> }
 ) {
     // GeneaPoche 12 : bouton d'actualisation du diagnostic A LA DEMANDE.
     // key(rafraichir) force le recalcul complet des listes du diagnostic
@@ -393,7 +401,7 @@ fun EcranJournal(
         .take(10)
     val anomalies = anomaliesPour(personnes)
     // G\u00E9n\u00E9aPoche 11 (11.2) : diagnostic complet de l'arbre.
-    val doublons = doublonsPotentiels(personnes)
+    val doublons = doublonsPotentiels(personnes, gardes)
     val isolees = personnes.filter { brancheIsolee(it, personnes) }
     val nonCertifiees = personnes.filterNot { identiteCertifiee(it) }
     // GeneaPoche 12 : BUG CORRIGE - les identites non certifiees comptaient
@@ -469,17 +477,42 @@ fun EcranJournal(
                                 modifier = Modifier.padding(top = 6.dp)
                             )
                             doublons.take(4).forEach { d ->
+                                // v0.78 : N et D des DEUX fiches pour comparer
+                                // avant de fusionner ou de garder les deux.
+                                fun ligneND(id: Long): String {
+                                    val q = personnes.firstOrNull { it.id == id }
+                                    val n = dateAffichee(q?.dateNaissance?.trim() ?: "")
+                                    val dd = if (q != null && decesAffichable(q)) dateAffichee(q.dateDeces.trim()) else ""
+                                    return (q?.titre() ?: "?") +
+                                        " \u2013 N. " + (if (n.isNotEmpty()) n else "?") +
+                                        " \u2013 D. " + (if (dd.isNotEmpty()) dd else "?")
+                                }
                                 Text(
                                     "M\u00EAme nom : " + d.nom,
                                     style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
+                                Text(
+                                    "1. " + ligneND(d.idA),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = CouleurVertFonce,
+                                    modifier = Modifier.padding(start = 10.dp).clickable { onOuvrirPersonne(d.idA) }
+                                )
+                                Text(
+                                    "2. " + ligneND(d.idB),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = CouleurVertFonce,
+                                    modifier = Modifier.padding(start = 10.dp).clickable { onOuvrirPersonne(d.idB) }
+                                )
                                 Row {
                                     TextButton(onClick = { fusionEnCours = d.idA to d.idB }) {
-                                        Text("Garder " + nomDe(d.idA), fontSize = 12.sp)
+                                        Text("Fusionner (garder 1)", fontSize = 12.sp)
                                     }
                                     TextButton(onClick = { fusionEnCours = d.idB to d.idA }) {
-                                        Text("Garder " + nomDe(d.idB), fontSize = 12.sp)
+                                        Text("Fusionner (garder 2)", fontSize = 12.sp)
+                                    }
+                                    TextButton(onClick = { onGarderDeux(d.idA, d.idB) }) {
+                                        Text("Garder les deux", fontSize = 12.sp)
                                     }
                                 }
                             }

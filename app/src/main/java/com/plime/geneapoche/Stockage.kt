@@ -438,6 +438,18 @@ object Stockage {
         }
     }
 
+    // v0.78 : paires de doublons "gardees les deux" (l'utilisateur a decide
+    // que les deux fiches sont bien deux personnes distinctes) : elles
+    // n'apparaissent plus dans le diagnostic de l'arbre.
+    fun lireDoublonsGardes(ctx: Context): Set<String> =
+        prefs(ctx).getStringSet("doublons_gardes", emptySet()) ?: emptySet()
+
+    fun garderDoublon(ctx: Context, idA: Long, idB: Long) {
+        prefs(ctx).edit()
+            .putStringSet("doublons_gardes", lireDoublonsGardes(ctx) + cleDoublon(idA, idB))
+            .commit()
+    }
+
     // ------------------------------------------------------------ Journal (chiffre)
 
     fun chargerJournal(ctx: Context): ResultatLecture<Piste> =

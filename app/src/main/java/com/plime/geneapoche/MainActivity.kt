@@ -176,6 +176,9 @@ fun AppEcran(
     val pistes = modele.pistes
     val actes = modele.actes
     val pileFiches = modele.pileFiches
+    // v0.78 : paires de doublons "gardees les deux" (decision definitive,
+    // persistee) : elles restent hors du diagnostic de l'arbre.
+    var doublonsGardes by remember { mutableStateOf(Stockage.lireDoublonsGardes(ctx)) }
     val categoriesIgnorees = modele.categoriesIgnorees
     var charge by modele::charge
     var aPin by remember { mutableStateOf(false) }
@@ -1917,7 +1920,7 @@ fun AppEcran(
             // GeneaPoche 12 : diagnostic de l'arbre annonce a l'ouverture de
             // l'application (anomalies + doublons + branches isolees).
             val nbDiag = anomaliesPour(personnes).size +
-                doublonsPotentiels(personnes).size +
+                doublonsPotentiels(personnes, doublonsGardes).size +
                 personnes.filter { brancheIsolee(it, personnes) }.size
             if (nbDiag > 0) {
                 message = "Diagnostic de l'arbre : " + nbDiag.toString() +
@@ -1976,7 +1979,9 @@ fun AppEcran(
                 // G3-17 : largeur etendue (tablette/paysage).
                 deuxColonnes = classeTaille.widthSizeClass != androidx.compose.material3.windowsizeclass.WindowWidthSizeClass.Compact,
                 // G3-19 : une suppression peut etre annulee.
-                annulationPossible = modele.annulation != null
+                annulationPossible = modele.annulation != null,
+                // v0.78 : paires de doublons "gardees les deux".
+                doublonsGardes = doublonsGardes
             ),
             actions = ActionsApplication(
                 onMessage = { message = it },
@@ -2044,6 +2049,11 @@ fun AppEcran(
                 // G\u00E9n\u00E9aPoche 11 : coche de certification + fusion guid\u00E9e.
                 validerIdentite = { pers, etat -> validerIdentite(pers, etat) },
                 fusionner = { gardeId, supprimeId -> fusionnerPersonnes(gardeId, supprimeId) },
+                // v0.78 : garder les deux fiches d'une paire (definitif).
+                garderDoublon = { a, b ->
+                    Stockage.garderDoublon(ctx, a, b)
+                    doublonsGardes = doublonsGardes + cleDoublon(a, b)
+                },
                 // G3-19 : annulation d'une suppression via le Snackbar.
                 onAnnulerSuppression = { annulerSuppression() },
                 onPurgerAnnulation = { modele.annulation = null }
