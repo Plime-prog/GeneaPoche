@@ -1693,6 +1693,25 @@ fun AppEcran(
             .takeIf { it.isNotEmpty() }?.let { lignes.add("P\u00E8re : " + it) }
         descriptionParent((a.mereNom + " " + a.merePrenoms).trim(), a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces)
             .takeIf { it.isNotEmpty() }?.let { lignes.add("M\u00E8re : " + it) }
+        // v0.80 : sur un D\u00C9C\u00C8S ou une S\u00C9PULTURE, le conjoint est EN VIE
+        // (d\u00E9clarant possible) ou D\u00C9C\u00C9D\u00C9 AVANT (veuf/veuve) : le choix du
+        // formulaire est PERSIST\u00C9 dans la transcription de l'acte.
+        if (a.type == "D" || a.type == "S") {
+            val nomConj = (a.marieePrenoms.trim() + " " + a.marieeNom.trim()).trim()
+                .ifEmpty { personneParId(personnes, a.marieeId)?.titre() ?: "" }
+            if (nomConj.isNotEmpty()) {
+                lignes.add((if (a.conjointEnVie) "Conjoint survivant : " else "Conjoint d\u00E9c\u00E9d\u00E9 avant : ") + nomConj)
+                // v0.80 : un conjoint D\u00C9C\u00C9D\u00C9 AVANT sans date de d\u00E9c\u00E8s connue
+                // re\u00E7oit "avant aaaa" sur sa fiche (qualification valide).
+                if (!a.conjointEnVie) {
+                    val conjFiche = personneParId(personnes, a.marieeId)
+                    val anneeConj = anneeDe(a.date)
+                    if (conjFiche != null && conjFiche.dateDeces.isBlank() && anneeConj != null) {
+                        conjFiche.dateDeces = "avant " + anneeConj.toString()
+                    }
+                }
+            }
+        }
         if (mariee != null) {
             lignes.add("Mari\u00E9e : " + mariee.titre() + (if (a.marieeProf.isNotBlank()) ", " + a.marieeProf else ""))
             descriptionParent((a.pMarieeNom + " " + a.pMarieePrenoms).trim(), a.pMarieeNe, a.pMarieeLieu, a.pMarieeDept, a.pMarieeProf, a.pMarieeDeces, a.pMarieeLieuDeces)
@@ -1717,6 +1736,8 @@ fun AppEcran(
                 // officier d'\u00E9tat civil.
                 l == "P\u00E8re de la mari\u00E9e" -> (a.pMarieeNom + " " + a.pMarieePrenoms).trim()
                 l == "M\u00E8re de la mari\u00E9e" -> (a.mMarieeNom + " " + a.mMarieePrenoms).trim()
+                // v0.80 : l'enfant DECLARANT d'un d\u00E9c\u00E8s.
+                l == "Enfant d\u00E9clarant" -> personneParId(personnes, a.declarantEnfantId)?.titre() ?: ""
                 l == "Pr\u00EAtre" || l == "Officier d'\u00E9tat civil" -> {
                     val t = a.temoins.firstOrNull { it.role == l } ?: return@mapNotNull null
                     (t.prenoms.trim() + " " + t.nom.trim()).trim()
@@ -1813,6 +1834,23 @@ fun AppEcran(
             if (!p.temoinsDe(a.type).contains(ficheT.id)) p.temoinsDe(a.type).add(ficheT.id)
             if (a.type == "M" && mariee != null && !mariee.temoinsDe(a.type).contains(ficheT.id)) {
                 mariee.temoinsDe(a.type).add(ficheT.id)
+            }
+        }
+
+        // v0.80 : l'enfant DECLARANT d'un d\u00E9c\u00E8s est m\u00E9moris\u00E9 comme
+        // signataire de la fiche (la coche revient \u00E0 l'\u00E9dition) ; le
+        // formulaire est la r\u00E9f\u00E9rence : un enfant retir\u00E9 dispara\u00EEt.
+        if (a.type == "D") {
+            val listeS = p.signatairesDe("D")
+            listeS.toList().forEach { id ->
+                val q = personneParId(personnes, id)
+                if (id != 0L && q != null && q.id != p.id &&
+                    (q.pere == p.id || q.mere == p.id || p.enfants.contains(id))) {
+                    listeS.remove(id)
+                }
+            }
+            if (a.declarantEnfantId != 0L && !listeS.contains(a.declarantEnfantId)) {
+                listeS.add(a.declarantEnfantId)
             }
         }
 

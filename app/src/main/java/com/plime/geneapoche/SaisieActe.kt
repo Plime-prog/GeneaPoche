@@ -124,7 +124,12 @@ data class ActeSaisie(
     val signataires: List<String> = listOf(),
     // v0.77 : "Créer une nouvelle fiche" choisi dans la fenêtre d'homonymes
     // pour la personne concernée (vrai homonyme, autre date de naissance).
-    val persNouvelle: Boolean = false
+    val persNouvelle: Boolean = false,
+    // v0.80 : le conjoint du défunt est ENCORE EN VIE (déclarant possible)
+    // ou DÉJÀ DÉCÉDÉ avant lui (veuf/veuve) ; sur un décès, un ENFANT peut
+    // être déclarant. Les deux choix sont désormais PERSISTÉS.
+    val conjointEnVie: Boolean = true,
+    val declarantEnfantId: Long = 0L
 )
 
 // Champs d'un parent (pere ou mere), observes par Compose.
@@ -350,7 +355,11 @@ fun EcranSaisieActe(
     var persNouvelle by remember(nom, prenoms) { mutableStateOf(false) }
     // v0.70 : le conjoint du defunt est-il ENCORE EN VIE (declarant de
     // l'acte) ou deja DECEDE avant lui (veuf/veuve) ?
-    var conjointEnVie by remember { mutableStateOf(true) }
+    // v0.80 : le choix est PRE-REMPLI depuis l'acte edite et PERSISTE.
+    var conjointEnVie by remember(initial) { mutableStateOf(initial?.conjointEnVie ?: true) }
+    // v0.80 : enfant DECLARANT d'un acte de deces (fiche existante).
+    var declarantEnfantId by remember(initial) { mutableStateOf(initial?.declarantEnfantId ?: 0L) }
+    var pickerEnfantDecl by remember { mutableStateOf(false) }
     // G\u00E9n\u00E9aPoche 3 : confirmation d'une date hors p\u00E9riode r\u00E9aliste.
     var confirme by remember { mutableStateOf(false) }
     var avertissement by remember { mutableStateOf<String?>(null) }
@@ -382,6 +391,9 @@ fun EcranSaisieActe(
         mere.remplir(a.mereNom, a.merePrenoms, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces); mere.id = a.mereId
         marieeId = a.marieeId
         marieeNom = a.marieeNom; marieePrenoms = a.marieePrenoms; marieeProf = a.marieeProf
+        // v0.80 : les deux suspends PERSISTENT entre deux ouvertures du formulaire.
+        conjointEnVie = a.conjointEnVie
+        declarantEnfantId = a.declarantEnfantId
         pereMariee.remplir(a.pMarieeNom, a.pMarieePrenoms, a.pMarieeNe, a.pMarieeLieu, a.pMarieeDept, a.pMarieeProf, a.pMarieeDeces, a.pMarieeLieuDeces)
         mereMariee.remplir(a.mMarieeNom, a.mMarieePrenoms, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
         temoins.clear(); a.temoins.forEach { temoins.add(it) }
@@ -416,7 +428,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.79",
+                "  v0.80",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -632,6 +644,56 @@ fun EcranSaisieActe(
                         checked = signataires.contains("Conjoint(e)"),
                         onCheckedChange = { if (signataires.contains("Conjoint(e)")) signataires.remove("Conjoint(e)") else signataires.add("Conjoint(e)") }
                     )
+                }
+            }
+            // v0.80 : sur un DÉCÈS, un ENFANT du défunt peut être le
+            // déclarant (fiche existante, coche de signature automatique).
+            if (type == "D" && exPersonne != null) {
+                val enfantsDecl = personnes.filter { q ->
+                    q.pere == exPersonne.id || q.mere == exPersonne.id || exPersonne.enfants.contains(q.id)
+                }
+                if (enfantsDecl.isNotEmpty()) {
+                    val enfChoisi = enfantsDecl.firstOrNull { it.id == declarantEnfantId }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            if (enfChoisi != null) "Enfant d\u00E9clarant : " + enfChoisi.titre()
+                            else "Enfant d\u00E9clarant (signe l'acte)",
+                            Modifier.weight(1f), style = MaterialTheme.typography.bodySmall
+                        )
+                        if (enfChoisi == null) {
+                            OutlinedButton(onClick = { pickerEnfantDecl = true }) { Text("Choisir", fontSize = 12.sp) }
+                        } else {
+                            TextButton(onClick = {
+                                declarantEnfantId = 0L
+                                signataires.remove("Enfant d\u00E9clarant")
+                            }) { Text("Retirer", fontSize = 12.sp) }
+                        }
+                    }
+                    if (pickerEnfantDecl) {
+                        AlertDialog(
+                            onDismissRequest = { pickerEnfantDecl = false },
+                            title = { Text("Enfant d\u00E9clarant") },
+                            text = {
+                                Column(Modifier.verticalScroll(rememberScrollState())) {
+                                    enfantsDecl.sortedWith(
+                                        compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
+                                    ).forEach { cand ->
+                                        // v0.79 : identifiant unique, liste compacte alignee a gauche.
+                                        Text(
+                                            libelleUnique(cand),
+                                            Modifier.fillMaxWidth().clickable {
+                                                declarantEnfantId = cand.id
+                                                if (!signataires.contains("Enfant d\u00E9clarant")) signataires.add("Enfant d\u00E9clarant")
+                                                pickerEnfantDecl = false
+                                            }.padding(vertical = 0.dp),
+                                            fontSize = 13.sp, lineHeight = 16.sp
+                                        )
+                                    }
+                                }
+                            },
+                            confirmButton = { TextButton(onClick = { pickerEnfantDecl = false }) { Text("Fermer") } }
+                        )
+                    }
                 }
             }
         }
@@ -871,7 +933,13 @@ fun EcranSaisieActe(
                             TemoinSaisie(nom = roleOfficielNom.trim(), prenoms = roleOfficielPrenoms.trim(), profession = roleOfficielProf.trim(),
                                 role = if (type == "B" || type == "S") "Pr\u00EAtre" else "Officier d'état civil") else null
                     ),
-                    signataires = if (type == "N") signataires.filter { it != "M\u00E8re" } else signataires.toList()
+                    signataires = if (type == "N") signataires.filter { it != "M\u00E8re" } else signataires.toList(),
+                    // v0.77 : drapeau "Créer une nouvelle fiche" ENFIN passé
+                    // (il manquait : le choix était perdu à l'enregistrement).
+                    // v0.80 : les deux suspends persistent dans l'acte.
+                    persNouvelle = persNouvelle,
+                    conjointEnVie = conjointEnVie,
+                    declarantEnfantId = declarantEnfantId
                 )
                 // Contr\u00F4le de coh\u00E9rence : AVERTISSEMENT non bloquant,
                 // l'utilisateur peut confirmer ("Enregistrer quand m\u00EAme").
