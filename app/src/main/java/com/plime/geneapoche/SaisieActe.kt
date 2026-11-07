@@ -318,11 +318,11 @@ fun EcranSaisieActe(
     // (mariage) : un témoin de plus avec son rôle. La coche de signature
     // est désormais DERRIÈRE chaque personne citée, la zone "Qui signe ?"
     // disparaît.
-    var roleOfficielNom by remember { mutableStateOf("") }
+    var roleOfficielNom by remember(initial) { mutableStateOf(initial?.temoins?.firstOrNull { it.role.isNotBlank() }?.nom ?: "") }
     // v0.73 : le pr\u00EAtre/officier a des PR\u00C9NOMS (plus de profession
     // pour le pr\u00EAtre, seul l'officier du mariage garde la sienne).
-    var roleOfficielPrenoms by remember { mutableStateOf("") }
-    var roleOfficielProf by remember { mutableStateOf("") }
+    var roleOfficielPrenoms by remember(initial) { mutableStateOf(initial?.temoins?.firstOrNull { it.role.isNotBlank() }?.prenoms ?: "") }
+    var roleOfficielProf by remember(initial) { mutableStateOf(initial?.temoins?.firstOrNull { it.role.isNotBlank() }?.profession ?: "") }
     var pickerCible by remember { mutableStateOf(0) } // 0 = personne concernee, 1 = mariee
     var pickerOuvert by remember { mutableStateOf(false) }
     // v0.70 : le conjoint du defunt est-il ENCORE EN VIE (declarant de
@@ -363,7 +363,11 @@ fun EcranSaisieActe(
         mereMariee.remplir(a.mMarieeNom, a.mMarieePrenoms, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
         temoins.clear(); a.temoins.forEach { temoins.add(it) }
         signataires.clear(); a.signataires.forEach { signataires.add(it) }
-        roleOfficielNom = ""; roleOfficielPrenoms = ""; roleOfficielProf = ""
+        // v0.74 : le prêtre/officier de l'acte est PRÉ-REMPLI en édition.
+        val tRole = a.temoins.firstOrNull { it.role.isNotBlank() }
+        roleOfficielNom = tRole?.nom ?: ""
+        roleOfficielPrenoms = tRole?.prenoms ?: ""
+        roleOfficielProf = tRole?.profession ?: ""
     }
 
 
@@ -389,7 +393,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.73",
+                "  v0.74",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -733,19 +737,20 @@ fun EcranSaisieActe(
             }
         }
 
-        // v0.72 : PRÊTRE (baptême, sépulture) ou OFFICIER D'ÉTAT CIVIL
-        // (mariage) : un témoin de plus avec son rôle, coche s'il signe.
-        if (type == "B" || type == "S" || type == "M") {
+        // v0.74 : PRÊTRE (baptême, sépulture) ou OFFICIER D'ÉTAT CIVIL
+        // (naissance, mariage, décès - il signe tout acte d'état civil) :
+        // un témoin de plus avec son rôle, coche s'il signe.
+        if (type != "E") {
             // v0.73 : PR\u00CATRE corrig\u00E9 (l'affichage b\u00E2tard cassait
             // aussi le mapping des signataires) ; le pr\u00EAtre porte nom et
             // pr\u00E9noms, SANS profession ; seul l'officier d'\u00E9tat civil du
             // mariage garde la sienne. Coche "Signe" align\u00E9e sur les champs.
-            val roleOfficiel = if (type == "M") "Officier d'\u00E9tat civil" else "Pr\u00EAtre"
+            val roleOfficiel = if (type == "B" || type == "S") "Pr\u00EAtre" else "Officier d'\u00E9tat civil"
             TitrePastille(roleOfficiel, roleOfficielNom.isNotBlank())
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Champ("Nom", roleOfficielNom, { roleOfficielNom = it }, modifier = Modifier.weight(1f))
                 Champ("Pr\u00E9noms", roleOfficielPrenoms, { roleOfficielPrenoms = it }, modifier = Modifier.weight(1f))
-                if (type == "M") {
+                if (type != "B" && type != "S") {
                     Champ("Profession", roleOfficielProf, { roleOfficielProf = it }, modifier = Modifier.weight(1f))
                 }
                 Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -801,9 +806,9 @@ fun EcranSaisieActe(
                     mMarieeNe = mereMariee.ne.trim(), mMarieeLieu = mereMariee.lieu.trim(), mMarieeDept = normaliserDept(mereMariee.dept),
                     mMarieeProf = mereMariee.profession.trim(), mMarieeDeces = mereMariee.deces.trim(), mMarieeLieuDeces = mereMariee.lieuDeces.trim(),
                     temoins = (if (type == "B") temoins.take(2).toList() else temoins.toList()) + listOfNotNull(
-                        if ((type == "B" || type == "S" || type == "M") && roleOfficielNom.isNotBlank())
+                        if (type != "E" && roleOfficielNom.isNotBlank())
                             TemoinSaisie(nom = roleOfficielNom.trim(), prenoms = roleOfficielPrenoms.trim(), profession = roleOfficielProf.trim(),
-                                role = if (type == "M") "Officier d'état civil" else "Pr\u00EAtre") else null
+                                role = if (type == "B" || type == "S") "Pr\u00EAtre" else "Officier d'état civil") else null
                     ),
                     signataires = if (type == "N") signataires.filter { it != "M\u00E8re" } else signataires.toList()
                 )
