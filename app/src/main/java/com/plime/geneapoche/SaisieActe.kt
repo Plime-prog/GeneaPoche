@@ -59,7 +59,10 @@ data class TemoinSaisie(
     val prenoms: String = "",
     val profession: String = "",
     // v0.72 : rôle du témoin officiel ("PrÊtre" ou "Officier d'état civil").
-    val role: String = ""
+    val role: String = "",
+    // v0.77 : vrai homonyme (autre date de naissance) : la fenêtre
+    // "Créer une nouvelle fiche" force une fiche DISTINCTE.
+    val nouveau: Boolean = false
 )
 
 data class ActeSaisie(
@@ -118,7 +121,10 @@ data class ActeSaisie(
     val mMarieeProf: String = "", val mMarieeDeces: String = "", val mMarieeLieuDeces: String = "",
     // T\u00E9moins et signataires
     val temoins: List<TemoinSaisie> = listOf(),
-    val signataires: List<String> = listOf()
+    val signataires: List<String> = listOf(),
+    // v0.77 : "Créer une nouvelle fiche" choisi dans la fenêtre d'homonymes
+    // pour la personne concernée (vrai homonyme, autre date de naissance).
+    val persNouvelle: Boolean = false
 )
 
 // Champs d'un parent (pere ou mere), observes par Compose.
@@ -339,6 +345,9 @@ fun EcranSaisieActe(
             q.nom.trim().uppercase() == nom.trim().uppercase() &&
             q.prenoms.trim().uppercase() == prenoms.trim().uppercase()
     }.sortedBy { it.dateNaissance }
+    // v0.77 : drapeau "Créer une nouvelle fiche" pour la personne concernée ;
+    // il retombe tout seul si le nom ou les prénoms changent.
+    var persNouvelle by remember(nom, prenoms) { mutableStateOf(false) }
     // v0.70 : le conjoint du defunt est-il ENCORE EN VIE (declarant de
     // l'acte) ou deja DECEDE avant lui (veuf/veuve) ?
     var conjointEnVie by remember { mutableStateOf(true) }
@@ -407,7 +416,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.76",
+                "  v0.77",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -716,9 +725,10 @@ fun EcranSaisieActe(
                         titre = libelle + " : fiches homonymes",
                         candidats = homosPm,
                         onChoisir = { q ->
-                            temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms)
+                            temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms, nouveau = false)
                             homonymesOuvert = null
                         },
+                        onCreer = { temoins[i] = t.copy(nouveau = true); homonymesOuvert = null },
                         onFermer = { homonymesOuvert = null }
                     )
                 }
@@ -770,9 +780,10 @@ fun EcranSaisieActe(
                     titre = "T\u00E9moin : fiches homonymes",
                     candidats = homosT,
                     onChoisir = { q ->
-                        temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms)
+                        temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms, nouveau = false)
                         homonymesOuvert = null
                     },
+                    onCreer = { temoins[i] = t.copy(nouveau = true); homonymesOuvert = null },
                     onFermer = { homonymesOuvert = null }
                 )
             }
@@ -906,8 +917,10 @@ fun EcranSaisieActe(
             candidats = homonymesPers,
             onChoisir = { q ->
                 remplirDepuis(prefillActe(q, personnes, actes, type))
+                persNouvelle = false
                 homonymesOuvert = null
             },
+            onCreer = { persNouvelle = true; homonymesOuvert = null },
             onFermer = { homonymesOuvert = null }
         )
     }
@@ -947,7 +960,7 @@ fun EcranSaisieActe(
                                 cand.titre() +
                                     (if (cand.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(cand.dateNaissance.trim()) else "") +
                                     (if (decesAffichable(cand)) " \u00b7 D. " + dateAffichee(cand.dateDeces.trim()) else ""),
-                                fontSize = 13.sp
+                                fontSize = 13.sp, lineHeight = 16.sp
                             )
                         }
                     }
@@ -970,6 +983,9 @@ fun DialogueHomonymes(
     titre: String,
     candidats: List<Personne>,
     onChoisir: (Personne) -> Unit,
+    // v0.77 : "Créer une nouvelle fiche" force une fiche distincte
+    // (vrai homonyme : date de naissance différente).
+    onCreer: (() -> Unit)? = null,
     onFermer: () -> Unit
 ) {
     AlertDialog(
@@ -987,13 +1003,13 @@ fun DialogueHomonymes(
                         q.titre() +
                             (if (q.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(q.dateNaissance.trim()) else "") +
                             (if (decesAffichable(q)) " \u00b7 D. " + dateAffichee(q.dateDeces.trim()) else ""),
-                        Modifier.fillMaxWidth().clickable { onChoisir(q) }.padding(vertical = 2.dp),
-                        fontSize = 13.sp
+                        Modifier.fillMaxWidth().clickable { onChoisir(q) }.padding(vertical = 0.dp),
+                        fontSize = 13.sp, lineHeight = 16.sp
                     )
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onFermer) { Text("Cr\u00E9er une nouvelle fiche") } },
+        confirmButton = { TextButton(onClick = { if (onCreer != null) onCreer() else onFermer() }) { Text("Cr\u00E9er une nouvelle fiche") } },
         dismissButton = { TextButton(onClick = onFermer) { Text("Annuler") } }
     )
 }
@@ -1076,8 +1092,8 @@ fun EcranSaisie(
                             Modifier.fillMaxWidth().clickable {
                                 pickerParent = false
                                 onEnfant(cand.id)
-                            }.padding(vertical = 2.dp),
-                            fontSize = 13.sp
+                            }.padding(vertical = 0.dp),
+                            fontSize = 13.sp, lineHeight = 16.sp
                         )
                     }
                     if (personnes.isEmpty()) {
