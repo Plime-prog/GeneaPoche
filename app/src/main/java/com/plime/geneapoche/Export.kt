@@ -176,7 +176,7 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ac
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.70") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
+    lignes.add("2 VERS 0.71") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
@@ -351,7 +351,10 @@ fun dateFrancaise(s: String): String {
     )
     Regex("(\\d{1,2})\\s+([A-Z]{3})\\s+(\\d{4})").find(t)?.let { m ->
         val mois = moisAnglais[m.groupValues[2]]
-        if (mois != null) return m.groupValues[1] + "/" + mois.toString() + "/" + m.groupValues[3]
+        // v0.71 : ZERO D'OFFICE aussi a l'import : "5 OCT 1890" doit revenir
+        // en "05/10/1890" (jj/mm/aaaa), sinon le probleme reviendrait apres
+        // chaque export/reimport.
+        if (mois != null) return m.groupValues[1].padStart(2, '0') + "/" + mois.toString().padStart(2, '0') + "/" + m.groupValues[3]
     }
     Regex("ABT\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
         return "vers " + m.groupValues[1]

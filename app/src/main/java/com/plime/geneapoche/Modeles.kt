@@ -62,6 +62,18 @@ fun normaliserDept(s: String): String {
 // aux cinq \u00E9v\u00E9nements d'une personne. Appele a TOUTE construction
 // (chargement, import, creation) ET a chaque enregistrement.
 fun normaliserLieux(p: Personne) {
+    // v0.71 : ZERO D'OFFICE sur les dates et heures des cinq evenements
+    // et des evenements libres. Appele a toute construction et a chaque
+    // enregistrement : les dates incompletes deja presentes dans la base
+    // (ancien GEDCOM, champ libre) se reparent d'elles-memes, pour de bon.
+    p.dateNaissance = normaliserDate(p.dateNaissance); p.heureNaissance = normaliserHeure(p.heureNaissance)
+    p.dateBapteme = normaliserDate(p.dateBapteme); p.heureBapteme = normaliserHeure(p.heureBapteme)
+    p.dateMariage = normaliserDate(p.dateMariage); p.heureMariage = normaliserHeure(p.heureMariage)
+    p.dateDeces = normaliserDate(p.dateDeces); p.heureDeces = normaliserHeure(p.heureDeces)
+    p.dateSepulture = normaliserDate(p.dateSepulture); p.heureSepulture = normaliserHeure(p.heureSepulture)
+    p.evenementsLibres.forEach { ev ->
+        ev.date = normaliserDate(ev.date); ev.heure = normaliserHeure(ev.heure)
+    }
     p.lieuNaissance = normaliserCommune(p.lieuNaissance)
     p.deptNaissance = normaliserDept(p.deptNaissance)
     p.lieuBapteme = normaliserCommune(p.lieuBapteme)
@@ -165,7 +177,10 @@ fun repubAGregorien(s: String): String? {
 // Date systematique : une saisie republicaine est GARDEE TELLE QUELLE
 // (l'affichage la complete de sa conversion gregorienne), toute autre
 // valeur est conservee telle quelle (jj/mm/aaaa ou aaaa).
-fun dateGreg(s: String): String = s.trim()
+// v0.71 : toute date d'acte enregistree recoit le ZERO D'OFFICE :
+// "5/7/1890" devient "05/07/1890" - le format jj/mm/aaaa tient apres
+// sauvegarde, export et reimport GEDCOM.
+fun dateGreg(s: String): String = normaliserDate(s.trim())
 
 // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement \u00E0 intitul\u00E9 LIBRE (profession,
 // d\u00E9m\u00E9nagement\u2026) rang\u00E9 dans la chronologie de la fiche.
@@ -674,7 +689,7 @@ data class Acte(
             contenu = o.optString("contenu", ""),
             reference = o.optString("reference", ""),
             depot = o.optString("depot", ""),
-            dateConsultation = o.optString("dateConsultation", ""),
+            dateConsultation = normaliserDate(o.optString("dateConsultation", "")),
             fiabilite = o.optInt("fiabilite", -1)
         )
     }
