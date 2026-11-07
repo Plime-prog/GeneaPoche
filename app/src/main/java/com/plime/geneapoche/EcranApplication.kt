@@ -282,7 +282,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.74",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.75",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -798,7 +798,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.74", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.75", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },

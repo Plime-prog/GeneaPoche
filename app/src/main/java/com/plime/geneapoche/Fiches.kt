@@ -216,11 +216,15 @@ fun EcranPersonne(
     // v0.70 : B et S n'apparaissent PLUS par defaut sur la fiche - ils
     // s'affichent seulement si l'acte porte une donnee (bapteme celebre,
     // sepulture datee).
-    val baptemePresent = listOf(p.dateBapteme, p.heureBapteme, p.lieuBapteme, p.deptBapteme).any { it.isNotBlank() }
-    val sepulturePresente = listOf(p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture).any { it.isNotBlank() }
+    // v0.75 : un acte ENREGISTRE suffit - un baptême (ou un décès
+    // ou une sépulture) saisi sans reporter sa date sur la fiche ne
+    // disparaît PLUS de la frise des événements.
+    val actePresent = { t: String -> actes.any { it.personneId == p.id && it.type == t } }
+    val baptemePresent = listOf(p.dateBapteme, p.heureBapteme, p.lieuBapteme, p.deptBapteme).any { it.isNotBlank() } || actePresent("B")
+    val sepulturePresente = listOf(p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture).any { it.isNotBlank() } || actePresent("S")
     val typesPresents = mutableListOf("N", "M")
     if (baptemePresent) typesPresents.add("B")
-    if (decesAffiche) typesPresents.add("D")
+    if (decesAffiche || actePresent("D")) typesPresents.add("D")
     if (sepulturePresente) typesPresents.add("S")
     // GÃ©nÃ©aPoche 10 : annÃ©e effective d'un Ã©vÃ©nement, pour garantir
     // B et M jamais avant N, S jamais avant D.

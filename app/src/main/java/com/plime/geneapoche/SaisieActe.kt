@@ -205,7 +205,8 @@ fun BlocParent(
             Champ("Profession", e.profession, { e.profession = it }, modifier = Modifier.weight(1f))
             // v0.73 : coche "Signe" ALIGNEE sur la ligne des champs.
             if (onCocheSigne != null) {
-                Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                // v0.75 : coche descendue d'une ligne, alignee sur le nom.
+                Column(Modifier.width(58.dp).padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Checkbox(checked = cocheSigne, onCheckedChange = { onCocheSigne() })
                 }
@@ -216,7 +217,8 @@ fun BlocParent(
             Champ("Nom", e.nom, { e.nom = it }, modifier = Modifier.weight(1f))
             Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it }, modifier = Modifier.weight(1f))
             if (onCocheSigne != null) {
-                Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                // v0.75 : coche descendue d'une ligne, alignee sur le nom.
+                Column(Modifier.width(58.dp).padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Checkbox(checked = cocheSigne, onCheckedChange = { onCocheSigne() })
                 }
@@ -393,7 +395,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.74",
+                "  v0.75",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -533,6 +535,21 @@ fun EcranSaisieActe(
             Champ("Nom", nom, { nom = it }, modifier = Modifier.weight(1f))
             Champ("Pr\u00E9noms", prenoms, { prenoms = it }, modifier = Modifier.weight(1f))
         }
+        // v0.75 : TOUS les homonymes (meme nom) sont proposes avec leur
+        // date de naissance : aucun doublon ne se cree en silence.
+        personnes.filter { q ->
+            nom.isNotBlank() && q.id != personneId && q.nom.trim().uppercase() == nom.trim().uppercase()
+        }.sortedBy { q -> if (prenoms.isNotBlank() && q.prenoms.trim().uppercase() == prenoms.trim().uppercase()) 0 else 1 }
+            .take(8).forEach { q ->
+            Text(
+                "\u2192 Fiche existante : " + q.titre() +
+                    (if (q.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(q.dateNaissance.trim()) else "") +
+                    (if (decesAffichable(q)) " \u00b7 D. " + dateAffichee(q.dateDeces.trim()) else ""),
+                Modifier.fillMaxWidth().clickable { remplirDepuis(prefillActe(q, personnes, actes, type)) },
+                fontSize = 10.sp,
+                color = CouleurVertFonce
+            )
+        }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("M") })
             FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("F") })
@@ -663,19 +680,21 @@ fun EcranSaisieActe(
                             Champ(libelle, t.nom, { temoins[i] = t.copy(nom = it) }, modifier = Modifier.weight(1f))
                             Champ("Pr\u00E9noms", t.prenoms, { temoins[i] = t.copy(prenoms = it) }, modifier = Modifier.weight(1f))
                         }
+                        // v0.75 : tous les homonymes avec leur date de naissance.
                         personnes.filter { q ->
-                            t.nom.isNotBlank() && q.nom.trim().uppercase() == t.nom.trim().uppercase() &&
-                                (t.prenoms.isBlank() || q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase())
-                        }.take(2).forEach { q ->
+                            t.nom.isNotBlank() && q.nom.trim().uppercase() == t.nom.trim().uppercase()
+                        }.sortedBy { q -> if (t.prenoms.isNotBlank() && q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase()) 0 else 1 }
+                            .take(8).forEach { q ->
                             Text(
-                                "\u2192 Fiche existante : " + q.titre(),
+                                "\u2192 Fiche existante : " + q.titre() +
+                                    (if (q.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(q.dateNaissance.trim()) else ""),
                                 Modifier.fillMaxWidth().clickable { temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms) },
                                 fontSize = 10.sp,
                                 color = CouleurVertFonce
                             )
                         }
                     }
-                    Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(Modifier.width(58.dp).padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Checkbox(
                             checked = signataires.contains(libelle),
@@ -698,12 +717,14 @@ fun EcranSaisieActe(
                         Champ("Pr\u00E9noms", t.prenoms, { temoins[i] = t.copy(prenoms = it) }, modifier = Modifier.weight(1f))
                         Champ("Profession", t.profession, { temoins[i] = t.copy(profession = it) }, modifier = Modifier.weight(1f))
                     }
+                    // v0.75 : tous les homonymes avec leur date de naissance.
                     personnes.filter { q ->
-                        t.nom.isNotBlank() && q.nom.trim().uppercase() == t.nom.trim().uppercase() &&
-                            (t.prenoms.isBlank() || q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase())
-                    }.take(2).forEach { q ->
+                        t.nom.isNotBlank() && q.nom.trim().uppercase() == t.nom.trim().uppercase()
+                    }.sortedBy { q -> if (t.prenoms.isNotBlank() && q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase()) 0 else 1 }
+                        .take(8).forEach { q ->
                         Text(
-                            "\u2192 Fiche existante : " + q.titre(),
+                            "\u2192 Fiche existante : " + q.titre() +
+                                (if (q.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(q.dateNaissance.trim()) else ""),
                             Modifier.fillMaxWidth().clickable { temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms) },
                             fontSize = 10.sp,
                             color = CouleurVertFonce
@@ -711,7 +732,7 @@ fun EcranSaisieActe(
                     }
                 }
                 // v0.73 : coche "Signe" align\u00E9e sur les champs.
-                Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.width(58.dp).padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Checkbox(
                         checked = signataires.contains("T\u00E9moin " + (i + 1).toString()),
@@ -753,7 +774,7 @@ fun EcranSaisieActe(
                 if (type != "B" && type != "S") {
                     Champ("Profession", roleOfficielProf, { roleOfficielProf = it }, modifier = Modifier.weight(1f))
                 }
-                Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.width(58.dp).padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Checkbox(
                         checked = signataires.contains(roleOfficiel),
@@ -881,7 +902,14 @@ fun EcranSaisieActe(
                                     pickerOuvert = false
                                 }
                                 .padding(horizontal = 4.dp, vertical = 0.dp)
-                        ) { Text(cand.titre(), fontSize = 13.sp) }
+                        ) {
+                            Text(
+                                cand.titre() +
+                                    (if (cand.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(cand.dateNaissance.trim()) else "") +
+                                    (if (decesAffichable(cand)) " \u00b7 D. " + dateAffichee(cand.dateDeces.trim()) else ""),
+                                fontSize = 13.sp
+                            )
+                        }
                     }
                 }
             },
@@ -968,7 +996,13 @@ fun EcranSaisie(
                                 onEnfant(cand.id)
                             },
                             Modifier.fillMaxWidth()
-                        ) { Text(cand.titre()) }
+                        ) {
+                            Text(
+                                cand.titre() +
+                                    (if (cand.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(cand.dateNaissance.trim()) else "") +
+                                    (if (decesAffichable(cand)) " \u00b7 D. " + dateAffichee(cand.dateDeces.trim()) else "")
+                            )
+                        }
                     }
                     if (personnes.isEmpty()) {
                         Text("Aucune personne : saisissez le nom dans le formulaire.")
