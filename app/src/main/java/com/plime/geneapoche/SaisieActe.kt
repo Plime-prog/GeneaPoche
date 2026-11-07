@@ -195,23 +195,32 @@ fun BlocParent(
 ) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         TitrePastille(libelle, e.nom.isNotBlank())
-        if (onCocheSigne != null) {
-            Spacer(Modifier.weight(1f))
-            Checkbox(checked = cocheSigne, onCheckedChange = { onCocheSigne() })
-        }
     }
     val age = ageActe(dateActe, e.ne)
     if (!avecNaissance && !avecDeces) {
         // Acte N/B : une seule ligne, ce que la d\u00E9claration dit des parents.
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Champ("Nom", e.nom, { e.nom = it }, modifier = Modifier.weight(1f))
             Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it }, modifier = Modifier.weight(1f))
             Champ("Profession", e.profession, { e.profession = it }, modifier = Modifier.weight(1f))
+            // v0.73 : coche "Signe" ALIGNEE sur la ligne des champs.
+            if (onCocheSigne != null) {
+                Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Checkbox(checked = cocheSigne, onCheckedChange = { onCocheSigne() })
+                }
+            }
         }
     } else {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Champ("Nom", e.nom, { e.nom = it }, modifier = Modifier.weight(1f))
             Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it }, modifier = Modifier.weight(1f))
+            if (onCocheSigne != null) {
+                Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Checkbox(checked = cocheSigne, onCheckedChange = { onCocheSigne() })
+                }
+            }
         }
         if (avecNaissance) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -222,7 +231,7 @@ fun BlocParent(
                     modifier = Modifier.weight(1.1f)
                 )
                 Champ("Lieu", e.lieu, { e.lieu = it }, modifier = Modifier.weight(1f))
-                Champ("D\u00E9p.", e.dept, { e.dept = it }, modifier = Modifier.weight(0.3f))
+                Champ("D\u00E9p.", e.dept, { e.dept = it }, modifier = Modifier.width(40.dp))
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -310,6 +319,9 @@ fun EcranSaisieActe(
     // est désormais DERRIÈRE chaque personne citée, la zone "Qui signe ?"
     // disparaît.
     var roleOfficielNom by remember { mutableStateOf("") }
+    // v0.73 : le pr\u00EAtre/officier a des PR\u00C9NOMS (plus de profession
+    // pour le pr\u00EAtre, seul l'officier du mariage garde la sienne).
+    var roleOfficielPrenoms by remember { mutableStateOf("") }
     var roleOfficielProf by remember { mutableStateOf("") }
     var pickerCible by remember { mutableStateOf(0) } // 0 = personne concernee, 1 = mariee
     var pickerOuvert by remember { mutableStateOf(false) }
@@ -351,7 +363,7 @@ fun EcranSaisieActe(
         mereMariee.remplir(a.mMarieeNom, a.mMarieePrenoms, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
         temoins.clear(); a.temoins.forEach { temoins.add(it) }
         signataires.clear(); a.signataires.forEach { signataires.add(it) }
-        roleOfficielNom = ""; roleOfficielProf = ""
+        roleOfficielNom = ""; roleOfficielPrenoms = ""; roleOfficielProf = ""
     }
 
 
@@ -377,7 +389,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.72",
+                "  v0.73",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -447,12 +459,12 @@ fun EcranSaisieActe(
         // v0.58 : champs compactes, deux par ligne.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Champ("Commune", commune, { commune = it }, modifier = Modifier.weight(1f))
-            Champ("D\u00E9p.", dept, { dept = it }, modifier = Modifier.weight(0.28f))
+            Champ("D\u00E9p.", dept, { dept = it }, modifier = Modifier.width(46.dp))
         }
         Champ("D\u00E9p\u00F4t (ex AD du Nord)", depot, { depot = it })
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Champ("R\u00E9f. AD", reference, { reference = it }, modifier = Modifier.weight(1f))
-            Champ("Consult\u00E9 le", dateConsultation, { dateConsultation = it }, erreur = !dateValide(dateConsultation), modifier = Modifier.weight(1f))
+            Champ("Consult\u00E9 le", dateConsultation, { dateConsultation = it }, erreur = !dateValide(dateConsultation), aide = "jj/mm/aaaa", modifier = Modifier.width(112.dp))
         }
         Text(
             "Niveau de preuve :",
@@ -630,6 +642,47 @@ fun EcranSaisieActe(
 
         // v0.68 : sur un bapt\u00EAme, les t\u00E9moins sont le parrain et la marraine.
         TitrePastille(if (type == "B") "Parrain et marraine" else "T\u00E9moins", temoins.any { it.nom.isNotBlank() })
+        // v0.73 : sur un bapt\u00EAme, PARRAIN et MARRAINE - deux lignes
+        // fixes (nom + pr\u00E9noms, SANS profession) avec leur coche "Signe" ;
+        // sur les autres actes, t\u00E9moins avec profession. Une fiche
+        // existante qui correspond au nom saisi est propos\u00E9e (coh\u00E9rence).
+        if (type == "B") {
+            while (temoins.size < 2) temoins.add(TemoinSaisie())
+            listOf("Parrain", "Marraine").forEachIndexed { i, libelle ->
+                val t = temoins[i]
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Champ(libelle, t.nom, { temoins[i] = t.copy(nom = it) }, modifier = Modifier.weight(1f))
+                            Champ("Pr\u00E9noms", t.prenoms, { temoins[i] = t.copy(prenoms = it) }, modifier = Modifier.weight(1f))
+                        }
+                        personnes.filter { q ->
+                            t.nom.isNotBlank() && q.nom.trim().uppercase() == t.nom.trim().uppercase() &&
+                                (t.prenoms.isBlank() || q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase())
+                        }.take(2).forEach { q ->
+                            Text(
+                                "\u2192 Fiche existante : " + q.titre(),
+                                Modifier.fillMaxWidth().clickable { temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms) },
+                                fontSize = 10.sp,
+                                color = CouleurVertFonce
+                            )
+                        }
+                    }
+                    Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Checkbox(
+                            checked = signataires.contains(libelle),
+                            onCheckedChange = {
+                                if (signataires.contains(libelle)) signataires.remove(libelle) else signataires.add(libelle)
+                            }
+                        )
+                    }
+                }
+            }
+        } else {
         temoins.forEachIndexed { i, t ->
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 2.dp),
@@ -641,15 +694,29 @@ fun EcranSaisieActe(
                         Champ("Pr\u00E9noms", t.prenoms, { temoins[i] = t.copy(prenoms = it) }, modifier = Modifier.weight(1f))
                         Champ("Profession", t.profession, { temoins[i] = t.copy(profession = it) }, modifier = Modifier.weight(1f))
                     }
-                }
-                // v0.72 : coche de signature derrière chaque témoin.
-                Checkbox(
-                    checked = signataires.contains("T\u00E9moin " + (i + 1).toString()),
-                    onCheckedChange = {
-                        if (signataires.contains("T\u00E9moin " + (i + 1).toString())) signataires.remove("T\u00E9moin " + (i + 1).toString())
-                        else signataires.add("T\u00E9moin " + (i + 1).toString())
+                    personnes.filter { q ->
+                        t.nom.isNotBlank() && q.nom.trim().uppercase() == t.nom.trim().uppercase() &&
+                            (t.prenoms.isBlank() || q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase())
+                    }.take(2).forEach { q ->
+                        Text(
+                            "\u2192 Fiche existante : " + q.titre(),
+                            Modifier.fillMaxWidth().clickable { temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms) },
+                            fontSize = 10.sp,
+                            color = CouleurVertFonce
+                        )
                     }
-                )
+                }
+                // v0.73 : coche "Signe" align\u00E9e sur les champs.
+                Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Checkbox(
+                        checked = signataires.contains("T\u00E9moin " + (i + 1).toString()),
+                        onCheckedChange = {
+                            if (signataires.contains("T\u00E9moin " + (i + 1).toString())) signataires.remove("T\u00E9moin " + (i + 1).toString())
+                            else signataires.add("T\u00E9moin " + (i + 1).toString())
+                        }
+                    )
+                }
                 IconButton(onClick = {
                     signataires.remove("T\u00E9moin " + (i + 1).toString())
                     temoins.removeAt(i)
@@ -657,6 +724,7 @@ fun EcranSaisieActe(
                     Icon(Icons.Filled.Close, contentDescription = "Retirer")
                 }
             }
+        }
         }
         if (temoins.size < 4) {
             OutlinedButton(onClick = { temoins.add(TemoinSaisie()) }) {
@@ -668,18 +736,25 @@ fun EcranSaisieActe(
         // v0.72 : PRÊTRE (baptême, sépulture) ou OFFICIER D'ÉTAT CIVIL
         // (mariage) : un témoin de plus avec son rôle, coche s'il signe.
         if (type == "B" || type == "S" || type == "M") {
-            val roleOfficiel = if (type == "M") "Officier d'état civil" else "PrÊtre"
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                TitrePastille(roleOfficiel, roleOfficielNom.isNotBlank())
-                Spacer(Modifier.weight(1f))
-                Checkbox(
-                    checked = signataires.contains(roleOfficiel),
-                    onCheckedChange = { if (signataires.contains(roleOfficiel)) signataires.remove(roleOfficiel) else signataires.add(roleOfficiel) }
-                )
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            // v0.73 : PR\u00CATRE corrig\u00E9 (l'affichage b\u00E2tard cassait
+            // aussi le mapping des signataires) ; le pr\u00EAtre porte nom et
+            // pr\u00E9noms, SANS profession ; seul l'officier d'\u00E9tat civil du
+            // mariage garde la sienne. Coche "Signe" align\u00E9e sur les champs.
+            val roleOfficiel = if (type == "M") "Officier d'\u00E9tat civil" else "Pr\u00EAtre"
+            TitrePastille(roleOfficiel, roleOfficielNom.isNotBlank())
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Champ("Nom", roleOfficielNom, { roleOfficielNom = it }, modifier = Modifier.weight(1f))
-                Champ("Profession", roleOfficielProf, { roleOfficielProf = it }, modifier = Modifier.weight(1f))
+                Champ("Pr\u00E9noms", roleOfficielPrenoms, { roleOfficielPrenoms = it }, modifier = Modifier.weight(1f))
+                if (type == "M") {
+                    Champ("Profession", roleOfficielProf, { roleOfficielProf = it }, modifier = Modifier.weight(1f))
+                }
+                Column(Modifier.width(58.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Checkbox(
+                        checked = signataires.contains(roleOfficiel),
+                        onCheckedChange = { if (signataires.contains(roleOfficiel)) signataires.remove(roleOfficiel) else signataires.add(roleOfficiel) }
+                    )
+                }
             }
         }
 
@@ -725,10 +800,10 @@ fun EcranSaisieActe(
                     mMarieeNom = mereMariee.nom.trim(), mMarieePrenoms = mereMariee.prenoms.trim(),
                     mMarieeNe = mereMariee.ne.trim(), mMarieeLieu = mereMariee.lieu.trim(), mMarieeDept = normaliserDept(mereMariee.dept),
                     mMarieeProf = mereMariee.profession.trim(), mMarieeDeces = mereMariee.deces.trim(), mMarieeLieuDeces = mereMariee.lieuDeces.trim(),
-                    temoins = temoins.toList() + listOfNotNull(
+                    temoins = (if (type == "B") temoins.take(2).toList() else temoins.toList()) + listOfNotNull(
                         if ((type == "B" || type == "S" || type == "M") && roleOfficielNom.isNotBlank())
-                            TemoinSaisie(nom = roleOfficielNom.trim(), profession = roleOfficielProf.trim(),
-                                role = if (type == "M") "Officier d'état civil" else "PrÊtre") else null
+                            TemoinSaisie(nom = roleOfficielNom.trim(), prenoms = roleOfficielPrenoms.trim(), profession = roleOfficielProf.trim(),
+                                role = if (type == "M") "Officier d'état civil" else "Pr\u00EAtre") else null
                     ),
                     signataires = if (type == "N") signataires.filter { it != "M\u00E8re" } else signataires.toList()
                 )
