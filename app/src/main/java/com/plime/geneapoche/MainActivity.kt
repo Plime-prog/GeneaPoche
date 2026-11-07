@@ -1376,6 +1376,16 @@ fun AppEcran(
                 res.add("m\u00E8re de la mari\u00E9e : " + (a.mMarieePrenoms.trim() + " " + a.mMarieeNom.trim()).trim())
             }
         }
+        // v0.73 : coherence ETENDUE - les temoins (parrain, marraine,
+        // pretre, officier d'etat civil, temoin) sont verifies aussi.
+        a.temoins.forEach { t ->
+            if ((t.nom.isNotBlank() || t.prenoms.isNotBlank()) && !nomDejaConnu(t.nom, t.prenoms)) {
+                res.add(
+                    (if (t.role.isNotBlank()) t.role.trim().lowercase() + " : " else "t\u00E9moin : ") +
+                        (t.prenoms.trim() + " " + t.nom.trim()).trim()
+                )
+            }
+        }
         return res
     }
 
@@ -1493,36 +1503,40 @@ fun AppEcran(
         // Date, heure et lieu de l'acte selon son type (fiche de la personne concernee).
         // Nouvel acte : ne remplit que les champs encore vides. Edition : le
         // formulaire pre-rempli devient la reference (champ vide = efface).
+        // v0.73 : bug CORRIGE - en edition, une COMMUNE ou un
+        // DEPARTEMENT vide EFFACE la valeur de la fiche (la correction
+        // reste desormais enregistree) ; le departement est normalise
+        // partout (2 chiffres).
         when (a.type) {
             "N" -> {
-                if (a.date.isNotBlank()) p.dateNaissance = dateGreg(a.date)
-                if (a.heure.isNotBlank()) p.heureNaissance = a.heure
-                if (a.commune.isNotBlank()) p.lieuNaissance = a.commune
-                if (a.dept.isNotBlank()) p.deptNaissance = a.dept
+                if (edition || a.date.isNotBlank()) p.dateNaissance = dateGreg(a.date)
+                if (edition || a.heure.isNotBlank()) p.heureNaissance = a.heure
+                if (edition || a.commune.isNotBlank()) p.lieuNaissance = a.commune.trim()
+                if (edition || a.dept.isNotBlank()) p.deptNaissance = normaliserDept(a.dept)
             }
             "B" -> {
-                if (a.date.isNotBlank()) p.dateBapteme = dateGreg(a.date)
-                if (a.heure.isNotBlank()) p.heureBapteme = a.heure
-                if (a.commune.isNotBlank()) p.lieuBapteme = a.commune
-                if (a.dept.isNotBlank()) p.deptBapteme = a.dept
+                if (edition || a.date.isNotBlank()) p.dateBapteme = dateGreg(a.date)
+                if (edition || a.heure.isNotBlank()) p.heureBapteme = a.heure
+                if (edition || a.commune.isNotBlank()) p.lieuBapteme = a.commune.trim()
+                if (edition || a.dept.isNotBlank()) p.deptBapteme = normaliserDept(a.dept)
             }
             "M" -> {
-                if (a.date.isNotBlank()) p.dateMariage = dateGreg(a.date)
-                if (a.heure.isNotBlank()) p.heureMariage = a.heure
-                if (a.commune.isNotBlank()) p.lieuMariage = a.commune
-                if (a.dept.isNotBlank()) p.deptMariage = a.dept
+                if (edition || a.date.isNotBlank()) p.dateMariage = dateGreg(a.date)
+                if (edition || a.heure.isNotBlank()) p.heureMariage = a.heure
+                if (edition || a.commune.isNotBlank()) p.lieuMariage = a.commune.trim()
+                if (edition || a.dept.isNotBlank()) p.deptMariage = normaliserDept(a.dept)
             }
             "D" -> {
-                if (a.date.isNotBlank()) p.dateDeces = dateGreg(a.date)
-                if (a.heure.isNotBlank()) p.heureDeces = a.heure
-                if (a.commune.isNotBlank()) p.lieuDeces = a.commune
-                if (a.dept.isNotBlank()) p.deptDeces = a.dept
+                if (edition || a.date.isNotBlank()) p.dateDeces = dateGreg(a.date)
+                if (edition || a.heure.isNotBlank()) p.heureDeces = a.heure
+                if (edition || a.commune.isNotBlank()) p.lieuDeces = a.commune.trim()
+                if (edition || a.dept.isNotBlank()) p.deptDeces = normaliserDept(a.dept)
             }
             "S" -> {
-                if (a.date.isNotBlank()) p.dateSepulture = dateGreg(a.date)
-                if (a.heure.isNotBlank()) p.heureSepulture = a.heure
-                if (a.commune.isNotBlank()) p.lieuSepulture = a.commune
-                if (a.dept.isNotBlank()) p.deptSepulture = a.dept
+                if (edition || a.date.isNotBlank()) p.dateSepulture = dateGreg(a.date)
+                if (edition || a.heure.isNotBlank()) p.heureSepulture = a.heure
+                if (edition || a.commune.isNotBlank()) p.lieuSepulture = a.commune.trim()
+                if (edition || a.dept.isNotBlank()) p.deptSepulture = normaliserDept(a.dept)
             }
         }
         if (a.profession.isNotBlank()) p.profession = a.profession.trim()
@@ -1679,7 +1693,7 @@ fun AppEcran(
             (if (t.role.isNotBlank()) t.role.trim() + " : " else "") +
                 (t.prenoms.trim() + " " + t.nom.trim()).trim() + (if (t.profession.isNotBlank()) " (" + t.profession.trim() + ")" else "")
         }
-        if (temoinsTexte.isNotEmpty()) lignes.add("T\u00E9moins : " + temoinsTexte)
+        if (temoinsTexte.isNotEmpty()) lignes.add((if (a.type == "B") "Parrain et marraine : " else "T\u00E9moins : ") + temoinsTexte)
         val signatairesNoms = a.signataires.mapNotNull { l ->
             when {
                 l == "Concerne(e)" -> p.titre()
@@ -1693,6 +1707,15 @@ fun AppEcran(
                 l == "M\u00E8re de la mari\u00E9e" -> (a.mMarieeNom + " " + a.mMarieePrenoms).trim()
                 l == "Pr\u00EAtre" || l == "Officier d'\u00E9tat civil" -> {
                     val t = a.temoins.firstOrNull { it.role == l } ?: return@mapNotNull null
+                    (t.prenoms.trim() + " " + t.nom.trim()).trim()
+                }
+                // v0.73 : sur un bapteme, parrain et marraine signent.
+                l == "Parrain" -> {
+                    val t = a.temoins.getOrNull(0) ?: return@mapNotNull null
+                    (t.prenoms.trim() + " " + t.nom.trim()).trim()
+                }
+                l == "Marraine" -> {
+                    val t = a.temoins.getOrNull(1) ?: return@mapNotNull null
                     (t.prenoms.trim() + " " + t.nom.trim()).trim()
                 }
                 l.startsWith("T\u00E9moin ") -> {
@@ -1766,6 +1789,19 @@ fun AppEcran(
                 )
             )
         }
+        }
+
+        // v0.73 : COHERENCE - chaque temoin (parrain, marraine, pretre,
+        // officier, temoin) est rattache a une FICHE : la personne
+        // existante est reutilisee, sinon une fiche est creee, et le lien
+        // temoin de l'acte est enregistre.
+        a.temoins.filter { it.nom.isNotBlank() }.forEach { t ->
+            val ficheT = trouverOuCreer(0L, t.nom, t.prenoms, "") ?: return@forEach
+            if (t.profession.isNotBlank() && ficheT.profession.isBlank()) ficheT.profession = t.profession.trim()
+            if (!p.temoinsDe(a.type).contains(ficheT.id)) p.temoinsDe(a.type).add(ficheT.id)
+            if (a.type == "M" && mariee != null && !mariee.temoinsDe(a.type).contains(ficheT.id)) {
+                mariee.temoinsDe(a.type).add(ficheT.id)
+            }
         }
 
         enregistrer()
