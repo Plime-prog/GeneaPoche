@@ -1,3 +1,213 @@
+## v0.72 – Petites retouches : ordre NBMDS, indicateurs 4/2, coches de signature
+
+Sept demandes utilisateur après la v0.71 :
+
+- **Ordre NBMDS prioritaire** : sur une fiche, les blocs suivent désormais Naissance, Baptême, Mariage, Décès, Sépulture même si le classement chronologique disposerait autrement — l'ordre NBMDS l'emporte.
+- **Fin des informations parasites** : les entrées de chronologie (mariages et naissances des frères et soeurs) antérieures à la naissance ou postérieures au décès de la personne ne s'affichent plus sur sa fiche.
+- **Indicateur sur 4 (et non plus 6) pour les personnes supposées en vie** (moins de 100 ans, pas de décès renseigné) : date de naissance, lieu de naissance complet, date de mariage, lieu de mariage complet.
+- **Indicateur sur 2 pour les mineurs supposés en vie** (moins de 18 ans) : date de naissance et commune de naissance seulement.
+- **Case département rétrécie** : la colonne département (2 chiffres) est resserrée au profit de la commune, sur la même ligne.
+- **La zone « Qui signe ? » disparaît de tous les actes** : à la place, une coche « Signe » derrière chaque personne citée — père (N/B), mère, prêtre, parrain et marraine (B), époux, épouse, les quatre parents et les témoins (M), officier d'état civil avec sa profession (M, géré comme un témoin portant son rôle), conjoint survivant déclarant et témoins (D), prêtre et témoins (S).
+- **Liste « Personne concernée » resserrée et alignée à gauche** dans le sélecteur.
+- Bumps 0.72 (gradle 72/« 0.72 », export GEDCOM « 2 VERS 0.72 », badge de saisie « v0.72 », écran d'application).
+
+## v0.71 – Zéro d'office sur les dates : le format tient dans le temps
+
+La détection de dates invalides (v0.69) était la bonne idée mais ne tenait pas dans le temps : après correction, sauvegarde, export GEDCOM puis réimport, le problème revenait. Cause : l'import GEDCOM fabriquait « 5/10/1890 » sans le zéro d'office, aussitôt re-signalé invalide au tour suivant.
+
+- **Zéro d'office, TOUTE l'application** : nouvelle fonction normaliserDate — « 5/7/1890 » ou « 5.7.1890 » devient « 05/07/1890 » dès l'enregistrement ; normaliserHeure fait de même (« 9:05 » → « 09:05 »).
+- **Trois points de passage obligatoires couvrent tout** : dateGreg (toute date d'acte), normaliserLieux (les cinq événements + événements libres, à chaque enregistrement : les dates incomplètes déjà présentes dans la base se réparent d'elles-mêmes) et dateFrancaise (« 5 OCT 1890 » → « 05/10/1890 » à l'import GEDCOM, fin de la boucle infernale).
+- **Dates consultées comprises** : dateConsultation des actes normalisée aussi à l'enregistrement et au chargement JSON.
+- **Qualificateurs GEDCOM légitimes** : « vers 1890 », « avant 1890 », « après 1890 » et « entre 1890 et 1895 » (ABT/BEF/AFT/BET relus de l'export) ne sont plus signalés comme des dates fausses : la norme GEDCOM est respectée.
+- Bumps 0.71 (gradle 71/« 0.71 », export GEDCOM « 2 VERS 0.71 », badge de saisie « v0.71 », écran d'application).
+
+## v0.70 – Saisie ultra-compacte, mère non signataire, conjoint veuf ou en vie, B/S masqués
+
+Quatre demandes utilisateur à la suite de v0.69 : le formulaire ne tient toujours pas sur une page (cadres trop grands, département en tête) ; la mère ne signe jamais un acte de naissance ; le conjoint d'un défunt peut être décédé avant lui ou encore en vie ; ne pas afficher B et S sur la fiche par défaut.
+
+- **Champs ULTRA-COMPACTS partout** : le composable Champ est réécrit — fini le grand OutlinedTextField (~64 dp), place à un cadre mince (~36 dp) : libellé 10 sp au-dessus, texte 14 sp, bordure fine arrondie, interligne 1 dp. Environ 25-30 dp gagnés PAR champ : un acte de naissance complet (personne + parents + témoins + signataires) tient enfin sur une page.
+- **N : la mère ne signe jamais l'acte** — la puce « Mère » disparaît des signataires possibles sur un acte de naissance, et toute signature « Mère » préexistante est filtrée à l'enregistrement.
+- **D/S : conjoint veuf ou en vie** — le bloc « Conjoint survivant » devient « Conjoint » avec deux puces : « En vie » (survivant, déclarant) ou « Décédé avant (veuf/veuve) » ; le libellé du champ de nom s'adapte.
+- **Fiche : B et S masqués par défaut** — les blocs Baptême et Sépulture ne s'affichent que si l'acte porte une donnée (date, heure, lieu ou département).
+- Bumps 0.70 (gradle 70/« 0.70 », export GEDCOM « 2 VERS 0.70 », badge de saisie « v0.70 », écran d'application).
+
+## v0.69 – Saisie compacte sur une page + alertes dates hors format partout
+
+Les deux demandes restantes de la revue NBMDS : formulaire plus compact (« tout voir pratiquement sur une page »), département toujours sur 2 chiffres, et contrôle du format de date PARTOUT (ancien GEDCOM ou champ non contrôlé).
+
+- **Badge de version en tête du formulaire** : un petit « v0.69 » figure à côté du titre « Saisie d'un acte » — preuve immédiate de la version installée.
+- **Formulaire resserré** : marges générales 12 → 8 dp, espacement des titres de section 12 → 6 dp, interligne des champs 3 → 2 dp — l'essentiel tient sur une page.
+- **Département normalisé à 2 chiffres partout** : « Nord » → « 59 », 5 → « 05 », à l'enregistrement de l'acte (commune, père, mère, parents du conjoint) et dans le dialogue d'édition de bloc.
+- **Contrôle du format de date PARTOUT** : nouvelle fonction 'datesInvalides(fiche)' qui liste les blocs (naissance, baptême, mariage, décès, sépulture, événements libres) dont la date ne respecte pas le format défini (jj/mm/aaaa, aaaa seul ou date républicaine) :
+  - **Liste Personnes** : pastille rouge « Date ! » sur toute fiche concernée ;
+  - **Fiche** : bandeau rouge « Date à corriger : … » listant les blocs fautifs ;
+  - **Saisie d'acte** : les champs de dates de la personne concernée (naissance, décès, consulté le) passent en rouge si le format est invalide.
+- Bumps 0.69 (gradle 69/« 0.69 », export GEDCOM « 2 VERS 0.69 », écran d'application).
+
+## v0.68 – Conjoint survivant (D/S) et parrain/marraine (B)
+
+Demandes utilisateur à la suite de la revue NBMDS de v0.67 :
+
+- **Actes de décès et sépulture** : champ « Conjoint survivant » — le « veuf/veuve de X » que porte l'acte — nom et prénoms sur une ligne avec sa pastille d'état. Le bloc complet du mariage (profession, parents du conjoint) n'apparaît pas.
+- **Acte de baptême** : la section « Témoins » devient « Parrain et marraine » — mêmes champs (nom, prénoms, profession), le bon libellé d'acte.
+- Bumps 0.68.
+
+## v0.67 – Revue NBMDS : les champs réels de chaque type d'acte
+
+Reprise utilisateur : le formulaire montrait le conjoint et ses parents sur tout type d'acte dès qu'ils existaient sur la fiche. Chaque type d'acte ne porte désormais que ses propres renseignements :
+
+- **Conjoint et ses parents : MARIAGE uniquement** (et événement libre). Un acte de naissance n'a ni conjoint ni beaux-parents — la section ne s'affiche plus pour N/B/D/S.
+- **Blocs Père/Mère adaptés au type** : acte de naissance ou baptême = identité des parents en une seule ligne (nom, prénoms, profession) ; décès ou sépulture = sans naissance des parents (décès mentionné) ; mariage/événement = bloc complet (naissance, lieu, département, profession, décès).
+- **Profession de la personne concernée masquée sur les actes N et B** : un nouveau-né n'a pas de profession.
+- Effet immédiat : l'acte de naissance se réduit à la personne + père/mère + témoins, sans les blocs du conjoint.
+- Bumps 0.67.
+
+## v0.66 – Nettoyage après victoire : formulaire de saisie compact à pastilles
+
+Le bug « belle-mère » est corrigé (v0.65) : la confirmation utilisateur est arrivée, place au nettoyage demandé.
+
+- **Boutons « Changer » supprimés** : dans la bannière de tête (le bouton « Choisir » ne reste que si aucune personne n'est sélectionnée) et le lien « Ce n'est pas la bonne personne ? Changer ». La bannière verte d'affichage (« Pour : … de X » / « Modification : … ») reste.
+- **Formulaire beaucoup plus compact** : blocs Père / Mère / parents de la mariée condensés de 4 à 3 lignes de champs, libellés raccourcis (Né(e) le, Lieu, Dép., Déc. le…), champs principaux resserrés (Date, Heure, Réf. AD, Consulté le, Dépôt).
+- **Pastilles d'état** sur les titres de blocs (Personne concernée, Père, Mère, Mariée/Conjoint(e), Témoins) : verte si le bloc est rempli, grise s'il est vide — l'état du formulaire se lit d'un coup d'œil.
+- Bumps 0.66 (gradle 66/« 0.66 », export GEDCOM « 2 VERS 0.66 », écran d'application).
+
+## v0.65 – Correctif « belle-mère » : champs parents fiabilisés (remplir() unique)
+
+Sur la base du diagnostic d'un professionnel, le remplissage des blocs parents de la saisie d'acte est refait proprement :
+
+- **Une seule fonction de remplissage** `ChampsParent.remplir(...)` : les quatre blocs (père, mère, parents du conjoint) sont remplis au même endroit — un champ ne peut plus « fuir » d'un parent vers un autre. `remplirDepuis` utilise la même fonction.
+- **Identifiants des parents transmis** (`pereId`/`mereId`) : le formulaire sait pour quelle fiche parent il est ouvert ; `trouverOuCreer` garde le lien existant si le nom saisi est resté celui de la personne liée (fin des détournements d'homonymes — la belle-mère ne peut plus être choisie à la place de la mère).
+- **Plus de détachement involontaire** : un lien de parenté n'est retiré que si un nom de parent rempli à l'ouverture a été explicitement vidé.
+- **Tout changement d'identité signalé** : si le nom, les prénoms ou la profession de la fiche changent à l'enregistrement, le message final le dit (« Nom modifié : X → Y. »).
+- **Édition : effacer un champ le vide réellement** (`renseigner` écrit aussi les valeurs vides en mode édition).
+- **Tests unitaires** (JVM) : le remplissage d'un parent ne touche jamais les autres champs ; `prefillActe` reste fidèle à la fiche (nom de la personne, mère du conjoint, identifiants).
+- Bumps 0.65.
+
+## v0.64 – Correctif « belle-mère » : plus aucun remplacement de lien silencieux
+
+Le bug persistant de la saisie de naissance (département, noms et prénoms de la belle-mère affichés à la place de ceux de l'homme, corrections jamais enregistrées) avait une double cause, démasquée par la bannière de la v0.63 :
+
+- Le formulaire vise bien la bonne personne : c'est la **fiche** qui porte un lien de père/mère pollué (héritage du bug d'avant-v0.58). Le formulaire recopiait fidèlement la fiche.
+- Surtout : corriger le nom du parent ne **remplaçait** le lien que si les dates étaient cohérentes ; en cas de refus, **RIEN n'était dit**. L'enregistrement semblait ne rien faire.
+
+**Correctifs v0.64 :**
+- **Aucun remplacement de lien silencieux** : un refus affiche son motif (« Mère NON remplacée : l'enfant ne naît pas avant sa mère » par exemple), un remplacement ou un retrait est confirmé en clair (« Mère de la fiche remplacée : A → B. ») dans le message final.
+- **Liens de la fiche affichés dans le formulaire**, sous les blocs Père/Mère : « Liens de la fiche — Père : X · Mère : Y ». Un lien erroné (mère pointant sur la belle-mère) devient visible immédiatement.
+- Bumps 0.64.
+
+## v0.63
+
+- **Personne concernée en tête du formulaire** : bannière vert/gras « Pour : Naissance de X » ou « Modification : … » (rouge si aucune personne) dès l'ouverture, sans défiler.
+- **Touche « Changer »** : si le formulaire part de la mauvaise fiche, une touche recharge tout le formulaire sur la bonne personne.
+- Le formulaire depuis une fiche transmet désormais les actes (le changement de personne retrouve l'acte existant, aucun doublon).
+
+## v0.62
+
+- **Saisie d'acte** : en modification d'un acte rattaché à une fiche, bannière claire « Modification : … de X » et suppression du bouton « Choisir une personne existante ».
+- **Réparation des actes mal rattachés** : dans chaque bloc d'acte stocké d'une fiche, bouton « Cet acte concerne une autre personne » pour réattribuer l'acte à la bonne fiche.
+- Fix du sous-titre (tiret cadratin manquant).
+
+## v0.61
+- Fin des doublons : la reconnaissance des noms est desormais insensible a la casse, aux accents, aux tirets/apostrophes et a l'ORDRE des prenoms ("Marie Jeanne" = "Jeanne Marie"). Corriger l'orthographe d'un nom (pere, mere, conjoint, personne) retrouve la fiche existante au lieu d'en creer une nouvelle.
+- Menu Saisie : les grandes cartes Naissance/Bapteme/Mariage/... sont remplacees par des PUCES compactes (meme gabarit que le niveau de preuve), sur une seule ligne deroulante.
+
+## v0.60
+- Synchronisation totale : tout champ non vide de la saisie d'un acte ECRASE la fiche (identite, dates, lieux, departements, profession, parents, epoux/epouse) ; fini le remplissage "si vide" qui ignorait les corrections.
+- Liens parents reparables : un nom saisi qui correspond a une AUTRE fiche REMPLACE le lien erronne (ex. mere pointant sur la belle-mere) ; nouveau bouton "Retirer ce lien" dans le bloc Naissance de la fiche ; delier nettoie aussi la liste enfants de l'ancien parent.
+- Onglet Saisie : demarre pre-rempli sur la derniere fiche ouverte (plus de formulaire vierge).
+- Formulaire de fiche : valeurs initiales capturees une seule fois a l'ouverture (plus de reset pendant la saisie).
+- Menu Saisie compacte (meme gabarit que les puces de niveau de preuve).
+- Accent de "republicain" restaure ; libelle de date unifie (jj/mm/aaaa, aaaa ou republicain).
+
+## v0.59 – Correctif : liens parentaux et corrections enfin enregistrées (saisie d'acte)
+
+- **Bug corrigé** : corriger la naissance d'une personne via la saisie d'acte montrait parfois un mauvais parent (ex la belle-mère) avec son département, et la correction ne s'enregistrait jamais.
+- **Corrections désormais enregistrées** : en édition d'un acte, les valeurs saisies pour le père et la mère (département, lieu, dates, profession) REMPLACENT celles de la fiche du parent (un champ laissé vide ne change rien).
+- **Réparation des liens erronés** : en édition, le nom saisi pour le père ou la mère est la référence — s'il correspond à une autre fiche, le lien de parenté est REMPLACÉ (l'ancien parent perd l'enfant, le nouveau le gagne, cohérence des dates vérifiée) ; un nom vidé retire le lien.
+- versionCode 59.
+
+## v0.58 – Correctif : saisie d'acte (personne erronée) + formulaire compact
+
+- **Correctif important** : lors d'une correction via « Saisie d'un acte », le formulaire pouvait réutiliser les états d'une saisie précédente (intitulé, personne, département… appartenant à une autre fiche), et la modification était enregistrée sur le mauvais acte. Les états sont désormais resynchronisés à chaque ouverture, et une instance neuve du formulaire est créée à chaque saisie (compteur d'ouverture).
+- **Formulaire compact** : bouton « Enregistrer » toujours visible en bas, hors défilement ; champs regroupés deux par ligne (commune + département, date + heure, nom + prénoms, profession, conjoint, parents, témoins).
+- versionCode 58.
+
+## v0.57 (correctifs : pré-remplissage en modification et dates invalides)
+
+- **Modification d'une fiche : plus aucune donnée d'une autre personne** : les 24 champs du dialogue d'édition sont mémorisés par l'identifiant de la fiche (`remember(cible?.id)`) et non plus par l'égalité de contenu ; le dialogue est entièrement reconstruit à chaque ouverture ou changement de cible (`key`) ; `construire()` ne mute plus la fiche en place (il travaille sur une copie) et la fiche modifiée est réellement remplacée dans la base à l'enregistrement.
+- **Saisie d'acte : intitulé propre à chaque acte** : ouvrir un autre acte ne conserve plus l'intitulé (profession, déménagement…) d'un acte précédent dont le champ serait vide.
+- **Dates invalides refusées partout (mois 00 compris)** : dans l'édition d'une fiche, la saisie d'acte et l'événement libre, toute date ou heure saisie mais irréelle (31/02, 29/02 d'une année non bissextile, jour ou mois 00) marque le champ en rouge avec une aide et désactive Enregistrer ; une date vide reste admise. GEDCOM : version réelle 0.57.
+
+## v0.56 – Correctif : pré-remplissage de l'édition
+
+- **Bug corrigé** : à l'ouverture de la modification d'une fiche existante, les champs pré-remplis pouvaient appartenir à une autre personne (états `remember` sans clé, conservés d'une ouverture à l'autre du dialogue).
+- Dialogue d'édition : les 24 champs sont désormais liés à la personne ciblée (`remember(cible)`) ; même correction pour le dialogue d'édition d'un bloc (date, heure, commune, département, référence) et pour l'édition d'un événement libre de la chronologie.
+- Saisie d'acte ouverte depuis la fiche (appui long sur un bloc NBMDS) : le formulaire est recréé pour la personne et le type d'acte demandés (clé personne + type) ; plus aucun mélange entre deux fiches.
+- Création d'une personne depuis « Ajouter un enfant » : le dialogue d'édition se FERME après le rattachement (il restait ouvert, encore rempli des données saisies).
+- Version 0.56 (versionCode 56).
+
+## v0.55 – GénéaPoche 11 (11.1) : alertes locales
+
+- Chantier 11.1 : rappels de recherches à faire annoncés à l'ouverture, sur le même principe que le diagnostic.
+- À l'ouverture (après déverrouillage) : « Rappels : N recherche(s) prioritaire(s) à faire (onglet Journal). » (même règle des 75 ans que le Journal).
+- Si le diagnostic a aussi des points à examiner, les deux annonces sont combinées en un seul message.
+
+## v0.54 – GénéaPoche 12 (2e salve)
+
+- Coche et croix de certification d'identité PLUS GRANDES sur la fiche (barre du haut).
+- Liste Personnes : coche verte ✔ (identité certifiée) ou croix rouge (à vérifier) rappelée directement sur le nom de chaque personne.
+- Tris réordonnés : Aboville à gauche et PAR DÉFAUT, puis Branches, puis A–Z à droite.
+- Diagnostic de l'arbre : le compteur « N point(s) à examiner » inclut désormais aussi les identités non certifiées (fini le « 0 point(s) » alors qu'il restait des identités à certifier).
+
+## v0.53 – GénéaPoche 12 : correctifs et diagnostic à la demande
+
+- **Sélecteur d'images réparé** : l'icône « + photo d'acte » est de retour dans l'en-tête de chaque bloc d'événement de la fiche ; le sélecteur ne re-verrouille plus l'application au retour (garde-fou picker réparé).
+- **Message « Lien refusé » complet** : quand un acte de naissance est refusé pour incohérence de parenté, le message complet s'affiche désormais (« Impossible : l'enfant… L'acte reste enregistré, SANS le lien de parenté. ») au lieu d'être écrasé par « Acte enregistré ».
+- **Diagnostic de l'arbre corrigé** : l'encadré du journal ne disparaît plus alors qu'il reste des points à corriger — les identités non certifiées sont désormais comptées comme les anomalies, doublons et branches isolées.
+- **Bouton « Actualiser le diagnostic »** en tête du journal : le diagnostic complet de l'arbre se refait à la demande.
+- **Annonce à l'ouverture** : si l'arbre compte des points à examiner, un message « Diagnostic de l'arbre : N point(s) à examiner (onglet Journal). » s'affiche au démarrage de l'application.
+- Version 0.53 (versionCode 53).
+
+## v0.52 - Correctif : un enfant ne peut plus etre ne avant son parent
+
+- Bug reproduit : un enfant ne avant la naissance de la personne selectionnee pouvait encore etre ajoute.
+- UNE SEULE regle anti-incoherence : incoherenceParente(parent, dateEnfant) dans Numerotation.kt. Annees seules et dates republicaines comprises (anneeDe) ; une date inconnue ne bloque jamais rien ; meme annee acceptee.
+- Toutes les voies d'ajout couvertes : saisie d'un enfant (verifie AVANT toute creation : aucun refus ne laisse de fiche orpheline, l'enfant EXISTANT deja date est couvert), choix d'une fiche existante, nouveau parent (refuse s'il serait ne apres l'enfant), acte de naissance rattache au parent (et au conjoint du parent), import GEDCOM fusionne, rattachement pere/mere d'un acte.
+- Le CONJOINT connu est teste au meme titre que la personne dans chaque voie d'ajout.
+- Journal - Diagnostic de l'arbre : l'age negatif de la mere n'affiche plus "agee de -5 ans, a verifier" (condition n >= nm) ; les anomalies "ne(e) avant son pere / sa mere" restent signalees pour les dates modifiees apres coup.
+- Version 0.52 (versionCode 52).
+
+## v0.51 – GénéaPoche 11 : coche d'identité, diagnostic de l'arbre, sources et preuves
+
+- **11.0 Vérification identité** : coche sur chaque fiche, à droite du nom et du score n/6. Coche automatique si au moins 1 renseignement sur 6, croix rouge sinon ; le choix manuel reste possible (auto → coche → croix en touchant l'icône), même si l'acte est incomplet. Le journal liste les identités non certifiées : la coche sert aussi aux recherches.
+- **11.2 Diagnostic complet de l'arbre** : nouvel encadré « Diagnostic de l'arbre » dans le journal — anomalies de cohérence (décès avant naissance, âges impossibles…), **doublons** (même nom et mêmes prénoms) avec **fusion guidée** : garder l'une ou l'autre fiche, toutes les informations et tous les liens (parents, conjoints, enfants, témoins, actes, recherches) sont reportés sans jamais écraser une donnée déjà présente ; **branches isolées** (personnes sans aucun lien de parenté) ; tout est cliquable vers la fiche.
+- **11.4 Sources et niveaux de preuve** : sur chaque acte, en plus de la côte AD — dépôt de conservation, date de consultation et niveau de preuve 0–3 (échelle QUAY standard, comme Heredis et Gramps : 0 indirecte, 1 plausible, 2 fiable, 3 acte original). Affichés dans le sous-bloc de l'acte sur la fiche et exportés en GEDCOM (`AGNC` dépôt, NOTE date de consultation, `QUAY` sur chaque citation).
+
+Les chantiers 11.1 (rappels et notifications), 11.3 (carte), 11.5 (vues étendues), 11.6 (retouche d'images), 11.7 (séance aux archives), 11.8 (statistiques) et 11.9 (sauvegarde planifiée) restent au programme des prochaines salves.
+
+## v0.50 – GénéaPoche 10 : cohérence NBMDS, pré-remplissage complet, édition corrigée
+
+- **Cohérence enfant/parent** : impossible d'ajouter ou de lier un enfant né avant la naissance de son parent (message explicite, personne non créée si nécessaire).
+- **Ordre NBMDS toujours respecté** : correction du bug qui classait la Sépulture AVANT le Décès ; ordre N, B, M, D, S même si les informations sont vides ; B/M jamais avant N, S jamais après... jamais avant D.
+- **Journal** : nouvelles anomalies “né(e) avant son père / sa mère” et “sépulture avant le décès”.
+- **Pré-remplissage complet** : depuis une ligne NBMDS de la fiche, la saisie propose désormais toutes les informations connues, y compris le conjoint (et les parents du conjoint) pour N et D, pas seulement pour M.
+- **Correction** : l'édition par appui long d'une ligne NBMDS reste maintenant sur la ligne après Enregistrer (mode édition forcé même sans acte stocké).
+
+## v0.49 – Correction : la saisie revient dans les cadres Recherche
+
+- Correction du bug de la v0.48 : rien ne s'écrivait dans les cadres Recherche (bloc Recherches de la fiche, sous-bloc de chaque acte, carte du journal). La liaison directe au texte de la piste ne rafraîchissait pas l'écran.
+- La saisie est de nouveau immédiate dans les trois endroits ; le bouton Enregistrer conserve la note dans la recherche, qui reste partagée entre la fiche et le journal.
+- Version 0.49 (versionCode 49).
+
+## v0.48 – GénéaPoche 9 : synchronisation fiche / arbre / recherches
+
+- 9.1 L'icône Arbre est supprimée de la fiche.
+- 9.2 L'arbre généalogique (et la ligne de vie) se synchronisent AUTOMATIQUEMENT avec la personne de la fiche ouverte : plus besoin d'aucun bouton.
+- 9.3 Le bloc Recherches de la fiche est synchronisé avec le journal : le texte de chaque recherche est recalculé exactement comme dans le journal.
+- 9.4 Chaque recherche de la fiche est CLIQUABLE : toucher « Compléter le lieu de mariage » ouvre directement la saisie du mariage ; « Rechercher son père » ouvre le choix du père ; « Rechercher les enfants » ouvre « Ajouter un enfant », etc.
+- 9.5 La note de recherche saisie dans la fiche (bloc Recherches et sous-blocs d'actes) est la MÊME que celle du journal : liaison directe, toute saisie d'un côté se retrouve de l'autre après enregistrement.
+- Version 0.48 (versionCode 48).
+
 # Historique des versions — GénéaPoche
 
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
