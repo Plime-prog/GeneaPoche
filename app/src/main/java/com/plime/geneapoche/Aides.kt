@@ -74,7 +74,36 @@ fun dateValide(s: String): Boolean {
         }
     }
     if (Regex("^\\d{4}$").matches(t)) return true
+    // v0.71 : les qualifications GEDCOM relues a l'import (ABT -> vers,
+    // BEF -> avant, AFT -> apr\u00E8s, BET...AND -> entre) sont des dates
+    // VALIDES : elles respectent la norme, un import GEDCOM ne doit plus
+    // jamais les signaler comme fausses.
+    if (Regex("^(vers|avant|apr\\u00E8s)\\s+\\d{4}$", RegexOption.IGNORE_CASE).matches(t)) return true
+    if (Regex("^entre\\s+\\d{4}\\s+et\\s+\\d{4}$", RegexOption.IGNORE_CASE).matches(t)) return true
     return repubAGregorien(t) != null
+}
+
+// v0.71 : ZERO D'OFFICE - une saisie incomplete recoit ses zeros et ses
+// slashes ("5/7/1890", "5.7.1890" -> "05/07/1890"). Applique d'office
+// dans TOUTE l'application (dateGreg, normaliserLieux, import GEDCOM) :
+// le format jj/mm/aaaa tient dans le temps, meme apres correction,
+// sauvegarde, export et reimport.
+fun normaliserDate(s: String): String {
+    val t = s.trim()
+    Regex("^(\\d{1,2})[.\\- ](\\d{1,2})[.\\- ](\\d{4})$").find(t)?.let { m ->
+        return m.groupValues[1].padStart(2, '0') + "/" +
+            m.groupValues[2].padStart(2, '0') + "/" + m.groupValues[3]
+    }
+    return t
+}
+
+// v0.71 : heure normalisee hh:mm ("9:05" -> "09:05").
+fun normaliserHeure(s: String): String {
+    val t = s.trim()
+    Regex("^(\\d{1,2}):(\\d{2})$").find(t)?.let { m ->
+        return m.groupValues[1].padStart(2, '0') + ":" + m.groupValues[2]
+    }
+    return t
 }
 
 // Heure au format unique hh:mm (00 a 23, 00 a 59).
