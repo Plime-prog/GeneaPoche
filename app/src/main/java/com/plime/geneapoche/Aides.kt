@@ -187,8 +187,10 @@ fun indicateurPersonne(p: Personne): Pair<Int, Int> {
     if (presumeVivant(p)) {
         val an = anneeDe(p.dateNaissance) ?: return Pair(renseignementsN6(p), 6)
         if (java.time.LocalDate.now().year - an < 18) {
+            // v0.73 : sur 2, TOUTE date de naissance renseignee compte
+            // (meme incomplete), avec la commune.
             var n = 0
-            if (dateComplete(p.dateNaissance)) n++
+            if (p.dateNaissance.trim().isNotEmpty()) n++
             if (p.lieuNaissance.trim().isNotEmpty()) n++
             return Pair(n, 2)
         }
