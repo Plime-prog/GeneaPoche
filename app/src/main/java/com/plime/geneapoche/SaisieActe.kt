@@ -203,12 +203,13 @@ fun BlocParent(
             Champ("Nom", e.nom, { e.nom = it }, modifier = Modifier.weight(1f))
             Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it }, modifier = Modifier.weight(1f))
             Champ("Profession", e.profession, { e.profession = it }, modifier = Modifier.weight(1f))
-            // v0.73 : coche "Signe" ALIGNEE sur la ligne des champs.
             if (onCocheSigne != null) {
-                // v0.75 : coche descendue d'une ligne, alignee sur le nom.
-                Column(Modifier.width(58.dp).padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                // v0.76 : colonne Signe CALQUÉE sur le champ "Nom" : hauteur
+                // 56.dp identique à l'OutlinedTextField, libellé "Signe" en
+                // tête comme le libellé du champ, coche centrée dessous.
+                Column(Modifier.width(58.dp).height(56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Checkbox(checked = cocheSigne, onCheckedChange = { onCocheSigne() })
+                    Checkbox(checked = cocheSigne, onCheckedChange = { onCocheSigne() }, modifier = Modifier.size(40.dp))
                 }
             }
         }
@@ -217,10 +218,12 @@ fun BlocParent(
             Champ("Nom", e.nom, { e.nom = it }, modifier = Modifier.weight(1f))
             Champ("Pr\u00E9noms", e.prenoms, { e.prenoms = it }, modifier = Modifier.weight(1f))
             if (onCocheSigne != null) {
-                // v0.75 : coche descendue d'une ligne, alignee sur le nom.
-                Column(Modifier.width(58.dp).padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                // v0.76 : colonne Signe CALQUÉE sur le champ "Nom" : hauteur
+                // 56.dp identique à l'OutlinedTextField, libellé "Signe" en
+                // tête comme le libellé du champ, coche centrée dessous.
+                Column(Modifier.width(58.dp).height(56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Checkbox(checked = cocheSigne, onCheckedChange = { onCocheSigne() })
+                    Checkbox(checked = cocheSigne, onCheckedChange = { onCocheSigne() }, modifier = Modifier.size(40.dp))
                 }
             }
         }
@@ -327,6 +330,15 @@ fun EcranSaisieActe(
     var roleOfficielProf by remember(initial) { mutableStateOf(initial?.temoins?.firstOrNull { it.role.isNotBlank() }?.profession ?: "") }
     var pickerCible by remember { mutableStateOf(0) } // 0 = personne concernee, 1 = mariee
     var pickerOuvert by remember { mutableStateOf(false) }
+    // v0.76 : fenêtre d'homonymes (nom + prénoms) : "pers" personne
+    // concernée, "pm:<i>" parrain/marraine, "t:<i>" témoin.
+    var homonymesOuvert by remember { mutableStateOf<String?>(null) }
+    // v0.76 : un homonyme = même nom ET mêmes prénoms (plus de simple patronyme).
+    val homonymesPers = personnes.filter { q ->
+        nom.isNotBlank() && prenoms.isNotBlank() && q.id != personneId &&
+            q.nom.trim().uppercase() == nom.trim().uppercase() &&
+            q.prenoms.trim().uppercase() == prenoms.trim().uppercase()
+    }.sortedBy { it.dateNaissance }
     // v0.70 : le conjoint du defunt est-il ENCORE EN VIE (declarant de
     // l'acte) ou deja DECEDE avant lui (veuf/veuve) ?
     var conjointEnVie by remember { mutableStateOf(true) }
@@ -395,7 +407,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.75",
+                "  v0.76",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -535,20 +547,13 @@ fun EcranSaisieActe(
             Champ("Nom", nom, { nom = it }, modifier = Modifier.weight(1f))
             Champ("Pr\u00E9noms", prenoms, { prenoms = it }, modifier = Modifier.weight(1f))
         }
-        // v0.75 : TOUS les homonymes (meme nom) sont proposes avec leur
-        // date de naissance : aucun doublon ne se cree en silence.
-        personnes.filter { q ->
-            nom.isNotBlank() && q.id != personneId && q.nom.trim().uppercase() == nom.trim().uppercase()
-        }.sortedBy { q -> if (prenoms.isNotBlank() && q.prenoms.trim().uppercase() == prenoms.trim().uppercase()) 0 else 1 }
-            .take(8).forEach { q ->
-            Text(
-                "\u2192 Fiche existante : " + q.titre() +
-                    (if (q.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(q.dateNaissance.trim()) else "") +
-                    (if (decesAffichable(q)) " \u00b7 D. " + dateAffichee(q.dateDeces.trim()) else ""),
-                Modifier.fillMaxWidth().clickable { remplirDepuis(prefillActe(q, personnes, actes, type)) },
-                fontSize = 10.sp,
-                color = CouleurVertFonce
-            )
+        // v0.76 : homonyme = même nom ET mêmes prénoms ; plus de liste sous
+        // les champs : un bouton ouvre une FENÊTRE pour reprendre la fiche
+        // existante ou en créer une nouvelle.
+        if (homonymesPers.isNotEmpty()) {
+            OutlinedButton(onClick = { homonymesOuvert = "pers" }) {
+                Text("Homonymes : " + homonymesPers.size.toString() + " – choisir ou créer")
+            }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("M") })
@@ -671,6 +676,13 @@ fun EcranSaisieActe(
             while (temoins.size < 2) temoins.add(TemoinSaisie())
             listOf("Parrain", "Marraine").forEachIndexed { i, libelle ->
                 val t = temoins[i]
+                // v0.76 : homonymes = même nom ET mêmes prénoms, proposés dans
+                // une FENÊTRE (une ligne compacte alignée à gauche, avec dates).
+                val homosPm = personnes.filter { q ->
+                    t.nom.isNotBlank() && t.prenoms.isNotBlank() &&
+                        q.nom.trim().uppercase() == t.nom.trim().uppercase() &&
+                        q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase()
+                }
                 Row(
                     Modifier.fillMaxWidth().padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -679,34 +691,46 @@ fun EcranSaisieActe(
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Champ(libelle, t.nom, { temoins[i] = t.copy(nom = it) }, modifier = Modifier.weight(1f))
                             Champ("Pr\u00E9noms", t.prenoms, { temoins[i] = t.copy(prenoms = it) }, modifier = Modifier.weight(1f))
-                        }
-                        // v0.75 : tous les homonymes avec leur date de naissance.
-                        personnes.filter { q ->
-                            t.nom.isNotBlank() && q.nom.trim().uppercase() == t.nom.trim().uppercase()
-                        }.sortedBy { q -> if (t.prenoms.isNotBlank() && q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase()) 0 else 1 }
-                            .take(8).forEach { q ->
-                            Text(
-                                "\u2192 Fiche existante : " + q.titre() +
-                                    (if (q.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(q.dateNaissance.trim()) else ""),
-                                Modifier.fillMaxWidth().clickable { temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms) },
-                                fontSize = 10.sp,
-                                color = CouleurVertFonce
-                            )
-                        }
-                    }
-                    Column(Modifier.width(58.dp).padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Checkbox(
-                            checked = signataires.contains(libelle),
-                            onCheckedChange = {
-                                if (signataires.contains(libelle)) signataires.remove(libelle) else signataires.add(libelle)
+                            // v0.76 : colonne Signe CALQUÉE sur le champ (même
+                            // hauteur que l'OutlinedTextField, libellé en tête).
+                            Column(Modifier.width(58.dp).height(56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Checkbox(
+                                    checked = signataires.contains(libelle),
+                                    onCheckedChange = {
+                                        if (signataires.contains(libelle)) signataires.remove(libelle) else signataires.add(libelle)
+                                    },
+                                    modifier = Modifier.size(40.dp)
+                                )
                             }
-                        )
+                        }
+                        if (homosPm.isNotEmpty()) {
+                            OutlinedButton(onClick = { homonymesOuvert = "pm:" + i.toString() }) {
+                                Text("Homonymes : " + homosPm.size.toString() + " – choisir ou créer")
+                            }
+                        }
                     }
+                }
+                if (homonymesOuvert == "pm:" + i.toString()) {
+                    DialogueHomonymes(
+                        titre = libelle + " : fiches homonymes",
+                        candidats = homosPm,
+                        onChoisir = { q ->
+                            temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms)
+                            homonymesOuvert = null
+                        },
+                        onFermer = { homonymesOuvert = null }
+                    )
                 }
             }
         } else {
         temoins.forEachIndexed { i, t ->
+            // v0.76 : homonymes = même nom ET mêmes prénoms (fenêtre de choix).
+            val homosT = personnes.filter { q ->
+                t.nom.isNotBlank() && t.prenoms.isNotBlank() &&
+                    q.nom.trim().uppercase() == t.nom.trim().uppercase() &&
+                    q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase()
+            }
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -716,31 +740,23 @@ fun EcranSaisieActe(
                         Champ("Nom du t\u00E9moin", t.nom, { temoins[i] = t.copy(nom = it) }, modifier = Modifier.weight(1f))
                         Champ("Pr\u00E9noms", t.prenoms, { temoins[i] = t.copy(prenoms = it) }, modifier = Modifier.weight(1f))
                         Champ("Profession", t.profession, { temoins[i] = t.copy(profession = it) }, modifier = Modifier.weight(1f))
-                    }
-                    // v0.75 : tous les homonymes avec leur date de naissance.
-                    personnes.filter { q ->
-                        t.nom.isNotBlank() && q.nom.trim().uppercase() == t.nom.trim().uppercase()
-                    }.sortedBy { q -> if (t.prenoms.isNotBlank() && q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase()) 0 else 1 }
-                        .take(8).forEach { q ->
-                        Text(
-                            "\u2192 Fiche existante : " + q.titre() +
-                                (if (q.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(q.dateNaissance.trim()) else ""),
-                            Modifier.fillMaxWidth().clickable { temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms) },
-                            fontSize = 10.sp,
-                            color = CouleurVertFonce
-                        )
-                    }
-                }
-                // v0.73 : coche "Signe" align\u00E9e sur les champs.
-                Column(Modifier.width(58.dp).padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Checkbox(
-                        checked = signataires.contains("T\u00E9moin " + (i + 1).toString()),
-                        onCheckedChange = {
-                            if (signataires.contains("T\u00E9moin " + (i + 1).toString())) signataires.remove("T\u00E9moin " + (i + 1).toString())
-                            else signataires.add("T\u00E9moin " + (i + 1).toString())
+                        Column(Modifier.width(58.dp).height(56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Checkbox(
+                                checked = signataires.contains("T\u00E9moin " + (i + 1).toString()),
+                                onCheckedChange = {
+                                    if (signataires.contains("T\u00E9moin " + (i + 1).toString())) signataires.remove("T\u00E9moin " + (i + 1).toString())
+                                    else signataires.add("T\u00E9moin " + (i + 1).toString())
+                                },
+                                modifier = Modifier.size(40.dp)
+                            )
                         }
-                    )
+                    }
+                    if (homosT.isNotEmpty()) {
+                        OutlinedButton(onClick = { homonymesOuvert = "t:" + i.toString() }) {
+                            Text("Homonymes : " + homosT.size.toString() + " – choisir ou créer")
+                        }
+                    }
                 }
                 IconButton(onClick = {
                     signataires.remove("T\u00E9moin " + (i + 1).toString())
@@ -748,6 +764,17 @@ fun EcranSaisieActe(
                 }) {
                     Icon(Icons.Filled.Close, contentDescription = "Retirer")
                 }
+            }
+            if (homonymesOuvert == "t:" + i.toString()) {
+                DialogueHomonymes(
+                    titre = "T\u00E9moin : fiches homonymes",
+                    candidats = homosT,
+                    onChoisir = { q ->
+                        temoins[i] = t.copy(nom = q.nom, prenoms = q.prenoms)
+                        homonymesOuvert = null
+                    },
+                    onFermer = { homonymesOuvert = null }
+                )
             }
         }
         }
@@ -774,11 +801,13 @@ fun EcranSaisieActe(
                 if (type != "B" && type != "S") {
                     Champ("Profession", roleOfficielProf, { roleOfficielProf = it }, modifier = Modifier.weight(1f))
                 }
-                Column(Modifier.width(58.dp).padding(top = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                // v0.76 : colonne Signe CALQUÉE sur le champ (hauteur 56.dp).
+                Column(Modifier.width(58.dp).height(56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Checkbox(
                         checked = signataires.contains(roleOfficiel),
-                        onCheckedChange = { if (signataires.contains(roleOfficiel)) signataires.remove(roleOfficiel) else signataires.add(roleOfficiel) }
+                        onCheckedChange = { if (signataires.contains(roleOfficiel)) signataires.remove(roleOfficiel) else signataires.add(roleOfficiel) },
+                        modifier = Modifier.size(40.dp)
                     )
                 }
             }
@@ -871,6 +900,17 @@ fun EcranSaisieActe(
         )
     }
 
+    if (homonymesOuvert == "pers") {
+        DialogueHomonymes(
+            titre = "Personne concern\u00E9e : fiches homonymes",
+            candidats = homonymesPers,
+            onChoisir = { q ->
+                remplirDepuis(prefillActe(q, personnes, actes, type))
+                homonymesOuvert = null
+            },
+            onFermer = { homonymesOuvert = null }
+        )
+    }
     if (pickerOuvert) {
         AlertDialog(
             onDismissRequest = { pickerOuvert = false },
@@ -918,6 +958,44 @@ fun EcranSaisieActe(
             }
         )
     }
+}
+
+// ---------------------------------------------------------------- Fenêtre d'homonymes
+// v0.76 : un homonyme = même nom ET mêmes prénoms. Une seule FENÊTRE
+// propose les fiches existantes (une ligne compacte alignée à gauche,
+// avec dates de naissance et de décès) ; "Créer une nouvelle fiche"
+// laisse la saisie telle quelle.
+@Composable
+fun DialogueHomonymes(
+    titre: String,
+    candidats: List<Personne>,
+    onChoisir: (Personne) -> Unit,
+    onFermer: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onFermer,
+        title = { Text(titre) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    "M\u00EAme nom et m\u00EAmes pr\u00E9noms : touchez la fiche \u00E0 reprendre.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                candidats.forEach { q ->
+                    Text(
+                        q.titre() +
+                            (if (q.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(q.dateNaissance.trim()) else "") +
+                            (if (decesAffichable(q)) " \u00b7 D. " + dateAffichee(q.dateDeces.trim()) else ""),
+                        Modifier.fillMaxWidth().clickable { onChoisir(q) }.padding(vertical = 2.dp),
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onFermer) { Text("Cr\u00E9er une nouvelle fiche") } },
+        dismissButton = { TextButton(onClick = onFermer) { Text("Annuler") } }
+    )
 }
 
 // ---------------------------------------------------------------- Menu Saisie
@@ -990,19 +1068,17 @@ fun EcranSaisie(
                     personnes.sortedWith(
                         compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
                     ).forEach { cand ->
-                        TextButton(
-                            onClick = {
+                        // v0.76 : liste condensée et alignée à gauche.
+                        Text(
+                            cand.titre() +
+                                (if (cand.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(cand.dateNaissance.trim()) else "") +
+                                (if (decesAffichable(cand)) " \u00b7 D. " + dateAffichee(cand.dateDeces.trim()) else ""),
+                            Modifier.fillMaxWidth().clickable {
                                 pickerParent = false
                                 onEnfant(cand.id)
-                            },
-                            Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                cand.titre() +
-                                    (if (cand.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(cand.dateNaissance.trim()) else "") +
-                                    (if (decesAffichable(cand)) " \u00b7 D. " + dateAffichee(cand.dateDeces.trim()) else "")
-                            )
-                        }
+                            }.padding(vertical = 2.dp),
+                            fontSize = 13.sp
+                        )
                     }
                     if (personnes.isEmpty()) {
                         Text("Aucune personne : saisissez le nom dans le formulaire.")

@@ -388,6 +388,13 @@ fun EcranPersonne(
                         val eE = personneParId(personnes, idE)
                         entrees.add((eE?.let { anneeDe(it.dateNaissance) } ?: -1) to ("enf:" + idE.toString()))
                     }
+                    // v0.76 : les BAPT\u00caMES o\u00f9 p est PARRAIN ou MARRAINE
+                    // apparaissent dans SES \u00e9v\u00e9nements (m\u00eame chronologie).
+                    personnes.filter { it.temoinsB.contains(p.id) }.forEach { b ->
+                        entrees.add(
+                            (anneeDe(b.dateBapteme) ?: anneeDe(b.dateNaissance) ?: -1) to ("par:" + b.id.toString())
+                        )
+                    }
                     // G\u00E9n\u00E9aPoche 7 : les \u00E9v\u00E9nements de la famille
                     // (mariages et d\u00E9c\u00E8s des parents, de la fratrie et des
                     // enfants) entrent dans la M\u00CAME chronologie, tri\u00E9s par
@@ -530,6 +537,27 @@ fun EcranPersonne(
                                                 )
                                             }
                                         }
+                                    }
+                                }
+                            }
+                            cle.startsWith("par:") -> {
+                                // v0.76 : bapt\u00eame o\u00f9 p est parrain ou marraine.
+                                val idB = cle.removePrefix("par:").toLongOrNull() ?: 0L
+                                val b = personneParId(personnes, idB)
+                                if (b != null) {
+                                    Card(
+                                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                                        border = BorderStroke(1.dp, CouleurOrange)
+                                    ) {
+                                        Text(
+                                            "B \u2013 Bapt\u00EAme de " + b.titre() +
+                                                (if (b.temoinsB.indexOf(p.id) == 0) " (parrain)" else " (marraine)") +
+                                                (if (b.dateBapteme.trim().isNotEmpty()) " \u2013 " + dateAffichee(b.dateBapteme.trim()) else ""),
+                                            Modifier.fillMaxWidth().padding(6.dp).clickable { onOuvrir(b.id) },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = CouleurVertFonce
+                                        )
                                     }
                                 }
                             }
