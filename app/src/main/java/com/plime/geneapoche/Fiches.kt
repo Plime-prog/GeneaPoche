@@ -1121,6 +1121,18 @@ fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: St
             }
         }
     }
+    // v0.80 : conjoint du d\u00E9funt EN VIE ou D\u00C9C\u00C9D\u00C9 AVANT (veuf/veuve),
+    // relu depuis la transcription de l'acte puis l'\u00E9tat de la fiche ;
+    // enfant D\u00C9CLARANT d'un d\u00E9c\u00E8s (coche de signature persist\u00E9e).
+    val conjointEnVie = if (acteEdit?.contenu?.contains("Conjoint d\u00E9c\u00E9d\u00E9 avant") == true) false
+        else if (acteEdit?.contenu?.contains("Conjoint survivant") == true) true
+        else conj == null || conj.dateDeces.isBlank()
+    val declarantEnfantId = if (type == "D") p.signatairesDe(type).firstOrNull { id ->
+        id != 0L && id != p.id &&
+            (p.enfants.contains(id) || personnes.firstOrNull { it.id == id }?.let { q -> q.pere == p.id || q.mere == p.id } == true)
+    } ?: 0L else 0L
+    val signatairesListe = signataires.toMutableList()
+    if (declarantEnfantId != 0L) signatairesListe.add("Enfant d\u00E9clarant")
     return ActeSaisie(
         acteId = acteEdit?.id ?: 0L,
         editionFiche = editionFiche,
@@ -1161,7 +1173,9 @@ fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: St
         temoins = temoinsIds.mapNotNull { id ->
             personneParId(personnes, id)?.let { q -> TemoinSaisie(q.nom, q.prenoms, q.profession) }
         },
-        signataires = signataires
+        signataires = signatairesListe,
+        conjointEnVie = conjointEnVie,
+        declarantEnfantId = declarantEnfantId
     )
 }
 
