@@ -416,7 +416,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.77",
+                "  v0.79",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -957,9 +957,7 @@ fun EcranSaisieActe(
                                 .padding(horizontal = 4.dp, vertical = 0.dp)
                         ) {
                             Text(
-                                cand.titre() +
-                                    (if (cand.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(cand.dateNaissance.trim()) else "") +
-                                    (if (decesAffichable(cand)) " \u00b7 D. " + dateAffichee(cand.dateDeces.trim()) else ""),
+                                libelleUnique(cand),
                                 fontSize = 13.sp, lineHeight = 16.sp
                             )
                         }
@@ -972,6 +970,14 @@ fun EcranSaisieActe(
         )
     }
 }
+
+// v0.79 : identifiant UNIQUE de toutes les listes de choix de l'application :
+// titre, puis N. et D. (r\u00E8gle des 100 ans respect\u00E9e) \u2014 deux homonymes
+// ne se ressemblent plus dans un picker.
+fun libelleUnique(p: Personne): String =
+    p.titre() +
+        (if (p.dateNaissance.trim().isNotEmpty()) " \u2013 N. " + dateAffichee(p.dateNaissance.trim()) else "") +
+        (if (decesAffichable(p)) " \u2013 D. " + dateAffichee(p.dateDeces.trim()) else "")
 
 // ---------------------------------------------------------------- Fenêtre d'homonymes
 // v0.76 : un homonyme = même nom ET mêmes prénoms. Une seule FENÊTRE
@@ -1000,9 +1006,7 @@ fun DialogueHomonymes(
                 )
                 candidats.forEach { q ->
                     Text(
-                        q.titre() +
-                            (if (q.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(q.dateNaissance.trim()) else "") +
-                            (if (decesAffichable(q)) " \u00b7 D. " + dateAffichee(q.dateDeces.trim()) else ""),
+                        libelleUnique(q),
                         Modifier.fillMaxWidth().clickable { onChoisir(q) }.padding(vertical = 0.dp),
                         fontSize = 13.sp, lineHeight = 16.sp
                     )
@@ -1086,9 +1090,7 @@ fun EcranSaisie(
                     ).forEach { cand ->
                         // v0.76 : liste condensée et alignée à gauche.
                         Text(
-                            cand.titre() +
-                                (if (cand.dateNaissance.trim().isNotEmpty()) " \u00b7 N. " + dateAffichee(cand.dateNaissance.trim()) else "") +
-                                (if (decesAffichable(cand)) " \u00b7 D. " + dateAffichee(cand.dateDeces.trim()) else ""),
+                            libelleUnique(cand),
                             Modifier.fillMaxWidth().clickable {
                                 pickerParent = false
                                 onEnfant(cand.id)

@@ -286,7 +286,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.78",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.79",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -776,10 +776,14 @@ fun EcranApplication(
                     text = {
                         Column(Modifier.verticalScroll(rememberScrollState())) {
                             personnes.sortedBy { it.titre() }.forEach { c ->
-                                TextButton(onClick = {
-                                    exportBrancheId = c.id
-                                    pickerBranche = false
-                                }) { Text(c.titre()) }
+                                Text(
+                                    libelleUnique(c),
+                                    Modifier.fillMaxWidth().clickable {
+                                        exportBrancheId = c.id
+                                        pickerBranche = false
+                                    }.padding(vertical = 0.dp),
+                                    fontSize = 13.sp, lineHeight = 16.sp
+                                )
                             }
                         }
                     },
@@ -804,7 +808,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.78", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.79", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1147,13 +1151,20 @@ fun EcranApplication(
                         Text("Aucune autre personne disponible. Cr\u00E9ez-la avec le bouton + de la liste.")
                     } else {
                         candidats.forEach { c ->
+                            // v0.79 : liste tres compacte, alignee a gauche,
+                            // identifiant unique (titre + N. + D.).
                             Row(
                                 Modifier.fillMaxWidth()
-                                    .heightIn(min = 48.dp)
                                     .clickable { lier(role, c.id) }
-                                    .padding(vertical = 6.dp)
+                                    .padding(vertical = 0.dp)
                             ) {
-                                Text(c.titre(), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    libelleUnique(c),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = 13.sp,
+                                    lineHeight = 16.sp
+                                )
                             }
                         }
                     }
