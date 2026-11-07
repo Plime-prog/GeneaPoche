@@ -14,9 +14,9 @@ Un outil léger pour :
 
 Périmètre : France uniquement, actes N/B/M/D/S.
 
-Principales fonctions : numérotation Sosa-Stradonitz et d'Aboville entièrement automatique (rien ne se saisit), fiche par événements (N/M/D regroupés, ordre chronologique) éditable par appui long via la saisie d'acte pré-remplie, saisie par acte d'état civil (témoins, signataires, transcription), calendrier républicain converti, contrôle de cohérence étendu à toutes les voies d'ajout (un enfant né avant son parent est refusé partout : saisie, choix de fiche, nouveau parent, acte de naissance, import fusionné — aucune fiche orpheline), arbre 3 générations, recherche par nom et lieu, mode sombre, mise en page adaptative tablette/paysage.
+Principales fonctions : numérotation Sosa-Stradonitz et d'Aboville entièrement automatique (rien ne se saisit), fiche par événements (N/B/M/D/S regroupés dans l'ordre généalogique NBMDS) éditable par appui long via la saisie d'acte pré-remplie, saisie par acte d'état civil (témoins, coche « Signe » derrière chaque personne citée — père, mère, prêtre, officier d'état civil avec sa profession, époux, parents, témoins —, transcription), calendrier républicain converti, contrôle de cohérence étendu à toutes les voies d'ajout (un enfant né avant son parent est refusé partout : saisie, choix de fiche, nouveau parent, acte de naissance, import fusionné — aucune fiche orpheline), arbre 3 générations, recherche par nom et lieu, mode sombre, mise en page adaptative tablette/paysage.
 
-GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque fiche (automatique : ✔ si au moins 1 renseignement sur 6, ✘ sinon ; choix manuel possible au toucher), diagnostic de l'arbre dans le journal (anomalies, doublons avec fusion guidée « Garder A / Garder B » sans aucune perte, branches isolées, identités non certifiées), sources et preuves sur chaque acte (dépôt d'archives, date de consultation, fiabilité 0-3 échelle QUAY) exportées en GEDCOM (AGNC, NOTE, QUAY).
+GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque fiche (indicateur automatique sur 6 renseignements, sur 4 pour une personne supposée en vie — naissance et mariage —, sur 2 pour un mineur ; ✘ si rien, choix manuel possible au toucher), diagnostic de l'arbre dans le journal (anomalies, doublons avec fusion guidée « Garder A / Garder B » sans aucune perte, branches isolées, identités non certifiées), sources et preuves sur chaque acte (dépôt d'archives, date de consultation, fiabilité 0-3 échelle QUAY) exportées en GEDCOM (AGNC, NOTE, QUAY).
 
 ## Modèle de sécurité — exact, avec ses limites
 
@@ -35,6 +35,10 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique de confidentialité en français).
 
 ## Installation
+
+**Téléchargement direct de la dernière version (v0.72)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.72-release.apk` (signé) ou `GeneaPoche-v0.72-debug.apk`.
+
+Sinon, depuis les sources :
 
 1. Onglet **Actions** → dernier run vert → artefact **geneapoche-apk** (debug) ; les versions taguées v* publient aussi l'APK release signé.
 2. Décompresser le ZIP, installer l'APK sur le téléphone (autoriser les sources inconnues).
