@@ -210,9 +210,14 @@ fun EcranFrise(
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     personnes.sortedBy { it.titre() }.forEach { c ->
-                        TextButton(onClick = { onChoisir(c.id); pickerOuvert = false }) {
-                            Text(c.titre())
-                        }
+                        // v0.79 : identifiant unique, compact, aligne a gauche.
+                        Text(
+                            libelleUnique(c),
+                            Modifier.fillMaxWidth().clickable {
+                                onChoisir(c.id); pickerOuvert = false
+                            }.padding(vertical = 0.dp),
+                            fontSize = 13.sp, lineHeight = 16.sp
+                        )
                     }
                 }
             },

@@ -1670,11 +1670,16 @@ fun SousBlocActe(
                         title = { Text("Rattacher cet acte à :") },
                         text = {
                             LazyColumn {
-                                items(personnes) { cand ->
-                                    TextButton(onClick = {
-                                        reattribueOuvert = false
-                                        onReattribuer(acte, cand.id)
-                                    }) { Text(cand.titre(), fontSize = 13.sp) }
+                                items(personnes.sortedBy { it.titre() }) { cand ->
+                                    // v0.79 : identifiant unique, compact, aligne a gauche.
+                                    Text(
+                                        libelleUnique(cand),
+                                        Modifier.fillMaxWidth().clickable {
+                                            reattribueOuvert = false
+                                            onReattribuer(acte, cand.id)
+                                        }.padding(vertical = 0.dp),
+                                        fontSize = 13.sp, lineHeight = 16.sp
+                                    )
                                 }
                             }
                         },

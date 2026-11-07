@@ -2275,17 +2275,17 @@ fun AppEcran(
                             Row(
                                 Modifier
                                     .fillMaxWidth()
-                                    .heightIn(min = 48.dp)
+                                    .heightIn(min = 32.dp)
                                     .clickable { cujusEdite = cand }
                                     .background(
                                         if (idDuCujus() == cand.id) CouleurVertPale
                                         else androidx.compose.ui.graphics.Color.Transparent
                                     )
-                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                                    .padding(horizontal = 8.dp, vertical = 0.dp)
                             ) {
-                                // Une seule ligne, tronquee a l'ellipsis ; plus de numero.
+                                // v0.79 : identifiant unique (titre + N. + D.), compact.
                                 Text(
-                                    cand.titre(),
+                                    libelleUnique(cand),
                                     Modifier.weight(1f),
                                     style = MaterialTheme.typography.bodyMedium,
                                     maxLines = 1,
