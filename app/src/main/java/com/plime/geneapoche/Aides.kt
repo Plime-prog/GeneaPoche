@@ -171,6 +171,37 @@ fun renseignementsN6(p: Personne): Int {
     return n
 }
 
+// v0.72 : INDICATEUR ADAPTÉ - une personne supposée en vie (née il y a
+// moins de 100 ans, sans décès renseigné) ne peut pas avoir de
+// renseignements de décès : son indicateur porte sur 4 (N date, N lieu,
+// M date, M lieu) ; un MINEUR (moins de 18 ans) sur 2 (N date, N commune).
+fun presumeVivant(p: Personne): Boolean {
+    if (p.dateDeces.trim().isNotEmpty()) return false
+    val an = anneeDe(p.dateNaissance) ?: return false
+    return java.time.LocalDate.now().year - an < 100
+}
+
+// v0.72 : (rempli, total) de l'indicateur de la fiche selon le profil :
+// décédé ou inconnu -> 6, en vie -> 4, mineur -> 2.
+fun indicateurPersonne(p: Personne): Pair<Int, Int> {
+    if (presumeVivant(p)) {
+        val an = anneeDe(p.dateNaissance) ?: return Pair(renseignementsN6(p), 6)
+        if (java.time.LocalDate.now().year - an < 18) {
+            var n = 0
+            if (dateComplete(p.dateNaissance)) n++
+            if (p.lieuNaissance.trim().isNotEmpty()) n++
+            return Pair(n, 2)
+        }
+        var n = 0
+        if (dateComplete(p.dateNaissance)) n++
+        if (lieuComplet(p.lieuNaissance, p.deptNaissance)) n++
+        if (dateComplete(p.dateMariage)) n++
+        if (lieuComplet(p.lieuMariage, p.deptMariage)) n++
+        return Pair(n, 4)
+    }
+    return Pair(renseignementsN6(p), 6)
+}
+
 // G\u00E9n\u00E9aPoche 11 (11.0) : \u00E9tat R\u00C9EL de la coche de certification.
 // "auto" = coche automatique si au moins 1 renseignement sur 6, croix rouge
 // sinon ; "coche" / "croix" = choix manuel (laiss\u00E9 m\u00EAme si incomplet).

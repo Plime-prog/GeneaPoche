@@ -26,6 +26,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,7 +57,9 @@ import androidx.compose.ui.unit.sp
 data class TemoinSaisie(
     val nom: String = "",
     val prenoms: String = "",
-    val profession: String = ""
+    val profession: String = "",
+    // v0.72 : rôle du témoin officiel ("PrÊtre" ou "Officier d'état civil").
+    val role: String = ""
 )
 
 data class ActeSaisie(
@@ -185,9 +188,18 @@ fun TitrePastille(t: String, rempli: Boolean) {
 @Composable
 fun BlocParent(
     libelle: String, e: ChampsParent, dateActe: String,
-    avecNaissance: Boolean = true, avecDeces: Boolean = true
+    avecNaissance: Boolean = true, avecDeces: Boolean = true,
+    // v0.72 : coche "signe l'acte" derrière ce parent (null = pas de coche).
+    cocheSigne: Boolean = false,
+    onCocheSigne: (() -> Unit)? = null
 ) {
-    TitrePastille(libelle, e.nom.isNotBlank())
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        TitrePastille(libelle, e.nom.isNotBlank())
+        if (onCocheSigne != null) {
+            Spacer(Modifier.weight(1f))
+            Checkbox(checked = cocheSigne, onCheckedChange = { onCocheSigne() })
+        }
+    }
     val age = ageActe(dateActe, e.ne)
     if (!avecNaissance && !avecDeces) {
         // Acte N/B : une seule ligne, ce que la d\u00E9claration dit des parents.
@@ -210,7 +222,7 @@ fun BlocParent(
                     modifier = Modifier.weight(1.1f)
                 )
                 Champ("Lieu", e.lieu, { e.lieu = it }, modifier = Modifier.weight(1f))
-                Champ("D\u00E9p.", e.dept, { e.dept = it }, modifier = Modifier.weight(0.6f))
+                Champ("D\u00E9p.", e.dept, { e.dept = it }, modifier = Modifier.weight(0.3f))
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -291,8 +303,14 @@ fun EcranSaisieActe(
             }
         }
     }
-    val temoins = remember(initial) { mutableStateListOf<TemoinSaisie>().also { l -> initial?.temoins?.forEach { l.add(it) } } }
+    val temoins = remember(initial) { mutableStateListOf<TemoinSaisie>().also { l -> initial?.temoins?.filter { it.role.isBlank() }?.forEach { l.add(it) } } }
     val signataires = remember(initial) { mutableStateListOf<String>().also { l -> initial?.signataires?.forEach { l.add(it) } } }
+    // v0.72 : PRÊTRE (baptême, sépulture) ou OFFICIER D'ÉTAT CIVIL
+    // (mariage) : un témoin de plus avec son rôle. La coche de signature
+    // est désormais DERRIÈRE chaque personne citée, la zone "Qui signe ?"
+    // disparaît.
+    var roleOfficielNom by remember { mutableStateOf("") }
+    var roleOfficielProf by remember { mutableStateOf("") }
     var pickerCible by remember { mutableStateOf(0) } // 0 = personne concernee, 1 = mariee
     var pickerOuvert by remember { mutableStateOf(false) }
     // v0.70 : le conjoint du defunt est-il ENCORE EN VIE (declarant de
@@ -333,17 +351,9 @@ fun EcranSaisieActe(
         mereMariee.remplir(a.mMarieeNom, a.mMarieePrenoms, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
         temoins.clear(); a.temoins.forEach { temoins.add(it) }
         signataires.clear(); a.signataires.forEach { signataires.add(it) }
+        roleOfficielNom = ""; roleOfficielProf = ""
     }
 
-    val parties: List<String> = buildList {
-        add("Concerne(e)")
-        if (pere.nom.isNotBlank()) add("P\u00E8re")
-        // v0.70 : sur un acte de NAISSANCE, la mere ne signe jamais l'acte
-        // (declarant = pere, sage-femme ou tiers) : pas de puce Mere.
-        if (mere.nom.isNotBlank() && type != "N") add("M\u00E8re")
-        if (marieeNom.isNotBlank() || marieeId != 0L) add(if (type == "M") "Mari\u00E9e" else "Conjoint(e)")
-        temoins.forEachIndexed { i, t -> if (t.nom.isNotBlank()) add("T\u00E9moin " + (i + 1).toString()) }
-    }
 
     // v0.58 : formulaire COMPACT. Le contenu defile, mais le bouton
     // Enregistrer reste TOUJOURS visible en bas, hors du defilement.
@@ -367,7 +377,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.71",
+                "  v0.72",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -437,7 +447,7 @@ fun EcranSaisieActe(
         // v0.58 : champs compactes, deux par ligne.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Champ("Commune", commune, { commune = it }, modifier = Modifier.weight(1f))
-            Champ("D\u00E9p.", dept, { dept = it }, modifier = Modifier.weight(0.6f))
+            Champ("D\u00E9p.", dept, { dept = it }, modifier = Modifier.weight(0.28f))
         }
         Champ("D\u00E9p\u00F4t (ex AD du Nord)", depot, { depot = it })
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -469,7 +479,17 @@ fun EcranSaisieActe(
             Champ("Heure", heure, { heure = it }, modifier = Modifier.weight(0.6f))
         }
 
-        TitrePastille("Personne concern\u00E9e", exPersonne != null || nom.isNotBlank())
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            TitrePastille("Personne concern\u00E9e", exPersonne != null || nom.isNotBlank())
+            // v0.72 : sur un mariage, l'époux (= personne concernée) signe.
+            if (type == "M") {
+                Spacer(Modifier.weight(1f))
+                Checkbox(
+                    checked = signataires.contains("Concerne(e)"),
+                    onCheckedChange = { if (signataires.contains("Concerne(e)")) signataires.remove("Concerne(e)") else signataires.add("Concerne(e)") }
+                )
+            }
+        }
         if (exPersonne != null) {
             // v0.62 : en modification d'un acte rattaché à une fiche, la
             // personne concernée est AFFICHÉE en clair et le bouton de choix
@@ -510,8 +530,17 @@ fun EcranSaisieActe(
         // parents ; M/E = tout. Le formulaire ne montre que ce que l'acte porte.
         val parentsNaissance = type == "M" || type == "E"
         val parentsDeces = type != "N" && type != "B"
-        BlocParent("P\u00E8re", pere, date, parentsNaissance, parentsDeces)
-        BlocParent("M\u00E8re", mere, date, parentsNaissance, parentsDeces)
+        // v0.72 : coches de signature - le père sur N/B/M, la mère sur M.
+        BlocParent("P\u00E8re", pere, date, parentsNaissance, parentsDeces,
+            cocheSigne = signataires.contains("P\u00E8re"),
+            onCocheSigne = if (type == "N" || type == "B" || type == "M") {
+                { if (signataires.contains("P\u00E8re")) signataires.remove("P\u00E8re") else signataires.add("P\u00E8re") }
+            } else null)
+        BlocParent("M\u00E8re", mere, date, parentsNaissance, parentsDeces,
+            cocheSigne = signataires.contains("M\u00E8re"),
+            onCocheSigne = if (type == "M") {
+                { if (signataires.contains("M\u00E8re")) signataires.remove("M\u00E8re") else signataires.add("M\u00E8re") }
+            } else null)
         // v0.64 : liens ACTUELS de la fiche en clair. Si la fiche porte un
         // lien errone (ex une mere qui pointe sur la belle-mere), c'est ICI
         // qu'on le voit : le formulaire recopie la fiche.
@@ -547,9 +576,30 @@ fun EcranSaisieActe(
                 )
                 Champ("Pr\u00E9noms", marieePrenoms, { marieePrenoms = it }, modifier = Modifier.weight(1f))
             }
+            // v0.72 : le conjoint survivant renseigné peut signer (déclarant).
+            if (marieeNom.isNotBlank()) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Signe l'acte (d\u00E9clarant)", style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.weight(1f))
+                    Checkbox(
+                        checked = signataires.contains("Conjoint(e)"),
+                        onCheckedChange = { if (signataires.contains("Conjoint(e)")) signataires.remove("Conjoint(e)") else signataires.add("Conjoint(e)") }
+                    )
+                }
+            }
         }
         if (type == "M" || type == "E") {
-            TitrePastille(if (type == "M") "Mari\u00E9e" else "Conjoint(e)", marieeNom.isNotBlank() || marieeId != 0L)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                TitrePastille(if (type == "M") "Mari\u00E9e" else "Conjoint(e)", marieeNom.isNotBlank() || marieeId != 0L)
+                // v0.72 : l'épouse signe le mariage.
+                if (type == "M") {
+                    Spacer(Modifier.weight(1f))
+                    Checkbox(
+                        checked = signataires.contains("Mari\u00E9e"),
+                        onCheckedChange = { if (signataires.contains("Mari\u00E9e")) signataires.remove("Mari\u00E9e") else signataires.add("Mari\u00E9e") }
+                    )
+                }
+            }
             if (exMariee != null) {
                 Text(
                     "Personne existante : " + exMariee.titre(),
@@ -565,8 +615,17 @@ fun EcranSaisieActe(
                 Champ("Pr\u00E9noms", marieePrenoms, { marieePrenoms = it }, modifier = Modifier.weight(1f))
             }
             Champ("Profession", marieeProf, { marieeProf = it })
-            BlocParent(if (type == "M") "P\u00E8re de la mari\u00E9e" else "P\u00E8re du conjoint", pereMariee, date)
-            BlocParent(if (type == "M") "M\u00E8re de la mari\u00E9e" else "M\u00E8re du conjoint", mereMariee, date)
+            // v0.72 : les 4 parents signent le mariage - coches derrière chacun.
+            BlocParent(if (type == "M") "P\u00E8re de la mari\u00E9e" else "P\u00E8re du conjoint", pereMariee, date,
+                cocheSigne = signataires.contains("P\u00E8re de la mari\u00E9e"),
+                onCocheSigne = if (type == "M") {
+                    { if (signataires.contains("P\u00E8re de la mari\u00E9e")) signataires.remove("P\u00E8re de la mari\u00E9e") else signataires.add("P\u00E8re de la mari\u00E9e") }
+                } else null)
+            BlocParent(if (type == "M") "M\u00E8re de la mari\u00E9e" else "M\u00E8re du conjoint", mereMariee, date,
+                cocheSigne = signataires.contains("M\u00E8re de la mari\u00E9e"),
+                onCocheSigne = if (type == "M") {
+                    { if (signataires.contains("M\u00E8re de la mari\u00E9e")) signataires.remove("M\u00E8re de la mari\u00E9e") else signataires.add("M\u00E8re de la mari\u00E9e") }
+                } else null)
         }
 
         // v0.68 : sur un bapt\u00EAme, les t\u00E9moins sont le parrain et la marraine.
@@ -583,6 +642,14 @@ fun EcranSaisieActe(
                         Champ("Profession", t.profession, { temoins[i] = t.copy(profession = it) }, modifier = Modifier.weight(1f))
                     }
                 }
+                // v0.72 : coche de signature derrière chaque témoin.
+                Checkbox(
+                    checked = signataires.contains("T\u00E9moin " + (i + 1).toString()),
+                    onCheckedChange = {
+                        if (signataires.contains("T\u00E9moin " + (i + 1).toString())) signataires.remove("T\u00E9moin " + (i + 1).toString())
+                        else signataires.add("T\u00E9moin " + (i + 1).toString())
+                    }
+                )
                 IconButton(onClick = {
                     signataires.remove("T\u00E9moin " + (i + 1).toString())
                     temoins.removeAt(i)
@@ -598,25 +665,24 @@ fun EcranSaisieActe(
             }
         }
 
-        SectionTitre("Qui signe ?")
-        if (parties.size <= 1) {
-            Text(
-                "Saisissez d'abord les personnes et les t\u00E9moins.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-            parties.forEach { l ->
-                FilterChip(
-                    selected = signataires.contains(l),
-                    onClick = {
-                        if (signataires.contains(l)) signataires.remove(l) else signataires.add(l)
-                    },
-                    label = { Text(l) }
+        // v0.72 : PRÊTRE (baptême, sépulture) ou OFFICIER D'ÉTAT CIVIL
+        // (mariage) : un témoin de plus avec son rôle, coche s'il signe.
+        if (type == "B" || type == "S" || type == "M") {
+            val roleOfficiel = if (type == "M") "Officier d'état civil" else "PrÊtre"
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                TitrePastille(roleOfficiel, roleOfficielNom.isNotBlank())
+                Spacer(Modifier.weight(1f))
+                Checkbox(
+                    checked = signataires.contains(roleOfficiel),
+                    onCheckedChange = { if (signataires.contains(roleOfficiel)) signataires.remove(roleOfficiel) else signataires.add(roleOfficiel) }
                 )
             }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Champ("Nom", roleOfficielNom, { roleOfficielNom = it }, modifier = Modifier.weight(1f))
+                Champ("Profession", roleOfficielProf, { roleOfficielProf = it }, modifier = Modifier.weight(1f))
+            }
         }
+
 
         }
         // v0.58 : bouton TOUJOURS visible en bas, hors du defilement.
@@ -659,7 +725,11 @@ fun EcranSaisieActe(
                     mMarieeNom = mereMariee.nom.trim(), mMarieePrenoms = mereMariee.prenoms.trim(),
                     mMarieeNe = mereMariee.ne.trim(), mMarieeLieu = mereMariee.lieu.trim(), mMarieeDept = normaliserDept(mereMariee.dept),
                     mMarieeProf = mereMariee.profession.trim(), mMarieeDeces = mereMariee.deces.trim(), mMarieeLieuDeces = mereMariee.lieuDeces.trim(),
-                    temoins = temoins.toList(),
+                    temoins = temoins.toList() + listOfNotNull(
+                        if ((type == "B" || type == "S" || type == "M") && roleOfficielNom.isNotBlank())
+                            TemoinSaisie(nom = roleOfficielNom.trim(), profession = roleOfficielProf.trim(),
+                                role = if (type == "M") "Officier d'état civil" else "PrÊtre") else null
+                    ),
                     signataires = if (type == "N") signataires.filter { it != "M\u00E8re" } else signataires.toList()
                 )
                 // Contr\u00F4le de coh\u00E9rence : AVERTISSEMENT non bloquant,
@@ -712,23 +782,26 @@ fun EcranSaisieActe(
                     personnes.sortedWith(
                         compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
                     ).forEach { cand ->
-                        TextButton(
-                            onClick = {
-                                if (pickerCible == 0) {
-                                    // G\u00E9n\u00E9aPoche 3 : la personne existante est
-                                    // PROPOSEE avec tout ce qui est connu d'elle ;
-                                    // si son acte de ce type existe deja, il est
-                                    // EDITE (aucun doublon).
-                                    remplirDepuis(prefillActe(cand, personnes, actes, type))
-                                } else {
-                                    marieeId = cand.id
-                                    marieeNom = cand.nom
-                                    marieePrenoms = cand.prenoms
-                                }
-                                pickerOuvert = false
-                            },
+                        // v0.72 : liste RESSENREE et ALIGNEE A GAUCHE
+                        // (une ligne compacte par personne).
+                        Row(
                             Modifier.fillMaxWidth()
-                        ) { Text(cand.titre()) }
+                                .clickable {
+                                    if (pickerCible == 0) {
+                                        // G\u00E9n\u00E9aPoche 3 : la personne existante est
+                                        // PROPOSEE avec tout ce qui est connu d'elle ;
+                                        // si son acte de ce type existe deja, il est
+                                        // EDITE (aucun doublon).
+                                        remplirDepuis(prefillActe(cand, personnes, actes, type))
+                                    } else {
+                                        marieeId = cand.id
+                                        marieeNom = cand.nom
+                                        marieePrenoms = cand.prenoms
+                                    }
+                                    pickerOuvert = false
+                                }
+                                .padding(horizontal = 4.dp, vertical = 0.dp)
+                        ) { Text(cand.titre(), fontSize = 13.sp) }
                     }
                 }
             },

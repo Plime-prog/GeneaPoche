@@ -1675,7 +1675,9 @@ fun AppEcran(
                 .takeIf { it.isNotEmpty() }?.let { lignes.add("M\u00E8re de la mari\u00E9e : " + it) }
         }
         val temoinsTexte = a.temoins.filter { it.nom.isNotBlank() }.joinToString(" ; ") { t ->
-            (t.prenoms.trim() + " " + t.nom.trim()).trim() + (if (t.profession.isNotBlank()) " (" + t.profession.trim() + ")" else "")
+            // v0.72 : le PR\u00CATRE ou l'OFFICIER D'\u00C9TAT CIVIL figure avec son r\u00F4le.
+            (if (t.role.isNotBlank()) t.role.trim() + " : " else "") +
+                (t.prenoms.trim() + " " + t.nom.trim()).trim() + (if (t.profession.isNotBlank()) " (" + t.profession.trim() + ")" else "")
         }
         if (temoinsTexte.isNotEmpty()) lignes.add("T\u00E9moins : " + temoinsTexte)
         val signatairesNoms = a.signataires.mapNotNull { l ->
@@ -1685,6 +1687,14 @@ fun AppEcran(
                 l == "M\u00E8re" -> (a.mereNom + " " + a.merePrenoms).trim().ifEmpty { mere?.titre() }
                 l == "Mari\u00E9e" -> (a.marieeNom + " " + a.marieePrenoms).trim().ifEmpty { mariee?.titre() }
                 l == "Conjoint(e)" -> (a.marieeNom + " " + a.marieePrenoms).trim().ifEmpty { personneParId(personnes, a.marieeId)?.titre() ?: "" }
+                // v0.72 : coches \u00E9largies - parents de la mari\u00E9e, pr\u00EAtre,
+                // officier d'\u00E9tat civil.
+                l == "P\u00E8re de la mari\u00E9e" -> (a.pMarieeNom + " " + a.pMarieePrenoms).trim()
+                l == "M\u00E8re de la mari\u00E9e" -> (a.mMarieeNom + " " + a.mMarieePrenoms).trim()
+                l == "Pr\u00EAtre" || l == "Officier d'\u00E9tat civil" -> {
+                    val t = a.temoins.firstOrNull { it.role == l } ?: return@mapNotNull null
+                    (t.prenoms.trim() + " " + t.nom.trim()).trim()
+                }
                 l.startsWith("T\u00E9moin ") -> {
                     val i = l.removePrefix("T\u00E9moin ").toIntOrNull() ?: return@mapNotNull null
                     val t = a.temoins.getOrNull(i - 1) ?: return@mapNotNull null

@@ -233,15 +233,9 @@ fun EcranPersonne(
             else -> a
         }
     }
-    val triChronologique = typesPresents.sortedWith(
-        compareBy(
-            { anneeEffective(it) ?: ordreNaturel.indexOf(it) },
-            { ordreNaturel.indexOf(it) }
-        )
-    ).toMutableList()
-    // G\u00E9n\u00E9aPoche 7 : ordre STRICTEMENT chronologique â le bloc
-    // Naissance n'est plus forc\u00E9 en t\u00EAte de la frise.
-    val ordreTypes = triChronologique.toList()
+    // v0.72 : réponse utilisateur - l'ordre NBMDS PREVAUT sur le
+    // classement chronologique : N, B, M, D puis S, quoi qu'il arrive.
+    val ordreTypes = ordreNaturel.filter { typesPresents.contains(it) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -262,13 +256,15 @@ fun EcranPersonne(
                         Spacer(Modifier.width(8.dp))
                         Text(p.titre(), Modifier.weight(1f, fill = false), fontSize = 16.sp)
                         Spacer(Modifier.width(8.dp))
-                        val n6 = renseignementsN6(p)
+                        // v0.72 : indicateur ADAPTÉ - sur 4 pour une
+                        // personne supposée en vie, sur 2 pour un mineur.
+                        val (nInd, totalInd) = indicateurPersonne(p)
                         Surface(
                             shape = RoundedCornerShape(50),
-                            color = couleurCompteur(n6, 6)
+                            color = couleurCompteur(nInd, totalInd)
                         ) {
                             Text(
-                                "  " + n6.toString() + "/6  ",
+                                "  " + nInd.toString() + "/" + totalInd.toString() + "  ",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold
@@ -395,9 +391,17 @@ fun EcranPersonne(
                     evsFamille.forEachIndexed { iFam, ef ->
                         entrees.add(ef.first to ("fam:" + iFam.toString()))
                     }
-                    // G\u00E9n\u00E9aPoche 7 : ordre STRICTEMENT chronologique
-                    // (les \u00E9v\u00E9nements sans ann\u00E9e restent en haut).
-                    val ordonnees = entrees.sortedBy { it.first }
+                    // v0.72 : PAS d'information PARASITE sur la fiche -
+                    // les \u00E9v\u00E9nements de la famille et des enfants
+                    // ANT\u00C9RIEURS \u00E0 la naissance ou POST\u00C9RIEURS au
+                    // d\u00E9c\u00E8s (s'il est connu) disparaissent.
+                    val anneeN = anneeDe(p.dateNaissance)
+                    val anneeD = anneeDe(p.dateDeces)
+                    val ordonnees = entrees.sortedBy { it.first }.filter { e ->
+                        if (!e.second.startsWith("fam:") && !e.second.startsWith("enf:")) true
+                        else (anneeN == null || e.first < 0 || e.first >= anneeN) &&
+                            (anneeD == null || e.first < 0 || e.first <= anneeD)
+                    }
                     ordonnees.forEach { entree ->
                         val cle = entree.second
                         when {
@@ -1053,6 +1057,8 @@ fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: St
             id == p.id -> "Concerne(e)"
             mere != null && id == mere.id -> "M\u00E8re"
             conj != null && id == conj.id -> "Mari\u00E9e"
+            pConj != null && id == pConj.id -> "P\u00E8re de la mari\u00E9e"
+            mConj != null && id == mConj.id -> "M\u00E8re de la mari\u00E9e"
             else -> {
                 val i = temoinsIds.indexOf(id)
                 if (i >= 0) "T\u00E9moin " + (i + 1).toString() else null
