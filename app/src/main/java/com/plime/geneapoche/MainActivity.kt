@@ -593,7 +593,11 @@ fun AppEcran(
         val existant = personnes.firstOrNull { q ->
             q.id != p.id &&
             cle(q.nom) == cle(n) &&
-            clePrenoms(q.prenoms) == clePrenoms(pr)
+            clePrenoms(q.prenoms) == clePrenoms(pr) &&
+            // v0.77 : vrai doublon = aussi la même date de naissance ; une
+            // date différente = homonyme, une nouvelle fiche est créée.
+            (q.dateNaissance.isBlank() || dateNaissance.isBlank() ||
+                dateGreg(dateNaissance) == q.dateNaissance)
         }
         // GeneaPoche 11 (bug enfant ne avant parent) : coherence verifiee
         // AVANT toute creation - aucun refus ne laisse de fiche orpheline,
@@ -1429,14 +1433,19 @@ fun AppEcran(
         val ancienContenu = acteExistant?.contenu ?: ""
 
         // Trouve une personne existante (par id ou nom+premoms), sinon la cree.
-        fun trouverOuCreer(id: Long, nomSaisi: String, prenomsSaisis: String, sexeDefaut: String): Personne? {
+        fun trouverOuCreer(id: Long, nomSaisi: String, prenomsSaisis: String, sexeDefaut: String,
+            dateNaiss: String = "", forcer: Boolean = false): Personne? {
             personneParId(personnes, id)?.let { return it }
             val n = nomSaisi.trim()
             val pr = prenomsSaisis.trim()
             if (n.isEmpty() && pr.isEmpty()) return null
-            personnes.firstOrNull {
+            // v0.77 : un VRAI doublon = même nom, mêmes prénoms ET même
+            // date de naissance. Une date différente (ou le drapeau "Créer
+            // une nouvelle fiche") = homonyme : une nouvelle fiche est créée.
+            if (!forcer) personnes.firstOrNull {
                 cle(it.nom) == cle(n) &&
-                clePrenoms(it.prenoms) == clePrenoms(pr)
+                clePrenoms(it.prenoms) == clePrenoms(pr) &&
+                (it.dateNaissance.isBlank() || dateNaiss.isBlank() || dateGreg(dateNaiss) == it.dateNaissance)
             }?.let { return it }
             val np = Personne(
                 id = Stockage.prochainId(ctx),
@@ -1480,7 +1489,7 @@ fun AppEcran(
             if (!parent.enfants.contains(enfant.id) && incoherenceParente(parent, enfant.dateNaissance) == null) parent.enfants.add(enfant.id)
         }
 
-        val p = trouverOuCreer(a.personneId, a.nom, a.prenoms, a.sexe)
+        val p = trouverOuCreer(a.personneId, a.nom, a.prenoms, a.sexe, if (a.type == "N") a.date else "", a.persNouvelle)
         if (p == null) {
             message = "Acte non enregistr\u00E9 : personne concern\u00E9e non identifi\u00E9e."
             return
@@ -1580,14 +1589,14 @@ fun AppEcran(
         val idPere = if (pereLie != null && a.pereNom.isNotBlank() &&
             cle(pereLie.nom) == cle(a.pereNom) &&
             clePrenoms(pereLie.prenoms) == clePrenoms(a.perePrenoms)) pereLie.id else 0L
-        val pere = trouverOuCreer(idPere, a.pereNom, a.perePrenoms, "M")
+        val pere = trouverOuCreer(idPere, a.pereNom, a.perePrenoms, "M", a.pereNe)
         renseigner(pere, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces)
         lierParent(p, pere, false)
         val mereLie = personneParId(personnes, p.mere)
         val idMere = if (mereLie != null && a.mereNom.isNotBlank() &&
             cle(mereLie.nom) == cle(a.mereNom) &&
             clePrenoms(mereLie.prenoms) == clePrenoms(a.merePrenoms)) mereLie.id else 0L
-        val mere = trouverOuCreer(idMere, a.mereNom, a.merePrenoms, "F")
+        val mere = trouverOuCreer(idMere, a.mereNom, a.merePrenoms, "F", a.mereNe)
         renseigner(mere, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces)
         lierParent(p, mere, true)
 
@@ -1796,7 +1805,7 @@ fun AppEcran(
         // existante est reutilisee, sinon une fiche est creee, et le lien
         // temoin de l'acte est enregistre.
         a.temoins.filter { it.nom.isNotBlank() }.forEach { t ->
-            val ficheT = trouverOuCreer(0L, t.nom, t.prenoms, "") ?: return@forEach
+            val ficheT = trouverOuCreer(0L, t.nom, t.prenoms, "", "", t.nouveau) ?: return@forEach
             if (t.profession.isNotBlank() && ficheT.profession.isBlank()) ficheT.profession = t.profession.trim()
             if (!p.temoinsDe(a.type).contains(ficheT.id)) p.temoinsDe(a.type).add(ficheT.id)
             if (a.type == "M" && mariee != null && !mariee.temoinsDe(a.type).contains(ficheT.id)) {

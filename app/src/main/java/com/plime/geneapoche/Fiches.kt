@@ -550,10 +550,15 @@ fun EcranPersonne(
                                         colors = CardDefaults.cardColors(containerColor = Color.White),
                                         border = BorderStroke(1.dp, CouleurOrange)
                                     ) {
+                                        // v0.77 : m\u00EAme gabarit que les autres \u00E9v\u00E9nements :
+                                        // date en t\u00EAte, \u00E2ge entre parenth\u00E8ses.
+                                        val dTxtPar = dateLigne(b.dateBapteme.trim()).ifEmpty { "  /  /    " }
+                                        val aTxtPar = ageAffiche(p.dateNaissance, b.dateBapteme)
                                         Text(
-                                            "B \u2013 Bapt\u00EAme de " + b.titre() +
-                                                (if (b.temoinsB.indexOf(p.id) == 0) " (parrain)" else " (marraine)") +
-                                                (if (b.dateBapteme.trim().isNotEmpty()) " \u2013 " + dateAffichee(b.dateBapteme.trim()) else ""),
+                                            dTxtPar +
+                                                (if (aTxtPar.isNotEmpty()) " " + aTxtPar else "") +
+                                                " B \u2013 Bapt\u00EAme de " + b.titre() +
+                                                (if (b.temoinsB.indexOf(p.id) == 0) " (parrain)" else " (marraine)"),
                                             Modifier.fillMaxWidth().padding(6.dp).clickable { onOuvrir(b.id) },
                                             style = MaterialTheme.typography.bodySmall,
                                             color = CouleurVertFonce

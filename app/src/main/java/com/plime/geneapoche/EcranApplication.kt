@@ -282,7 +282,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.76",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.77",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -798,7 +798,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.76", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.77", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1054,13 +1054,18 @@ fun EcranApplication(
                 if (editionCible == null) {
                     // Contr\u00F4le anti-doublon : une fiche portant d\u00E9j\u00E0 le m\u00EAme
                     // couple nom + pr\u00E9noms n'est JAMAIS recr\u00E9\u00E9e (insensible \u00E0 la casse).
+                    // v0.77 : un VRAI doublon = m\u00EAme nom, m\u00EAmes pr\u00E9noms ET
+                    // m\u00EAme date de naissance. Sinon c'est un homonyme : la
+                    // nouvelle fiche est cr\u00E9\u00E9e.
                     val doublon = personnes.firstOrNull { q ->
                         q.nom.trim().uppercase() == p2.nom.trim().uppercase() &&
-                        q.prenoms.trim().uppercase() == p2.prenoms.trim().uppercase()
+                        q.prenoms.trim().uppercase() == p2.prenoms.trim().uppercase() &&
+                        q.dateNaissance.isNotBlank() && p2.dateNaissance.isNotBlank() &&
+                        q.dateNaissance == p2.dateNaissance
                     }
                     if (doublon != null) {
                         onMessage(
-                            "Cette personne existe d\u00E9j\u00E0 : " + doublon.titre() +
+                            "Cette personne existe d\u00E9j\u00E0 (m\u00Eame nom, m\u00Eames pr\u00E9noms, m\u00Eame date de naissance) : " + doublon.titre() +
                             ". Ouvrez sa fiche pour la compl\u00E9ter (aucun doublon dans la base)."
                         )
                         return@DialogueEdition
