@@ -1,5 +1,15 @@
 # Historique des versions — GénéaPoche
 
+## v0.84 – Ajustements fiches et journal
+
+- **Ordre chronologique réel des événements** : sur la fiche, tous les événements (blocs N/B/M/D/S, événements libres, enfants, mariages et décès de la famille) sont rangés par date complète convertie en clé comparable (aaaammjj, dates républicaines comprises) ; si l'un des événements N, M ou D est sans date, retour à l'ordre naturel NBMDS.
+- **Blocs NMD affichés seulement s'ils portent une information** (date, heure, commune, département ou coche « Enregistré ») ; B et S restent affichés dès qu'une donnée existe. La règle des 100 ans ne masque plus les blocs de la fiche.
+- **Vivant de moins de 30 ans aujourd'hui** : la fiche n'affiche que la naissance (mariage et décès masqués même si renseignés).
+- **Personne décédée avant 25 ans** : pas de bloc mariage sur la fiche.
+- **Indicateurs identiques fiche et liste** : sur 6 (naissance, mariage, décès : date + commune complète) pour tous, sur 4 (naissance et décès) pour une personne décédée avant 25 ans, sur 2 (naissance) pour un vivant de moins de 30 ans ; le mariage est retiré du compte (total 4) s'il n'y a pas de conjoint.
+- **Journal** : plus de recherche de mariage, ni de conjoint, ni d'enfants pour un vivant de moins de 30 ans ni pour une personne décédée avant 25 ans.
+- Bumps v0.84 (gradle 84/« 0.84 », export GEDCOM « 2 VERS 0.84 », badge de saisie « v0.84 », écran d'application).
+
 ## v0.83 – Actes : coche « Enregistré » (12.0)
 
 - **Le stockage des actes est supprimé de l'application** : plus de photos d'actes, de transcriptions ni de fichiers actes.bin chiffrés — les documents restent conservés ailleurs (archives, PC, cloud). Les anciens fichiers sont purgés proprement à la migration.
