@@ -183,6 +183,11 @@ fun AppEcran(
     var dossierSauvegarde by remember { mutableStateOf(Stockage.lireDossierSauvegarde(ctx)) }
     var seuilSauvegarde by remember { mutableStateOf(Stockage.lireSeuilSauvegarde(ctx)) }
     var cleRecuperation by remember { mutableStateOf("") }
+    // G\u00E9n\u00E9aPoche 12 (12.2) : import d'un GEDCOM chiffr\u00E9 (.gpged) et
+    // rappel de suppression du dernier fichier export\u00E9/partag\u00E9.
+    var importChiffreUri by remember { mutableStateOf<Uri?>(null) }
+    var phraseImportChiffre by remember { mutableStateOf("") }
+    var rappelPartageFerme by remember { mutableStateOf(false) }
     val categoriesIgnorees = modele.categoriesIgnorees
     var charge by modele::charge
     var aPin by remember { mutableStateOf(false) }
@@ -1041,7 +1046,7 @@ fun AppEcran(
             ?: 0L
     }
 
-    fun exporterGedcom(uri: Uri, sousEnsemble: Set<Long>?, exclureVivants: Boolean = false, format: String = "5.5.1") {
+    fun exporterGedcom(uri: Uri, sousEnsemble: Set<Long>?, exclureVivants: Boolean = false, format: String = "5.5.1", phrase: String = "") {
         // G2-06 : export HORS du thread principal, indicateur a l'ecran.
         occupation = "Export GEDCOM en cours..."
         scopeTravail.launch(Dispatchers.IO) {
@@ -1059,15 +1064,32 @@ fun AppEcran(
                     withContext(Dispatchers.Main) { message = "Aucune personne \u00E0 exporter : export refus\u00E9, aucun fichier cr\u00E9\u00E9 (base vide, ou liste effac\u00E9e de la m\u00E9moire par un verrouillage pendant le choix du fichier : d\u00E9verrouillez puis recommencez)." }
                     return@launch
                 }
+                // 12.2 : export chiffr\u00E9 (.gpged) si une phrase secr\u00E8te est
+                // fournie ; le fichier ne s'ouvre que dans GeneaPoche.
+                val octetsSortie = if (phrase.isNotEmpty()) {
+                    Sauvegarde.chiffrerOctets(phrase, texte.toByteArray(Charsets.UTF_8), Sauvegarde.MAGIQUE_GPGED)
+                } else {
+                    texte.toByteArray(Charsets.UTF_8)
+                }
+                if (octetsSortie == null) {
+                    withContext(Dispatchers.Main) { message = "\u00C9chec du chiffrement : export annul\u00E9, aucun fichier cr\u00E9\u00E9." }
+                    return@launch
+                }
                 ctx.contentResolver.openOutputStream(uri)?.use { sortie ->
-                    sortie.write(texte.toByteArray(Charsets.UTF_8))
+                    sortie.write(octetsSortie)
                 }
                 // v0.39 : avertissement si le fichier contient moins de
                 // personnes que la base (branche, vivants exclus...).
                 val alerte = if (n < personnes.size) " ATTENTION : seulement " + n.toString() + " sur " + personnes.size.toString() + " personnes de la base." else ""
+                // 12.2 : rappel de suppression du fichier partag\u00E9 (GEDCOM
+                // clair ou .gpged chiffr\u00E9).
+                Stockage.noterFichierPartage(ctx, uri.lastPathSegment?.substringAfterLast('/') ?: "fichier export\u00E9")
                 // R1 : etat Compose JAMAIS modifie depuis le thread IO.
                 withContext(Dispatchers.Main) {
-                    message = "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "") + alerte
+                    message = if (phrase.isNotEmpty())
+                        "GEDCOM chiffr\u00E9 export\u00E9 (" + n.toString() + " personnes) : fichier .gpged ouvrable uniquement dans GeneaPoche (Importer un GEDCOM) avec la phrase secr\u00E8te. Une fois le fichier envoy\u00E9, pensez \u00E0 le supprimer."
+                    else
+                        "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "") + alerte + " Une fois le fichier envoy\u00E9, pensez \u00E0 le supprimer."
                 }
             } catch (e: Exception) {
                 // G2-05 : message distinct selon le type d'echec.
@@ -1115,12 +1137,63 @@ fun AppEcran(
                     withContext(Dispatchers.Main) { message = "Fichier vide (0 octet) : ancien export refus\u00E9 ou vide. Relancez un export depuis la base." }
                     return@launch
                 }
+                // 12.2 : export GEDCOM chiffr\u00E9 (.gpged) : la phrase secr\u00E8te
+                // est demand\u00E9e avant l'analyse du contenu.
+                if (Sauvegarde.estGpged(octets)) {
+                    withContext(Dispatchers.Main) { importChiffreUri = uri }
+                    return@launch
+                }
                 val resultat = importerGedcomRapporte(decoderGedcom(octets))
                 if (resultat.personnes.isEmpty()) {
                     withContext(Dispatchers.Main) { message = "Aucune personne trouv\u00E9e dans ce GEDCOM." }
                     return@launch
                 }
                 // R1 : etat Compose modifie uniquement sur le thread principal.
+                withContext(Dispatchers.Main) {
+                    importConfirme = resultat.personnes
+                    importRapport = resultat.ignores
+                }
+            } catch (e: Exception) {
+                // G2-05 : message distinct selon le type d'echec.
+                withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de la lecture du GEDCOM.") }
+            } finally {
+                withContext(Dispatchers.Main) { occupation = "" }
+            }
+        }
+    }
+
+    // 12.2 : ouverture d'un GEDCOM chiffr\u00E9 (.gpged) avec la phrase secr\u00E8te
+    // choisie \u00E0 l'export. Phrase erronee = rien n'est import\u00E9.
+    fun lireGedcomChiffre(uri: Uri, phrase: String) {
+        if (phrase.isEmpty()) return
+        occupation = "Import GEDCOM chiffr\u00E9 en cours..."
+        scopeTravail.launch(Dispatchers.IO) {
+            try {
+                val octets = ctx.contentResolver.openInputStream(uri)?.use { entree ->
+                    val tampon = ByteArrayOutputStream()
+                    val morceau = ByteArray(64 * 1024)
+                    while (true) {
+                        val n = entree.read(morceau)
+                        if (n <= 0) break
+                        tampon.write(morceau, 0, n)
+                        if (tampon.size() > 10_000_000) return@use null
+                    }
+                    tampon.toByteArray()
+                }
+                if (octets == null || !Sauvegarde.estGpged(octets)) {
+                    withContext(Dispatchers.Main) { message = "Fichier .gpged illisible." }
+                    return@launch
+                }
+                val clair = Sauvegarde.dechiffrerOctets(phrase, octets, Sauvegarde.MAGIQUE_GPGED)
+                if (clair == null) {
+                    withContext(Dispatchers.Main) { message = "Phrase secr\u00E8te erron\u00E9e (ou fichier .gpged invalide) : import annul\u00E9." }
+                    return@launch
+                }
+                val resultat = importerGedcomRapporte(decoderGedcom(clair))
+                if (resultat.personnes.isEmpty()) {
+                    withContext(Dispatchers.Main) { message = "Aucune personne trouv\u00E9e dans ce GEDCOM." }
+                    return@launch
+                }
                 withContext(Dispatchers.Main) {
                     importConfirme = resultat.personnes
                     importRapport = resultat.ignores
@@ -1279,6 +1352,8 @@ fun AppEcran(
         scopeTravail.launch(Dispatchers.IO) {
             try {
                 if (Sauvegarde.exporter(ctx, uri, phrase, personnes, pistes)) {
+                    // 12.2 : rappel de suppression du fichier partag\u00E9.
+                    Stockage.noterFichierPartage(ctx, uri.lastPathSegment?.substringAfterLast('/') ?: "sauvegarde .gpbak")
                     withContext(Dispatchers.Main) { message = "Sauvegarde .gpbak cr\u00E9\u00E9e : conservez-la et notez la phrase secr\u00E8te." }
                 } else {
                     withContext(Dispatchers.Main) { message = "\u00C9chec de la sauvegarde .gpbak (v\u00E9rifiez le fichier et la phrase)." }
@@ -2038,7 +2113,7 @@ fun AppEcran(
                 supprimerPiste = { supprimerPiste(it) },
                 onBasculerEnregistre = { basculerEnregistre(it) },
                 onArbreCentre = { arbreCentre = it },
-                exporterGedcom = { uri, sel, ev, fmt -> exporterGedcom(uri, sel, ev, fmt) },
+                exporterGedcom = { uri, sel, ev, fmt, ph -> exporterGedcom(uri, sel, ev, fmt, ph) },
                 importerGedcom = { uri -> lireGedcom(uri) },
                 viderBase = { viderBase() },
                 enregistrerActe = { a -> enregistrerActe(a) },
@@ -2416,6 +2491,74 @@ fun AppEcran(
                 TextButton(onClick = { importConfirme = null }) { Text("Annuler") }
             }
         )
+    }
+
+    // 12.2 : phrase secr\u00E8te d'un GEDCOM chiffr\u00E9 (.gpged) import\u00E9.
+    if (importChiffreUri != null) {
+        AlertDialog(
+            onDismissRequest = { importChiffreUri = null; phraseImportChiffre = "" },
+            title = { Text("GEDCOM chiffr\u00E9 (.gpged)") },
+            text = {
+                Column {
+                    Text(
+                        "Ce fichier est chiffr\u00E9 : saisissez la phrase secr\u00E8te choisie \u00E0 son export pour l'ouvrir.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = phraseImportChiffre,
+                        onValueChange = { phraseImportChiffre = it },
+                        label = { Text("Phrase secr\u00E8te (6 caract\u00E8res min.)") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val uriChiffree = importChiffreUri
+                        val ph = phraseImportChiffre
+                        importChiffreUri = null
+                        phraseImportChiffre = ""
+                        if (uriChiffree != null) lireGedcomChiffre(uriChiffree, ph)
+                    },
+                    enabled = phraseImportChiffre.length >= 6
+                ) { Text("Ouvrir") }
+            },
+            dismissButton = {
+                TextButton(onClick = { importChiffreUri = null; phraseImportChiffre = "" }) { Text("Annuler") }
+            }
+        )
+    }
+
+    // 12.2 : rappel de suppression du dernier fichier export\u00E9/partag\u00E9,
+    // \u00E0 chaque ouverture tant qu'il n'est pas confirm\u00E9 supprim\u00E9.
+    if (!rappelPartageFerme) {
+        val rappelPartage = Stockage.lireFichierPartage(ctx)
+        if (verrou.deverrouille && rappelPartage != null) {
+            AlertDialog(
+                onDismissRequest = { rappelPartageFerme = true },
+                title = { Text("Fichier export\u00E9") },
+                text = {
+                    Text(
+                        "Le fichier " + rappelPartage.first + " a \u00E9t\u00E9 export\u00E9 le " +
+                            java.text.SimpleDateFormat("dd/MM/yyyy").format(java.util.Date(rappelPartage.second)) +
+                            ". Une fois le fichier envoy\u00E9, pensez \u00E0 le SUPPRIMER de votre appareil (T\u00E9l\u00E9chargements, messages, e-mails envoy\u00E9s...) : il contient vos donn\u00E9es.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        Stockage.effacerFichierPartage(ctx)
+                        rappelPartageFerme = true
+                    }) { Text("Fichier supprim\u00E9", color = CouleurVertFonce, fontWeight = FontWeight.Bold) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { rappelPartageFerme = true }) { Text("Me le rappeler plus tard") }
+                }
+            )
+        }
     }
 }
 
