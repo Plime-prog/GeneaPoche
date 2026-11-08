@@ -2024,6 +2024,14 @@ fun AppEcran(
                     " recherche(s) prioritaire(s) \u00E0 faire (onglet Journal)."
                 message = if (nbDiag > 0) message + " " + alerte else alerte
             }
+            // G\u00E9n\u00E9aPoche 12 (12.3) : alertes locales - anniversaires du jour
+            // (naissance, mariage, d\u00E9c\u00E8s un jour comme aujourd'hui).
+            val nbAnniv = alertesDuJour(personnes).size
+            if (nbAnniv > 0) {
+                val alerteJour = "Ce jour : " + nbAnniv.toString() +
+                    " \u00E9v\u00E9nement(s) d'anc\u00EAtre(s) (onglet Journal)."
+                message = if (message.isNotEmpty()) message + " " + alerteJour else alerteJour
+            }
         }
     }
 

@@ -106,6 +106,49 @@ fun titreCourt(p: Personne): String {
     return if (t.isEmpty()) "(sans nom)" else t
 }
 
+// ---------------------------------------------------------------- Alertes du jour
+// G\u00E9n\u00E9aPoche 12 (12.3) : alertes locales. Un \u00E9v\u00E9nement (naissance,
+// mariage, d\u00E9c\u00E8s) dont le JOUR et le MOIS tombent \u00E0 la date du jour,
+// quelle que soit l'ann\u00E9e (anniversaire). Les dates r\u00E9publicaines sont
+// converties pour retrouver le jour et le mois gr\u00E9goriens.
+// Jour et mois d'une date "jj/mm/aaaa" (ou r\u00E9publicaine convertie) ;
+// null si la date ne permet pas de conna\u00EEtre le jour et le mois.
+fun jourMoisDe(date: String): Pair<Int, Int>? {
+    val d = date.trim()
+    if (d.isEmpty()) return null
+    val regex = Regex("^(\\d{1,2})/(\\d{1,2})/(\\d{4})$")
+    val m = regex.find(d)
+    if (m != null) return Pair(m.groupValues[1].toInt(), m.groupValues[2].toInt())
+    val g = repubAGregorien(d) ?: return null
+    val mg = regex.find(g) ?: return null
+    return Pair(mg.groupValues[1].toInt(), mg.groupValues[2].toInt())
+}
+
+data class AlerteJour(val personneId: Long, val texte: String)
+
+// Alertes du jour : naissances, mariages et d\u00E9c\u00E8s tombant un jour comme
+// aujourd'hui. R\u00E8gles de la fiche respect\u00E9es : vivant de moins de 30 ans =
+// naissance seule ; d\u00E9c\u00E9d\u00E9 avant 25 ans = pas de mariage ; d\u00E9c\u00E8s
+// signal\u00E9 seulement s'il est affichable (r\u00E8gle des 100 ans).
+fun alertesDuJour(personnes: List<Personne>): List<AlerteJour> {
+    val aujourdhui = java.time.LocalDate.now()
+    val res = mutableListOf<AlerteJour>()
+    for (p in personnes) {
+        val jeunesse = vivantMoinsDe30(p) || decedeAvant25(p)
+        fun ajoute(date: String, libelle: String) {
+            val jm = jourMoisDe(date) ?: return
+            if (jm.first != aujourdhui.dayOfMonth || jm.second != aujourdhui.monthValue) return
+            val ans = anneeDe(date)?.let { aujourdhui.year - it }
+            val suite = if (ans != null && ans > 0) " (il y a " + ans.toString() + " an(s))" else ""
+            res.add(AlerteJour(p.id, libelle + " de " + titreCourt(p) + suite))
+        }
+        ajoute(p.dateNaissance, "N.")
+        if (!jeunesse) ajoute(p.dateMariage, "Mariage")
+        if (decesAffichable(p)) ajoute(p.dateDeces, "D\u00E9c\u00E8s")
+    }
+    return res
+}
+
 // ---------------------------------------------------------------- Anomalies
 
 // Incoherence detectee entre les dates d'une personne (comparaisons d'annees).
@@ -395,6 +438,8 @@ fun EcranJournal(
     val doublons = doublonsPotentiels(personnes, gardes)
     val isolees = personnes.filter { brancheIsolee(it, personnes) }
     val nonCertifiees = personnes.filterNot { identiteCertifiee(it) }
+    // G\u00E9n\u00E9aPoche 12 (12.3) : anniversaires du jour (alertes locales).
+    val anniversaires = alertesDuJour(personnes)
     // GeneaPoche 12 : BUG CORRIGE - les identites non certifiees comptaient
     // AUSSI dans l'encadre : il ne doit pas disparaitre tant qu'il reste
     // quelque chose a examiner (anomalie, doublon, branche isolee, identite).
@@ -416,6 +461,34 @@ fun EcranJournal(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+        // G\u00E9n\u00E9aPoche 12 (12.3) : anniversaires du jour (alertes locales),
+        // chaque ligne cliquable ouvre la fiche.
+        if (anniversaires.isNotEmpty()) {
+            item {
+                Card(
+                    Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = CouleurVertPale),
+                    border = BorderStroke(1.dp, Color(0xFF9CBF9A))
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                        Text(
+                            "Ce jour : " + anniversaires.size.toString() + " \u00E9v\u00E9nement(s)",
+                            fontWeight = FontWeight.Bold, color = CouleurVertFonce
+                        )
+                        anniversaires.forEach { al ->
+                            Text(
+                                al.texte,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = CouleurVertFonce,
+                                modifier = Modifier
+                                    .padding(top = 4.dp)
+                                    .clickable { onOuvrirPersonne(al.personneId) }
+                            )
+                        }
+                    }
+                }
             }
         }
         if (diagnostic) {
