@@ -1,5 +1,12 @@
 # Historique des versions — GénéaPoche
 
+## v0.85 – Exports chiffrés et nettoyage après partage (12.2)
+
+- **Export GEDCOM chiffré (.gpged)** : nouvelle coche « Chiffrer le fichier (.gpged, phrase secrète) » dans le dialogue « Exporter en GEDCOM » (toutes les personnes ou une branche). La phrase secrète (6 caractères min.) est demandée avant le choix du fichier ; le fichier est chiffré AES-256/GCM + PBKDF2 (210 000 itérations), comme une sauvegarde .gpbak.
+- **Un .gpged ne s'ouvre que dans GeneaPoche** : à l'import GEDCOM, la phrase secrète est demandée automatiquement ; une phrase erronée n'importe strictement rien. L'avertissement « EN CLAIR » n'apparaît plus quand la coche est activée.
+- **Rappel de suppression du fichier envoyé** : après chaque export réussi (GEDCOM .ged ou .gpged, sauvegarde .gpbak), le fichier est mémorisé (nom + date) et le message rappelle de le supprimer une fois envoyé ; à chaque ouverture, un dialogue le rappelle tant que le fichier n'est pas confirmé supprimé (« Fichier supprimé » définitif, « Me le rappeler plus tard » réaffiche à la prochaine ouverture).
+- Bumps v0.85 (gradle 85/« 0.85 », export GEDCOM « 2 VERS 0.85 », badge de saisie « v0.85 », écran d'application).
+
 ## v0.84 – Ajustements fiches et journal
 
 - **Ordre chronologique réel des événements** : sur la fiche, tous les événements (blocs N/B/M/D/S, événements libres, enfants, mariages et décès de la famille) sont rangés par date complète convertie en clé comparable (aaaammjj, dates républicaines comprises) ; si l'un des événements N, M ou D est sans date, retour à l'ordre naturel NBMDS.
