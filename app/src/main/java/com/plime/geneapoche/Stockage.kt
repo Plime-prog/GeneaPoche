@@ -64,6 +64,48 @@ object Stockage {
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
+    // ---------------------------- 12.1 : sauvegarde automatique (.gpbak)
+    // GénéaPoche 12 (12.1) : copie .gpbak automatique dans un dossier
+    // choisi après N modifications ; sans dossier, un simple rappel.
+    // Les sauvegardes automatiques sont protégées par la CLÉ DE
+    // RÉCUPÉRATION (générée par l'application, à imprimer et conserver
+    // hors de l'appareil). Elle est stockée CHIFFRÉE avec la clé maître
+    // (jamais en clair dans les préférences) : sans la clé imprimée,
+    // personne ne peut déchiffrer les sauvegardes automatiques.
+    fun lireDossierSauvegarde(ctx: Context): String = prefs(ctx).getString("sauvegarde_dossier", "") ?: ""
+    fun ecrireDossierSauvegarde(ctx: Context, uri: String) {
+        prefs(ctx).edit().putString("sauvegarde_dossier", uri).commit()
+    }
+    fun effacerDossierSauvegarde(ctx: Context) {
+        prefs(ctx).edit().remove("sauvegarde_dossier").commit()
+    }
+    fun lireSeuilSauvegarde(ctx: Context): Int = prefs(ctx).getInt("sauvegarde_seuil", 25)
+    fun ecrireSeuilSauvegarde(ctx: Context, n: Int) {
+        prefs(ctx).edit().putInt("sauvegarde_seuil", n).commit()
+    }
+    fun lireCompteurSauvegarde(ctx: Context): Int = prefs(ctx).getInt("sauvegarde_compteur", 0)
+    fun incrementerCompteurSauvegarde(ctx: Context) {
+        prefs(ctx).edit().putInt("sauvegarde_compteur", lireCompteurSauvegarde(ctx) + 1).commit()
+    }
+    fun razCompteurSauvegarde(ctx: Context) {
+        prefs(ctx).edit().putInt("sauvegarde_compteur", 0).commit()
+    }
+    // La clé de récupération ne peut être écrite/lue que déverrouillé
+    // (la clé maître est en mémoire) ; null/false si l'app est verrouillée.
+    fun ecrirePhraseSauvegarde(ctx: Context, phrase: String): Boolean {
+        val chiffre = chiffrer(phrase.toByteArray(Charsets.UTF_8)) ?: return false
+        return prefs(ctx).edit()
+            .putString("sauvegarde_phrase", Base64.encodeToString(chiffre, Base64.NO_WRAP))
+            .commit()
+    }
+    fun lirePhraseSauvegarde(ctx: Context): String {
+        val b64 = prefs(ctx).getString("sauvegarde_phrase", "") ?: ""
+        if (b64.isEmpty()) return ""
+        val clair = dechiffrer(Base64.decode(b64, Base64.NO_WRAP)) ?: return ""
+        return String(clair, Charsets.UTF_8)
+    }
+
+
     // ------------------------------------------------------------ De cujus (personne de reference et son n Sosa)
 
     fun lireIdCujus(ctx: Context): Long = prefs(ctx).getLong(CLE_ID_CUJUS, 0L)

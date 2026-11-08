@@ -88,6 +88,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -158,7 +160,11 @@ class EtatApplication(
     // avec "Annuler").
     val annulationPossible: Boolean = false,
     // v0.78 : paires de doublons "gard\u00E9es les deux" (diagnostic).
-    val doublonsGardes: Set<String> = emptySet()
+    val doublonsGardes: Set<String> = emptySet(),
+    // 12.1 : sauvegarde automatique (.gpbak) dans un dossier choisi.
+    val dossierSauvegarde: String = "",
+    val seuilSauvegarde: Int = 25,
+    val cleRecuperation: String = ""
 )
 
 // G2-09 : toutes les actions de l'ecran regroupees en une seule classe.
@@ -220,7 +226,13 @@ class ActionsApplication(
     val validerIdentite: (Personne, String) -> Unit,
     val fusionner: (Long, Long) -> Unit,
     // v0.78 : garder les deux fiches d'une paire de doublons (d\u00E9finitif).
-    val garderDoublon: (Long, Long) -> Unit
+    val garderDoublon: (Long, Long) -> Unit,
+    // 12.1 : sauvegarde automatique apr\u00E8s N modifications dans un dossier
+    // choisi + cl\u00E9 de r\u00E9cup\u00E9ration \u00E0 imprimer.
+    val sauvegardeAuto: (Uri) -> Unit,
+    val sauvegardeAutoOff: () -> Unit,
+    val reglerSeuilSauvegarde: (Int) -> Unit,
+    val afficherCleSauvegarde: () -> Unit
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -286,7 +298,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.81",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.82",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -325,6 +337,15 @@ fun EcranApplication(
             var phraseEnAttente by remember { mutableStateOf("") }
             var demandePhraseExport by remember { mutableStateOf(false) }
             var demandePhraseImport by remember { mutableStateOf(false) }
+            // 12.1 : dialogue de sauvegarde automatique + dossier choisi.
+            var dialogueSauvegardeAuto by remember { mutableStateOf(false) }
+            var seuilSaisi by remember(dialogueSauvegardeAuto) { mutableStateOf(seuilSauvegarde.toString()) }
+            val lanceurDossierSauvegarde = rememberLauncherForActivityResult(
+                ActivityResultContracts.OpenDocumentTree()
+            ) { uri ->
+                picker(false)
+                if (uri != null) sauvegardeAuto(uri)
+            }
             val lanceurGpbakExport = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
             ) { uri ->
@@ -808,7 +829,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.81", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.82", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -879,6 +900,18 @@ fun EcranApplication(
                                     Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text("Sauvegarde chiffr\u00E9e (.gpbak)")
+                                }
+                            }
+                            // 12.1 : sauvegarde automatique dans un dossier
+                            // choisi + cl\u00E9 de r\u00E9cup\u00E9ration \u00E0 imprimer.
+                            TextButton(
+                                onClick = { menuGedcom = false; dialogueSauvegardeAuto = true },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Sauvegarde automatique...")
                                 }
                             }
                             TextButton(
@@ -969,6 +1002,89 @@ fun EcranApplication(
                     },
                     dismissButton = {
                         TextButton(onClick = { demandePhraseExport = false; demandePhraseImport = false; phraseSecrete = "" }) { Text("Annuler") }
+                    }
+                )
+            }
+            // 12.1 : sauvegarde automatique — copie .gpbak dans un dossier
+            // choisi apr\u00E8s N modifications (sinon simple rappel), prot\u00E9g\u00E9e
+            // par une CL\u00C9 DE R\u00C9CUP\u00C9RATION g\u00E9n\u00E9r\u00E9e par l'application,
+            // affich\u00E9e ici et \u00E0 imprimer hors de l'appareil.
+            if (dialogueSauvegardeAuto) {
+                val pressePapiers = LocalClipboardManager.current
+                AlertDialog(
+                    onDismissRequest = { dialogueSauvegardeAuto = false },
+                    title = { Text("Sauvegarde automatique") },
+                    text = {
+                        Column(Modifier.verticalScroll(rememberScrollState())) {
+                            if (dossierSauvegarde.isEmpty()) {
+                                Text(
+                                    "Une sauvegarde chiffr\u00E9e (.gpbak) est copi\u00E9e automatiquement dans le dossier de votre choix apr\u00E8s N modifications enregistr\u00E9es. Sans dossier choisi, un simple rappel s'affiche.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                OutlinedTextField(
+                                    value = seuilSaisi,
+                                    onValueChange = { seuilSaisi = it.filter { c -> c.isDigit() }.take(3) },
+                                    label = { Text("N modifications (5 \u00E0 500)") },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                TextButton(
+                                    onClick = {
+                                        reglerSeuilSauvegarde(seuilSaisi.toIntOrNull() ?: 25)
+                                        picker(true)
+                                        lanceurDossierSauvegarde.launch(null)
+                                    },
+                                    Modifier.fillMaxWidth()
+                                ) { Text("Choisir le dossier et activer") }
+                            } else {
+                                Text(
+                                    "Sauvegardes automatiques ACTIV\u00C9ES : une copie .gpbak est cr\u00E9\u00E9e dans le dossier choisi apr\u00E8s " + seuilSauvegarde.toString() + " modifications.",
+                                    fontWeight = FontWeight.Bold,
+                                    color = CouleurVertFonce
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                OutlinedTextField(
+                                    value = seuilSaisi,
+                                    onValueChange = { seuilSaisi = it.filter { c -> c.isDigit() }.take(3) },
+                                    label = { Text("N modifications (5 \u00E0 500)") },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                TextButton(
+                                    onClick = { reglerSeuilSauvegarde(seuilSaisi.toIntOrNull() ?: 25) },
+                                    Modifier.fillMaxWidth()
+                                ) { Text("Appliquer ce seuil") }
+                                TextButton(
+                                    onClick = { sauvegardeAutoOff() },
+                                    Modifier.fillMaxWidth()
+                                ) { Text("D\u00E9sactiver", color = CouleurRouge) }
+                            }
+                            if (cleRecuperation.isNotEmpty()) {
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "Cl\u00E9 de r\u00E9cup\u00E9ration (\u00E0 imprimer, hors de l'appareil) :",
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(cleRecuperation, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                Text(
+                                    "Sans cette cl\u00E9, vos sauvegardes automatiques sont ind\u00E9chiffrables. Elle est aussi n\u00E9cessaire pour les restaurer sur un autre appareil.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                TextButton(onClick = { pressePapiers.setText(AnnotatedString(cleRecuperation)) }) {
+                                    Text("Copier la cl\u00E9")
+                                }
+                            } else if (dossierSauvegarde.isNotEmpty()) {
+                                Spacer(Modifier.height(8.dp))
+                                TextButton(onClick = { afficherCleSauvegarde() }, Modifier.fillMaxWidth()) {
+                                    Text("Afficher la cl\u00E9 de r\u00E9cup\u00E9ration")
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { dialogueSauvegardeAuto = false }) { Text("Fermer") }
                     }
                 )
             }

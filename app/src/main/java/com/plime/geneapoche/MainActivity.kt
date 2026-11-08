@@ -179,6 +179,11 @@ fun AppEcran(
     // v0.78 : paires de doublons "gardees les deux" (decision definitive,
     // persistee) : elles restent hors du diagnostic de l'arbre.
     var doublonsGardes by remember { mutableStateOf(Stockage.lireDoublonsGardes(ctx)) }
+    // G\u00E9n\u00E9aPoche 12 (12.1) : sauvegarde automatique .gpbak dans un
+    // dossier choisi apr\u00E8s N modifications + cl\u00E9 de r\u00E9cup\u00E9ration.
+    var dossierSauvegarde by remember { mutableStateOf(Stockage.lireDossierSauvegarde(ctx)) }
+    var seuilSauvegarde by remember { mutableStateOf(Stockage.lireSeuilSauvegarde(ctx)) }
+    var cleRecuperation by remember { mutableStateOf("") }
     val categoriesIgnorees = modele.categoriesIgnorees
     var charge by modele::charge
     var aPin by remember { mutableStateOf(false) }
@@ -294,6 +299,101 @@ fun AppEcran(
         }
     }
 
+    // G\u00E9n\u00E9aPoche 12 (12.1) : sauvegarde automatique. La copie .gpbak
+    // est chiffr\u00E9e par la CL\u00C9 DE R\u00C9CUP\u00C9RATION g\u00E9n\u00E9r\u00E9e par
+    // l'application (20 caract\u00E8res sans caract\u00E8res ambigus), affich\u00E9e
+    // une fois \u00E0 l'activation et \u00E0 imprimer hors de l'appareil.
+    fun genererCleRecuperation(): String {
+        val alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+        val alea = java.security.SecureRandom()
+        return (0 until 4).map {
+            (0 until 5).map { alphabet[alea.nextInt(alphabet.length)] }.joinToString("")
+        }.joinToString("-")
+    }
+
+    // Copie .gpbak automatique dans le dossier choisi (DocumentsContract :
+    // l'URI du dossier b\u00E9n\u00E9ficie d'une permission persistable, aucune
+    // autorisation manifeste). Lanc\u00E9e \u00E0 l'activation et au franchissement
+    // du seuil de N modifications.
+    fun sauvegardeAuto() {
+        val dossierTxt = dossierSauvegarde
+        if (dossierTxt.isEmpty()) return
+        val phrase = Stockage.lirePhraseSauvegarde(ctx)
+        if (phrase.isEmpty()) return
+        val persC = personnes.toList()
+        val pisC = pistes.toList()
+        val actC = actes.toList()
+        occupation = "Sauvegarde automatique..."
+        scopeTravail.launch(Dispatchers.IO) {
+            try {
+                val arbre = Uri.parse(dossierTxt)
+                val horodatage = java.time.LocalDateTime.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-Hmm"))
+                val uri = android.provider.DocumentsContract.createDocument(
+                    ctx.contentResolver, arbre, "application/octet-stream",
+                    "GeneaPoche-sauvegarde-" + horodatage + ".gpbak"
+                )
+                var ok = false
+                if (uri != null) {
+                    ok = Sauvegarde.exporter(ctx, uri, phrase, persC, pisC, actC)
+                }
+                withContext(Dispatchers.Main) {
+                    Stockage.razCompteurSauvegarde(ctx)
+                    message = if (ok)
+                        "Sauvegarde automatique cr\u00E9\u00E9e dans le dossier choisi (restauration : cl\u00E9 de r\u00E9cup\u00E9ration)."
+                    else
+                        "\u00C9chec de la sauvegarde automatique (dossier inaccessible ?)."
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de la sauvegarde automatique.") }
+            } finally {
+                withContext(Dispatchers.Main) { occupation = "" }
+            }
+        }
+    }
+
+    // Activation depuis le dialogue : permission persistable sur le dossier,
+    // g\u00E9n\u00E9ration de la cl\u00E9 de r\u00E9cup\u00E9ration si elle n'existe pas encore,
+    // puis PREMI\u00C8RE sauvegarde imm\u00E9diate (l'utilisateur voit que \u00E7a marche).
+    fun activerSauvegardeAuto(uri: Uri) {
+        try {
+            ctx.contentResolver.takePersistableUriPermission(
+                uri,
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+        } catch (e: Exception) {
+            // Permission d\u00E9j\u00E0 prise ou non persistable : on continue.
+        }
+        Stockage.ecrireDossierSauvegarde(ctx, uri.toString())
+        dossierSauvegarde = uri.toString()
+        var phrase = Stockage.lirePhraseSauvegarde(ctx)
+        if (phrase.isEmpty()) {
+            phrase = genererCleRecuperation()
+            if (!Stockage.ecrirePhraseSauvegarde(ctx, phrase)) {
+                message = "\u00C9chec de la cr\u00E9ation de la cl\u00E9 de r\u00E9cup\u00E9ration."
+                return
+            }
+            cleRecuperation = phrase
+            message = "Sauvegarde automatique activ\u00E9e : IMPRIMEZ la cl\u00E9 de r\u00E9cup\u00E9ration affich\u00E9e."
+        }
+        Stockage.razCompteurSauvegarde(ctx)
+        sauvegardeAuto()
+    }
+
+    fun desactiverSauvegardeAuto() {
+        Stockage.effacerDossierSauvegarde(ctx)
+        dossierSauvegarde = ""
+        cleRecuperation = ""
+        message = "Sauvegarde automatique d\u00E9sactiv\u00E9e (la cl\u00E9 de r\u00E9cup\u00E9ration reste valable pour les fichiers d\u00E9j\u00E0 cr\u00E9\u00E9s)."
+    }
+
+    fun reglerSeuilSauvegarde(n: Int) {
+        val v = n.coerceIn(5, 500)
+        Stockage.ecrireSeuilSauvegarde(ctx, v)
+        seuilSauvegarde = v
+    }
+
     fun enregistrer(recalculNumerotation: Boolean = true, personnesTouchees: Set<Long>? = null): Boolean {
         // G1-04 : donnees illisibles -> AUCUNE sauvegarde, ne rien ecraser.
         if (fichiersIllisibles.isNotEmpty()) {
@@ -326,11 +426,17 @@ fun AppEcran(
                 null
             }
         }
+        // 12.1 : vrai seulement si un fichier a REELLEMENT ete reecrit
+        // (le compteur de modifications ne compte pas les coches sans ecriture).
+        var ecritFichier = false
         fun ecrireSiChange(cle: String, texte: String?, ecrire: (String) -> Boolean): Boolean {
             if (texte == null) return false
             if (derniersJson[cle] == texte) return true
             val ok = ecrire(texte)
-            if (ok) derniersJson[cle] = texte
+            if (ok) {
+                derniersJson[cle] = texte
+                ecritFichier = true
+            }
             return ok
         }
         val ok1 = ecrireSiChange(
@@ -352,6 +458,19 @@ fun AppEcran(
             !ok1 -> "\u00C9chec de l'enregistrement des personnes."
             !ok2 -> "\u00C9chec de l'enregistrement du journal."
             else -> "\u00C9chec de l'enregistrement des actes."
+        }
+        // 12.1 : compteur de modifications -> sauvegarde automatique .gpbak
+        // dans le dossier choisi, ou simple rappel si aucun dossier.
+        if (ok1 && ok2 && ok3 && ecritFichier) {
+            Stockage.incrementerCompteurSauvegarde(ctx)
+            if (Stockage.lireCompteurSauvegarde(ctx) >= Stockage.lireSeuilSauvegarde(ctx)) {
+                if (dossierSauvegarde.isNotEmpty()) {
+                    sauvegardeAuto()
+                } else {
+                    Stockage.razCompteurSauvegarde(ctx)
+                    message = "Modifications enregistr\u00E9es : pensez \u00E0 faire une sauvegarde chiffr\u00E9e (.gpbak, param\u00E9trages)."
+                }
+            }
         }
         return ok1 && ok2 && ok3
     }
@@ -2029,7 +2148,11 @@ fun AppEcran(
                 // G3-19 : une suppression peut etre annulee.
                 annulationPossible = modele.annulation != null,
                 // v0.78 : paires de doublons "gardees les deux".
-                doublonsGardes = doublonsGardes
+                doublonsGardes = doublonsGardes,
+                // 12.1 : etat de la sauvegarde automatique.
+                dossierSauvegarde = dossierSauvegarde,
+                seuilSauvegarde = seuilSauvegarde,
+                cleRecuperation = cleRecuperation
             ),
             actions = ActionsApplication(
                 onMessage = { message = it },
@@ -2102,6 +2225,11 @@ fun AppEcran(
                     Stockage.garderDoublon(ctx, a, b)
                     doublonsGardes = doublonsGardes + cleDoublon(a, b)
                 },
+                // 12.1 : sauvegarde automatique + cle de recuperation.
+                sauvegardeAuto = { uri -> activerSauvegardeAuto(uri) },
+                sauvegardeAutoOff = { desactiverSauvegardeAuto() },
+                reglerSeuilSauvegarde = { reglerSeuilSauvegarde(it) },
+                afficherCleSauvegarde = { cleRecuperation = Stockage.lirePhraseSauvegarde(ctx) },
                 // G3-19 : annulation d'une suppression via le Snackbar.
                 onAnnulerSuppression = { annulerSuppression() },
                 onPurgerAnnulation = { modele.annulation = null }
