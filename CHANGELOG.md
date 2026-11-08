@@ -1,5 +1,13 @@
 # Historique des versions — GénéaPoche
 
+## v0.82 – Sauvegarde automatique et clé de récupération (12.1)
+
+- **Sauvegarde automatique .gpbak** : nouvelle entrée « Sauvegarde automatique… » dans la feuille des paramétrages — choisissez un dossier, et une copie chiffrée de toute la base y est créée automatiquement après N modifications enregistrées (25 par défaut, réglable de 5 à 500). Sans dossier choisi, un simple rappel s'affiche au franchissement du seuil.
+- **Clé de récupération à imprimer** : générée par l'application à l'activation (20 caractères sans caractères ambigus, en groupes de 5), affichée dans le dialogue avec un bouton « Copier la clé », à conserver hors de l'appareil. Elle protège toutes les sauvegardes automatiques : sans elle, personne ne peut les déchiffrer, même sur un autre appareil. Elle n'est jamais stockée en clair (chiffrée avec la clé maître) et reste consultable via « Afficher la clé de récupération ».
+- Première sauvegarde immédiate dès l'activation ; restauration par l'entrée existante « Restaurer une sauvegarde (.gpbak) » en saisissant cette clé.
+- Le compteur n'est incrémenté que par les enregistrements qui réécrivent réellement un fichier (une simple consultation ne compte pas).
+- Bumps v0.82 (gradle 82/« 0.82 », export GEDCOM « 2 VERS 0.82 », badge de saisie « v0.82 », écran d'application, README).
+
 ## v0.81 – Déverrouillage accéléré
 
 - **Ouverture environ deux fois plus rapide après la saisie du code PIN** : la clé maître est désormais ouverte en premier (un seul calcul PBKDF2 de 600 000 itérations) — si son déchiffrement réussit, le code est prouvé correct, le second calcul de vérification est économisé ; en cas d'échec, l'ancien chemin complet (vérification puis migration éventuelle) reprend exactement comme avant, sans aucune perte de sécurité.
