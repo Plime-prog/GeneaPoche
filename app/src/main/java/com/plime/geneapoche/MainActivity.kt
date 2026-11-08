@@ -1302,3 +1302,1126 @@ fun AppEcran(
                     withContext(Dispatchers.Main) { message = "Sauvegarde illisible : v\u00E9rifiez le fichier et la phrase secr\u00E8te." }
                     return@launch
                 }
+                // R1 : toute mutation d'etat Compose et toute sauvegarde se
+                // font sur le thread principal.
+                withContext(Dispatchers.Main) {
+                    personnes.clear()
+                    personnes.addAll(contenu.personnes)
+                    pistes.clear()
+                    pistes.addAll(contenu.pistes)
+                    // Chantier 12.0 : les anciennes sauvegardes contenaient des
+                    // actes stockes ; leurs coches "Enregistre" sont posees sur
+                    // les fiches correspondantes (une par type d'acte).
+                    contenu.cochesActes.forEach { (pid, types) ->
+                        personneParId(personnes, pid)?.let { q ->
+                            types.forEach { q.definirEnregistre(it, true) }
+                        }
+                    }
+                    pileFiches.clear()
+                    idOuvert = 0L
+                    derniersJson.clear()
+                    val premier = personnes.filter { it.sosa.trim().toLongOrNull() != null }.minByOrNull { it.sosa.trim().toLong() }
+                    if (premier != null) {
+                        sosaCujus = premier.sosa.trim().toLongOrNull() ?: 1L
+                        Stockage.definirCujus(ctx, premier.id, sosaCujus)
+                        arbreCentre = premier.id
+                    }
+                    verifierLiensEtRapporter()
+                    if (enregistrer()) {
+                        message = "Sauvegarde restaur\u00E9e : " + contenu.personnes.size.toString() + " personnes."
+                    } else {
+                        // Echec d'ecriture : on ne detruit rien.
+                        message = "\u00C9chec de l'enregistrement apr\u00E8s restauration : rien n'a \u00E9t\u00E9 supprim\u00E9."
+                    }
+                }
+            } catch (e: Exception) {
+                // G2-05 : message distinct selon le type d'echec.
+                withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de la restauration .gpbak.") }
+            } finally {
+                withContext(Dispatchers.Main) { occupation = "" }
+            }
+        }
+    }
+
+    // G1-09 : restauration de la base sauvegardee automatiquement avant un import GEDCOM.
+    fun restaurerSauvegardeImport() {
+        // v0.41 : RESCUE - les 5 sauvegardes d'avant import sont essayees de
+        // la plus recente a la plus ancienne ; la premiere qui rend une base
+        // NON VIDE est gardee (une sauvegarde vide est sautee).
+        val slots = Stockage.slotsImport(ctx)
+        if (slots.isEmpty() && !Stockage.aSauvegardeImport(ctx)) {
+            message = "Aucune sauvegarde d'import disponible."
+            return
+        }
+        for (s in slots) {
+            if (!Stockage.restaurerSauvegardeImportSlot(ctx, s)) continue
+            val essai = Stockage.charger(ctx)
+            if (essai.liste.isEmpty()) continue
+            derniersJson.clear()
+            personnes.clear()
+            pistes.clear()
+            val rp = essai
+            val rj = Stockage.chargerJournal(ctx)
+            personnes.addAll(rp.liste)
+            pistes.addAll(rj.liste)
+            fichiersIllisibles = listOf(rp, rj).filter { it.illisible }.map { it.nom }
+            pileFiches.clear()
+            idOuvert = 0L
+            verifierLiensEtRapporter()
+            message = "Base d'avant import restaur\u00E9e : " + personnes.size.toString() + " personne(s) (sauvegarde n\u00B0" + s.toString() + ")."
+            rafraichirTout()
+            return
+        }
+        // Aucun slot exploitable : repli sur l'ancienne sauvegarde plate.
+        if (Stockage.aSauvegardeImport(ctx) && Stockage.restaurerSauvegardeImport(ctx)) {
+            derniersJson.clear()
+            personnes.clear()
+            pistes.clear()
+            val rp = Stockage.charger(ctx)
+            val rj = Stockage.chargerJournal(ctx)
+            personnes.addAll(rp.liste)
+            pistes.addAll(rj.liste)
+            fichiersIllisibles = listOf(rp, rj).filter { it.illisible }.map { it.nom }
+            pileFiches.clear()
+            idOuvert = 0L
+            verifierLiensEtRapporter()
+            message = if (personnes.isEmpty()) "Aucune sauvegarde ne contient de personnes." else "Base d'avant import restaur\u00E9e : " + personnes.size.toString() + " personne(s)."
+            rafraichirTout()
+            return
+        }
+        message = "Aucune sauvegarde exploitable."
+    }
+
+    // v0.42 : RESCUE .bak - restaure les copies de rotation des deux
+    // fichiers (personnes/journal), dernier recours apres une base
+    // videe, meme si les fichiers actuels sont lisibles. Sans effet si la
+    // copie .bak est vide aussi : rien n'est perdu en l'essayant.
+    fun restaurerSecoursBak() {
+        listOf("personnes.bin", "journal.bin").forEach { nom ->
+            Stockage.restaurerBak(ctx, nom)
+        }
+        derniersJson.clear()
+        personnes.clear()
+        pistes.clear()
+        val rp = Stockage.charger(ctx)
+        val rj = Stockage.chargerJournal(ctx)
+        personnes.addAll(rp.liste)
+        pistes.addAll(rj.liste)
+        fichiersIllisibles = listOf(rp, rj).filter { it.illisible }.map { it.nom }
+        if (personnes.isEmpty()) {
+            message = "La copie de secours ne contient aucune personne non plus."
+        } else {
+            verifierLiensEtRapporter()
+            completerJournal()
+            message = "Base restaur\u00E9e depuis la copie de secours : " + personnes.size.toString() + " personne(s)."
+        }
+        rafraichirTout()
+    }
+
+    // ------------------------------------------------------------ Saisie par acte
+    // Transcription d'un acte N/B/M/D/S : alimente la fiche Personne (dates, lieux,
+    // professions, liens pere/mere/conjoint), cree les personnes absentes, et la
+    // numerotation est recalculee automatiquement par enregistrer().
+    // Les temoins et signataires sont memorises dans le contenu de l'acte.
+
+    // Un nom correspond-il deja a une fiche existante (nom + prenoms, casse ignoree) ?
+    fun nomDejaConnu(nomSaisi: String, prenomsSaisis: String): Boolean {
+        val n = nomSaisi.trim()
+        val pr = prenomsSaisis.trim()
+        if (n.isEmpty() && pr.isEmpty()) return true
+        return personnes.any {
+            cle(it.nom) == cle(n) &&
+            clePrenoms(it.prenoms) == clePrenoms(pr)
+        }
+    }
+
+    // Noms saisis qui ne correspondent a aucune fiche : creation a proposer.
+    fun nomsNouveaux(a: ActeSaisie): List<String> {
+        val res = mutableListOf<String>()
+        if (a.personneId == 0L && !nomDejaConnu(a.nom, a.prenoms) && (a.nom.isNotBlank() || a.prenoms.isNotBlank())) {
+            res.add((a.prenoms.trim() + " " + a.nom.trim()).trim())
+        }
+        if (!nomDejaConnu(a.pereNom, a.perePrenoms)) {
+            res.add("p\u00E8re : " + (a.perePrenoms.trim() + " " + a.pereNom.trim()).trim())
+        }
+        if (!nomDejaConnu(a.mereNom, a.merePrenoms)) {
+            res.add("m\u00E8re : " + (a.merePrenoms.trim() + " " + a.mereNom.trim()).trim())
+        }
+        if (a.type == "M") {
+            if (a.marieeId == 0L && !nomDejaConnu(a.marieeNom, a.marieePrenoms) && (a.marieeNom.isNotBlank() || a.marieePrenoms.isNotBlank())) {
+                res.add("mari\u00E9e : " + (a.marieePrenoms.trim() + " " + a.marieeNom.trim()).trim())
+            }
+            if (!nomDejaConnu(a.pMarieeNom, a.pMarieePrenoms)) {
+                res.add("p\u00E8re de la mari\u00E9e : " + (a.pMarieePrenoms.trim() + " " + a.pMarieeNom.trim()).trim())
+            }
+            if (!nomDejaConnu(a.mMarieeNom, a.mMarieePrenoms)) {
+                res.add("m\u00E8re de la mari\u00E9e : " + (a.mMarieePrenoms.trim() + " " + a.mMarieeNom.trim()).trim())
+            }
+        }
+        // v0.73 : coherence ETENDUE - les temoins (parrain, marraine,
+        // pretre, officier d'etat civil, temoin) sont verifies aussi.
+        a.temoins.forEach { t ->
+            if ((t.nom.isNotBlank() || t.prenoms.isNotBlank()) && !nomDejaConnu(t.nom, t.prenoms)) {
+                res.add(
+                    (if (t.role.isNotBlank()) t.role.trim().lowercase() + " : " else "t\u00E9moin : ") +
+                        (t.prenoms.trim() + " " + t.nom.trim()).trim()
+                )
+            }
+        }
+        return res
+    }
+
+    // Synchronisation avec les fiches existantes, ou proposition de creation.
+    fun enregistrerActe(a: ActeSaisie, confirme: Boolean = false) {
+        // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement \u00E0 intitul\u00E9 LIBRE (menu Saisie ou
+        // fiche) : aucun acte cr\u00E9\u00E9, l'\u00E9v\u00E9nement est rang\u00E9 dans la
+        // chronologie de la personne (evenementsLibres), tri\u00E9 par date.
+        if (a.type == "E") {
+            val cible = personneParId(personnes, a.personneId)
+            if (cible == null) {
+                message = "\u00C9v\u00E9nement non enregistr\u00E9 : personne concern\u00E9e non identifi\u00E9e."
+                return
+            }
+            val idEv = if (a.acteId != 0L) a.acteId else Stockage.prochainId(ctx)
+            val ev = EvenementLibre(
+                id = idEv,
+                intitule = a.intitule.trim(),
+                date = a.date.trim(), heure = a.heure.trim(),
+                lieu = a.commune.trim(), dept = a.dept.trim()
+            )
+            val i = cible.evenementsLibres.indexOfFirst { it.id == idEv }
+            if (i >= 0) cible.evenementsLibres[i] = ev else cible.evenementsLibres.add(ev)
+            enregistrer(false, setOf(cible.id))
+            message = "\u00C9v\u00E9nement enregistr\u00E9 : " + a.intitule.trim().ifEmpty { "sans intitul\u00E9" }
+            return
+        }
+        val nouveaux = nomsNouveaux(a)
+        if (nouveaux.isNotEmpty() && !confirme) {
+            acteAConfirmer = a
+            return
+        }
+        acteAConfirmer = null
+        var crees = 0
+
+        // G\u00E9n\u00E9aPoche 10 : appui long sur un bloc = EDITION des champs de
+        // la fiche (chantier 12.0 : plus aucun acte stock\u00E9 \u00E0 mettre \u00E0 jour).
+        val edition = a.editionFiche
+
+        // Trouve une personne existante (par id ou nom+premoms), sinon la cree.
+        fun trouverOuCreer(id: Long, nomSaisi: String, prenomsSaisis: String, sexeDefaut: String,
+            dateNaiss: String = "", forcer: Boolean = false): Personne? {
+            personneParId(personnes, id)?.let { return it }
+            val n = nomSaisi.trim()
+            val pr = prenomsSaisis.trim()
+            if (n.isEmpty() && pr.isEmpty()) return null
+            // v0.77 : un VRAI doublon = même nom, mêmes prénoms ET même
+            // date de naissance. Une date différente (ou le drapeau "Créer
+            // une nouvelle fiche") = homonyme : une nouvelle fiche est créée.
+            if (!forcer) personnes.firstOrNull {
+                cle(it.nom) == cle(n) &&
+                clePrenoms(it.prenoms) == clePrenoms(pr) &&
+                (it.dateNaissance.isBlank() || dateNaiss.isBlank() || dateGreg(dateNaiss) == it.dateNaissance)
+            }?.let { return it }
+            val np = Personne(
+                id = Stockage.prochainId(ctx),
+                nom = n, prenoms = pr, sexe = if (sexeDefaut.isNotEmpty()) sexeDefaut else ""
+            )
+            personnes.add(np)
+            crees += 1
+            return np
+        }
+
+        // Renseigne les champs du parent : toute valeur saisie non vide
+        // REMPLACE celle de la fiche (v0.60 : synchronisation totale).
+        fun renseigner(c: Personne?, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String) {
+            if (c == null) return
+            if (edition) {
+                // v0.65 : en EDITION, le formulaire est la r\u00E9f\u00E9rence
+                // compl\u00E8te : une valeur vide EFFACE le champ du parent.
+                c.dateNaissance = dateGreg(ne)
+                c.lieuNaissance = lieu.trim()
+                c.deptNaissance = dept.trim()
+                c.profession = prof.trim()
+                c.dateDeces = dateGreg(dec)
+                c.lieuDeces = lieuDec.trim()
+            } else {
+                if (ne.isNotBlank()) c.dateNaissance = dateGreg(ne)
+                if (lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
+                if (dept.isNotBlank()) c.deptNaissance = dept.trim()
+                if (prof.isNotBlank()) c.profession = prof.trim()
+                if (dec.isNotBlank()) c.dateDeces = dateGreg(dec)
+                if (lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
+            }
+        }
+
+        fun lierParent(enfant: Personne, parent: Personne?, estMere: Boolean) {
+            if (parent == null) return
+            if (estMere) {
+                if (enfant.mere == 0L) enfant.mere = parent.id
+            } else {
+                if (enfant.pere == 0L) enfant.pere = parent.id
+            }
+            if (!parent.enfants.contains(enfant.id) && incoherenceParente(parent, enfant.dateNaissance) == null) parent.enfants.add(enfant.id)
+        }
+
+        val p = trouverOuCreer(a.personneId, a.nom, a.prenoms, a.sexe, if (a.type == "N") a.date else "", a.persNouvelle)
+        if (p == null) {
+            message = "Acte non enregistr\u00E9 : personne concern\u00E9e non identifi\u00E9e."
+            return
+        }
+
+
+        // v0.60 : synchronisation TOTALE - le formulaire est la reference
+        // pour tout champ non vide, identite comprise.
+        // v0.65 : tout changement d'IDENTITE est signal\u00E9 dans le message
+        // final (un m\u00E9lange de champs ne peut plus passer inaper\u00E7u).
+        var identiteTxt = ""
+        if (a.nom.isNotBlank() && cle(p.nom) != cle(a.nom.trim()))
+            identiteTxt += "Nom modifi\u00E9 : " + p.nom + " \u2192 " + a.nom.trim() + ". "
+        if (a.prenoms.isNotBlank() && clePrenoms(p.prenoms) != clePrenoms(a.prenoms.trim()))
+            identiteTxt += "Pr\u00E9noms modifi\u00E9s : " + p.prenoms + " \u2192 " + a.prenoms.trim() + ". "
+        if (a.profession.isNotBlank() && p.profession.trim() != a.profession.trim())
+            identiteTxt += "Profession modifi\u00E9e : " + p.profession + " \u2192 " + a.profession.trim() + ". "
+        if (a.nom.isNotBlank()) p.nom = a.nom.trim()
+        if (a.prenoms.isNotBlank()) p.prenoms = a.prenoms.trim()
+        // Date, heure et lieu de l'acte selon son type (fiche de la personne concernee).
+        // Nouvel acte : ne remplit que les champs encore vides. Edition : le
+        // formulaire pre-rempli devient la reference (champ vide = efface).
+        // v0.73 : bug CORRIGE - en edition, une COMMUNE ou un
+        // DEPARTEMENT vide EFFACE la valeur de la fiche (la correction
+        // reste desormais enregistree) ; le departement est normalise
+        // partout (2 chiffres).
+        when (a.type) {
+            "N" -> {
+                if (edition || a.date.isNotBlank()) p.dateNaissance = dateGreg(a.date)
+                if (edition || a.heure.isNotBlank()) p.heureNaissance = a.heure
+                if (edition || a.commune.isNotBlank()) p.lieuNaissance = a.commune.trim()
+                if (edition || a.dept.isNotBlank()) p.deptNaissance = normaliserDept(a.dept)
+            }
+            "B" -> {
+                if (edition || a.date.isNotBlank()) p.dateBapteme = dateGreg(a.date)
+                if (edition || a.heure.isNotBlank()) p.heureBapteme = a.heure
+                if (edition || a.commune.isNotBlank()) p.lieuBapteme = a.commune.trim()
+                if (edition || a.dept.isNotBlank()) p.deptBapteme = normaliserDept(a.dept)
+            }
+            "M" -> {
+                if (edition || a.date.isNotBlank()) p.dateMariage = dateGreg(a.date)
+                if (edition || a.heure.isNotBlank()) p.heureMariage = a.heure
+                if (edition || a.commune.isNotBlank()) p.lieuMariage = a.commune.trim()
+                if (edition || a.dept.isNotBlank()) p.deptMariage = normaliserDept(a.dept)
+            }
+            "D" -> {
+                if (edition || a.date.isNotBlank()) p.dateDeces = dateGreg(a.date)
+                if (edition || a.heure.isNotBlank()) p.heureDeces = a.heure
+                if (edition || a.commune.isNotBlank()) p.lieuDeces = a.commune.trim()
+                if (edition || a.dept.isNotBlank()) p.deptDeces = normaliserDept(a.dept)
+            }
+            "S" -> {
+                if (edition || a.date.isNotBlank()) p.dateSepulture = dateGreg(a.date)
+                if (edition || a.heure.isNotBlank()) p.heureSepulture = a.heure
+                if (edition || a.commune.isNotBlank()) p.lieuSepulture = a.commune.trim()
+                if (edition || a.dept.isNotBlank()) p.deptSepulture = normaliserDept(a.dept)
+            }
+        }
+        if (a.profession.isNotBlank()) p.profession = a.profession.trim()
+
+        // G\u00E9n\u00E9aPoche 3 : "Enfant" du menu Saisie : la naissance est
+        // rattach\u00E9e au parent choisi (et \u00E0 son conjoint). Aucun doublon.
+        // GeneaPoche 12 : BUG CORRIGE - le refus de lien ne peut plus etre
+        // ecrase par le message final "Acte enregistre" (trompeur) : le
+        // refus est memorise et rappele a la fin de l'enregistrement.
+        var refusLienTxt = ""
+        if (a.type == "N" && a.parentPourEnfant != 0L) {
+            val parentChoisi = personneParId(personnes, a.parentPourEnfant)
+            if (parentChoisi != null && parentChoisi.id != p.id) {
+                // G\u00E9n\u00E9aPoche 10 : COH\u00C9RENCE, l'enfant ne na\u00EEt pas avant son parent.
+                // GeneaPoche 11 : UNE SEULE regle (incoherenceParente),
+                // le conjoint du parent est teste au meme titre.
+                val refusN = incoherenceParente(parentChoisi, p.dateNaissance)
+                    ?: personneParId(personnes, parentChoisi.conjoint)?.let { co -> incoherenceParente(co, p.dateNaissance) }
+                if (refusN != null) {
+                    refusLienTxt = refusN
+                } else {
+                    if (parentChoisi.sexe == "F") {
+                        if (p.mere == 0L) p.mere = parentChoisi.id
+                    } else {
+                        if (p.pere == 0L) p.pere = parentChoisi.id
+                    }
+                    if (!parentChoisi.enfants.contains(p.id)) parentChoisi.enfants.add(p.id)
+                    val conjointDuParent = personneParId(personnes, parentChoisi.conjoint)
+                    if (conjointDuParent != null && !conjointDuParent.enfants.contains(p.id) && incoherenceParente(conjointDuParent, p.dateNaissance) == null) {
+                        conjointDuParent.enfants.add(p.id)
+                    }
+                }
+            }
+        }
+
+        // Pere et mere de la personne concernee.
+        // v0.65 : l'identifiant du parent li\u00E9 n'est gard\u00E9 QUE si le nom
+        // saisi est rest\u00E9 le sien : un homonyme ne d\u00E9route plus le lien,
+        // une correction de nom ne force plus l'ancienne fiche.
+        val pereLie = personneParId(personnes, p.pere)
+        val idPere = if (pereLie != null && a.pereNom.isNotBlank() &&
+            cle(pereLie.nom) == cle(a.pereNom) &&
+            clePrenoms(pereLie.prenoms) == clePrenoms(a.perePrenoms)) pereLie.id else 0L
+        val pere = trouverOuCreer(idPere, a.pereNom, a.perePrenoms, "M", a.pereNe)
+        renseigner(pere, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces)
+        lierParent(p, pere, false)
+        val mereLie = personneParId(personnes, p.mere)
+        val idMere = if (mereLie != null && a.mereNom.isNotBlank() &&
+            cle(mereLie.nom) == cle(a.mereNom) &&
+            clePrenoms(mereLie.prenoms) == clePrenoms(a.merePrenoms)) mereLie.id else 0L
+        val mere = trouverOuCreer(idMere, a.mereNom, a.merePrenoms, "F", a.mereNe)
+        renseigner(mere, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces)
+        lierParent(p, mere, true)
+
+        // v0.60 : le nom saisi pour un parent est TOUJOURS la reference :
+        // s'il correspond a une AUTRE fiche que le lien actuel, le lien de
+        // parente est REMPLACE (reparation des liens errones, ex une mere
+        // pointant sur la belle-mere). En EDITION seulement, un nom laisse
+        // vide RETIRE le lien. La coherence des dates est respectee.
+        // v0.64 : plus AUCUN remplacement de lien silencieux. Un refus
+        // (incoherenceParente) est EXPLIQUE a l'utilisateur, un remplacement
+        // ou un retrait est CONFIRME en clair dans le message final.
+        var retourLiens = ""
+        var refusParentTxt = ""
+        val ancienPere = personneParId(personnes, p.pere)
+        if (pere == null) {
+            // v0.65 : le lien n'est retir\u00E9 que si un nom rempli \u00E0
+            // l'ouverture a \u00E9t\u00E9 vid\u00E9 (action explicite).
+            if (edition && a.pereNomInit.isNotBlank()) {
+                ancienPere?.enfants?.remove(p.id)
+                p.pere = 0L
+                retourLiens += "Lien du p\u00E8re retir\u00E9. "
+            }
+        } else if (pere.id != p.pere) {
+            val motifP = incoherenceParente(pere, p.dateNaissance)
+            if (motifP == null) {
+                ancienPere?.enfants?.remove(p.id)
+                p.pere = pere.id
+                retourLiens += "P\u00E8re de la fiche remplac\u00E9 : " + (ancienPere?.titre() ?: "aucun") + " \u2192 " + pere.titre() + ". "
+            } else {
+                refusParentTxt += "P\u00E8re NON remplac\u00E9 : " + motifP + " "
+            }
+        }
+        val ancienneMere = personneParId(personnes, p.mere)
+        if (mere == null) {
+            // v0.65 : le lien n'est retir\u00E9 que si un nom rempli \u00E0
+            // l'ouverture a \u00E9t\u00E9 vid\u00E9 (action explicite).
+            if (edition && a.mereNomInit.isNotBlank()) {
+                ancienneMere?.enfants?.remove(p.id)
+                p.mere = 0L
+                retourLiens += "Lien de la m\u00E8re retir\u00E9. "
+            }
+        } else if (mere.id != p.mere) {
+            val motifM = incoherenceParente(mere, p.dateNaissance)
+            if (motifM == null) {
+                ancienneMere?.enfants?.remove(p.id)
+                p.mere = mere.id
+                retourLiens += "M\u00E8re de la fiche remplac\u00E9e : " + (ancienneMere?.titre() ?: "aucune") + " \u2192 " + mere.titre() + ". "
+            } else {
+                refusParentTxt += "M\u00E8re NON remplac\u00E9e : " + motifM + " "
+            }
+        }
+
+        // Mariee et ses parents (mariage uniquement).
+        var mariee: Personne? = null
+        if (a.type == "M") {
+            mariee = trouverOuCreer(a.marieeId, a.marieeNom, a.marieePrenoms, "F")
+            if (mariee != null) {
+                if (a.date.isNotBlank()) mariee.dateMariage = dateGreg(a.date)
+                if (a.heure.isNotBlank()) mariee.heureMariage = a.heure
+                if (a.commune.isNotBlank()) mariee.lieuMariage = a.commune
+                if (a.dept.isNotBlank()) mariee.deptMariage = a.dept
+                if (a.marieeProf.isNotBlank()) mariee.profession = a.marieeProf.trim()
+                val mMar = trouverOuCreer(0L, a.mMarieeNom, a.mMarieePrenoms, "F")
+                renseigner(mMar, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
+                lierParent(mariee, mMar, true)
+            }
+        }
+
+        // Contenu memorise dans l'acte : description, ages, temoins, signataires.
+        fun descriptionParent(nomComplet: String, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String): String {
+            if (nomComplet.isBlank()) return ""
+            val m = mutableListOf<String>()
+            m.add(nomComplet.trim())
+            if (ne.isNotBlank()) {
+                val age = ageActe(a.date, ne)
+                m.add("n\u00E9(e) le " + dateAffichee(ne) + (if (age.isNotEmpty()) " (" + age + " \u00E0 l'acte)" else ""))
+            }
+            if (lieu.isNotBlank()) m.add("\u00E0 " + lieu.trim() + (if (dept.isNotBlank()) " (" + dept.trim() + ")" else ""))
+            if (prof.isNotBlank()) m.add(prof.trim())
+            if (dec.isNotBlank()) m.add("d\u00E9c\u00E9d\u00E9(e) le " + dateAffichee(dec) + (if (lieuDec.isNotBlank()) " \u00E0 " + lieuDec.trim() else ""))
+            return m.joinToString(", ")
+        }
+
+        // Chantier 12.0 : plus AUCUN acte stocke dans l'app. La coche
+        // "Enregistre" du formulaire est PERSISTEE par type sur la fiche
+        // (miroir sur la mariee pour un mariage).
+        p.definirEnregistre(a.type, a.enregistre)
+        if (mariee != null) mariee.definirEnregistre(a.type, a.enregistre)
+        // v0.80 : sur un DECES ou une SEPULTURE, le conjoint est EN VIE
+        // (declarant possible) ou DECEDE AVANT (veuf/veuve) : le choix du
+        // formulaire est PERSISTE sur la fiche (chantier 12.0 : plus de
+        // transcription d'acte pour le porter).
+        if (a.type == "D" || a.type == "S") {
+            p.conjointEnVieDeces = a.conjointEnVie
+            if (!a.conjointEnVie) {
+                // v0.80 : un conjoint DECEDE AVANT sans date de deces connue
+                // recoit "avant aaaa" sur sa fiche (qualification valide).
+                val conjFiche = personneParId(personnes, a.marieeId)
+                val anneeConj = anneeDe(a.date)
+                if (conjFiche != null && conjFiche.dateDeces.isBlank() && anneeConj != null) {
+                    conjFiche.dateDeces = "avant " + anneeConj.toString()
+                }
+            }
+        }
+
+        // v0.73 : COHERENCE - chaque temoin (parrain, marraine, pretre,
+        // officier, temoin) est rattache a une FICHE : la personne
+        // existante est reutilisee, sinon une fiche est creee, et le lien
+        // temoin de l'acte est enregistre.
+        val fichesTemoins = mutableListOf<Personne>()
+        a.temoins.filter { it.nom.isNotBlank() }.forEach { t ->
+            val ficheT = trouverOuCreer(0L, t.nom, t.prenoms, "", "", t.nouveau) ?: return@forEach
+            fichesTemoins.add(ficheT)
+            if (t.profession.isNotBlank() && ficheT.profession.isBlank()) ficheT.profession = t.profession.trim()
+            if (!p.temoinsDe(a.type).contains(ficheT.id)) p.temoinsDe(a.type).add(ficheT.id)
+            if (a.type == "M" && mariee != null && !mariee.temoinsDe(a.type).contains(ficheT.id)) {
+                mariee.temoinsDe(a.type).add(ficheT.id)
+            }
+        }
+
+        // FIX v0.83 (chantier 12.0) : les coches "Signe" du formulaire
+        // DISPARAISSAIENT apres enregistrement (seul l'enfant declarant
+        // d'un deces etait persiste). Chaque libelle de signataire est
+        // desormais converti en id de fiche et ECRIT dans la liste des
+        // signataires du type d'acte ; le formulaire est la reference :
+        // une coche retiree fait disparaitre le signataire.
+        fun idSignataire(l: String): Long? = when {
+            l == "P\u00E8re" -> 0L
+            l == "Concerne(e)" -> p.id
+            l == "M\u00E8re" -> mere?.id
+            l == "Mari\u00E9e" || l == "Conjoint(e)" -> mariee?.id
+            l == "P\u00E8re de la mari\u00E9e" -> mariee?.let { personneParId(personnes, it.pere) }?.id
+            l == "M\u00E8re de la mari\u00E9e" -> mariee?.let { personneParId(personnes, it.mere) }?.id
+            l == "Enfant d\u00E9clarant" -> if (a.declarantEnfantId != 0L) a.declarantEnfantId else null
+            l == "Pr\u00EAtre" || l == "Officier d'\u00E9tat civil" -> {
+                val i = a.temoins.indexOfFirst { it.role == l }
+                if (i >= 0) fichesTemoins.getOrNull(i)?.id else null
+            }
+            // v0.73 : sur un bapteme, parrain et marraine signent.
+            l == "Parrain" -> fichesTemoins.getOrNull(0)?.id
+            l == "Marraine" -> fichesTemoins.getOrNull(1)?.id
+            l.startsWith("T\u00E9moin ") ->
+                l.removePrefix("T\u00E9moin ").toIntOrNull()?.let { fichesTemoins.getOrNull(it - 1)?.id }
+            else -> null
+        }
+        val listeS = p.signatairesDe(a.type)
+        listeS.clear()
+        a.signataires.mapNotNull { idSignataire(it) }.distinct().forEach { listeS.add(it) }
+        // Enfant declarant d'un deces : mene en tete s'il n'est pas deja la.
+        if (a.type == "D" && a.declarantEnfantId != 0L && !listeS.contains(a.declarantEnfantId)) {
+            listeS.add(a.declarantEnfantId)
+        }
+        // Miroir : la mariee porte les memes signataires de mariage.
+        if (a.type == "M" && mariee != null) {
+            val listeM = mariee.signatairesDe("M")
+            listeM.clear()
+            listeS.forEach { listeM.add(it) }
+        }
+
+        enregistrer()
+        // GeneaPoche 12 : message final EXACT - le lien refuse est rappele
+        // (l'acte est conserve, SANS le lien de parente).
+        // v0.64 : message COMPLET - refus parentPourEnfant, refus ou
+        // remplacement de lien pere/mere, puis le resume de l'acte.
+        val resumeActe =
+            (if (edition) "Acte modifi\u00E9 : " else "Acte enregistr\u00E9 : ") + libelleType(a.type) +
+                (if (crees > 0) " ; " + crees.toString() + " personne(s) cr\u00E9\u00E9e(s)" else "")
+        message =
+            (if (refusLienTxt.isNotEmpty()) refusLienTxt + " L'acte reste enregistr\u00E9, SANS le lien de parent\u00E9. " else "") +
+            refusParentTxt +
+            identiteTxt +
+            (if (retourLiens.isNotEmpty()) retourLiens.trim() + " " else "") +
+            resumeActe
+    }
+
+    // Chargement uniquement apres deverrouillage (rien ne s'affiche sans PIN).
+    // G1-04/G1-05/G1-06 : lecture tout-ou-rien avec repli sur la copie .bak ;
+    // tout fichier illisible BLOQUE l'enregistrement (rien n'est ecrase).
+    LaunchedEffect(verrou.deverrouille) {
+        if (verrou.deverrouille && !charge) {
+            // G2-06 : dechiffrement HORS du thread principal.
+            occupation = "Chargement des donn\u00E9es..."
+            val charges = withContext(Dispatchers.IO) {
+                Pair(Stockage.charger(ctx), Stockage.chargerJournal(ctx))
+            }
+            val rp = charges.first
+            val rj = charges.second
+            personnes.addAll(rp.liste)
+            pistes.addAll(rj.liste)
+            sosaCujus = Stockage.lireSosaCujus(ctx)
+            fichiersIllisibles = listOf(rp, rj).filter { it.illisible }.map { it.nom }
+            // Chantier 12.0 : MIGRATION - les actes stockes (v0.82 et
+            // avant) ne le sont plus ; on lit actes.bin UNE DERNIERE FOIS
+            // pour poser la coche "Enregistr\u00E9" correspondante sur chaque
+            // fiche, puis le stockage des actes est purg\u00E9 definitivement.
+            val texteActes = withContext(Dispatchers.IO) {
+                Stockage.lireTexteActesLegacy(ctx)
+            }
+            if (texteActes != null) {
+                try {
+                    val tableau = org.json.JSONArray(texteActes)
+                    for (i in 0 until tableau.length()) {
+                        val acte = tableau.optJSONObject(i) ?: continue
+                        val pid = acte.optLong("personneId")
+                        val type = acte.optString("type")
+                        personneParId(personnes, pid)?.let { q -> q.definirEnregistre(type, true) }
+                    }
+                } catch (e: Exception) {
+                    // JSON illisible : la migration est sautee, les coches
+                    // seront posees a la main (rien n'est perdu ailleurs).
+                }
+                withContext(Dispatchers.IO) { Stockage.purgerActes(ctx) }
+                enregistrer()
+            }
+            charge = true
+            occupation = ""
+            if (fichiersIllisibles.isEmpty()) {
+                // G5 : le cache part du contenu exact du disque : le premier
+                // enregistrement ne reecrit que ce qui a vraiment change.
+                // v0.81 : la reconstruction des JSON tourne HORS du thread
+                // principal (avec un instantane des listes, aucune mutation
+                // concurrente) : le premier ecran s'affiche sans attendre,
+                // la preparation du journal suit des que le calcul est fini.
+                try {
+                    val instantaneP = personnes.toList()
+                    val instantaneJ = pistes.toList()
+                    val (chaineP, chaineJ) = withContext(Dispatchers.Default) {
+                        val tp = org.json.JSONArray(); instantaneP.forEach { tp.put(it.versJson()) }
+                        val tj = org.json.JSONArray(); instantaneJ.forEach { tj.put(it.versJson()) }
+                        Pair(tp.toString(), tj.toString())
+                    }
+                    derniersJson["personnes"] = chaineP
+                    derniersJson["journal"] = chaineJ
+                } catch (e: Exception) {
+                    derniersJson.clear()
+                }
+                verifierLiensEtRapporter()
+                completerJournal()
+            }
+        }
+        // G1-14 : au verrouillage, PLUS AUCUNE donnee ne reste en memoire
+        // (personnes, journal, fiche ouverte, pile de navigation).
+        if (!verrou.deverrouille && charge) {
+            personnes.clear()
+            pistes.clear()
+            pileFiches.clear()
+            idOuvert = 0L
+            charge = false
+        }
+    }
+    LaunchedEffect(Unit) { aPin = Stockage.aPin(ctx) }
+
+    // Ouverture sur le de cujus des le deverrouillage
+    LaunchedEffect(charge, verrou.deverrouille) {
+        if (charge && verrou.deverrouille && !cujasOuvert) {
+            cujasOuvert = true
+            idDuCujus().takeIf { it != 0L }?.let { idOuvert = it }
+            // GeneaPoche 12 : diagnostic de l'arbre annonce a l'ouverture de
+            // l'application (anomalies + doublons + branches isolees).
+            val nbDiag = anomaliesPour(personnes).size +
+                doublonsPotentiels(personnes, doublonsGardes).size +
+                personnes.filter { brancheIsolee(it, personnes) }.size
+            if (nbDiag > 0) {
+                message = "Diagnostic de l'arbre : " + nbDiag.toString() +
+                    " point(s) \u00E0 examiner (onglet Journal)."
+            }
+            // G\u00E9n\u00E9aPoche 11 (11.1) : rappels de recherches \u00E0 faire,
+            // annonc\u00E9s \u00E0 l'ouverture comme le diagnostic (r\u00E8gle des 75 ans).
+            val limiteAlertes = anneeCourante() - 75
+            val nbRech = pistes.count { ps ->
+                !ps.faite && (anneeCiblePiste(ps) == null || anneeCiblePiste(ps)!! <= limiteAlertes)
+            }
+            if (nbRech > 0) {
+                val alerte = "Rappels : " + nbRech.toString() +
+                    " recherche(s) prioritaire(s) \u00E0 faire (onglet Journal)."
+                message = if (nbDiag > 0) message + " " + alerte else alerte
+            }
+        }
+    }
+
+    // ------------------------------------------------------------ Porte PIN
+
+    if (!aPin) {
+        DialogueCreationPin(onCree = { pin ->
+            if (Stockage.definirPin(ctx, pin)) {
+                aPin = true
+                verrou.deverrouille = true
+            } else {
+                message = "Echec de la cr\u00E9ation du PIN."
+            }
+        })
+    } else if (!verrou.deverrouille) {
+        EcranPin(
+            ctx = ctx,
+            onDeverrouille = {
+                Stockage.reinitialiserEchecs(ctx)
+                verrou.deverrouille = true
+            }
+        )
+    } else {
+        Box {
+        EcranApplication(
+            etat = EtatApplication(
+                personnes = personnes,
+                cujus = personneParId(personnes, idDuCujus()),
+                pistes = pistes,
+                charge = charge,
+                message = message,
+                idOuvert = idOuvert,
+                onglet = onglet,
+                editionOuverte = editionOuverte,
+                editionCible = editionCible,
+                pickerRole = pickerRole,
+                confirmSuppression = confirmSuppression,
+                arbreCentre = if (arbreCentre != 0L) arbreCentre else idDuCujus(),
+                // G3-17 : largeur etendue (tablette/paysage).
+                deuxColonnes = classeTaille.widthSizeClass != androidx.compose.material3.windowsizeclass.WindowWidthSizeClass.Compact,
+                // G3-19 : une suppression peut etre annulee.
+                annulationPossible = modele.annulation != null,
+                // v0.78 : paires de doublons "gardees les deux".
+                doublonsGardes = doublonsGardes,
+                // 12.1 : etat de la sauvegarde automatique.
+                dossierSauvegarde = dossierSauvegarde,
+                seuilSauvegarde = seuilSauvegarde,
+                cleRecuperation = cleRecuperation
+            ),
+            actions = ActionsApplication(
+                onMessage = { message = it },
+                onIdOuvert = { id ->
+                    // Empile la fiche courante avant d'en ouvrir une autre
+                    // (retour arriere = depilement).
+                    if (id != 0L && idOuvert != 0L) pileFiches.add(idOuvert)
+                    idOuvert = id
+                },
+                onRetourFiche = {
+                    idOuvert = if (pileFiches.isNotEmpty()) pileFiches.removeAt(pileFiches.size - 1) else 0L
+                },
+                onOnglet = { onglet = it },
+                onEditionOuverte = { editionOuverte = it },
+                onEditionCible = { editionCible = it },
+                onPickerRole = { pickerRole = it },
+                onConfirmSuppression = { confirmSuppression = it },
+                enregistrer = { enregistrer() },
+                supprimer = { supprimer(it) },
+                lier = { role, id -> lier(role, id) },
+                delier = { role, id -> delier(role, id) },
+                ajouterMariage = { nom, prenoms, date, commune, dept ->
+                    ajouterMariage(nom, prenoms, date, commune, dept)
+                },
+                nouveauParent = { role, nom, prenoms -> nouveauParent(role, nom, prenoms) },
+                nouveauTemoin = { type, id, nom, prenoms -> nouveauTemoin(type, id, nom, prenoms) },
+                retirerTemoin = { type, id -> retirerTemoin(type, id) },
+                basculerSignature = { type, id -> basculerSignature(type, id) },
+                majEvenement = { type, d, h, co, de, rf -> majEvenement(type, d, h, co, de, rf) },
+                // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres de la chronologie.
+                majEvenementLibre = { pers, ev -> modifierEvenementLibre(pers, ev) },
+                supprimerEvenementLibre = { pers, idEv -> supprimerEvenementLibre(pers, idEv) },
+                ajouterEnfant = { nom, prenoms, sexe, date ->
+                    ajouterEnfant(nom, prenoms, sexe, date)
+                },
+                definirCujus = { cujusPreselec = it; cujusDialogue = true },
+                choisirCujus = { cujusPreselec = null; cujusDialogue = true },
+                renumeroter = { renumeroter(personnes, it, sosaCujus) },
+                supprimerPiste = { supprimerPiste(it) },
+                onBasculerEnregistre = { basculerEnregistre(it) },
+                onArbreCentre = { arbreCentre = it },
+                exporterGedcom = { uri, sel, ev, fmt -> exporterGedcom(uri, sel, ev, fmt) },
+                importerGedcom = { uri -> lireGedcom(uri) },
+                viderBase = { viderBase() },
+                enregistrerActe = { a -> enregistrerActe(a) },
+                sauvegarderBase = { uri, ph -> sauvegarderBase(uri, ph) },
+                restaurerSauvegarde = { uri, ph -> restaurerSauvegardeBase(uri, ph) },
+                restaurerImport = { restaurerSauvegardeImport() },
+                restaurerSecours = { restaurerSecoursBak() },
+                picker = { actif -> verrou.pickerOuvert = actif },
+                changerPin = { dialoguePin = true },
+                reglagesVerrouillage = { dialogueDelai = true },
+                reglagesTheme = { dialogueTheme = true },
+                prochainId = { Stockage.prochainId(ctx) },
+                validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) },
+                // G\u00E9n\u00E9aPoche 11 : coche de certification + fusion guid\u00E9e.
+                validerIdentite = { pers, etat -> validerIdentite(pers, etat) },
+                fusionner = { gardeId, supprimeId -> fusionnerPersonnes(gardeId, supprimeId) },
+                // v0.78 : garder les deux fiches d'une paire (definitif).
+                garderDoublon = { a, b ->
+                    Stockage.garderDoublon(ctx, a, b)
+                    doublonsGardes = doublonsGardes + cleDoublon(a, b)
+                },
+                // 12.1 : sauvegarde automatique + cle de recuperation.
+                sauvegardeAuto = { uri -> activerSauvegardeAuto(uri) },
+                sauvegardeAutoOff = { desactiverSauvegardeAuto() },
+                reglerSeuilSauvegarde = { reglerSeuilSauvegarde(it) },
+                afficherCleSauvegarde = { cleRecuperation = Stockage.lirePhraseSauvegarde(ctx) },
+                // G3-19 : annulation d'une suppression via le Snackbar.
+                onAnnulerSuppression = { annulerSuppression() },
+                onPurgerAnnulation = { modele.annulation = null }
+            )
+        )
+        // G2-06 : indicateur d'occupation (image, GEDCOM, sauvegarde).
+        if (occupation.isNotEmpty()) {
+            Surface(
+                Modifier.fillMaxWidth(),
+                color = CouleurVertPale
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Text(occupation, style = MaterialTheme.typography.labelSmall, color = CouleurVertFonce)
+                }
+            }
+        }
+        }
+    }
+
+    // G1-15 : changement de code PIN (l'ancien est exige).
+    if (dialoguePin) {
+        var ancienPin by remember { mutableStateOf("") }
+        var nouveauPin1 by remember { mutableStateOf("") }
+        var nouveauPin2 by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { dialoguePin = false },
+            title = { Text("Changer le code PIN") },
+            text = {
+                Column {
+                    Text("L'ancien code est exig\u00E9 ; la base est re-chiffr\u00E9e avec le nouveau code, sans rien perdre.", style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = ancienPin,
+                        onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) ancienPin = it },
+                        label = { Text("Ancien code") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    )
+                    OutlinedTextField(
+                        value = nouveauPin1,
+                        onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) nouveauPin1 = it },
+                        label = { Text("Nouveau code") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                    )
+                    OutlinedTextField(
+                        value = nouveauPin2,
+                        onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) nouveauPin2 = it },
+                        label = { Text("Confirmez le nouveau code") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (nouveauPin1.length < 4) {
+                            message = "Le nouveau code doit contenir au moins 4 chiffres."
+                        } else if (nouveauPin1 != nouveauPin2) {
+                            message = "Les deux nouveaux codes ne correspondent pas."
+                        } else if (Stockage.changerPin(ctx, ancienPin, nouveauPin1)) {
+                            message = "Code PIN chang\u00E9 : utilisez le nouveau code au prochain d\u00E9verrouillage."
+                            dialoguePin = false
+                        } else {
+                            message = "Ancien code incorrect."
+                        }
+                    },
+                    enabled = ancienPin.isNotEmpty() && nouveauPin1.isNotEmpty() && nouveauPin2.isNotEmpty()
+                ) { Text("Changer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { dialoguePin = false }) { Text("Annuler") }
+            }
+        )
+    }
+
+    // G1-14 : delai de reverrouillage reglable.
+    if (dialogueDelai) {
+        AlertDialog(
+            onDismissRequest = { dialogueDelai = false },
+            title = { Text("D\u00E9lai de verrouillage") },
+            text = {
+                Column {
+                    Text("Verrouillage apr\u00E8s un passage en arri\u00E8re-plan ou l'extinction de l'\u00E9cran :", style = MaterialTheme.typography.bodySmall)
+                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 0L); dialogueDelai = false; message = "Verrouillage imm\u00E9diat." }, Modifier.fillMaxWidth()) { Text("Imm\u00E9diat (par d\u00E9faut)") }
+                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 60_000L); dialogueDelai = false; message = "Verrouillage apr\u00E8s 1 minute." }, Modifier.fillMaxWidth()) { Text("Apr\u00E8s 1 minute") }
+                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 300_000L); dialogueDelai = false; message = "Verrouillage apr\u00E8s 5 minutes." }, Modifier.fillMaxWidth()) { Text("Apr\u00E8s 5 minutes") }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { dialogueDelai = false }) { Text("Fermer") }
+            }
+        )
+    }
+
+    // G3-02 : choix du theme, memorise : Syst\u00E8me (suit le mode sombre du
+    // t\u00E9l\u00E9phone), Clair ou Sombre. Appliqu\u00E9 imm\u00E9diatement.
+    if (dialogueTheme) {
+        AlertDialog(
+            onDismissRequest = { dialogueTheme = false },
+            title = { Text("Th\u00E8me de l'application") },
+            text = {
+                Column {
+                    Text("Choisissez le th\u00E8me ; le choix est m\u00E9moris\u00E9 :", style = MaterialTheme.typography.bodySmall)
+                    TextButton(onClick = {
+                        Stockage.definirTheme(ctx, "systeme")
+                        themeChoisi.value = "systeme"
+                        dialogueTheme = false
+                    }, Modifier.fillMaxWidth()) { Text("Syst\u00E8me (par d\u00E9faut)") }
+                    TextButton(onClick = {
+                        Stockage.definirTheme(ctx, "clair")
+                        themeChoisi.value = "clair"
+                        dialogueTheme = false
+                    }, Modifier.fillMaxWidth()) { Text("Clair") }
+                    TextButton(onClick = {
+                        Stockage.definirTheme(ctx, "sombre")
+                        themeChoisi.value = "sombre"
+                        dialogueTheme = false
+                    }, Modifier.fillMaxWidth()) { Text("Sombre") }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { dialogueTheme = false }) { Text("Fermer") }
+            }
+        )
+    }
+
+    // G1-04 : donnees illisibles -> affichage + restauration depuis la copie .bak
+    if (fichiersIllisibles.isNotEmpty() && !avertissementLectureFerme) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Donn\u00E9es illisibles") },
+            text = {
+                Text(
+                    fichiersIllisibles.size.toString() + " fichier(s) de donn\u00E9es ne se lisent plus, pas plus que leur copie .bak. L'enregistrement est bloqu\u00E9 pour ne rien \u00E9craser : restaurez la derni\u00E8re copie valide ou fermez sans rien modifier."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { restaurerDepuisBak() }) { Text("Restaurer la copie .bak") }
+            },
+            dismissButton = {
+                TextButton(onClick = { avertissementLectureFerme = true }) { Text("Fermer") }
+            }
+        )
+    }
+
+    // Confirmation : noms saisis inconnus -> creer de nouvelles fiches
+    // (numerotation deduite automatiquement) ou annuler.
+    acteAConfirmer?.let { a ->
+        val nouveaux = nomsNouveaux(a)
+        AlertDialog(
+            onDismissRequest = { acteAConfirmer = null },
+            title = { Text("Noms inconnus") },
+            text = {
+                Column {
+                    Text("Ces noms ne correspondent \u00E0 aucune fiche existante :")
+                    nouveaux.forEach { n ->
+                        Text("\u2022 " + n, fontWeight = FontWeight.Bold)
+                    }
+                    Text(
+                        "Cr\u00E9er de nouvelles fiches (la num\u00E9rotation sera d\u00E9duite automatiquement) ? Pour synchroniser avec une fiche existante, annulez et choisissez-la dans la saisie.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    acteAConfirmer = null
+                    enregistrerActe(a, true)
+                }) { Text("Cr\u00E9er les fiches") }
+            },
+            dismissButton = {
+                TextButton(onClick = { acteAConfirmer = null }) { Text("Annuler") }
+            }
+        )
+    }
+
+    // Dialogue : choix du de cujus et de son n Sosa (pas forcement 1).
+    // Toute la numerotation Sosa / d'Aboville en decoule automatiquement.
+    // Dialogue : choix du de cujus (liste des personnes avec leur numero).
+    // Toucher une personne ouvre le dialogue d'edition de son n Sosa.
+    if (cujusDialogue) {
+        LaunchedEffect(cujusDialogue) {
+            val pre = cujusPreselec
+            if (cujusDialogue && pre != null) {
+                cujusEdite = pre
+                cujusPreselec = null
+            }
+        }
+        AlertDialog(
+            onDismissRequest = { cujusDialogue = false },
+            title = { Text("De cujus") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        "Touchez la personne de r\u00E9f\u00E9rence : son n\u00B0 Sosa (pas forc\u00E9ment 1) sera demand\u00E9, puis toute la num\u00E9rotation Sosa et d'Aboville sera recalcul\u00E9e.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
+                        personnes.sortedWith(
+                            compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
+                        ).forEach { cand ->
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 32.dp)
+                                    .clickable { cujusEdite = cand }
+                                    .background(
+                                        if (idDuCujus() == cand.id) CouleurVertPale
+                                        else androidx.compose.ui.graphics.Color.Transparent
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 0.dp)
+                            ) {
+                                // v0.79 : identifiant unique (titre + N. + D.), compact.
+                                Text(
+                                    libelleUnique(cand),
+                                    Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { cujusDialogue = false }) { Text("Fermer") }
+            }
+        )
+    }
+
+    // Dialogue d'edition du n Sosa du de cujus choisi : APERCU PUR pendant la
+    // saisie (aucune donnee n'est modifiee avant Enregistrer), puis recalcule
+    // complet + sauvegarde a l'enregistrement, avec message de confirmation.
+    if (cujusEdite != null) {
+        val cible = cujusEdite!!
+        var numCujus by remember(cible.id) {
+            mutableStateOf((cible.sosa.trim().toLongOrNull() ?: sosaCujus).toString())
+        }
+        val numSaisi = numCujus.trim().toLongOrNull() ?: 0L
+        val numValide = numSaisi >= 1L
+        // Apercu SANS toucher aux donnees : le numero du de cujus, puis les
+        // numeros qui en decouleront (pere 2n, mere 2n+1, enfants n.1, n.2...).
+        fun apercuNumerotation(n: Long): String {
+            val m = mutableListOf<String>()
+            m.add(cible.titre() + " : Sosa " + n.toString())
+            if (cible.pere != 0L) m.add("P\u00E8re : Sosa " + (2L * n).toString())
+            if (cible.mere != 0L) m.add("M\u00E8re : Sosa " + (2L * n + 1L).toString())
+            if (cible.enfants.isNotEmpty()) {
+                m.add("Enfants : d'Aboville " + n.toString() + ".1 \u00E0 " + n.toString() + "." + cible.enfants.size.toString())
+            }
+            return m.joinToString("\n")
+        }
+        fun annulerCujus() {
+            cujusEdite = null
+        }
+        AlertDialog(
+            onDismissRequest = { annulerCujus() },
+            title = { Text("De cujus : " + cible.titre()) },
+            text = {
+                Column {
+                    Text(
+                        "N\u00B0 Sosa du de cujus : l'aper\u00E7u se met \u00E0 jour en direct ; Enregistrer recalcule et applique toute la num\u00E9rotation.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = numCujus,
+                        onValueChange = { t -> numCujus = t.filter { it.isDigit() } },
+                        label = { Text("N\u00B0 Sosa (chiffres)") },
+                        isError = !numValide,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    )
+                    if (numValide) {
+                        Text(
+                            apercuNumerotation(numSaisi),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = CouleurVertFonce,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        definirCujus(cible, numSaisi)
+                        cujusEdite = null
+                        cujusDialogue = false
+                    },
+                    enabled = numValide
+                ) { Text("Enregistrer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { annulerCujus() }) { Text("Annuler") }
+            }
+        )
+    }
+
+    importConfirme?.let { importees ->
+        AlertDialog(
+            onDismissRequest = { importConfirme = null },
+            title = { Text("Importer ce GEDCOM ?") },
+            text = {
+                Column {
+                    Text(
+                        "Importer ce fichier : REMPLACER toute la base (" + personnes.size.toString() + " personnes) par les " + importees.size.toString() + " personnes du fichier, ou FUSIONNER sans aucun doublon (les fiches existantes sont compl\u00E9t\u00E9es, jamais dupliqu\u00E9es). Une sauvegarde horodat\u00E9e sera cr\u00E9\u00E9e avant le remplacement (les 5 derni\u00E8res sont conserv\u00E9es et restaurables).",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    // G2-04 : avertissement listant ce que l import ignore.
+                    if (importRapport.isNotEmpty()) {
+                        Text(
+                            "\u00C9l\u00E9ments ignor\u00E9s par l import (aucune perte silencieuse) :",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                        importRapport.take(6).forEach { ligneIgn ->
+                            Text("\u2022 " + ligneIgn, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Row {
+                    TextButton(onClick = {
+                        fusionnerBase(importees)
+                        importConfirme = null
+                    }) { Text("Fusionner", color = CouleurVertFonce, fontWeight = FontWeight.Bold) }
+                    TextButton(onClick = {
+                        remplacerBase(importees)
+                        importConfirme = null
+                    }) { Text("Remplacer", color = CouleurRouge, fontWeight = FontWeight.Bold) }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { importConfirme = null }) { Text("Annuler") }
+            }
+        )
+    }
+}
+
+
+
+
+
+
+
