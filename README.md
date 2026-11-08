@@ -27,16 +27,17 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 - **FLAG_SECURE** : captures d'écran et aperçu dans les applications récentes interdits.
 - **Reverrouillage** automatique (délai réglable, immédiat par défaut) et à l'extinction de l'écran ; purge complète de la mémoire au verrouillage.
 - **Sauvegarde .gpbak chiffrée** exportable/importable avec phrase secrète ; copie .bak locale vérifiée ; écritures atomiques et durables.
+- **Sauvegarde automatique** : copie .gpbak chiffrée créée dans un dossier choisi après N modifications (25 par défaut), protégée par une **clé de récupération** générée par l'application, à imprimer et conserver hors de l'appareil.
 
 **Limites, en toute honnêteté :**
 - ⚠️ Les exports GEDCOM et images sont en clair, à manipuler avec prudence.
-- ⚠️ Sans le code PIN, la base est indéchiffrable : **aucune récupération possible**.
+- ⚠️ Sans le code PIN, la base est indéchiffrable : **aucune récupération possible** (les sauvegardes automatiques, elles, se restaurent avec la clé de récupération imprimée).
 
 Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique de confidentialité en français).
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.81)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.81-release.apk` (signé) ou `GeneaPoche-v0.81-debug.apk`.
+**Téléchargement direct de la dernière version (v0.82)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.82-release.apk` (signé) ou `GeneaPoche-v0.82-debug.apk`.
 
 Sinon, depuis les sources :
 
