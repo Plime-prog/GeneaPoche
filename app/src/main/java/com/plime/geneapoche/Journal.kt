@@ -272,10 +272,12 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
     val dDebut = anneeD?.toString() ?: (if (anneeN != null) (anneeN + 50).toString() else "")
     val dFin = anneeD?.toString() ?: (if (anneeN != null) (anneeN + 95).toString() else "")
     val decesPossible = decesAffichable(p)
+    // v0.84 : pas de recherche de mariage/enfants pour les jeunes.
+    val jeunesse = vivantMoinsDe30(p) || decedeAvant25(p)
 
     evenement("naissance", "N", LibellesNaissance, champsEvenement(p, "N"), true, strN, strN)
     evenement("bapteme", "B", LibellesBapteme, champsEvenement(p, "B"), p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank(), strN, strN)
-    evenement("mariage", "M", LibellesMariage, champsEvenement(p, "M"), true, mDebut, mFin)
+    evenement("mariage", "M", LibellesMariage, champsEvenement(p, "M"), !jeunesse, mDebut, mFin)
     // Deces et sepulture : uniquement si la personne peut avoir plus de 100 ans.
     evenement("deces", "D", LibellesDeces, champsEvenement(p, "D"), decesPossible, dDebut, dFin)
     evenement("sepulture", "S", LibellesSepulture, champsEvenement(p, "S"), decesPossible && (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank()), dDebut, dFin)
@@ -299,15 +301,18 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
         ajouter("mere", "Rechercher sa m\u00E8re" + (if (debut.isNotEmpty()) { " : n\u00E9e entre " + debut + " et " + fin } else { "" }) + suffixe(lieuN, deptN), "ME", lieuN, deptN, debut, fin)
     }
 
-    // --- Conjoint et enfants : tous les enfants, toujours.
-    if (p.conjoint == 0L && p.conjointsSupp.isEmpty()) {
-        ajouter("conjoint", "Rechercher le conjoint de " + titreCourt(p), "C", "", "", mDebut, mFin)
-    }
-    if (p.enfants.isEmpty()) {
-        val anneeM = anneeDe(p.dateMariage)
-        val debut = anneeM?.toString() ?: ""
-        val fin = anneeM?.let { (it + 25).toString() } ?: ""
-        ajouter("enfants", "Rechercher les enfants de " + titreCourt(p) + (if (debut.isNotEmpty()) { " (apr\u00E8s le mariage de " + debut + ")" } else { "" }), "A", debut = debut, fin = fin)
+    // v0.84 : ni recherche de conjoint ni d'enfants pour un vivant de
+    // moins de 30 ans, ni pour une personne decedee avant 25 ans.
+    if (!jeunesse) {
+        if (p.conjoint == 0L && p.conjointsSupp.isEmpty()) {
+            ajouter("conjoint", "Rechercher le conjoint de " + titreCourt(p), "C", "", "", mDebut, mFin)
+        }
+        if (p.enfants.isEmpty()) {
+            val anneeM = anneeDe(p.dateMariage)
+            val debut = anneeM?.toString() ?: ""
+            val fin = anneeM?.let { (it + 25).toString() } ?: ""
+            ajouter("enfants", "Rechercher les enfants de " + titreCourt(p) + (if (debut.isNotEmpty()) { " (apr\u00E8s le mariage de " + debut + ")" } else { "" }), "A", debut = debut, fin = fin)
+        }
     }
 
     return res

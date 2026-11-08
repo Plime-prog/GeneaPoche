@@ -147,19 +147,8 @@ fun deptIdentifiable(dept: String, lieu: String): Int? =
 fun lieuComplet(lieu: String, dept: String): Boolean =
     lieu.trim().isNotEmpty() && deptIdentifiable(dept, lieu) != null
 
-// Compteur n/4 de la liste Personnes : date et lieu complets de
-// NAISSANCE et de D\u00C9C\u00C8S (une ann\u00E9e seule ne compte pas).
-fun renseignementsN4(p: Personne): Int {
-    var n = 0
-    if (dateComplete(p.dateNaissance)) n++
-    if (lieuComplet(p.lieuNaissance, p.deptNaissance)) n++
-    if (dateComplete(p.dateDeces)) n++
-    if (lieuComplet(p.lieuDeces, p.deptDeces)) n++
-    return n
-}
-
-// Compteur n/6 de la fiche : date, commune et d\u00E9partement de la
-// naissance, puis du d\u00E9c\u00E8s.
+// v0.84 : compteur n/6 conserve pour la coche de certification
+// (N et D : date, commune, departement).
 fun renseignementsN6(p: Personne): Int {
     var n = 0
     if (dateComplete(p.dateNaissance)) n++
@@ -181,28 +170,56 @@ fun presumeVivant(p: Personne): Boolean {
     return java.time.LocalDate.now().year - an < 100
 }
 
-// v0.72 : (rempli, total) de l'indicateur de la fiche selon le profil :
-// décédé ou inconnu -> 6, en vie -> 4, mineur -> 2.
-fun indicateurPersonne(p: Personne): Pair<Int, Int> {
-    if (presumeVivant(p)) {
-        val an = anneeDe(p.dateNaissance) ?: return Pair(renseignementsN6(p), 6)
-        if (java.time.LocalDate.now().year - an < 18) {
-            // v0.73 : sur 2, TOUTE date de naissance renseignee compte
-            // (meme incomplete), avec la commune.
-            var n = 0
-            if (p.dateNaissance.trim().isNotEmpty()) n++
-            if (p.lieuNaissance.trim().isNotEmpty()) n++
-            return Pair(n, 2)
-        }
-        var n = 0
-        if (dateComplete(p.dateNaissance)) n++
-        if (lieuComplet(p.lieuNaissance, p.deptNaissance)) n++
-        if (dateComplete(p.dateMariage)) n++
-        if (lieuComplet(p.lieuMariage, p.deptMariage)) n++
-        return Pair(n, 4)
-    }
-    return Pair(renseignementsN6(p), 6)
+// v0.84 : un VIVANT de moins de 30 ans a la date du jour (regle de
+// l'affichage NMD : N seulement, ni mariage ni deces a afficher).
+fun vivantMoinsDe30(p: Personne): Boolean {
+    if (!presumeVivant(p)) return false
+    val an = anneeDe(p.dateNaissance) ?: return false
+    return java.time.LocalDate.now().year - an < 30
 }
+
+// v0.84 : une personne DECEDEE avant ses 25 ans (naissance et deces
+// dates) : pas de mariage a afficher ni a chercher.
+fun decedeAvant25(p: Personne): Boolean {
+    val n = anneeDe(p.dateNaissance) ?: return false
+    val d = anneeDe(p.dateDeces) ?: return false
+    return d - n < 25
+}
+
+// v0.84 : (rempli, total) de l'indicateur, PARTOUT le meme calcul
+// (en-tete de la fiche et liste des personnes) :
+// - vivant de moins de 30 ans aujourd'hui : sur 2 (uniquement N) ;
+// - decede avant 25 ans : sur 4 (N et D) ;
+// - tous les autres : sur 6 (N, M, D), M retire du compte (total 4)
+//   s'il n'y a pas de conjoint.
+fun indicateurPersonne(p: Personne): Pair<Int, Int> {
+    fun cEvs(date: String, lieu: String, dept: String): Int {
+        var n = 0
+        if (dateComplete(date)) n++
+        if (lieuComplet(lieu, dept)) n++
+        return n
+    }
+    if (vivantMoinsDe30(p)) {
+        return Pair(cEvs(p.dateNaissance, p.lieuNaissance, p.deptNaissance), 2)
+    }
+    if (decedeAvant25(p)) {
+        return Pair(
+            cEvs(p.dateNaissance, p.lieuNaissance, p.deptNaissance) +
+                cEvs(p.dateDeces, p.lieuDeces, p.deptDeces),
+            4
+        )
+    }
+    var n = cEvs(p.dateNaissance, p.lieuNaissance, p.deptNaissance)
+    var total = 2
+    if (p.conjoint != 0L || p.conjointsSupp.isNotEmpty()) {
+        n += cEvs(p.dateMariage, p.lieuMariage, p.deptMariage)
+        total += 2
+    }
+    n += cEvs(p.dateDeces, p.lieuDeces, p.deptDeces)
+    total += 2
+    return Pair(n, total)
+}
+
 
 // G\u00E9n\u00E9aPoche 11 (11.0) : \u00E9tat R\u00C9EL de la coche de certification.
 // "auto" = coche automatique si au moins 1 renseignement sur 6, croix rouge

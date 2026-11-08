@@ -183,52 +183,39 @@ fun EcranPersonne(
     var menuEnfant by remember { mutableStateOf(false) }
     var enfantSaisie by remember { mutableStateOf(false) }
 
-    // G\u00E9n\u00E9aPoche 2 : la fiche REGROUPE N, M et D (pr\u00E9sents m\u00EAme sans
-    // information) ; B et S apparaissent d\u00E8s qu'une donn\u00E9e existe ; le tout
-    // est rang\u00E9 dans l'ORDRE CHRONOLOGIQUE (les \u00E9v\u00E9nements sans ann\u00E9e
-    // restent en haut dans l'ordre naturel).
-    // R\u00E8gle des 100 ans : la notion de d\u00E9c\u00E8s ou de s\u00E9pulture ne s'affiche
-    // que si la personne peut avoir plus de 100 ans \u00E0 la date du jour (ou si
-    // son d\u00E9c\u00E8s est d\u00E9j\u00E0 connu).
-    val decesAffiche = decesAffichable(p)
-    // GÃ©nÃ©aPoche 10 : ordre NBMDS TOUJOURS respectÃ©, mÃªme si les
-    // informations sont vides : N, B, M, D puis S (la sÃ©pulture est APRÃS
-    // le dÃ©cÃ¨s, le mariage APRÃS la naissance, mÃªme sans dates).
-    val ordreNaturel = listOf("N", "B", "M", "D", "S")
-    // v0.70 : B et S n'apparaissent PLUS par defaut sur la fiche - ils
-    // s'affichent seulement si l'acte porte une donnee (bapteme celebre,
-    // sepulture datee).
-    // v0.75 : un acte ENREGISTRE suffit - un baptême (ou un décès
-    // ou une sépulture) saisi sans reporter sa date sur la fiche ne
-    // disparaît PLUS de la frise des événements.
+    // v0.84 : regles d'affichage des blocs d'evenement de la fiche :
+    // - vivant de moins de 30 ans aujourd'hui : N seulement ;
+    // - personne decedee avant 25 ans : pas de M ;
+    // - tous les autres : N, M et D systematiques. Un bloc NMD
+    //   n'apparait que s'il porte une information (date, heure, commune,
+    //   departement) ou la coche "Enregistr\u00E9" ; B et S apparaissent
+    //   des qu'une information existe.
     val actePresent = { t: String -> p.enregistreDe(t) }
-    val baptemePresent = listOf(p.dateBapteme, p.heureBapteme, p.lieuBapteme, p.deptBapteme).any { it.isNotBlank() } || actePresent("B")
-    val sepulturePresente = listOf(p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture).any { it.isNotBlank() } || actePresent("S")
-    val typesPresents = mutableListOf("N", "M")
-    if (baptemePresent) typesPresents.add("B")
-    if (decesAffiche || actePresent("D")) typesPresents.add("D")
-    if (sepulturePresente) typesPresents.add("S")
-    // GÃ©nÃ©aPoche 10 : annÃ©e effective d'un Ã©vÃ©nement, pour garantir
-    // B et M jamais avant N, S jamais avant D.
-    fun anneeEffective(t: String): Int? {
-        val a = anneeDe(champsEvenement(p, t).date)
-        return when (t) {
-            "B" -> listOfNotNull(a, anneeDe(p.dateNaissance)).maxOrNull()
-            "M" -> listOfNotNull(a, anneeDe(p.dateNaissance)).maxOrNull()
-            "S" -> listOfNotNull(a, anneeDe(p.dateDeces)).maxOrNull()
-            else -> a
-        }
+    fun blocRenseigne(t: String): Boolean {
+        val c = champsEvenement(p, t)
+        return c.date.isNotBlank() || c.heure.isNotBlank() || c.lieu.isNotBlank() ||
+            c.dept.isNotBlank() || actePresent(t)
     }
-    // v0.72 : réponse utilisateur - l'ordre NBMDS PREVAUT sur le
-    // classement chronologique : N, B, M, D puis S, quoi qu'il arrive.
+    val jeuneVivant = vivantMoinsDe30(p)
+    val jeuneDecede = decedeAvant25(p)
+    val typesPresents = mutableListOf("N")
+    if (blocRenseigne("B")) typesPresents.add("B")
+    if (blocRenseigne("M") && !jeuneVivant && !jeuneDecede) typesPresents.add("M")
+    if (blocRenseigne("D")) typesPresents.add("D")
+    if (blocRenseigne("S")) typesPresents.add("S")
+    // v0.84 : les evenements sont ranges dans l'ordre CHRONOLOGIQUE
+    // (dates completes converties en cle comparable) ; si l'un des
+    // evenements N, M ou D est sans date, retour a l'ordre naturel NBMDS.
+    val ordreNaturel = listOf("N", "B", "M", "D", "S")
     val ordreTypes = ordreNaturel.filter { typesPresents.contains(it) }
+    val nmdComplets = listOf("N", "M", "D").all { champsEvenement(p, it).date.isNotBlank() }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     // G\u00E9n\u00E9aPoche 3 : pastille + titre + compteur des
-                    // renseignements essentiels sur 6 (N date, N commune, N
-                    // d\u00E9partement, D date, D commune, D d\u00E9partement), rouge
+                    // renseignements essentiels (date + commune de N, M, D
+                    // au maximum, selon l'\u00E2ge de la personne), rouge
                     // \u00E0 vert. Appui long : \u00E9dition de l'identit\u00E9.
                     Row(
                         Modifier.combinedClickable(
@@ -242,8 +229,10 @@ fun EcranPersonne(
                         Spacer(Modifier.width(8.dp))
                         Text(p.titre(), Modifier.weight(1f, fill = false), fontSize = 16.sp)
                         Spacer(Modifier.width(8.dp))
-                        // v0.72 : indicateur ADAPTÉ - sur 4 pour une
-                        // personne supposée en vie, sur 2 pour un mineur.
+                        // v0.84 : indicateur identique fiche/liste - sur 6
+                        // (N, M, D : date + commune) pour tous, sur 4 (N, D)
+                        // pour un d\u00E9c\u00E9d\u00E9 avant 25 ans, sur 2 (N) pour un
+                        // vivant de moins de 30 ans.
                         val (nInd, totalInd) = indicateurPersonne(p)
                         Surface(
                             shape = RoundedCornerShape(50),
@@ -359,54 +348,47 @@ fun EcranPersonne(
             item {
                 Column(Modifier.fillMaxWidth()) {
                     val evsFamille = evenementsFamille(p, personnes)
-                    val entrees = mutableListOf<Pair<Int, String>>()
+                    val entrees = mutableListOf<Pair<Long, String>>()
                     ordreTypes.forEach { t ->
-                        entrees.add((anneeEffective(t) ?: -1) to ("ev:" + t))
+                        entrees.add(cleDate(champsEvenement(p, t).date) to ("ev:" + t))
                     }
                     p.evenementsLibres.forEach { ev ->
-                        entrees.add((anneeDe(ev.date) ?: -1) to ("evl:" + ev.id.toString()))
+                        entrees.add((anneeDe(ev.date)?.toLong() ?: -1L) * 10000L to ("evl:" + ev.id.toString()))
                     }
                     p.enfants.forEach { idE ->
                         val eE = personneParId(personnes, idE)
-                        entrees.add((eE?.let { anneeDe(it.dateNaissance) } ?: -1) to ("enf:" + idE.toString()))
+                        entrees.add(((eE?.let { anneeDe(it.dateNaissance) } ?: -1).toLong() * 10000L) to ("enf:" + idE.toString()))
                     }
-                    // v0.76 : les BAPT\u00caMES o\u00f9 p est PARRAIN ou MARRAINE
-                    // apparaissent dans SES \u00e9v\u00e9nements (m\u00eame chronologie).
                     personnes.filter { it.temoinsB.contains(p.id) }.forEach { b ->
                         entrees.add(
-                            (anneeDe(b.dateBapteme) ?: anneeDe(b.dateNaissance) ?: -1) to ("par:" + b.id.toString())
+                            ((anneeDe(b.dateBapteme) ?: anneeDe(b.dateNaissance)) ?: -1).toLong() * 10000L to ("par:" + b.id.toString())
                         )
                     }
-                    // G\u00E9n\u00E9aPoche 7 : les \u00E9v\u00E9nements de la famille
-                    // (mariages et d\u00E9c\u00E8s des parents, de la fratrie et des
-                    // enfants) entrent dans la M\u00CAME chronologie, tri\u00E9s par
-                    // date avec tous les autres \u00E9v\u00E9nements.
                     evsFamille.forEachIndexed { iFam, ef ->
-                        entrees.add(ef.first to ("fam:" + iFam.toString()))
+                        entrees.add(ef.first.toLong() * 10000L to ("fam:" + iFam.toString()))
                     }
-                    // v0.72 : PAS d'information PARASITE sur la fiche -
-                    // les \u00E9v\u00E9nements de la famille et des enfants
-                    // ANT\u00C9RIEURS \u00E0 la naissance ou POST\u00C9RIEURS au
-                    // d\u00E9c\u00E8s (s'il est connu) disparaissent.
-                    val anneeN = anneeDe(p.dateNaissance)
-                    val anneeD = anneeDe(p.dateDeces)
-                    // v0.73 : l'ordre NBMDS PREVAUT ENFIN - le tri
-                    // chronologique de la v0.72 DEFERAIT les cinq blocs
-                    // d'acte des la premiere date divergente. Les blocs
-                    // N, B, M, D, S s'affichent TOUJOURS dans cet ordre ;
-                    // les evenements libres et de famille restent tries
-                    // par date (antecedents a la naissance et posterieurs
-                    // au deces toujours exclus).
-                    val filtreParasites = { e: Pair<Int, String> ->
+                    // v0.84 : clefs de tri en Long (aaaammjj) ; les
+                    // evenements de famille/temoins, hors de la vie de la
+                    // personne, restent masques comme avant.
+                    val anneeN = (anneeDe(p.dateNaissance) ?: -1).toLong() * 10000L
+                    val anneeD = (anneeDe(p.dateDeces) ?: -1).toLong() * 10000L
+                    val filtreParasites = { e: Pair<Long, String> ->
                         if (!e.second.startsWith("fam:") && !e.second.startsWith("enf:")) true
-                        else (anneeN == null || e.first < 0 || e.first >= anneeN) &&
-                            (anneeD == null || e.first < 0 || e.first <= anneeD)
+                        else (anneeN < 0L || e.first < 0L || e.first >= anneeN) &&
+                            (anneeD < 0L || e.first < 0L || e.first <= anneeD)
                     }
-                    val blocsActe = entrees.filter { it.second.startsWith("ev:") }
-                        .sortedBy { ordreNaturel.indexOf(it.second.removePrefix("ev:")) }
-                    val autres = entrees.filter { !it.second.startsWith("ev:") }
-                        .filter(filtreParasites).sortedBy { it.first }
-                    val ordonnees = blocsActe + autres
+                    // v0.84 : si N, M et D sont dates, TOUT est range dans
+                    // l'ordre chronologique (tri stable) ; sinon les blocs
+                    // gardent l'ordre naturel NBMDS et le reste suit par date.
+                    val ordonnees = if (nmdComplets) {
+                        entrees.filter(filtreParasites).sortedBy { it.first }
+                    } else {
+                        val blocsActe = entrees.filter { it.second.startsWith("ev:") }
+                            .sortedBy { ordreNaturel.indexOf(it.second.removePrefix("ev:")) }
+                        val autres = entrees.filter { !it.second.startsWith("ev:") }
+                            .filter(filtreParasites).sortedBy { it.first }
+                        blocsActe + autres
+                    }
                     ordonnees.forEach { entree ->
                         val cle = entree.second
                         when {
@@ -1161,6 +1143,19 @@ fun champsEvenement(p: Personne, type: String): EvChamps = when (type) {
 fun anneeDe(s: String): Int? =
     Regex("[0-9]{4}").find(s)?.value?.toIntOrNull()
         ?: repubAGregorien(s)?.takeLast(4)?.toIntOrNull()
+
+// v0.84 : cle de tri chronologique : date COMPLETE convertie en nombre
+// comparable (aaaammjj) ; une annee seule vaut aaaammjj = aaaa0000.
+fun cleDate(date: String): Long {
+    val t = date.trim()
+    val g = repubAGregorien(t) ?: t
+    val m = Regex("^(\\d{2})/(\\d{2})/(\\d{4})$").find(g)
+    if (m != null) {
+        return m.groupValues[3].toLong() * 10000L +
+            m.groupValues[2].toLong() * 100L + m.groupValues[1].toLong()
+    }
+    return (anneeDe(t)?.toLong() ?: -1L) * 10000L
+}
 
 // Conjoint connu de la personne, affiche apres son titre (" avec X").
 fun conjointDeTxt(p: Personne, personnes: List<Personne>): String {

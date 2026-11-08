@@ -296,7 +296,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.83",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.84",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -825,7 +825,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.83", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.84", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1419,12 +1419,12 @@ fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
                 )
             }
             Spacer(Modifier.width(6.dp))
-            // G\u00E9n\u00E9aPoche 5 : \u00E9tiquette des renseignements sur 6
-            // (N date compl\u00E8te, N commune, N d\u00E9partement, D date
-            // compl\u00E8te, D commune, D d\u00E9partement), rouge (0) \u00E0 vert (6).
-            // v0.73 : indicateur SYNCHRONISE avec la fiche (sur 4 pour
-            // une personne supposee en vie, sur 2 pour un mineur, sur 6
-            // sinon).
+            // G\u00E9n\u00E9aPoche 5 : \u00E9tiquette des renseignements
+            // (date + commune de N, M, D au maximum selon l'\u00E2ge),
+            // rouge (0) \u00E0 vert (total).
+            // v0.84 : indicateur IDENTIQUE \u00E0 la fiche - sur 6 (N, M, D)
+            // pour tous, sur 4 (N, D) pour un d\u00E9c\u00E9d\u00E9 avant 25 ans,
+            // sur 2 (N) pour un vivant de moins de 30 ans.
             val (nInd, totalInd) = indicateurPersonne(p)
             Surface(
                 shape = RoundedCornerShape(50),
