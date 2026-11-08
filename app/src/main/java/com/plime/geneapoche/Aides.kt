@@ -40,8 +40,7 @@ fun dateLigne(s: String): String {
     val t = s.trim()
     if (t.isEmpty()) return ""
     Regex("^(\\d{1,2})[./\\- ](\\d{1,2})[./\\- ](\\d{4})$").find(t)?.let { m ->
-        return m.groupValues[1].padStart(2, '0') + "/" + m.groupValues[2].padStart(2, '0') + "/" + m.groupVal
-ues[3]
+        return m.groupValues[1].padStart(2, '0') + "/" + m.groupValues[2].padStart(2, '0') + "/" + m.groupValues[3]
     }
     repubAGregorien(t)?.let { return it + " (" + t + ")" }
     if (Regex("^\\d{4}$").matches(t)) return "  /  /" + t
@@ -88,8 +87,7 @@ fun dateValide(s: String): Boolean {
 // slashes ("5/7/1890", "5.7.1890" -> "05/07/1890"). Applique d'office
 // dans TOUTE l'application (dateGreg, normaliserLieux, import GEDCOM) :
 // le format jj/mm/aaaa tient dans le temps, meme apres correction,
-/
-/ sauvegarde, export et reimport.
+// sauvegarde, export et reimport.
 fun normaliserDate(s: String): String {
     val t = s.trim()
     Regex("^(\\d{1,2})[.\\- ](\\d{1,2})[.\\- ](\\d{4})$").find(t)?.let { m ->
@@ -137,8 +135,7 @@ fun dateComplete(s: String): Boolean {
     val t = s.trim()
     if (t.isEmpty()) return false
     if (Regex("^(\\d{1,2})[./\\- ](\\d{1,2})[./\\- ](\\d{4})$").matches(t)) return true
-    retur
-n repubAGregorien(t) != null
+    return repubAGregorien(t) != null
 }
 
 // D\u00E9partement IDENTIFIABLE : num\u00E9ro saisi, nom de d\u00E9partement, ou
@@ -150,12 +147,8 @@ fun deptIdentifiable(dept: String, lieu: String): Int? =
 fun lieuComplet(lieu: String, dept: String): Boolean =
     lieu.trim().isNotEmpty() && deptIdentifiable(dept, lieu) != null
 
-// v0.84 : INDICATEURS IDENTIQUES sur la fiche et sur la liste, sur la
-// base DATE + LIEU de chaque evenement N, M, D affichable :
-// - vivant de moins de 30 ans aujourd'hui : sur 2 (uniquement N) ;
-// - decede avant 25 ans : sur 4 (N et D) ;
-// - tous les autres : sur 6 (N, M, D), M retire du compte s'il n'y a
-//   pas de conjoint (le total devient 4).
+// v0.84 : compteur n/6 conserve pour la coche de certification
+// (N et D : date, commune, departement).
 fun renseignementsN6(p: Personne): Int {
     var n = 0
     if (dateComplete(p.dateNaissance)) n++
@@ -185,7 +178,7 @@ fun vivantMoinsDe30(p: Personne): Boolean {
     return java.time.LocalDate.now().year - an < 30
 }
 
-// v0.84 : une personne DECEDEE avant ses 25 ans (naissances et deces
+// v0.84 : une personne DECEDEE avant ses 25 ans (naissance et deces
 // dates) : pas de mariage a afficher ni a chercher.
 fun decedeAvant25(p: Personne): Boolean {
     val n = anneeDe(p.dateNaissance) ?: return false
@@ -194,7 +187,11 @@ fun decedeAvant25(p: Personne): Boolean {
 }
 
 // v0.84 : (rempli, total) de l'indicateur, PARTOUT le meme calcul
-// (en-tete de la fiche et liste des personnes).
+// (en-tete de la fiche et liste des personnes) :
+// - vivant de moins de 30 ans aujourd'hui : sur 2 (uniquement N) ;
+// - decede avant 25 ans : sur 4 (N et D) ;
+// - tous les autres : sur 6 (N, M, D), M retire du compte (total 4)
+//   s'il n'y a pas de conjoint.
 fun indicateurPersonne(p: Personne): Pair<Int, Int> {
     fun cEvs(date: String, lieu: String, dept: String): Int {
         var n = 0
@@ -202,11 +199,9 @@ fun indicateurPersonne(p: Personne): Pair<Int, Int> {
         if (lieuComplet(lieu, dept)) n++
         return n
     }
-    // Moins de 30 ans aujourd'hui : uniquement la naissance.
     if (vivantMoinsDe30(p)) {
         return Pair(cEvs(p.dateNaissance, p.lieuNaissance, p.deptNaissance), 2)
     }
-    // Decede avant 25 ans : naissance et deces (pas de mariage).
     if (decedeAvant25(p)) {
         return Pair(
             cEvs(p.dateNaissance, p.lieuNaissance, p.deptNaissance) +
@@ -214,7 +209,6 @@ fun indicateurPersonne(p: Personne): Pair<Int, Int> {
             4
         )
     }
-    // Tous les autres : N, M (si conjoint), D - date + lieu chacun.
     var n = cEvs(p.dateNaissance, p.lieuNaissance, p.deptNaissance)
     var total = 2
     if (p.conjoint != 0L || p.conjointsSupp.isNotEmpty()) {
@@ -225,6 +219,7 @@ fun indicateurPersonne(p: Personne): Pair<Int, Int> {
     total += 2
     return Pair(n, total)
 }
+
 
 // G\u00E9n\u00E9aPoche 11 (11.0) : \u00E9tat R\u00C9EL de la coche de certification.
 // "auto" = coche automatique si au moins 1 renseignement sur 6, croix rouge
@@ -253,8 +248,7 @@ fun couleurCompteur(n: Int, total: Int): androidx.compose.ui.graphics.Color =
     )
 
 // \u00C2ge de la personne \u00E0 la date de l'\u00E9v\u00E9nement, affich\u00E9 entre
-// parenth\u00E8ses
- dans la chronologie. Vide si incalculable.
+// parenth\u00E8ses dans la chronologie. Vide si incalculable.
 // G\u00E9n\u00E9aPoche 7 : pr\u00E9cision fine quand les deux dates sont compl\u00E8tes
 // ("(3 jours)", "(5 mois)") ; repli sur l'\u00E9cart d'ann\u00E9es sinon.
 fun ageAffiche(dateNaissance: String, dateEvenement: String): String {
@@ -297,8 +291,7 @@ fun periodeRealisteTxt(type: String, p: Personne?): String {
     val an = anneeDe(p?.dateNaissance ?: "")
     val deces = anneeDe(p?.dateDeces ?: "")
     return when (type) {
-        "B" -> if (an == null) "Bapt\u00EAme
- : dans les 2 ans suivant la naissance" else "Bapt\u00EAme : entre " + an.toString() + " et " + (an + 2).toString()
+        "B" -> if (an == null) "Bapt\u00EAme : dans les 2 ans suivant la naissance" else "Bapt\u00EAme : entre " + an.toString() + " et " + (an + 2).toString()
         "M" -> if (an == null) "Mariage : entre 16 et 40 ans" else "Mariage : entre " + (an + 16).toString() + " et " + (an + 40).toString()
         "S" -> "S\u00E9pulture : dans l'ann\u00E9e suivant le d\u00E9c\u00E8s"
         "D" -> if (an == null) "D\u00E9c\u00E8s : apr\u00E8s la naissance" else "D\u00E9c\u00E8s : apr\u00E8s " + an.toString()
@@ -338,8 +331,7 @@ fun avertissementCoherence(
                     return "Mariage en dehors de 16-40 ans pour le conjoint : confirmer ?"
                 }
                 val dc = anneeDe(c.dateDeces)
-                if (dc != n
-ull && ae > dc) {
+                if (dc != null && ae > dc) {
                     return "Mariage apr\u00E8s le d\u00E9c\u00E8s du conjoint : confirmer ?"
                 }
             }
@@ -386,8 +378,7 @@ fun datesInvalides(p: Personne): List<String> {
     if (!dateValide(p.dateBapteme)) res.add("baptême")
     if (!dateValide(p.dateMariage)) res.add("mariage")
     if (!dateValide(p.dateDeces)) res.add("décès")
-    if (!dateValide(p.dateSepulture)) res.add("
-sépulture")
+    if (!dateValide(p.dateSepulture)) res.add("sépulture")
     p.evenementsLibres.forEach { ev -> if (!dateValide(ev.date)) res.add("événement : " + ev.intitule) }
     return res
 }
