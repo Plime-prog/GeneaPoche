@@ -1,5 +1,12 @@
 # Historique des versions — GénéaPoche
 
+## v0.86 – Alertes locales (12.3)
+
+- Anniversaires du jour : naissances, mariages et décès tombant un jour comme aujourd'hui (jour et mois identiques, quelle que soit l'année) ; les dates républicaines sont converties pour la comparaison.
+- Onglet Journal : encadré vert « Ce jour : N événement(s) » en tête, chaque ligne (avec l'âge de l'événement) est cliquable et ouvre la fiche.
+- Annonce à l'ouverture de l'application, combinée aux messages existants (diagnostic de l'arbre, rappels de recherche).
+- Rappels de recherche (acte manquant sans coche « Enregistré », identités à vérifier, règle des 75 ans) : déjà couverts par le journal et le diagnostic, rappelés à chaque ouverture.
+
 ## v0.85 – Exports chiffrés et nettoyage après partage (12.2)
 
 - **Export GEDCOM chiffré (.gpged)** : nouvelle coche « Chiffrer le fichier (.gpged, phrase secrète) » dans le dialogue « Exporter en GEDCOM » (toutes les personnes ou une branche). La phrase secrète (6 caractères min.) est demandée avant le choix du fichier ; le fichier est chiffré AES-256/GCM + PBKDF2 (210 000 itérations), comme une sauvegarde .gpbak.
