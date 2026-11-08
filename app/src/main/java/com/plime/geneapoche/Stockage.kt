@@ -275,12 +275,20 @@ object Stockage {
     // Premier lancement depuis la v0.28 : la cle maitre n'existe pas encore,
     // on la cree et on migre les fichiers chiffres avec l'ancienne cle.
     fun deverrouiller(ctx: Context, pin: String): Boolean {
-        if (!verifierPin(ctx, pin)) return false
-        val maitre = desenvelopperCleMaitre(ctx, pin)
-        if (maitre != null) {
-            cleMaitre = maitre
+        // v0.81 : ouverture DIRECTE de la cle maitre d'abord (un seul PBKDF2).
+        // Si le dechiffrement de l'enveloppe reussit, le tag GCM PROUVE que le
+        // PIN est correct : inutile de recalculer le hash de verification (un
+        // deuxieme PBKDF2 de 600 000 iterations est economise, le
+        // deverrouillage est environ deux fois plus rapide). En cas d'echec
+        // (PIN faux, enveloppe absente ou illisible), repli sur l'ancien
+        // chemin complet ci-dessous : verifierPin distingue un PIN faux
+        // d'une donnee pre-0.29 a migrer.
+        val direct = desenvelopperCleMaitre(ctx, pin)
+        if (direct != null) {
+            cleMaitre = direct
             return true
         }
+        if (!verifierPin(ctx, pin)) return false
         val octets = ByteArray(32)
         SecureRandom().nextBytes(octets)
         val nouvelle = javax.crypto.spec.SecretKeySpec(octets, "AES")

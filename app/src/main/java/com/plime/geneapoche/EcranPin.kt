@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -320,6 +321,19 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
             }
             if (erreur.isNotEmpty()) {
                 Text(erreur, color = CouleurRouge, modifier = Modifier.padding(vertical = 6.dp).semantics { liveRegion = LiveRegionMode.Polite })
+            }
+            // v0.81 : le calcul de deverrouillage est visible (il reste
+            // court, environ une demi-seconde, mais l'utilisateur sait que
+            // l'app a bien pris l'appui en compte).
+            if (travail) {
+                Row(
+                    Modifier.padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Text("D\u00E9verrouillage en cours...", style = MaterialTheme.typography.bodySmall)
+                }
             }
             if (blocage > 0L) {
                 Text(
