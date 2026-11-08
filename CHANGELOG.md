@@ -1,3 +1,5 @@
+# Historique des versions — GénéaPoche
+
 ## v0.80 – Suspend levés : conjoint veuf/en vie persisté, enfant déclarant sur décès
 
 - le choix « veuf / en vie » du conjoint sur un acte de décès ou de sépulture est désormais mémorisé : la transcription affiche « Conjoint survivant : … » ou « Conjoint décédé avant : … », et si le conjoint est décédé avant, sa fiche reçoit « avant aaaa » comme date de décès (qualification BEF à l'export GEDCOM) ;
@@ -157,7 +159,6 @@ Le bug persistant de la saisie de naissance (département, noms et prénoms de l
 - **Liens de la fiche affichés dans le formulaire**, sous les blocs Père/Mère : « Liens de la fiche — Père : X · Mère : Y ». Un lien erroné (mère pointant sur la belle-mère) devient visible immédiatement.
 - Bumps 0.64.
 
-
 ## v0.63
 
 - **Personne concernée en tête du formulaire** : bannière vert/gras « Pour : Naissance de X » ou « Modification : … » (rouge si aucune personne) dès l'ouverture, sans défiler.
@@ -277,7 +278,300 @@ Les chantiers 11.1 (rappels et notifications), 11.3 (carte), 11.5 (vues étendue
 - 9.5 La note de recherche saisie dans la fiche (bloc Recherches et sous-blocs d'actes) est la MÊME que celle du journal : liaison directe, toute saisie d'un côté se retrouve de l'autre après enregistrement.
 - Version 0.48 (versionCode 48).
 
-# Historique des versions — GénéaPoche
+## v0.47 – GénéaPoche 8 : onglet « Ligne de vie »
+
+- Le menu Frise est refondu intégralement et devient « Ligne de vie » : une ligne de vie horizontale par membre de la famille proche de la personne choisie (grands-parents, parents, frères et sœurs, enfants), sur un axe d'années commun — tout tient à l'écran, sans zoom ni déplacement.
+- Chaque trait va de la naissance au décès, ou jusqu'à aujourd'hui si la personne est vivante (règle des 100 ans respectée : un décès non certain n'est jamais tracé).
+- Un point marque chaque événement connu (N, B, M, S, D, événements libres) ; lignes fines par décennie et trait vert vertical à l'année en cours ; toucher une ligne ouvre la fiche.
+- Numéro de version désormais affiché dans l'application : sous le titre de la barre du haut et dans les paramétrages.
+- Version 0.47 (versionCode 47).
+
+## v0.46 – GénéaPoche 7 : chronologie unique de la fiche
+
+- 7.1 Bouton « Ajouter un enfant » sur la fiche : choisir une fiche existante ou saisir un nouvel enfant.
+- 7.2 Ordre STRICTEMENT chronologique de TOUS les événements de la fiche (N/B/M/S/D, événements libres, événements de la famille, naissances et décès des enfants) dans une seule et même frise.
+- 7.3 Âge entre parenthèses sur chaque événement (précision jours/mois/ans), y compris l'âge du parent pour les enfants.
+- 7.4 La date figure en TÊTE de chaque ligne, au format jj/mm/aaaa ; les événements de famille prennent le même format.
+- 7.5 Dates grégoriennes alignées : une année seule s'affiche «   /  /aaaa » ; les dates républicaines sont converties en grégorien avec l'original entre parenthèses.
+- Bloc séparé événements de famille supprimé (fusionné dans la chronologie).
+- Version 0.46 (versionCode 46).
+
+## v0.45 – APK de release nommés avec la version
+
+- Les fichiers téléchargeables d'une release s'appellent désormais **GeneaPoche-v0.45-release.apk** (a installer) et **GeneaPoche-v0.45-debug.apk**, le numéro de version étant déduit automatiquement du tag.
+- Aucun changement dans l'application elle-même (même code que la v0.44).
+
+## v0.44 – GénéaPoche 6 : l'arbre montre les enfants
+
+- **Arbre** : rangée des enfants sous le couple central (liaisons en T), la même présentation que les autres rangées.
+- Toujours 4 générations (arrière-grands-parents, grands-parents, parents, couple central) + les enfants ; toucher une carte la rend centrale immédiatement (zoom/pan réinitialisés), appui long = fiche.
+- **Nouveau bouton Arbre** dans la barre du haut de la fiche : la personne devient le centre de l'arbre et l'onglet Arbre s'ouvre, synchronisation instantanée.
+
+## v0.43 - Export GEDCOM verrouillé par le sélecteur de fichiers (fix export à 0 personne)
+- **Correctif majeur** : lancer un export GEDCOM ouvrait le sélecteur de fichiers, ce qui verrouillait l'app et vidait la mémoire (purge de sécurité) ; l'export s'exécutait alors sur une liste VIDE : « Aucune personne à exporter » et fichier créé vide (0 Ko). Un sélecteur de fichiers ouvert (GEDCOM, .gpbak) suspend désormais le re-verrouillage automatique.
+- Export : refus AVANT d'ouvrir le sélecteur si la base est vide (plus jamais de fichier 0 Ko créé) ; message de refus explicite.
+- Import : message distinct « Fichier vide (0 octet) : ancien export refusé ou vide » au lieu d'« illisible ».
+- Version 0.43 (versionCode 43).
+
+## v0.43 - Export GEDCOM verrouillé par le sélecteur de fichiers (fix export à 0 personne)
+- **Correctif majeur** : lancer un export GEDCOM ouvrait le sélecteur de fichiers, ce qui verrouillait l'app et vidait la mémoire (purge de sécurité) ; l'export s'exécutait alors sur une liste VIDE : « Aucune personne à exporter » et fichier créé vide (0 Ko). Un sélecteur de fichiers ouvert (GEDCOM, .gpbak) suspend désormais le re-verrouillage automatique.
+- Export : refus AVANT d'ouvrir le sélecteur si la base est vide (plus jamais de fichier 0 Ko créé) ; message de refus explicite.
+- Import : message distinct « Fichier vide (0 octet) : ancien export refusé ou vide » au lieu d'« illisible ».
+- Version 0.43 (versionCode 43).
+
+## v0.43 - Export GEDCOM verrouillé par le sélecteur de fichiers (fix export à 0 personne)
+- **Correctif majeur** : lancer un export GEDCOM ouvrait le sélecteur de fichiers, ce qui verrouillait l'app et vidait la mémoire (purge de sécurité) ; l'export s'exécutait alors sur une liste VIDE : « Aucune personne à exporter » et fichier créé vide (0 Ko). Un sélecteur de fichiers ouvert (GEDCOM, .gpbak) suspend désormais le re-verrouillage automatique.
+- Export : refus AVANT d'ouvrir le sélecteur si la base est vide (plus jamais de fichier 0 Ko créé) ; message de refus explicite.
+- Import : message distinct « Fichier vide (0 octet) : ancien export refusé ou vide » au lieu d'« illisible ».
+- Version 0.43 (versionCode 43).
+
+## v0.42 - Secours copie de secours (.bak)
+- Nouveau menu « Restaurer la copie de secours (.bak) » : dernier recours quand la base est vide — restaure les copies de rotation personnes.bin.bak / journal.bin.bak / actes.bin.bak, sans aucun risque pour les fichiers actuels.
+- Version 0.42 (versionCode 42).
+
+## v0.42 - Secours copie de secours (.bak)
+- Nouveau menu « Restaurer la copie de secours (.bak) » : dernier recours quand la base est vide — restaure les copies de rotation personnes.bin.bak / journal.bin.bak / actes.bin.bak, sans aucun risque pour les fichiers actuels.
+- Version 0.42 (versionCode 42).
+
+## v0.42 - Secours copie de secours (.bak)
+- Nouveau menu « Restaurer la copie de secours (.bak) » : dernier recours quand la base est vide — restaure les copies de rotation personnes.bin.bak / journal.bin.bak / actes.bin.bak, sans aucun risque pour les fichiers actuels.
+- Version 0.42 (versionCode 42).
+
+## v0.42 - Secours copie de secours (.bak)
+- Nouveau menu « Restaurer la copie de secours (.bak) » : dernier recours quand la base est vide — restaure les copies de rotation personnes.bin.bak / journal.bin.bak / actes.bin.bak, sans aucun risque pour les fichiers actuels.
+- Version 0.42 (versionCode 42).
+
+## v0.42 - Secours copie de secours (.bak)
+- Nouveau menu « Restaurer la copie de secours (.bak) » : dernier recours quand la base est vide — restaure les copies de rotation personnes.bin.bak / journal.bin.bak / actes.bin.bak, sans aucun risque pour les fichiers actuels.
+- Version 0.42 (versionCode 42).
+
+## v0.42 - Secours copie de secours (.bak)
+- Nouveau menu « Restaurer la copie de secours (.bak) » : dernier recours quand la base est vide — restaure les copies de rotation personnes.bin.bak / journal.bin.bak / actes.bin.bak, sans aucun risque pour les fichiers actuels.
+- Version 0.42 (versionCode 42).
+
+## v0.41 - Secours base vide
+- Restauration RESCUE : « Restaurer la base d’avant import » essaie les 5 sauvegardes tournantes de la plus récente à la plus ancienne et garde la première qui contient des personnes.
+- Export GEDCOM : plus jamais de fichier vide — un export de 0 personne est refusé avec un message explicite.
+- Version 0.41 (versionCode 41).
+
+## v0.41 - Secours base vide
+- Restauration RESCUE : « Restaurer la base d’avant import » essaie les 5 sauvegardes tournantes de la plus récente à la plus ancienne et garde la première qui contient des personnes.
+- Export GEDCOM : plus jamais de fichier vide — un export de 0 personne est refusé avec un message explicite.
+- Version 0.41 (versionCode 41).
+
+## v0.41 - Secours base vide
+- Restauration RESCUE : « Restaurer la base d’avant import » essaie les 5 sauvegardes tournantes de la plus récente à la plus ancienne et garde la première qui contient des personnes.
+- Export GEDCOM : plus jamais de fichier vide — un export de 0 personne est refusé avec un message explicite.
+- Version 0.41 (versionCode 41).
+
+## v0.41 - Secours base vide
+- Restauration RESCUE : « Restaurer la base d’avant import » essaie les 5 sauvegardes tournantes de la plus récente à la plus ancienne et garde la première qui contient des personnes.
+- Export GEDCOM : plus jamais de fichier vide — un export de 0 personne est refusé avec un message explicite.
+- Version 0.41 (versionCode 41).
+
+## v0.41 - Secours base vide
+- Restauration RESCUE : « Restaurer la base d’avant import » essaie les 5 sauvegardes tournantes de la plus récente à la plus ancienne et garde la première qui contient des personnes.
+- Export GEDCOM : plus jamais de fichier vide — un export de 0 personne est refusé avec un message explicite.
+- Version 0.41 (versionCode 41).
+
+## v0.41 - Secours base vide
+- Restauration RESCUE : « Restaurer la base d’avant import » essaie les 5 sauvegardes tournantes de la plus récente à la plus ancienne et garde la première qui contient des personnes.
+- Export GEDCOM : plus jamais de fichier vide — un export de 0 personne est refusé avec un message explicite.
+- Version 0.41 (versionCode 41).
+
+## v0.41 - Secours base vide
+- Restauration RESCUE : « Restaurer la base d’avant import » essaie les 5 sauvegardes tournantes de la plus récente à la plus ancienne et garde la première qui contient des personnes.
+- Export GEDCOM : plus jamais de fichier vide — un export de 0 personne est refusé avec un message explicite.
+- Version 0.41 (versionCode 41).
+
+## v0.41 - Secours base vide
+- Restauration RESCUE : « Restaurer la base d’avant import » essaie les 5 sauvegardes tournantes de la plus récente à la plus ancienne et garde la première qui contient des personnes.
+- Export GEDCOM : plus jamais de fichier vide — un export de 0 personne est refusé avec un message explicite.
+- Version 0.41 (versionCode 41).
+
+## v0.41 - Secours base vide
+- Restauration RESCUE : « Restaurer la base d’avant import » essaie les 5 sauvegardes tournantes de la plus récente à la plus ancienne et garde la première qui contient des personnes.
+- Export GEDCOM : plus jamais de fichier vide — un export de 0 personne est refusé avec un message explicite.
+- Version 0.41 (versionCode 41).
+
+## v0.40 – Fiche et arbre corrigés (2 novembre 2026)
+
+- **Fiche** : le cadre **NAISSANCE est TOUJOURS en tête**, quelles que soient les dates (la chronologie générale le re-triait par année).
+- **Fiche** : **tous les cadres sont REPLIÉS sur une ligne** à l'ouverture de la fiche ; toucher un cadre le développe, l'appui long ouvre la saisie pré-remplie.
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre ET la vue (zoom/déplacement) se réinitialise — l'arbre se régénère nettement sur 4 générations. Appui long = ouverture de la fiche.
+
+## v0.40 – Fiche et arbre corrigés (2 novembre 2026)
+
+- **Fiche** : le cadre **NAISSANCE est TOUJOURS en tête**, quelles que soient les dates (la chronologie générale le re-triait par année).
+- **Fiche** : **tous les cadres sont REPLIÉS sur une ligne** à l'ouverture de la fiche ; toucher un cadre le développe, l'appui long ouvre la saisie pré-remplie.
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre ET la vue (zoom/déplacement) se réinitialise — l'arbre se régénère nettement sur 4 générations. Appui long = ouverture de la fiche.
+
+## v0.40 – Fiche et arbre corrigés (2 novembre 2026)
+
+- **Fiche** : le cadre **NAISSANCE est TOUJOURS en tête**, quelles que soient les dates (la chronologie générale le re-triait par année).
+- **Fiche** : **tous les cadres sont REPLIÉS sur une ligne** à l'ouverture de la fiche ; toucher un cadre le développe, l'appui long ouvre la saisie pré-remplie.
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre ET la vue (zoom/déplacement) se réinitialise — l'arbre se régénère nettement sur 4 générations. Appui long = ouverture de la fiche.
+
+## v0.40 – Fiche et arbre corrigés (2 novembre 2026)
+
+- **Fiche** : le cadre **NAISSANCE est TOUJOURS en tête**, quelles que soient les dates (la chronologie générale le re-triait par année).
+- **Fiche** : **tous les cadres sont REPLIÉS sur une ligne** à l'ouverture de la fiche ; toucher un cadre le développe, l'appui long ouvre la saisie pré-remplie.
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre ET la vue (zoom/déplacement) se réinitialise — l'arbre se régénère nettement sur 4 générations. Appui long = ouverture de la fiche.
+
+## v0.40 – Fiche et arbre corrigés (2 novembre 2026)
+
+- **Fiche** : le cadre **NAISSANCE est TOUJOURS en tête**, quelles que soient les dates (la chronologie générale le re-triait par année).
+- **Fiche** : **tous les cadres sont REPLIÉS sur une ligne** à l'ouverture de la fiche ; toucher un cadre le développe, l'appui long ouvre la saisie pré-remplie.
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre ET la vue (zoom/déplacement) se réinitialise — l'arbre se régénère nettement sur 4 générations. Appui long = ouverture de la fiche.
+
+## v0.40 – Fiche et arbre corrigés (2 novembre 2026)
+
+- **Fiche** : le cadre **NAISSANCE est TOUJOURS en tête**, quelles que soient les dates (la chronologie générale le re-triait par année).
+- **Fiche** : **tous les cadres sont REPLIÉS sur une ligne** à l'ouverture de la fiche ; toucher un cadre le développe, l'appui long ouvre la saisie pré-remplie.
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre ET la vue (zoom/déplacement) se réinitialise — l'arbre se régénère nettement sur 4 générations. Appui long = ouverture de la fiche.
+
+## v0.40 – Fiche et arbre corrigés (2 novembre 2026)
+
+- **Fiche** : le cadre **NAISSANCE est TOUJOURS en tête**, quelles que soient les dates (la chronologie générale le re-triait par année).
+- **Fiche** : **tous les cadres sont REPLIÉS sur une ligne** à l'ouverture de la fiche ; toucher un cadre le développe, l'appui long ouvre la saisie pré-remplie.
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre ET la vue (zoom/déplacement) se réinitialise — l'arbre se régénère nettement sur 4 générations. Appui long = ouverture de la fiche.
+
+## v0.40 – Fiche et arbre corrigés (2 novembre 2026)
+
+- **Fiche** : le cadre **NAISSANCE est TOUJOURS en tête**, quelles que soient les dates (la chronologie générale le re-triait par année).
+- **Fiche** : **tous les cadres sont REPLIÉS sur une ligne** à l'ouverture de la fiche ; toucher un cadre le développe, l'appui long ouvre la saisie pré-remplie.
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre ET la vue (zoom/déplacement) se réinitialise — l'arbre se régénère nettement sur 4 générations. Appui long = ouverture de la fiche.
+
+## v0.40 – Fiche et arbre corrigés (2 novembre 2026)
+
+- **Fiche** : le cadre **NAISSANCE est TOUJOURS en tête**, quelles que soient les dates (la chronologie générale le re-triait par année).
+- **Fiche** : **tous les cadres sont REPLIÉS sur une ligne** à l'ouverture de la fiche ; toucher un cadre le développe, l'appui long ouvre la saisie pré-remplie.
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre ET la vue (zoom/déplacement) se réinitialise — l'arbre se régénère nettement sur 4 générations. Appui long = ouverture de la fiche.
+
+## v0.40 – Fiche et arbre corrigés (2 novembre 2026)
+
+- **Fiche** : le cadre **NAISSANCE est TOUJOURS en tête**, quelles que soient les dates (la chronologie générale le re-triait par année).
+- **Fiche** : **tous les cadres sont REPLIÉS sur une ligne** à l'ouverture de la fiche ; toucher un cadre le développe, l'appui long ouvre la saisie pré-remplie.
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre ET la vue (zoom/déplacement) se réinitialise — l'arbre se régénère nettement sur 4 générations. Appui long = ouverture de la fiche.
+
+## v0.39 (2 novembre 2026)
+
+- **Import/export GEDCOM fiabilisé** : sauvegardes d'avant import tournantes (les 5 dernières), avertissement avant tout export ou remplacement, dialogue d'import clarifié.
+- **Fiche** : le cadre NAISSANCE est TOUJOURS en tête ; tous les cadres sont REPLIÉS sur une ligne à l'ouverture (toucher = développer, appui long = modifier via la saisie pré-remplie).
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre et la vue (zoom/déplacement) se réinitialise : l'arbre se régénère nettement sur 4 générations. Appui long = fiche.
+
+## v0.39 (2 novembre 2026)
+
+- **Import/export GEDCOM fiabilisé** : sauvegardes d'avant import tournantes (les 5 dernières), avertissement avant tout export ou remplacement, dialogue d'import clarifié.
+- **Fiche** : le cadre NAISSANCE est TOUJOURS en tête ; tous les cadres sont REPLIÉS sur une ligne à l'ouverture (toucher = développer, appui long = modifier via la saisie pré-remplie).
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre et la vue (zoom/déplacement) se réinitialise : l'arbre se régénère nettement sur 4 générations. Appui long = fiche.
+
+## v0.39 – Sécurité des imports et de l’export GEDCOM (2 novembre 2026)
+
+- **Sauvegardes d’avant import tournantes** : les 5 dernières bases d’avant import sont conservées (plus jamais écrasées par un import suivant), en copie vérifiée ; restauration depuis le menu des paramétrages.
+- **Alerte à l’export GEDCOM** : message explicite si le fichier contient moins de personnes que la base (branche, vivants exclus).
+- Dialogue d’import clarifié ; message après « Remplacer » rappelle la restauration possible.
+
+## v0.39 (2 novembre 2026)
+
+- **Import/export GEDCOM fiabilisé** : sauvegardes d'avant import tournantes (les 5 dernières), avertissement avant tout export ou remplacement, dialogue d'import clarifié.
+- **Fiche** : le cadre NAISSANCE est TOUJOURS en tête ; tous les cadres sont REPLIÉS sur une ligne à l'ouverture (toucher = développer, appui long = modifier via la saisie pré-remplie).
+- **Arbre** : à chaque toucher d'une carte, la personne devient le centre et la vue (zoom/déplacement) se réinitialise : l'arbre se régénère nettement sur 4 générations. Appui long = fiche.
+
+## v0.39 – Sécurité des imports et de l’export GEDCOM (2 novembre 2026)
+
+- **Sauvegardes d’avant import tournantes** : les 5 dernières bases d’avant import sont conservées (plus jamais écrasées par un import suivant), en copie vérifiée ; restauration depuis le menu des paramétrages.
+- **Alerte à l’export GEDCOM** : message explicite si le fichier contient moins de personnes que la base (branche, vivants exclus).
+- Dialogue d’import clarifié ; message après « Remplacer » rappelle la restauration possible.
+
+## v0.38 (« GénéaPoche 5 » : normes d'écriture, arbre 4 générations)
+
+- **Communes normalisées** : initiale en majuscules (norme française), automatiquement à la saisie, à l'édition, à l'import et au chargement (« le havre » → « Le Havre »).
+- **Départements au format numérique** (norme GEDCOM), 2 ou 3 chiffres : « Nord » → « 59 », « 5 » → « 05 ».
+- **Icône de paramétrages** : l'intitulé « GEDCOM » de la barre du haut est remplacé par une roue crantée.
+- **Personnes** : pastille VIDE si la personne n'est ni Sosa ni d'Aboville ; étiquette à droite n/6 (N date complète, N commune, N département, D date complète, D commune, D département), rouge (0) → vert (6).
+- **Fiche** : cadre de la personne supprimé (l'identité est dans la barre de titre) ; profession des parents sans étiquette dans le cadre des parents ; bloc Naissance toujours en tête, croix père/mère supprimées ; bloc Mariage allégé (plus de croix, ni « Autre conjoint », ni « Saisir un mariage ») ; le bloc « Biographie » devient **« Notes »** ; modification par appui long = le menu de Saisie pré-rempli (parents et conjoint inclus).
+- **Arbre : retour à 4 générations** (8 arrière-grands-parents → 4 grands-parents → parents → personne centrale + conjoint) ; toucher une carte la rend immédiatement centrale ; appui long ouvre la fiche ; zoom et déplacement conservés.
+
+## v0.38 (« GénéaPoche 5 » : normes d'écriture, arbre 4 générations)
+
+- **Communes normalisées** : initiale en majuscules (norme française), automatiquement à la saisie, à l'édition, à l'import et au chargement (« le havre » → « Le Havre »).
+- **Départements au format numérique** (norme GEDCOM), 2 ou 3 chiffres : « Nord » → « 59 », « 5 » → « 05 ».
+- **Icône de paramétrages** : l'intitulé « GEDCOM » de la barre du haut est remplacé par une roue crantée.
+- **Personnes** : pastille VIDE si la personne n'est ni Sosa ni d'Aboville ; étiquette à droite n/6 (N date complète, N commune, N département, D date complète, D commune, D département), rouge (0) → vert (6).
+- **Fiche** : cadre de la personne supprimé (l'identité est dans la barre de titre) ; profession des parents sans étiquette dans le cadre des parents ; bloc Naissance toujours en tête, croix père/mère supprimées ; bloc Mariage allégé (plus de croix, ni « Autre conjoint », ni « Saisir un mariage ») ; le bloc « Biographie » devient **« Notes »** ; modification par appui long = le menu de Saisie pré-rempli (parents et conjoint inclus).
+- **Arbre : retour à 4 générations** (8 arrière-grands-parents → 4 grands-parents → parents → personne centrale + conjoint) ; toucher une carte la rend immédiatement centrale ; appui long ouvre la fiche ; zoom et déplacement conservés.
+
+## v0.38 (« GénéaPoche 5 » : normes d'écriture, arbre 4 générations)
+
+- **Communes normalisées** : initiale en majuscules (norme française), automatiquement à la saisie, à l'édition, à l'import et au chargement (« le havre » → « Le Havre »).
+- **Départements au format numérique** (norme GEDCOM), 2 ou 3 chiffres : « Nord » → « 59 », « 5 » → « 05 ».
+- **Icône de paramétrages** : l'intitulé « GEDCOM » de la barre du haut est remplacé par une roue crantée.
+- **Personnes** : pastille VIDE si la personne n'est ni Sosa ni d'Aboville ; étiquette à droite n/6 (N date complète, N commune, N département, D date complète, D commune, D département), rouge (0) → vert (6).
+- **Fiche** : cadre de la personne supprimé (l'identité est dans la barre de titre) ; profession des parents sans étiquette dans le cadre des parents ; bloc Naissance toujours en tête, croix père/mère supprimées ; bloc Mariage allégé (plus de croix, ni « Autre conjoint », ni « Saisir un mariage ») ; le bloc « Biographie » devient **« Notes »** ; modification par appui long = le menu de Saisie pré-rempli (parents et conjoint inclus).
+- **Arbre : retour à 4 générations** (8 arrière-grands-parents → 4 grands-parents → parents → personne centrale + conjoint) ; toucher une carte la rend immédiatement centrale ; appui long ouvre la fiche ; zoom et déplacement conservés.
+
+## v0.38 (« GénéaPoche 5 » : normes d'écriture, arbre 4 générations)
+
+- **Communes normalisées** : initiale en majuscules (norme française), automatiquement à la saisie, à l'édition, à l'import et au chargement (« le havre » → « Le Havre »).
+- **Départements au format numérique** (norme GEDCOM), 2 ou 3 chiffres : « Nord » → « 59 », « 5 » → « 05 ».
+- **Icône de paramétrages** : l'intitulé « GEDCOM » de la barre du haut est remplacé par une roue crantée.
+- **Personnes** : pastille VIDE si la personne n'est ni Sosa ni d'Aboville ; étiquette à droite n/6 (N date complète, N commune, N département, D date complète, D commune, D département), rouge (0) → vert (6).
+- **Fiche** : cadre de la personne supprimé (l'identité est dans la barre de titre) ; profession des parents sans étiquette dans le cadre des parents ; bloc Naissance toujours en tête, croix père/mère supprimées ; bloc Mariage allégé (plus de croix, ni « Autre conjoint », ni « Saisir un mariage ») ; le bloc « Biographie » devient **« Notes »** ; modification par appui long = le menu de Saisie pré-rempli (parents et conjoint inclus).
+- **Arbre : retour à 4 générations** (8 arrière-grands-parents → 4 grands-parents → parents → personne centrale + conjoint) ; toucher une carte la rend immédiatement centrale ; appui long ouvre la fiche ; zoom et déplacement conservés.
+
+## v0.38 (« GénéaPoche 5 » : normes d'écriture, arbre 4 générations)
+
+- **Communes normalisées** : initiale en majuscules (norme française), automatiquement à la saisie, à l'édition, à l'import et au chargement (« le havre » → « Le Havre »).
+- **Départements au format numérique** (norme GEDCOM), 2 ou 3 chiffres : « Nord » → « 59 », « 5 » → « 05 ».
+- **Icône de paramétrages** : l'intitulé « GEDCOM » de la barre du haut est remplacé par une roue crantée.
+- **Personnes** : pastille VIDE si la personne n'est ni Sosa ni d'Aboville ; étiquette à droite n/6 (N date complète, N commune, N département, D date complète, D commune, D département), rouge (0) → vert (6).
+- **Fiche** : cadre de la personne supprimé (l'identité est dans la barre de titre) ; profession des parents sans étiquette dans le cadre des parents ; bloc Naissance toujours en tête, croix père/mère supprimées ; bloc Mariage allégé (plus de croix, ni « Autre conjoint », ni « Saisir un mariage ») ; le bloc « Biographie » devient **« Notes »** ; modification par appui long = le menu de Saisie pré-rempli (parents et conjoint inclus).
+- **Arbre : retour à 4 générations** (8 arrière-grands-parents → 4 grands-parents → parents → personne centrale + conjoint) ; toucher une carte la rend immédiatement centrale ; appui long ouvre la fiche ; zoom et déplacement conservés.
+
+## v0.37 (arbre épuré et illimité)
+
+- **Arbre : suppression des boutons « Centré sur… » et « Vue initiale »** : l'arbre s'affiche directement, la navigation reste au doigt (pincement = zoom, glissement = déplacement).
+- **Arbre : plus aucune limite** dans le plan des familles (fin du plafond de 25 générations de descendants) : toutes les personnes de l'arbre apparaissent, en plus de toutes les générations d'ascendants déjà affichées depuis la v0.36.
+- **Fiche : le bloc Naissance est toujours en tête** de la frise chronologique, quelles que soient les dates.
+- **Fiche : le bloc de saisie libre devient le bloc « Biographie »**, placé tout en bas de la fiche.
+- GEDCOM : version réelle 0.37.
+
+## v0.36 (« GénéaPoche 4 » : fiche épurée et arbre complet)
+
+- **Fiche : le bloc Naissance est toujours affiché avant le bloc Mariage**, quelles que soient les dates.
+- **Plus d'âge à la naissance** dans la ligne de la frise (l'âge reste indiqué pour les autres événements).
+- **Bloc « Ajouter un enfant » supprimé** (doublon avec « Ajouter un événement » et le menu +Saisie).
+- **Blocs Naissance, Mariage et Décès ouverts par défaut** à l'ouverture de la fiche.
+- **Blocs épurés** : suppression de la case de validation, de l'icône + (photo), de la coche « Signe » et de la section des témoins — les témoins, signatures et photos se saisissent uniquement par le formulaire d'acte (appui long).
+- **Appui long sur un bloc = formulaire pré-rempli** (noms et prénoms des parents, date, heure, commune, département) et **limité à ce seul type d'acte** : modifier la ligne d'un décès n'ouvre que le formulaire décès.
+- **Écran « Page et référence de l'acte » supprimé**.
+- **Frise familiale** : « Mariage de… » remplace « Assiste au mariage de… » (plus de présomption de présence).
+- **Arbre : TOUTES les générations affichées**, sans plafond (fin de la limite de profondeur).
+- GEDCOM : version réelle 0.36.
+
+## v0.35 (arbre complet et frise chronologique)
+
+- **Arbre absolument complet, version verticale** : toutes les générations d'ancêtres et **tous les latéraux** (fratries, descendants, conjoints) sur un seul grand arbre déroulant à partir de la personne choisie ; **navigation par zoom (pincement) et déplacement** (glissement), bouton « Vue initiale » pour revenir au centre ; garde-fous anti-cycles et profondeur maximale pour rester fluide.
+- **Suppression de l'ancienne vue horizontale sur 4 générations**, devenue obsolète.
+- **Nouvel onglet « Frise »** : frise chronologique verticale, **une colonne par personne vivante de la branche** (la personne choisie garde toujours sa colonne, même décédée) ; axe vertical des années de 10 en 10 avec **ligne fine par décennie** ; échelle basée sur la vie : naissance tout en bas, décès ou naissance + 100 ans en haut.
+- **Étiquette pour chaque événement** de la personne choisie (naissance, baptême, mariage, sépulture, décès, événements libres, naissances des enfants) placée à la bonne hauteur dans sa colonne.
+- Trait de vie **bleu pour les hommes, rose pour les femmes** ; nom au sommet de chaque trait ; zoom et déplacement identiques à l'arbre.
+- GEDCOM : version réelle 0.35.
+
+## v0.34 (« GénéaPoche 3 » : chronologie unique, menu Saisie refondu, compteur de renseignements)
+
+- **Bandeau réduit et figé** sur tous les écrans : icône et titre plus compacts, toujours visibles pendant le défilement.
+- **Compteur de renseignements dans la liste Personnes** : « n/4 » tout à droite du nom, couleur du rouge (rien) au vert (complet) ; une date complète exige le jour, le mois et l'année (une année seule est incomplète) et un lieu complet exige la commune avec un département identifiable.
+- **Fiche : cartouche identité + parents figé** (il reste visible en haut pendant le défilement), badge « n/6 » dans le titre (naissance et décès : date, commune, département).
+- **Édition par appui long** de l'identité (nom, prénoms, profession) ; suppression de l'indice « Appui long sur… » et de l'étiquette « Identité ».
+- **Père et mère dans un seul cadre**, affichés comme les enfants (même police, numéros cliquables) ; la pastille renvoie vers leur fiche ; appui long = choisir ou créer, avec synchronisation complète.
+- **Chronologie unique** : naissance, baptême, mariage, décès, sépulture, événements libres et enfants sont tous rangés par date, avec **l'âge entre parenthèses** pour chaque événement.
+- **Mariage** : plus de « présent et consentant » automatique ; seules les mentions réellement transcrites sur l'acte sont enregistrées.
+- **Menu Saisie refondu** : 7 entrées avec icônes (N, B, M, S, D, Événement, Enfant) ; la personne existante est proposée systématiquement et l'acte existant est édité (aucun doublon) ; le mariage traite bien les deux conjoints.
+- **Périodes réalistes indiquées** sous le champ date (baptême dans les 2 ans, mariage 16-40 ans, sépulture dans l'année du décès…) et **avertissements de cohérence non bloquants** : « Enregistrer quand même » reste possible.
+- **Événements libres** : intitulé, date, heure, commune, département, édition et suppression.
+- **GEDCOM** : export au choix 5.5.1 ou 7.0.18 ; import avec **fusion sans doublon** (complétion des fiches existantes, ajout des absents, liens recalés) ou remplacement ; version réelle 0.34.
 
 ## v0.33 (« GénéaPoche 2 » : fiche par événements et saisie d'acte intégrée)
 
