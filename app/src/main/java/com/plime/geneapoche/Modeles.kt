@@ -331,6 +331,38 @@ data class Personne(
         "S" -> signatairesS
         else -> signatairesD
     }
+
+    // v0.83 (12.0) : les actes ne sont plus stockés dans l'application ; une
+    // coche « Enregistré » PAR TYPE d'événement signale un acte conservé
+    // ailleurs. Le journal recherche son absence comme un acte manquant.
+    var enregistreN: Boolean = false
+    var enregistreB: Boolean = false
+    var enregistreM: Boolean = false
+    var enregistreS: Boolean = false
+    var enregistreD: Boolean = false
+    // v0.83 : état EN VIE / DÉCÉDÉ du conjoint au décès (persisté sur la
+    // fiche, plus dans une transcription d'acte).
+    var conjointEnVieDeces: Boolean = true
+
+    fun enregistreDe(type: String): Boolean = when (type) {
+        "N" -> enregistreN
+        "B" -> enregistreB
+        "M" -> enregistreM
+        "S" -> enregistreS
+        "D" -> enregistreD
+        else -> false
+    }
+
+    fun definirEnregistre(type: String, valeur: Boolean) {
+        when (type) {
+            "N" -> enregistreN = valeur
+            "B" -> enregistreB = valeur
+            "M" -> enregistreM = valeur
+            "S" -> enregistreS = valeur
+            "D" -> enregistreD = valeur
+        }
+    }
+
     fun aVerifier(): Boolean {
         return etatIdentite == "rouge" || etatNaissance == "rouge" ||
             etatBapteme == "rouge" || etatMariage == "rouge" ||
@@ -432,6 +464,12 @@ data class Personne(
         ecrire("signatairesM", signatairesM)
         ecrire("signatairesD", signatairesD)
         ecrire("signatairesS", signatairesS)
+        o.put("enregistreN", enregistreN)
+        o.put("enregistreB", enregistreB)
+        o.put("enregistreM", enregistreM)
+        o.put("enregistreS", enregistreS)
+        o.put("enregistreD", enregistreD)
+        o.put("conjointEnVieDeces", conjointEnVieDeces)
         return o
     }
 
@@ -531,7 +569,13 @@ data class Personne(
                 signatairesB = lireLongs(o, "signatairesB"),
                 signatairesM = lireLongs(o, "signatairesM"),
                 signatairesD = lireLongs(o, "signatairesD"),
-                signatairesS = lireLongs(o, "signatairesS")
+                signatairesS = lireLongs(o, "signatairesS"),
+                enregistreN = o.optBoolean("enregistreN", false),
+                enregistreB = o.optBoolean("enregistreB", false),
+                enregistreM = o.optBoolean("enregistreM", false),
+                enregistreS = o.optBoolean("enregistreS", false),
+                enregistreD = o.optBoolean("enregistreD", false),
+                conjointEnVieDeces = o.optBoolean("conjointEnVieDeces", true)
             )
         }
     }
@@ -636,64 +680,6 @@ data class Piste(
     }
 }
 
-// ---------------------------------------------------------------- Modele Acte (image chiffree liee a une personne)
-
-data class Acte(
-    val id: Long,
-    var personneId: Long = 0L,
-    var type: String = "N",
-    var titre: String = "",
-    var creation: Long = 0L,
-    var numPage: String = "",
-    var totalPage: String = "",
-    // Transcription integrale (saisie par acte) : ages, temoins, signataires.
-    var contenu: String = "",
-    // Reference de l'acte aux Archives departementales (cote, ex "1890-N-123").
-    var reference: String = "",
-    // G\u00E9n\u00E9aPoche 11 (11.4) : source et niveau de preuve structures.
-    // Depot = lieu de conservation (ex "Archives d\u00E9partementales du Nord").
-    var depot: String = "",
-    // Date de consultation de la source (jj/mm/aaaa, saisie libre).
-    var dateConsultation: String = "",
-    // Fiabilit\u00E9 / niveau de preuve, \u00E9chelle GEDCOM QUAY :
-    // -1 = non renseign\u00E9e, 0 = indirecte/incertaine, 1 = plausible,
-    // 2 = fiable (registre), 3 = acte original.
-    var fiabilite: Int = -1
-) {
-    fun versJson(): JSONObject {
-        val o = JSONObject()
-        o.put("id", id)
-        o.put("personneId", personneId)
-        o.put("type", type)
-        o.put("titre", titre)
-        o.put("creation", creation)
-        o.put("numPage", numPage)
-        o.put("totalPage", totalPage)
-        o.put("contenu", contenu)
-        o.put("reference", reference)
-        o.put("depot", depot)
-        o.put("dateConsultation", dateConsultation)
-        o.put("fiabilite", fiabilite)
-        return o
-    }
-
-    companion object {
-        fun depuisJson(o: JSONObject): Acte = Acte(
-            id = o.optLong("id", 0L),
-            personneId = o.optLong("personneId", 0L),
-            type = o.optString("type", "N"),
-            titre = o.optString("titre", ""),
-            creation = o.optLong("creation", 0L),
-            numPage = o.optString("numPage", ""),
-            totalPage = o.optString("totalPage", ""),
-            contenu = o.optString("contenu", ""),
-            reference = o.optString("reference", ""),
-            depot = o.optString("depot", ""),
-            dateConsultation = normaliserDate(o.optString("dateConsultation", "")),
-            fiabilite = o.optInt("fiabilite", -1)
-        )
-    }
-}
 
 
 

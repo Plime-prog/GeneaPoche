@@ -143,7 +143,6 @@ class EtatApplication(
     val personnes: List<Personne>,
     val cujus: Personne?,
     val pistes: List<Piste>,
-    val actes: List<Acte>,
     val charge: Boolean,
     val message: String,
     val idOuvert: Long,
@@ -195,9 +194,8 @@ class ActionsApplication(
     val choisirCujus: () -> Unit,
     val renumeroter: (Long) -> Unit,
     val supprimerPiste: (Piste) -> Unit,
-    val ajouterActe: (Long, Uri, String, String) -> Unit,
-    val onSupprimerActe: (Acte) -> Unit,
-    val onVoirActe: (Acte) -> Unit,
+    // Chantier 12.0 : coche "Enregistré" par type d'acte sur la fiche.
+    val onBasculerEnregistre: (String) -> Unit = {},
     val onArbreCentre: (Long) -> Unit,
     val exporterGedcom: (Uri, Set<Long>?, Boolean, String) -> Unit,
     val importerGedcom: (Uri) -> Unit,
@@ -298,7 +296,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.82",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.83",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -665,13 +663,12 @@ fun EcranApplication(
                 } else {
                     EcranSaisieActe(
                         personnes = personnes,
-                        actes = actes,
                         onEnregistrer = enregistrerActe,
                         // v0.60 : l'onglet Saisie demarre sur la derniere
                         // fiche ouverte (pre-remplissage) au lieu d'un
                         // formulaire vierge.
                         initial = if (saisieParentEnfant == 0L && idOuvert != 0L && saisieType != "E") {
-                            personneParId(personnes, idOuvert)?.let { cand -> prefillActe(cand, personnes, actes, saisieType) }
+                            personneParId(personnes, idOuvert)?.let { cand -> prefillActe(cand, personnes, saisieType) }
                                 ?: ActeSaisie(type = saisieType ?: "N")
                         } else {
                             ActeSaisie(type = saisieType ?: "N", parentPourEnfant = saisieParentEnfant)
@@ -696,7 +693,6 @@ fun EcranApplication(
                 EcranJournal(
                     pistes = pistes,
                     personnes = personnes,
-                    actes = actes,
                     onSupprimer = { supprimerPiste(it) },
                     onOuvrirPersonne = { onIdOuvert(it) },
                     onSauver = enregistrer,
@@ -829,7 +825,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.82", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.83", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -967,7 +963,7 @@ fun EcranApplication(
                         Column {
                             Text(
                                 if (demandePhraseExport)
-                                    "La sauvegarde contiendra toute la base (personnes, journal, actes, notes et images), chiffr\u00E9e par votre phrase secr\u00E8te. Sans elle, le fichier est indechiffrable."
+                                    "La sauvegarde contiendra toute la base (personnes et journal), chiffr\u00E9e par votre phrase secr\u00E8te. Sans elle, le fichier est indechiffrable."
                                 else
                                     "Choisissez le fichier .gpbak : la base actuelle sera remplace\u00E9e par son contenu.",
                                 style = MaterialTheme.typography.bodySmall
@@ -1093,7 +1089,7 @@ fun EcranApplication(
                     onDismissRequest = { confirmeVider = false },
                     title = { Text("Vider toute la base ?") },
                     text = {
-                        Text("Toutes les personnes, le journal, les actes et leurs images seront d\u00E9finitivement supprim\u00E9s. Confirmez seulement si vous avez export\u00E9 une sauvegarde GEDCOM.")
+                        Text("Toutes les personnes et tout le journal seront d\u00E9finitivement supprim\u00E9s. Confirmez seulement si vous avez export\u00E9 une sauvegarde GEDCOM.")
                     },
                     confirmButton = {
                         TextButton(onClick = {
@@ -1117,7 +1113,6 @@ fun EcranApplication(
                 LaunchedEffect(p.id) { onArbreCentre(p.id) }
                 EcranPersonne(
             personnes = personnes,
-            actes = actes,
             p = p,
             enregistrer = enregistrer,
             onOuvrir = { onIdOuvert(it) },
@@ -1140,21 +1135,12 @@ fun EcranApplication(
             onNouvelEnfant = { nom, prenoms, sexe, date ->
                 ajouterEnfant(nom, prenoms, sexe, date)
             },
-            onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },
-            picker = picker,
-            onSupprimerActe = { onSupprimerActe(it) },
-            onVoirActe = { onVoirActe(it) },
+            onBasculerEnregistre = { onBasculerEnregistre(it) },
             onValider = { section, valide -> validerInfo(p, section, valide) },
             onValiderIdentite = { etat -> validerIdentite(p, etat) },
             onEditerIdentite = { onEditionCible(p); onEditionOuverte(true) },
             onModifierEvenementLibre = { ev -> majEvenementLibre(p, ev) },
             onSupprimerEvenementLibre = { idEv -> supprimerEvenementLibre(p, idEv) },
-            // v0.65 : réparation des actes mal rattachés.
-            onReattribuerActe = { acte, id ->
-                acte.personneId = id
-                enregistrer()
-                onMessage("Acte rattach\u00E9 \u00E0 " + (personneParId(personnes, id)?.titre() ?: ""))
-            },
             // G\u00E9n\u00E9aPoche 9 : plus de bouton Arbre sur la fiche ;
             // l'arbre et la ligne de vie suivent la fiche ouverte.
         )
@@ -1169,321 +1155,3 @@ fun EcranApplication(
     // G3-19 : le message passe par le Snackbar (declare plus haut).
 
     if (editionOuverte) {
-        // G2-18 residuel : identifiant alloue UNE seule fois par ouverture du
-        // dialogue, strictement croissant (compteur persistant).
-        val idNouvellePersonne = remember { prochainId() }
-        key(editionCible?.id ?: idNouvellePersonne) {
-        DialogueEdition(
-            cible = editionCible,
-            idNouvelle = idNouvellePersonne,
-            onValider = { p2 ->
-                if (editionCible == null) {
-                    // Contr\u00F4le anti-doublon : une fiche portant d\u00E9j\u00E0 le m\u00EAme
-                    // couple nom + pr\u00E9noms n'est JAMAIS recr\u00E9\u00E9e (insensible \u00E0 la casse).
-                    // v0.77 : un VRAI doublon = m\u00EAme nom, m\u00EAmes pr\u00E9noms ET
-                    // m\u00EAme date de naissance. Sinon c'est un homonyme : la
-                    // nouvelle fiche est cr\u00E9\u00E9e.
-                    val doublon = personnes.firstOrNull { q ->
-                        q.nom.trim().uppercase() == p2.nom.trim().uppercase() &&
-                        q.prenoms.trim().uppercase() == p2.prenoms.trim().uppercase() &&
-                        q.dateNaissance.isNotBlank() && p2.dateNaissance.isNotBlank() &&
-                        q.dateNaissance == p2.dateNaissance
-                    }
-                    if (doublon != null) {
-                        onMessage(
-                            "Cette personne existe d\u00E9j\u00E0 (m\u00Eame nom, m\u00Eames pr\u00E9noms, m\u00Eame date de naissance) : " + doublon.titre() +
-                            ". Ouvrez sa fiche pour la compl\u00E9ter (aucun doublon dans la base)."
-                        )
-                        return@DialogueEdition
-                    }
-                    (personnes as? MutableList<Personne>)?.add(p2)
-                    if (pickerRole.isNotEmpty()) {
-                        lier(pickerRole, p2.id)
-                        onEditionOuverte(false)
-                        return@DialogueEdition
-                    }
-                } else {
-                    (personnes as? MutableList<Personne>)?.let { l ->
-                        val i = l.indexOfFirst { q -> q.id == p2.id }
-                        if (i >= 0) l[i] = p2
-                    }
-                }
-                enregistrer()
-                onEditionOuverte(false)
-            },
-            onAnnuler = { onEditionOuverte(false) },
-            onSupprimer = {
-                editionCible?.let { onConfirmSuppression(it) }
-                onEditionOuverte(false)
-            }
-        )
-        }
-    }
-
-    if (pickerRole.isNotEmpty() && ouverte != null) {
-        val p = ouverte
-        val role = pickerRole
-        val candidats = personnes
-            .filter { q ->
-                q.id != p.id && when (role) {
-                    "pere" -> q.id != p.mere && q.id != p.conjoint && !p.conjointsSupp.contains(q.id)
-                    "mere" -> q.id != p.pere && q.id != p.conjoint && !p.conjointsSupp.contains(q.id)
-                    "conjoint" -> q.id != p.pere && q.id != p.mere && !p.conjointsSupp.contains(q.id)
-                    "conjointsupp" -> q.id != p.conjoint && !p.conjointsSupp.contains(q.id) &&
-                        q.id != p.pere && q.id != p.mere
-                    "enfant" -> q.id != p.pere && q.id != p.mere && q.id != p.conjoint &&
-                        !p.conjointsSupp.contains(q.id) && !p.enfants.contains(q.id)
-                    else -> false
-                }
-            }
-            .sortedBy { it.titre() }
-        val titrePicker = when (role) {
-            "pere" -> "Choisir le p\u00E8re"
-            "mere" -> "Choisir la m\u00E8re"
-            "conjoint" -> "Choisir le conjoint"
-            "conjointsupp" -> "Ajouter un autre conjoint"
-            else -> "Ajouter un enfant"
-        }
-        AlertDialog(
-            onDismissRequest = { onPickerRole("") },
-            title = { Text(titrePicker) },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    if (role == "enfant") {
-                        OutlinedButton(onClick = {
-                            onEditionCible(null)
-                            onEditionOuverte(true)
-                        }) {
-                            Icon(Icons.Filled.Add, contentDescription = null)
-                            Text("  Cr\u00E9er une nouvelle personne")
-                        }
-                        Text(
-                            "Ou choisir une personne existante :",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 6.dp)
-                        )
-                    }
-                    if (candidats.isEmpty()) {
-                        Text("Aucune autre personne disponible. Cr\u00E9ez-la avec le bouton + de la liste.")
-                    } else {
-                        candidats.forEach { c ->
-                            // v0.79 : liste tres compacte, alignee a gauche,
-                            // identifiant unique (titre + N. + D.).
-                            Row(
-                                Modifier.fillMaxWidth()
-                                    .clickable { lier(role, c.id) }
-                                    .padding(vertical = 0.dp)
-                            ) {
-                                Text(
-                                    libelleUnique(c),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    fontSize = 13.sp,
-                                    lineHeight = 16.sp
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { onPickerRole("") }) { Text("Annuler") }
-            }
-        )
-    }
-
-    if (confirmSuppression != null) {
-        val cible = confirmSuppression
-        AlertDialog(
-            onDismissRequest = { onConfirmSuppression(null) },
-            title = { Text("Supprimer ?") },
-            text = { Text("Supprimer d\u00E9finitivement " + (cible?.titre() ?: "") + " ? Les liens de parent\u00E9 seront retir\u00E9s.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    cible?.let { supprimer(it) }
-                    onConfirmSuppression(null)
-                }) { Text("Supprimer") }
-            },
-            dismissButton = {
-                TextButton(onClick = { onConfirmSuppression(null) }) { Text("Annuler") }
-            }
-        )
-    }
-    }
-    }
-}
-
-// ---------------------------------------------------------------- Liste : carte personne
-
-// Branche d'un grand-parent : lui, ses conjoints et TOUS ses descendants,
-// quel que soit leur nom (les liens font la branche, pas le nom de famille).
-fun brancheDe(rootId: Long, personnes: List<Personne>): Set<Long> {
-    val racine = personnes.firstOrNull { it.id == rootId }
-    val res = mutableSetOf(rootId)
-    if (racine != null) {
-        racine.tousConjoints().forEach { c -> if (c != 0L) res.add(c) }
-    }
-    var front = listOf(rootId)
-    while (front.isNotEmpty()) {
-        val nouveaux = personnes
-            .filter { pers -> front.any { f -> pers.pere == f || pers.mere == f } }
-            .map { it.id }
-            .filter { it !in res }
-        res.addAll(nouveaux)
-        front = nouveaux
-    }
-    return res
-}
-
-// Racine de branche d'une personne : l'ancetre le plus haut atteignable
-// (pere, sinon mere). La branche porte le nom de famille de cette racine.
-fun racineBranche(p: Personne, personnes: List<Personne>): Personne {
-    var courante = p
-    var gardeFou = 0
-    while (gardeFou < 60) {
-        gardeFou += 1
-        val parentId = if (courante.pere != 0L) courante.pere else courante.mere
-        if (parentId == 0L) return courante
-        val parent = personnes.firstOrNull { it.id == parentId } ?: return courante
-        courante = parent
-    }
-    return courante
-}
-
-@Composable
-fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
-    // Tout l'encadre rose pale (femme) ou bleu pale (homme), neutre sinon.
-    val couleurCarte = when (p.sexe) {
-        "F" -> CouleurRosePale
-        "M" -> CouleurBleuPale
-        else -> CouleurNeutrePale
-    }
-    Card(
-        Modifier.fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .padding(horizontal = 12.dp, vertical = 3.dp)
-            .clickable { onOuvrir() },
-        colors = CardDefaults.cardColors(containerColor = couleurCarte)
-    ) {
-        Row(
-            Modifier.fillMaxWidth().padding(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Vignette : rond au NUMERO (Sosa ou d'Aboville) ; PASTILLE
-            // VIDE si la personne n'est ni Sosa ni d'Aboville (G\u00E9n\u00E9aPoche 5).
-            val vignette = p.numeroAffiche()
-            val couleurAvatar = when (p.sexe) {
-                "F" -> CouleurRose
-                "M" -> CouleurBleu
-                else -> CouleurNeutreDoux
-            }
-            Box(
-                Modifier.size(40.dp).clip(CircleShape).background(couleurAvatar),
-                contentAlignment = Alignment.Center
-            ) {
-                if (vignette.isNotEmpty()) {
-                    Text(
-                        vignette,
-                        color = CouleurVertFonce,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = when {
-                            vignette.length <= 3 -> 15.sp
-                            vignette.length <= 5 -> 12.sp
-                            else -> 12.sp
-                        },
-                        maxLines = 1
-                    )
-                }
-            }
-            Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    p.titre(),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                val n = dateAffichee(p.dateNaissance.trim())
-                val m = dateAffichee(p.dateMariage.trim())
-                val d = dateAffichee(p.dateDeces.trim())
-                if (n.isNotEmpty() || m.isNotEmpty() || d.isNotEmpty()) {
-                    val morceaux = mutableListOf<String>()
-                    if (n.isNotEmpty()) morceaux.add("N. " + n)
-                    if (m.isNotEmpty()) morceaux.add("M. " + m)
-                    if (d.isNotEmpty() && decesAffichable(p)) morceaux.add("D. " + d)
-                    Text(morceaux.joinToString("  \u2013  "), style = MaterialTheme.typography.bodySmall)
-                }
-            }
-            // G\u00E9n\u00E9aPoche 12 : coche (identit\u00E9 certifi\u00E9e) ou croix
-            // (\u00E0 v\u00E9rifier) rappel\u00E9e directement sur le nom de la liste.
-            if (identiteCertifiee(p)) {
-                Icon(
-                    Icons.Filled.Check,
-                    contentDescription = "Identit\u00E9 certifi\u00E9e",
-                    Modifier.size(20.dp),
-                    tint = CouleurVertFonce
-                )
-            } else {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = "Identit\u00E9 \u00E0 v\u00E9rifier",
-                    Modifier.size(16.dp),
-                    tint = CouleurRouge
-                )
-            }
-            Spacer(Modifier.width(6.dp))
-            // G\u00E9n\u00E9aPoche 5 : \u00E9tiquette des renseignements sur 6
-            // (N date compl\u00E8te, N commune, N d\u00E9partement, D date
-            // compl\u00E8te, D commune, D d\u00E9partement), rouge (0) \u00E0 vert (6).
-            // v0.73 : indicateur SYNCHRONISE avec la fiche (sur 4 pour
-            // une personne supposee en vie, sur 2 pour un mineur, sur 6
-            // sinon).
-            val (nInd, totalInd) = indicateurPersonne(p)
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = couleurCompteur(nInd, totalInd)
-            ) {
-                Text(
-                    "  " + nInd.toString() + "/" + totalInd.toString() + "  ",
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            // v0.69 : pastille rouge "Date !" si la fiche porte une date hors format
-            // (ancien GEDCOM, champ libre) : a corriger au plus vite.
-            if (datesInvalides(p).isNotEmpty()) {
-                Surface(shape = RoundedCornerShape(50), color = CouleurRouge) {
-                    Text(
-                        "  Date !  ",
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    )
-                }
-                Spacer(Modifier.width(6.dp))
-            }
-            Spacer(Modifier.width(6.dp))
-            IconButton(onClick = onSupprimer, Modifier.size(30.dp)) {
-                Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(16.dp))
-            }
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
