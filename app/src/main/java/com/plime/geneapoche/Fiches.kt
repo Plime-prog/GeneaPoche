@@ -1121,3 +1121,370 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         pereNomInit = pere?.nom ?: "",
         mereNomInit = mere?.nom ?: "",
         nom = p.nom, prenoms = p.prenoms, sexe = p.sexe, profession = p.profession,
+        pereNom = pere?.nom ?: "", perePrenoms = pere?.prenoms ?: "",
+        pereNe = pere?.dateNaissance ?: "", pereLieu = pere?.lieuNaissance ?: "",
+        pereDept = pere?.deptNaissance ?: "", pereProf = pere?.profession ?: "",
+        pereDeces = pere?.dateDeces ?: "", pereLieuDeces = pere?.lieuDeces ?: "",
+        mereNom = mere?.nom ?: "", merePrenoms = mere?.prenoms ?: "",
+        mereNe = mere?.dateNaissance ?: "", mereLieu = mere?.lieuNaissance ?: "",
+        mereDept = mere?.deptNaissance ?: "", mereProf = mere?.profession ?: "",
+        mereDeces = mere?.dateDeces ?: "", mereLieuDeces = mere?.lieuDeces ?: "",
+        marieeId = conj?.id ?: 0L,
+        marieeNom = conj?.nom ?: "", marieePrenoms = conj?.prenoms ?: "",
+        marieeProf = conj?.profession ?: "",
+        pMarieeNom = pConj?.nom ?: "", pMarieePrenoms = pConj?.prenoms ?: "",
+        pMarieeNe = pConj?.dateNaissance ?: "", pMarieeLieu = pConj?.lieuNaissance ?: "",
+        pMarieeDept = pConj?.deptNaissance ?: "", pMarieeProf = pConj?.profession ?: "",
+        pMarieeDeces = pConj?.dateDeces ?: "", pMarieeLieuDeces = pConj?.lieuDeces ?: "",
+        mMarieeNom = mConj?.nom ?: "", mMarieePrenoms = mConj?.prenoms ?: "",
+        mMarieeNe = mConj?.dateNaissance ?: "", mMarieeLieu = mConj?.lieuNaissance ?: "",
+        mMarieeDept = mConj?.deptNaissance ?: "", mMarieeProf = mConj?.profession ?: "",
+        mMarieeDeces = mConj?.dateDeces ?: "", mMarieeLieuDeces = mConj?.lieuDeces ?: "",
+        temoins = temoinsIds.mapNotNull { id ->
+            personneParId(personnes, id)?.let { q -> TemoinSaisie(q.nom, q.prenoms, q.profession) }
+        },
+        signataires = signatairesListe,
+        conjointEnVie = conjointEnVie,
+        declarantEnfantId = declarantEnfantId
+    )
+}
+
+fun champsEvenement(p: Personne, type: String): EvChamps = when (type) {
+    "N" -> EvChamps(p.dateNaissance, p.heureNaissance, p.lieuNaissance, p.deptNaissance)
+    "B" -> EvChamps(p.dateBapteme, p.heureBapteme, p.lieuBapteme, p.deptBapteme)
+    "M" -> EvChamps(p.dateMariage, p.heureMariage, p.lieuMariage, p.deptMariage)
+    "S" -> EvChamps(p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture)
+    else -> EvChamps(p.dateDeces, p.heureDeces, p.lieuDeces, p.deptDeces)
+}
+
+// Annee d'une date : gregorienne, ou conversion d'une date republicaine.
+fun anneeDe(s: String): Int? =
+    Regex("[0-9]{4}").find(s)?.value?.toIntOrNull()
+        ?: repubAGregorien(s)?.takeLast(4)?.toIntOrNull()
+
+// Conjoint connu de la personne, affiche apres son titre (" avec X").
+fun conjointDeTxt(p: Personne, personnes: List<Personne>): String {
+    val c = personneParId(personnes, p.conjoint) ?: return ""
+    return " avec " + c.titre()
+}
+
+// Evenements lies a la famille (reponse utilisateur) : deces des parents et
+// grands-parents, mariages et deces des freres et soeurs, mariages et deces
+// des enfants. Chaque ligne : (annee, "jj/mm/aaaa Texte a Lieu (dep)"),
+// triee par annee croissante.
+fun evenementsFamille(p: Personne, personnes: List<Personne>): List<Pair<Int, String>> {
+    fun lieuAvecDept(lieu: String, dept: String): String {
+        val l = lieu.trim()
+        if (l.isEmpty()) return ""
+        val d = dept.trim()
+        val num = d.toIntOrNull() ?: numeroDepartement(d) ?: numeroDepartement(l)
+        return l + (if (num != null) " (" + num.toString() + ")" else "")
+    }
+    fun ligne(date: String, lieu: String, dept: String, texte: String): Pair<Int, String>? {
+        val d = date.trim()
+        if (d.isEmpty()) return null
+        val an = anneeDe(d) ?: return null
+        val lt = lieuAvecDept(lieu, dept)
+        // G\u00E9n\u00E9aPoche 7 : date en t\u00EAte + \u00E2ge de la personne
+        // centrale entre parenth\u00E8ses (7.3 et 7.5).
+        val a = ageAffiche(p.dateNaissance, d)
+        return an to (dateLigne(d) + (if (a.isNotEmpty()) " " + a else "") + " " + texte + (if (lt.isNotEmpty()) " \u00E0 " + lt else ""))
+    }
+    val res = mutableListOf<Pair<Int, String>>()
+    fun decesRelatif(r: Personne, lien: String) {
+        // Regle des 100 ans : un deces ne s'affiche que s'il est connu
+        // ou possible (la personne est decedee ou nee il y a plus de 100 ans).
+        if (!decesAffichable(r)) return
+        ligne(r.dateDeces, r.lieuDeces, r.deptDeces, "D\u00E9c\u00E8s de " + lien + " " + r.titre())?.let { res.add(it) }
+    }
+    // Parents et grands-parents.
+    val pere = personneParId(personnes, p.pere)
+    val mere = personneParId(personnes, p.mere)
+    pere?.let {
+        decesRelatif(it, "son p\u00E8re")
+        personneParId(personnes, it.pere)?.let { gp -> decesRelatif(gp, "son grand-p\u00E8re paternel") }
+        personneParId(personnes, it.mere)?.let { gm -> decesRelatif(gm, "sa grand-m\u00E8re paternelle") }
+    }
+    mere?.let {
+        decesRelatif(it, "sa m\u00E8re")
+        personneParId(personnes, it.pere)?.let { gp -> decesRelatif(gp, "son grand-p\u00E8re maternel") }
+        personneParId(personnes, it.mere)?.let { gm -> decesRelatif(gm, "sa grand-m\u00E8re maternelle") }
+    }
+    // Freres et soeurs : autres enfants du pere et/ou de la mere.
+    val idsFratrie = mutableSetOf<Long>()
+    listOfNotNull(pere, mere).forEach { par -> par.enfants.forEach { id -> if (id != p.id) idsFratrie.add(id) } }
+    idsFratrie.mapNotNull { personneParId(personnes, it) }.forEach { fr ->
+        val lienFr = if (fr.sexe == "F") "sa soeur" else "son fr\u00E8re"
+        ligne(
+            fr.dateMariage, fr.lieuMariage, fr.deptMariage,
+            "Mariage de " + lienFr + " " + fr.titre() + conjointDeTxt(fr, personnes)        )?.let { res.add(it) }
+        decesRelatif(fr, lienFr)
+    }
+    // Enfants : mariage (la personne y est presente et consentante) et deces.
+    p.enfants.mapNotNull { personneParId(personnes, it) }.forEach { e ->
+        val lienE = if (e.sexe == "F") "sa fille" else "son fils"
+        ligne(e.dateMariage, e.lieuMariage, e.deptMariage, "Mariage de " + lienE + " " + e.titre() + conjointDeTxt(e, personnes))?.let { res.add(it) }
+        if (decesAffichable(e)) {
+            ligne(e.dateDeces, e.lieuDeces, e.deptDeces, "D\u00E9c\u00E8s de " + lienE + " " + e.titre())?.let { res.add(it) }
+        }
+    }
+    return res.sortedBy { it.first }
+}
+
+// Bloc de la frise : evenements de la famille, sans etre repliables.
+@Composable
+fun EvenementsFamille(p: Personne, personnes: List<Personne>) {
+    val evs = remember(p.id, personnes.size) { evenementsFamille(p, personnes) }
+    if (evs.isEmpty()) return
+    Card(
+        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, CouleurBordVert)
+    ) {
+        Column(Modifier.fillMaxWidth().padding(8.dp)) {
+            evs.forEach { ev ->
+                Text(
+                    ev.second,
+                    Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+// Extrait une ligne de la transcription du dernier acte du type (ex "T\u00E9moins : ...").
+// Ligne d'une personne liee (pere, mere, conjoint) : nom, profession, naissance,
+// age a l'acte, deces. Grisee si absente.
+@Composable
+fun LignePersonneG(
+    libelle: String,
+    q: Personne?,
+    anneeActe: Int?,
+    onOuvrir: (() -> Unit)? = null
+) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+        if (q == null) {
+            Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
+        } else {
+            val m = mutableListOf<String>()
+            m.add(q.titre())
+            if (q.profession.isNotBlank()) m.add(q.profession.trim())
+            val an = anneeDe(q.dateNaissance)
+            if (an != null) {
+                var s = "n\u00E9(e) le " + dateAffichee(q.dateNaissance)
+                if (anneeActe != null) s = s + " (" + (anneeActe - an).coerceAtLeast(0).toString() + " ans \u00E0 l'acte)"
+                m.add(s)
+            }
+            if (q.lieuNaissance.isNotBlank()) m.add("\u00E0 " + q.lieuNaissance.trim())
+            if (q.dateDeces.isNotBlank()) m.add("d\u00E9c\u00E9d\u00E9(e) le " + dateAffichee(q.dateDeces))
+            // Appui direct sur le nom : ouverture de la fiche.
+            Text(
+                m.joinToString(", "),
+                Modifier.weight(1f).heightIn(min = 48.dp).clickable(enabled = onOuvrir != null) { onOuvrir?.invoke() },
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+// Ligne toujours affichee : valeur ou em-dash gris si manquante.
+@Composable
+fun LigneG(libelle: String, valeur: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+        if (valeur.isBlank()) {
+            Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
+        } else {
+            Text(valeur, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+
+// ---------------------------------------------------------------- Bloc d'evenement
+// Affiche un evenement de la frise : entete avec edition, date et heure sur
+// la meme ligne, commune + numero de departement accole, parents choisis ou
+// crees (naissance), conjoints et enfants (mariage), temoins avec coche de
+// signature. Aucun temoin par defaut ; les doublons sont evites en amont.
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun CarteEvenement(
+    titre: String,
+    typeActe: String,
+    p: Personne,
+    personnes: List<Personne>,
+    onEditer: () -> Unit,
+    onOuvrir: (Long) -> Unit,
+    onChoisir: (String) -> Unit,
+    onRetirer: (String, Long) -> Unit,
+    onOuvrirMariage: () -> Unit,
+    onOuvrirParent: (String) -> Unit,
+    // Chantier 12.0 : coche "Enregistré" dans l'en-tête du bloc.
+    onBasculerEnregistre: (String) -> Unit = {},
+    onEnregistrer: () -> Unit,    // Recherches ouvertes (la premiere de la section alimente le sous-bloc).
+    pistes: List<Piste> = emptyList(),
+    modifier: Modifier = Modifier
+) {
+    val c = champsEvenement(p, typeActe)
+    val d = c.date.trim()
+    val h = c.heure.trim()
+    val l = c.lieu.trim()
+    val dp = c.dept.trim()
+    val anneeActe = anneeDe(d)
+    val numDept = dp.toIntOrNull() ?: numeroDepartement(dp) ?: numeroDepartement(l)
+    // Le bloc est maintenant affiche DANS la carte de l'evenement (v0.28) :
+    // simple colonne, plus de carte imbriquee.
+    Column(modifier.fillMaxWidth().padding(top = 4.dp)) {
+        // Entete : titre + coche "Enregistré" (chantier 12.0 : l'acte n'est
+        // plus stocké dans l'app, la coche marque un acte conservé ailleurs).
+        // Plus de crayon (reponse utilisateur) : l'edition du bloc ouvert se
+        // fait par APPUI LONG sur cette entete (ou sur la ligne repliee).
+        Row(
+            Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = onEditer, onLongClickLabel = "Modifier ce bloc"),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Checkbox(
+                checked = p.enregistreDe(typeActe),
+                onCheckedChange = { onBasculerEnregistre(typeActe) }
+            )
+            Text("Enregistr\u00E9", fontSize = 12.sp)
+        }
+        // Date et heure sur la meme ligne.
+        Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Date : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+            if (d.isEmpty() && h.isEmpty()) {
+                Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
+            } else {
+                val s = mutableListOf<String>()
+                if (d.isNotEmpty()) s.add(dateAffichee(d))
+                if (h.isNotEmpty()) s.add("\u00E0 " + heureAffichee(h))
+                Text(s.joinToString(" "), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+
+        // Commune avec numero de departement accole, ex. Roubaix (59).
+        Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Commune : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+            if (l.isEmpty()) {
+                Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
+            } else {
+                Text(
+                    l + (if (numDept != null) " (" + numDept.toString() + ")" else ""),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+
+        // (Chantier 12.0 : plus aucune cote AD stockee - l'acte est conserve ailleurs.)
+
+        // Naissance : pere (avec coche de signature) et mere, choisies parmi
+        // les fiches existantes ou creees ; la synchronisation a lieu a la
+        // validation dans MainActivity.
+        if (typeActe == "N") {
+            LignePersonneG(
+                libelle = "P\u00E8re",
+                q = personneParId(personnes, p.pere),
+                anneeActe = anneeActe,
+                onOuvrir = { onOuvrir(p.pere) }
+            )
+            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                // G\u00E9n\u00E9aPoche 5 : la croix de retrait du p\u00E8re est
+                // SUPPRIM\u00C9E ; les boutons n'apparaissent que si le
+                // parent est inconnu.
+                if (p.pere == 0L) {
+                    OutlinedButton(onClick = { onChoisir("pere") }, Modifier.height(32.dp)) {
+                        Text("Choisir", fontSize = 12.sp)
+                    }
+                    TextButton(onClick = { onOuvrirParent("pere") }) {
+                        Text("Cr\u00E9er", fontSize = 12.sp)
+                    }
+                } else {
+                    TextButton(onClick = { onRetirer("pere", p.pere) }) {
+                        Text("Retirer ce lien", fontSize = 12.sp)
+                    }
+                }
+            }
+            LignePersonneG(
+                libelle = "M\u00E8re",
+                q = personneParId(personnes, p.mere),
+                anneeActe = anneeActe,
+                onOuvrir = { onOuvrir(p.mere) }
+            )
+            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                // G\u00E9n\u00E9aPoche 5 : la croix de retrait de la m\u00E8re est
+                // SUPPRIM\u00C9E.
+                if (p.mere == 0L) {
+                    OutlinedButton(onClick = { onChoisir("mere") }, Modifier.height(32.dp)) {
+                        Text("Choisir", fontSize = 12.sp)
+                    }
+                    TextButton(onClick = { onOuvrirParent("mere") }) {
+                        Text("Cr\u00E9er", fontSize = 12.sp)
+                    }
+                } else {
+                    TextButton(onClick = { onRetirer("mere", p.mere) }) {
+                        Text("Retirer ce lien", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+
+        // Mariage : conjoint et autres conjoints, puis les enfants. Chaque
+        // personne est choisie parmi les fiches existantes (sans doublon) ou
+        // saisie directement.
+        if (typeActe == "M") {
+            LignePersonneG(
+                libelle = "Conjoint(e)",
+                q = personneParId(personnes, p.conjoint),
+                anneeActe = anneeActe,
+                onOuvrir = { onOuvrir(p.conjoint) }
+            )
+            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                // G\u00E9n\u00E9aPoche 5 : la croix de retrait du conjoint est
+                // SUPPRIM\u00C9E.
+                if (p.conjoint == 0L) {
+                    OutlinedButton(onClick = { onChoisir("conjoint") }, Modifier.height(32.dp)) {
+                        Text("Choisir", fontSize = 12.sp)
+                    }
+                    TextButton(onClick = onOuvrirMariage) {
+                        Text("Saisir", fontSize = 12.sp)
+                    }
+                }
+            }
+            // G\u00E9n\u00E9aPoche 5 : les autres conjoints et les boutons
+            // "Autre conjoint" / "Saisir un mariage" sont SUPPRIM\u00C9S du
+            // bloc ; tout se saisit par le menu de modification (appui
+            // long) ou le menu Saisie.
+
+        }
+        // GeneaPoche 4 : temoins et signature retires du bloc ; ils se
+        // saisissent uniquement par le formulaire d'acte.
+    }
+}
+// GeneaPoche 4 : ecran "Page et reference de l'acte" supprime.// Ligne masquee si vide (liens de la famille).
+@Composable
+fun Ligne(libelle: String, valeur: String) {
+    if (valeur.isEmpty()) return
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Text(libelle + " : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+        Text(valeur, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
