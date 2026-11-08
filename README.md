@@ -23,7 +23,7 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 - **Aucune permission Internet** dans le manifeste : l'application elle-même ne transmet rien.
 - ✅ **Zéro Internet** : plus aucun lien ni recherche vers les archives départementales (supprimés en v0.33) ; l'application n'accède à aucun réseau, le seul échange externe reste le fichier GEDCOM.
 - Stockage local **chiffré AES-256/GCM** avec une **clé maître aléatoire de 256 bits liée au code PIN** (double enveloppe PBKDF2 + AndroidKeyStore) : sans le PIN, aucune donnée ne se déchiffre, même en accédant directement au stockage.
-- **Code PIN** : PBKDF2-HmacSHA256 (600 000 itérations, calcul hors du thread principal), codes triviaux refusés, phrase secrète alphanumérique possible, blocage progressif après 5 erreurs (30 s / 2 min / 10 min / 1 h) insensible au changement de l'heure.
+- **Code PIN** : PBKDF2-HmacSHA256 (600 000 itérations, calcul hors du thread principal), déverrouillage accéléré (un seul calcul, l'ouverture de la clé prouve le code), codes triviaux refusés, phrase secrète alphanumérique possible, blocage progressif après 5 erreurs (30 s / 2 min / 10 min / 1 h) insensible au changement de l'heure.
 - **FLAG_SECURE** : captures d'écran et aperçu dans les applications récentes interdits.
 - **Reverrouillage** automatique (délai réglable, immédiat par défaut) et à l'extinction de l'écran ; purge complète de la mémoire au verrouillage.
 - **Sauvegarde .gpbak chiffrée** exportable/importable avec phrase secrète ; copie .bak locale vérifiée ; écritures atomiques et durables.
@@ -36,7 +36,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.80)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.80-release.apk` (signé) ou `GeneaPoche-v0.80-debug.apk`.
+**Téléchargement direct de la dernière version (v0.81)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.81-release.apk` (signé) ou `GeneaPoche-v0.81-debug.apk`.
 
 Sinon, depuis les sources :
 

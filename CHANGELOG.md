@@ -1,5 +1,12 @@
 # Historique des versions — GénéaPoche
 
+## v0.81 – Déverrouillage accéléré
+
+- **Ouverture environ deux fois plus rapide après la saisie du code PIN** : la clé maître est désormais ouverte en premier (un seul calcul PBKDF2 de 600 000 itérations) — si son déchiffrement réussit, le code est prouvé correct, le second calcul de vérification est économisé ; en cas d'échec, l'ancien chemin complet (vérification puis migration éventuelle) reprend exactement comme avant, sans aucune perte de sécurité.
+- **Premier écran affiché sans attendre** : la reconstruction du cache d'enregistrement (les trois fichiers JSON) passe en arrière-plan au déverrouillage, au lieu de bloquer le premier rendu.
+- **Indicateur « Déverrouillage en cours… »** sur l'écran du PIN pendant le calcul.
+- Bumps v0.81 (gradle 81/« 0.81 », export GEDCOM « 2 VERS 0.81 », badge de saisie « v0.81 », écran d'application, README).
+
 ## v0.80 – Suspend levés : conjoint veuf/en vie persisté, enfant déclarant sur décès
 
 - le choix « veuf / en vie » du conjoint sur un acte de décès ou de sépulture est désormais mémorisé : la transcription affiche « Conjoint survivant : … » ou « Conjoint décédé avant : … », et si le conjoint est décédé avant, sa fiche reçoit « avant aaaa » comme date de décès (qualification BEF à l'export GEDCOM) ;

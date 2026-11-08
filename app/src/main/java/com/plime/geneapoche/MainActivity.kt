@@ -1923,13 +1923,23 @@ fun AppEcran(
             if (fichiersIllisibles.isEmpty()) {
                 // G5 : le cache part du contenu exact du disque : le premier
                 // enregistrement ne reecrit que ce qui a vraiment change.
+                // v0.81 : la reconstruction des 3 JSON tourne HORS du thread
+                // principal (avec un instantane des listes, aucune mutation
+                // concurrente) : le premier ecran s'affiche sans attendre,
+                // la preparation du journal suit des que le calcul est fini.
                 try {
-                    val tp = org.json.JSONArray(); personnes.forEach { tp.put(it.versJson()) }
-                    val tj = org.json.JSONArray(); pistes.forEach { tj.put(it.versJson()) }
-                    val ta = org.json.JSONArray(); actes.forEach { ta.put(it.versJson()) }
-                    derniersJson["personnes"] = tp.toString()
-                    derniersJson["journal"] = tj.toString()
-                    derniersJson["actes"] = ta.toString()
+                    val instantaneP = personnes.toList()
+                    val instantaneJ = pistes.toList()
+                    val instantaneA = actes.toList()
+                    val (chaineP, chaineJ, chaineA) = withContext(Dispatchers.Default) {
+                        val tp = org.json.JSONArray(); instantaneP.forEach { tp.put(it.versJson()) }
+                        val tj = org.json.JSONArray(); instantaneJ.forEach { tj.put(it.versJson()) }
+                        val ta = org.json.JSONArray(); instantaneA.forEach { ta.put(it.versJson()) }
+                        Triple(tp.toString(), tj.toString(), ta.toString())
+                    }
+                    derniersJson["personnes"] = chaineP
+                    derniersJson["journal"] = chaineJ
+                    derniersJson["actes"] = chaineA
                 } catch (e: Exception) {
                     derniersJson.clear()
                 }
