@@ -197,7 +197,7 @@ class ActionsApplication(
     // Chantier 12.0 : coche "Enregistré" par type d'acte sur la fiche.
     val onBasculerEnregistre: (String) -> Unit = {},
     val onArbreCentre: (Long) -> Unit,
-    val exporterGedcom: (Uri, Set<Long>?, Boolean, String) -> Unit,
+    val exporterGedcom: (Uri, Set<Long>?, Boolean, String, String) -> Unit,
     val importerGedcom: (Uri) -> Unit,
     val viderBase: () -> Unit,
     val enregistrerActe: (ActeSaisie) -> Unit,
@@ -255,6 +255,13 @@ fun EcranApplication(
     // G\u00E9n\u00E9aPoche 3 : double export GEDCOM (5.5.1 pour Heredis, ou
     // 7.0.18, derni\u00E8re version du standard au 01/11/2026).
     var formatGedcom by remember { mutableStateOf("5.5.1") }
+    // 12.2 : export GEDCOM chiffr\u00E9 (.gpged) avec phrase secr\u00E8te, et
+    // rappel de suppression du fichier envoy\u00E9.
+    var exportChiffre by remember { mutableStateOf(false) }
+    var demandePhraseGedcom by remember { mutableStateOf(false) }
+    var phraseSecreteGed by remember { mutableStateOf("") }
+    var gedPhraseEnAttente by remember { mutableStateOf("") }
+    var gedChiffreBranche by remember { mutableStateOf(false) }
     var confirmeVider by remember { mutableStateOf(false) }
     // G\u00E9n\u00E9aPoche 3 : menu Saisie \u00E0 7 entr\u00E9es ; le formulaire
     // s'ouvre en plein \u00E9cran (type N/B/M/S/D/E ou enfant).
@@ -296,7 +303,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.84",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.85",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -361,7 +368,12 @@ fun EcranApplication(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
             ) { uri ->
                 picker(false)
-                if (uri != null) exporterGedcom(uri, null, exclureVivants, formatGedcom)
+                if (uri != null) {
+                    // 12.2 : phrase en attente = export chiffr\u00E9 (.gpged).
+                    val ph = gedPhraseEnAttente
+                    gedPhraseEnAttente = ""
+                    exporterGedcom(uri, null, exclureVivants, formatGedcom, ph)
+                }
             }
             val lanceurGedcomBranche = rememberLauncherForActivityResult(
                 ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -369,7 +381,10 @@ fun EcranApplication(
                 picker(false)
                 if (uri != null) {
                     val sel = exportBrancheId
-                    exporterGedcom(uri, if (sel != 0L) brancheDe(personnes, sel) else null, exclureVivants, formatGedcom)
+                    // 12.2 : phrase en attente = export chiffr\u00E9 (.gpged).
+                    val ph = gedPhraseEnAttente
+                    gedPhraseEnAttente = ""
+                    exporterGedcom(uri, if (sel != 0L) brancheDe(personnes, sel) else null, exclureVivants, formatGedcom, ph)
                 }
             }
             val lanceurImport = rememberLauncherForActivityResult(
@@ -753,14 +768,22 @@ fun EcranApplication(
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(top = 8.dp)
                             )
-                            Text(
-                                "\u26A0\uFE0F Le fichier GEDCOM est EN CLAIR, sans chiffrement : ne le partagez qu'avec pr\u00E9caution.",
-                                style = MaterialTheme.typography.bodySmall
-                            )
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Checkbox(checked = exclureVivants, onCheckedChange = { exclureVivants = it })
                                 Text("Exclure les personnes vivantes (sans d\u00E9c\u00E8s, n\u00E9es il y a moins de 100 ans)", style = MaterialTheme.typography.bodySmall)
                             }
+                            // 12.2 : coche d'export chiffr\u00E9 (.gpged).
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(checked = exportChiffre, onCheckedChange = { exportChiffre = it })
+                                Text("Chiffrer le fichier (.gpged, phrase secr\u00E8te)", style = MaterialTheme.typography.bodySmall)
+                            }
+                            Text(
+                                if (exportChiffre)
+                                    "Le fichier .gpged sera chiffr\u00E9 : il ne s'ouvre que dans GeneaPoche (Importer un GEDCOM) avec la phrase secr\u00E8te, jamais dans Heredis."
+                                else
+                                    "\u26A0\uFE0F Le fichier GEDCOM est EN CLAIR, sans chiffrement : ne le partagez qu'avec pr\u00E9caution.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                     },
                     confirmButton = {
@@ -770,14 +793,18 @@ fun EcranApplication(
                             // lance depuis une base vide.
                             if (personnes.isEmpty()) {
                                 onMessage("La base est vide : rien \u00E0 exporter.")
+                            } else if (!exportTout && exportBrancheId == 0L) {
+                                onMessage("Choisissez une personne centrale.")
+                            } else if (exportChiffre) {
+                                // 12.2 : phrase secr\u00E8te AVANT le choix du fichier.
+                                gedChiffreBranche = !exportTout
+                                demandePhraseGedcom = true
                             } else if (exportTout) {
                                 picker(true)
                                 lanceurGedcom.launch("geneapoche.ged")
-                            } else if (exportBrancheId != 0L) {
+                            } else {
                                 picker(true)
                                 lanceurGedcomBranche.launch("geneapoche-branche.ged")
-                            } else {
-                                onMessage("Choisissez une personne centrale.")
                             }
                         }) { Text("Exporter") }
                     },
@@ -825,7 +852,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.84", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.85", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -998,6 +1025,45 @@ fun EcranApplication(
                     },
                     dismissButton = {
                         TextButton(onClick = { demandePhraseExport = false; demandePhraseImport = false; phraseSecrete = "" }) { Text("Annuler") }
+                    }
+                )
+            }
+            // 12.2 : export GEDCOM chiffr\u00E9 (.gpged) - phrase secr\u00E8te
+            // demand\u00E9e AVANT le choix du fichier, comme pour un .gpbak.
+            if (demandePhraseGedcom) {
+                AlertDialog(
+                    onDismissRequest = { demandePhraseGedcom = false; phraseSecreteGed = "" },
+                    title = { Text("Export GEDCOM chiffr\u00E9 (.gpged)") },
+                    text = {
+                        Column {
+                            Text(
+                                "Le fichier .gpged sera chiffr\u00E9 avec cette phrase secr\u00E8te : il ne s'ouvre que dans GeneaPoche (Param\u00E9trages \u203a Importer un GEDCOM), jamais dans Heredis. Sans la phrase, il est ind\u00E9chiffrable.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            OutlinedTextField(
+                                value = phraseSecreteGed,
+                                onValueChange = { phraseSecreteGed = it },
+                                label = { Text("Phrase secr\u00E8te (6 caract\u00E8res min.)") },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                gedPhraseEnAttente = phraseSecreteGed
+                                phraseSecreteGed = ""
+                                demandePhraseGedcom = false
+                                picker(true)
+                                if (gedChiffreBranche) lanceurGedcomBranche.launch("geneapoche-branche.gpged") else lanceurGedcom.launch("geneapoche.gpged")
+                            },
+                            enabled = phraseSecreteGed.length >= 6
+                        ) { Text("Continuer") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { demandePhraseGedcom = false; phraseSecreteGed = "" }) { Text("Annuler") }
                     }
                 )
             }

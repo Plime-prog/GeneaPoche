@@ -497,6 +497,25 @@ object Stockage {
             .commit()
     }
 
+    // ------------------------------------------------------------ Rappel partage (12.2)
+    // 12.2 : rappel de suppression du dernier fichier exporte/partage
+    // (GEDCOM .ged/.gpged ou sauvegarde .gpbak) : rappele a l'ouverture tant
+    // que l'utilisateur ne confirme pas l'avoir supprime de son appareil.
+    fun noterFichierPartage(ctx: Context, nom: String) {
+        prefs(ctx).edit()
+            .putString("partage_nom", nom)
+            .putLong("partage_date", System.currentTimeMillis())
+            .commit()
+    }
+    fun lireFichierPartage(ctx: Context): Pair<String, Long>? {
+        val nom = prefs(ctx).getString("partage_nom", "") ?: ""
+        if (nom.isEmpty()) return null
+        return Pair(nom, prefs(ctx).getLong("partage_date", 0L))
+    }
+    fun effacerFichierPartage(ctx: Context) {
+        prefs(ctx).edit().remove("partage_nom").remove("partage_date").commit()
+    }
+
     // ------------------------------------------------------------ Journal (chiffre)
 
     fun chargerJournal(ctx: Context): ResultatLecture<Piste> =
