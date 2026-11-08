@@ -1,5 +1,15 @@
 # Historique des versions — GénéaPoche
 
+## v0.83 – Actes : coche « Enregistré » (12.0)
+
+- **Le stockage des actes est supprimé de l'application** : plus de photos d'actes, de transcriptions ni de fichiers actes.bin chiffrés — les documents restent conservés ailleurs (archives, PC, cloud). Les anciens fichiers sont purgés proprement à la migration.
+- **Coche « Enregistré » par type d'événement (N, B, M, D, S)** : sur la fiche, dans l'en-tête de chaque bloc d'événement ; et dans le formulaire de saisie. Elle signale un acte conservé ailleurs, sans encombrer la poche.
+- **Migration automatique** : à la mise à jour, toute personne qui avait un acte stocké reçoit la coche « Enregistré » du type correspondant ; l'import d'une ancienne sauvegarde .gpbak (avec actes) pose aussi les coches.
+- **Journal** : l'absence de coche devient une recherche « Enregistrer [type] de … » ; la recherche « acte manquant » s'appuie désormais sur la coche.
+- **Champs de preuve supprimés** (dépôt, côte AD, consulté le, niveau de preuve) : le système complet des sources sera revu plus tard.
+- **Correctif « Signe »** : la coche Signe du formulaire de saisie disparaissait après enregistrement — les signataires (père, prêtre, témoin…) sont désormais réellement persistés sur les fiches, comme l'enfant déclarant l'était déjà.
+- Bumps v0.83 (gradle 83/« 0.83 », export GEDCOM « 2 VERS 0.83 », badge de saisie « v0.83 », écran d'application).
+
 ## v0.82 – Sauvegarde automatique et clé de récupération (12.1)
 
 - **Sauvegarde automatique .gpbak** : nouvelle entrée « Sauvegarde automatique… » dans la feuille des paramétrages — choisissez un dossier, et une copie chiffrée de toute la base y est créée automatiquement après N modifications enregistrées (25 par défaut, réglable de 5 à 500). Sans dossier choisi, un simple rappel s'affiche au franchissement du seuil.
