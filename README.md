@@ -7,7 +7,6 @@ Application Android de généalogie de poche : recherches généalogiques en Fra
 Un outil léger pour :
 - saisir au fil de l'eau des personnes (père, mère, époux/épouse, **tous** les enfants) ;
 - savoir quelles futures recherches faire (journal de recherches intelligent) ;
-- stocker captures d'écran et photos d'actes **dans chaque bloc d'événement** (chiffrées sur l'appareil) ;
 - suivre ce qui est vérifié (pastilles vertes) ou à vérifier (rouge doux) ;
 - **exporter en GEDCOM 5.5.1** pour alimenter Heredis, et importer depuis Heredis.
 
@@ -18,7 +17,7 @@ un enfant né avant son parent est refusé partout : saisie, choix de fiche, nou
 
 GénéaPoche 12 : alertes locales — anniversaires du jour (naissances, mariages et décès tombant un jour comme aujourd'hui, dates républicaines converties) affichés dans l'onglet Journal et annoncés à l'ouverture ; sauvegarde automatique .gpbak avec clé de récupération ; coche « Enregistré » par type d'événement (les actes restent conservés ailleurs) ; export GEDCOM chiffré (.gpged) et rappel de suppression du fichier partagé.
 
-GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque fiche (indicateur automatique sur 6 renseignements (naissance, mariage et décès : date et commune complète), sur 4 (naissance et décès) pour une personne décédée avant 25 ans, sur 2 (naissance) pour un vivant de moins de 30 ans, sans mariage compté s'il n'y a pas de conjoint, calcul identique sur la fiche et la liste des noms ; ✘ si rien, choix manuel possible au toucher), diagnostic de l'arbre dans le journal (anomalies, doublons avec fusion guidée « Garder A / Garder B » sans aucune perte, branches isolées, identités non certifiées), sources et preuves sur chaque acte (dépôt d'archives, date de consultation, fiabilité 0-3 échelle QUAY) exportées en GEDCOM (AGNC, NOTE, QUAY).
+GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque fiche (indicateur automatique sur 6 renseignements (naissance, mariage et décès : date et commune complète), sur 4 (naissance et décès) pour une personne décédée avant 25 ans, sur 2 (naissance) pour un vivant de moins de 30 ans, sans mariage compté s'il n'y a pas de conjoint, calcul identique sur la fiche et la liste des noms ; ✘ si rien, choix manuel possible au toucher), diagnostic de l'arbre dans le journal (anomalies, doublons avec fusion guidée « Garder A / Garder B » sans aucune perte, branches isolées, identités non certifiées).
 
 ## Modèle de sécurité — exact, avec ses limites
 
@@ -32,7 +31,7 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 - **Export GEDCOM chiffré (.gpged)** : le fichier exporté ne s'ouvre que dans GeneaPoche, avec la phrase secrète choisie à l'export ; l'application rappelle de supprimer le fichier exporté une fois qu'il a été envoyé.
 
 **Limites, en toute honnêteté :**
-- ⚠️ Les exports GEDCOM et images sont en clair, à manipuler avec prudence.
+- ⚠️ L'export GEDCOM est en clair par défaut (à manipuler avec prudence) ; l'option « Chiffrer le fichier » (.gpged) le protège par une phrase secrète.
 - ⚠️ Sans le code PIN, la base est indéchiffrable : **aucune récupération possible**.
 
 Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique de confidentialité en français).
