@@ -45,7 +45,8 @@ fun normaliserCommune(s: String): String {
 // Une valeur non identifiable est laiss\u00E9e telle quelle.
 fun normaliserDept(s: String): String {
     val t = s.trim()
-    if (t.isEmpty()) return ""
+    if (t.isEm
+pty()) return ""
     val n = t.toIntOrNull()
     if (n != null) {
         if (NomsDepartements.containsKey(n)) {
@@ -83,7 +84,8 @@ fun normaliserLieux(p: Personne) {
     p.lieuDeces = normaliserCommune(p.lieuDeces)
     p.deptDeces = normaliserDept(p.deptDeces)
     p.lieuSepulture = normaliserCommune(p.lieuSepulture)
-    p.deptSepulture = normaliserDept(p.deptSepulture)
+    p.deptSepulture = normaliserDept(
+p.deptSepulture)
 }
 
 fun normaliserPrenoms(s: String): String {
@@ -132,6 +134,7 @@ fun anneeRepubli(s: String): Int? {
     RomainsRepubli.forEachIndexed { i, r -> if (t == r) return i + 1 }
     val n = t.toIntOrNull() ?: return null
     if (n in 1..14) return n
+
     // Saisie de l'annee gregorienne equivalente (1792 -> an I).
     if (n in 1792..1805) return n - 1791
     return null
@@ -175,7 +178,8 @@ fun repubAGregorien(s: String): String? {
 }
 
 // Date systematique : une saisie republicaine est GARDEE TELLE QUELLE
-// (l'affichage la complete de sa conversion gregorienne), toute autre
+// (l'a
+ffichage la complete de sa conversion gregorienne), toute autre
 // valeur est conservee telle quelle (jj/mm/aaaa ou aaaa).
 // v0.71 : toute date d'acte enregistree recoit le ZERO D'OFFICE :
 // "5/7/1890" devient "05/07/1890" - le format jj/mm/aaaa tient apres
@@ -230,7 +234,8 @@ data class Personne(
     // "coche" / "croix" = choix manuel (possible m\u00EAme si incomplet).
     var identiteVerifiee: String = "auto",
     var dateNaissance: String = "",
-    var heureNaissance: String = "",
+    var heureNaissan
+ce: String = "",
     var lieuNaissance: String = "",
     var deptNaissance: String = "",
     var dateBapteme: String = "",
@@ -274,7 +279,8 @@ data class Personne(
     // Signataires de l'acte : 0L = le pere, sinon l'id d'un temoin.
     var signatairesN: MutableList<Long> = mutableListOf(),
     var signatairesB: MutableList<Long> = mutableListOf(),
-    var signatairesM: MutableList<Long> = mutableListOf(),
+    var signatairesM: MutableList<Long> = mutableList
+Of(),
     var signatairesD: MutableList<Long> = mutableListOf(),
     var signatairesS: MutableList<Long> = mutableListOf()
 ) {
@@ -332,7 +338,8 @@ data class Personne(
         else -> signatairesD
     }
 
-    // v0.83 (12.0) : les actes ne sont plus stockés dans l'application ; une
+    // v0.83 (12.0) : les actes ne sont plus stockés dans l'appli
+cation ; une
     // coche « Enregistré » PAR TYPE d'événement signale un acte conservé
     // ailleurs. Le journal recherche son absence comme un acte manquant.
     var enregistreN: Boolean = false
@@ -391,7 +398,8 @@ data class Personne(
 
     fun tousConjoints(): List<Long> {
         val res = mutableListOf<Long>()
-        if (conjoint != 0L) res.add(conjoint)
+        i
+f (conjoint != 0L) res.add(conjoint)
         conjointsSupp.forEach { if (it != 0L && !res.contains(it)) res.add(it) }
         return res
     }
@@ -443,7 +451,8 @@ data class Personne(
         enfants.forEach { tableau.put(it) }
         o.put("enfants", tableau)
         val blocs = JSONArray()
-        blocsOuverts.forEach { blocs.put(it) }
+        blo
+csOuverts.forEach { blocs.put(it) }
         o.put("blocsOuverts", blocs)
         // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres de la chronologie.
         val evLibres = JSONArray()
@@ -492,7 +501,8 @@ data class Personne(
                 sosa = o.optString("sosa", ""),
                 lateral = o.optString("lateral", ""),
                 nom = o.optString("nom", ""),
-                prenoms = o.optString("prenoms", o.optString("prenom", "")),
+                prenoms = o.optString("prenoms", o.
+optString("prenom", "")),
                 sexe = o.optString("sexe", ""),
                 profession = o.optString("profession", ""),
                 notesLibres = o.optString("notesLibres", ""),
@@ -524,7 +534,8 @@ data class Personne(
                 etatDeces = o.optString("etatDeces", ""),
                 etatSepulture = o.optString("etatSepulture", ""),
                 pere = o.optLong("pere", 0L),
-                mere = o.optLong("mere", 0L),
+              
+  mere = o.optLong("mere", 0L),
                 conjoint = o.optLong("conjoint", 0L),
                 conjointsSupp = mutableListOf<Long>().apply {
                     val supp = o.optJSONArray("conjointsSupp")
@@ -566,7 +577,8 @@ data class Personne(
                 temoinsD = lireLongs(o, "temoinsD"),
                 temoinsS = lireLongs(o, "temoinsS"),
                 signatairesN = lireLongs(o, "signatairesN"),
-                signatairesB = lireLongs(o, "signatairesB"),
+                signatairesB = lireLon
+gs(o, "signatairesB"),
                 signatairesM = lireLongs(o, "signatairesM"),
                 signatairesD = lireLongs(o, "signatairesD"),
                 signatairesS = lireLongs(o, "signatairesS")
@@ -621,7 +633,8 @@ data class Recherche(
 data class Piste(
     val id: Long,
     var texte: String = "",
-    var personneId: Long = 0L,
+    
+var personneId: Long = 0L,
     var creation: Long = 0L,
     var faite: Boolean = false,
     var cloture: Long = 0L,
@@ -672,7 +685,8 @@ data class Piste(
             enCours = o.optString("enCours", ""),
             historique = mutableListOf<Recherche>().apply {
                 val tableau = o.optJSONArray("historique")
-                if (tableau != null) {
+                if (tableau != null)
+ {
                     for (i in 0 until tableau.length()) {
                         add(Recherche.depuisJson(tableau.getJSONObject(i)))
                     }
