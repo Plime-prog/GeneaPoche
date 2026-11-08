@@ -207,7 +207,7 @@ object Stockage {
     private fun envelopperCleMaitre(ctx: Context, pin: String, maitre: javax.crypto.SecretKey): Boolean {
         return try {
             val sel = ByteArray(16)
-            SecureRandom.nextBytes(sel)
+            SecureRandom().nextBytes(sel)
             val kek = javax.crypto.spec.SecretKeySpec(hacherPin(pin, sel), "AES")
             val c1 = Cipher.getInstance("AES/GCM/NoPadding")
             c1.init(Cipher.ENCRYPT_MODE, kek)
@@ -294,10 +294,10 @@ object Stockage {
     fun definirPin(ctx: Context, pin: String): Boolean {
         // Cle maitre aleatoire de 256 bits, liee au PIN des la creation (v0.29).
         val octets = ByteArray(32)
-        SecureRandom.nextBytes(octets)
+        SecureRandom().nextBytes(octets)
         val maitre = javax.crypto.spec.SecretKeySpec(octets, "AES")
         val sel = ByteArray(16)
-        SecureRandom.nextBytes(sel)
+        SecureRandom().nextBytes(sel)
         val hash = hacherPin(pin, sel)
         val ok = prefs(ctx).edit()
             .putString(CLE_SEL, Base64.encodeToString(sel, Base64.NO_WRAP))
@@ -332,7 +332,7 @@ object Stockage {
         }
         if (!verifierPin(ctx, pin)) return false
         val octets = ByteArray(32)
-        SecureRandom.nextBytes(octets)
+        SecureRandom().nextBytes(octets)
         val nouvelle = javax.crypto.spec.SecretKeySpec(octets, "AES")
         cleMaitre = nouvelle
         migrerVersCleMaitre(ctx)
@@ -360,7 +360,7 @@ object Stockage {
         if (!verifierPin(ctx, ancien)) return false
         val m = cleMaitre ?: return false
         val sel = ByteArray(16)
-        SecureRandom.nextBytes(sel)
+        SecureRandom().nextBytes(sel)
         val hash = hacherPin(nouveau, sel)
         val ok = prefs(ctx).edit()
             .putString(CLE_SEL, Base64.encodeToString(sel, Base64.NO_WRAP))

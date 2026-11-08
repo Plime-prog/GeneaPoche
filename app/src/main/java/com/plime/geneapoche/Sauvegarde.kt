@@ -43,7 +43,7 @@ object Sauvegarde {
             racine.put("journal", jj)
             val clair = racine.toString().toByteArray(Charsets.UTF_8)
             val sel = ByteArray(16)
-            SecureRandom.nextBytes(sel)
+            SecureRandom().nextBytes(sel)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
             cipher.init(Cipher.ENCRYPT_MODE, cleDepuisPhrase(phrase, sel))
             val chiffre = cipher.iv + cipher.doFinal(clair)

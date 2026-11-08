@@ -487,7 +487,7 @@ data class Personne(
         fun depuisJson(o: JSONObject): Personne {
             val ancienneNaissance = o.optString("naissance", "")
             val ancienDeces = o.optString("deces", "")
-            return Personne(
+            val p = Personne(
                 id = o.optLong("id", 0L),
                 sosa = o.optString("sosa", ""),
                 lateral = o.optString("lateral", ""),
@@ -569,14 +569,16 @@ data class Personne(
                 signatairesB = lireLongs(o, "signatairesB"),
                 signatairesM = lireLongs(o, "signatairesM"),
                 signatairesD = lireLongs(o, "signatairesD"),
-                signatairesS = lireLongs(o, "signatairesS"),
-                enregistreN = o.optBoolean("enregistreN", false),
-                enregistreB = o.optBoolean("enregistreB", false),
-                enregistreM = o.optBoolean("enregistreM", false),
-                enregistreS = o.optBoolean("enregistreS", false),
-                enregistreD = o.optBoolean("enregistreD", false),
-                conjointEnVieDeces = o.optBoolean("conjointEnVieDeces", true)
+                signatairesS = lireLongs(o, "signatairesS")
             )
+            // v0.83 : coches « Enregistré » (corps de classe, pas constructeur).
+            p.enregistreN = o.optBoolean("enregistreN", false)
+            p.enregistreB = o.optBoolean("enregistreB", false)
+            p.enregistreM = o.optBoolean("enregistreM", false)
+            p.enregistreS = o.optBoolean("enregistreS", false)
+            p.enregistreD = o.optBoolean("enregistreD", false)
+            p.conjointEnVieDeces = o.optBoolean("conjointEnVieDeces", true)
+            return p
         }
     }
 }
