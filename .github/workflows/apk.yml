@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 # G2-15 : deux pushes rapproches ne lancent qu un build ; le plus ancien
 # est annule au profit du plus recent.
@@ -38,9 +39,10 @@ jobs:
       # (telechargement Gradle) -> 4 tentatives avec pause de 20 s.
       - name: Wrapper Gradle
         run: |
+          set -o pipefail
           ok=0
           for i in 1 2 3 4; do
-            if gradle wrapper --gradle-version 9.4.1 --no-daemon; then ok=1; break; fi
+            if gradle wrapper --gradle-version 9.4.1 --no-daemon 2>&1 | tee /tmp/wrapper.log; then ok=1; break; fi
             echo "Echec du wrapper (essai $i/4), nouvelle tentative dans 20 s"
             sleep 20
           done
@@ -102,6 +104,26 @@ jobs:
           name: geneapoche-release-apk
           path: app/build/outputs/apk/release/app-release.apk
 
+      # 8/11/2026 : en cas d echec, ouvrir une issue avec les logs pour
+      # pouvoir diagnostiquer les pannes d infrastructure GitHub Actions.
+      - name: Diagnostiquer l echec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Echec du job **build** sur $GITHUB_REF_NAME (run #$GITHUB_RUN_NUMBER)."
+            echo ""
+            echo "Run : $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo ""
+            echo "## Wrapper Gradle"
+            tail -40 /tmp/wrapper.log 2>/dev/null || echo "(pas de wrapper.log : echec avant le wrapper)"
+            echo ""
+            echo "## Fin du build.log"
+            tail -60 /tmp/build.log 2>/dev/null || echo "(pas de build.log : echec avant la compilation)"
+          } > /tmp/diag.md
+          gh issue create --title "CI : echec du run #$GITHUB_RUN_NUMBER sur $GITHUB_REF_NAME" --body-file /tmp/diag.md
+
   # G2-15 : release GitHub quand un tag v* est pousse OU quand une branche
   # release-* est poussee (les tags ne sont pas poussables par l integration).
   release:
@@ -110,6 +132,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      issues: write
     steps:
       - name: Recuperer le depot
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -128,9 +151,10 @@ jobs:
       # 8/11/2026 : idem build, 4 tentatives.
       - name: Wrapper Gradle
         run: |
+          set -o pipefail
           ok=0
           for i in 1 2 3 4; do
-            if gradle wrapper --gradle-version 9.4.1 --no-daemon; then ok=1; break; fi
+            if gradle wrapper --gradle-version 9.4.1 --no-daemon 2>&1 | tee /tmp/wrapper.log; then ok=1; break; fi
             echo "Echec du wrapper (essai $i/4), nouvelle tentative dans 20 s"
             sleep 20
           done
@@ -155,7 +179,7 @@ jobs:
           fi
 
       - name: Compiler les APK debug et release
-        run: ./gradlew assembleDebug assembleRelease --no-daemon
+        run: ./gradlew assembleDebug assembleRelease --no-daemon > /tmp/build-release.log 2>&1 || { tail -60 /tmp/build-release.log; exit 1; }
 
       - name: Creer la release GitHub
         env:
@@ -173,3 +197,22 @@ jobs:
             "GeneaPoche-v${VERSION}-debug.apk#APK debug" \
             --title "GeneaPoche $TAG" \
             --generate-notes
+
+      # 8/11/2026 : diagnostic en issue en cas d echec du job release.
+      - name: Diagnostiquer l echec
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Echec du job **release** sur $GITHUB_REF_NAME (run #$GITHUB_RUN_NUMBER)."
+            echo ""
+            echo "Run : $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo ""
+            echo "## Wrapper Gradle"
+            tail -40 /tmp/wrapper.log 2>/dev/null || echo "(pas de wrapper.log)"
+            echo ""
+            echo "## Fin du build-release.log"
+            tail -60 /tmp/build-release.log 2>/dev/null || echo "(pas de build-release.log)"
+          } > /tmp/diag.md
+          gh issue create --title "CI : echec du job release run #$GITHUB_RUN_NUMBER sur $GITHUB_REF_NAME" --body-file /tmp/diag.md
