@@ -33,21 +33,12 @@ jobs:
         with:
           gradle-version: '9.4.1'
 
-      # G2-15 : regenerer le jar du wrapper (fichier binaire non versionne)
-      # puis construire avec ./gradlew, reproductible pour les developpeurs.
-      # 8/11/2026 : etape wrapper en echec aleatoire sur les runners GitHub
-      # (telechargement Gradle) -> 4 tentatives avec pause de 20 s.
-      - name: Wrapper Gradle
-        run: |
-          set -o pipefail
-          ok=0
-          for i in 1 2 3 4; do
-            if gradle wrapper --gradle-version 9.4.1 --no-daemon 2>&1 | tee /tmp/wrapper.log; then ok=1; break; fi
-            echo "Echec du wrapper (essai $i/4), nouvelle tentative dans 20 s"
-            sleep 20
-          done
-          if [ "$ok" != "1" ]; then echo "Wrapper Gradle en echec apres 4 essais"; exit 1; fi
-          chmod +x gradlew
+      # 8/11/2026 : l etape "gradle wrapper" (regeneration du jar du
+      # wrapper) echoue sur les runners (Test of distribution url failed,
+      # services.gradle.org injoignable depuis les runners en pique).
+      # Le Gradle 9.4.1 installe par setup-gradle etant deja la, on compile
+      # directement avec "gradle" au lieu de "./gradlew" : le wrapper n est
+      # plus necessaire en CI.
 
       # G2-12 : lintDebug + testDebugUnitTest dans la CI.
       # G1-03 : cle de signature dans les secrets GitHub (jamais dans le depot).
@@ -71,7 +62,7 @@ jobs:
       - name: Compiler les APK debug et release
         run: |
           set +e
-          ./gradlew lintDebug testDebugUnitTest assembleDebug assembleRelease --no-daemon > /tmp/build.log 2>&1
+          gradle lintDebug testDebugUnitTest assembleDebug assembleRelease --no-daemon > /tmp/build.log 2>&1
           code=$?
           if [ $code -ne 0 ]; then
             grep '^e: ' /tmp/build.log | head -10 | while IFS= read -r l; do
@@ -116,9 +107,6 @@ jobs:
             echo ""
             echo "Run : $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo ""
-            echo "## Wrapper Gradle"
-            tail -40 /tmp/wrapper.log 2>/dev/null || echo "(pas de wrapper.log : echec avant le wrapper)"
-            echo ""
             echo "## Fin du build.log"
             tail -60 /tmp/build.log 2>/dev/null || echo "(pas de build.log : echec avant la compilation)"
           } > /tmp/diag.md
@@ -148,19 +136,6 @@ jobs:
         with:
           gradle-version: '9.4.1'
 
-      # 8/11/2026 : idem build, 4 tentatives.
-      - name: Wrapper Gradle
-        run: |
-          set -o pipefail
-          ok=0
-          for i in 1 2 3 4; do
-            if gradle wrapper --gradle-version 9.4.1 --no-daemon 2>&1 | tee /tmp/wrapper.log; then ok=1; break; fi
-            echo "Echec du wrapper (essai $i/4), nouvelle tentative dans 20 s"
-            sleep 20
-          done
-          if [ "$ok" != "1" ]; then echo "Wrapper Gradle en echec apres 4 essais"; exit 1; fi
-          chmod +x gradlew
-
       - name: Cle de signature release
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -179,7 +154,7 @@ jobs:
           fi
 
       - name: Compiler les APK debug et release
-        run: ./gradlew assembleDebug assembleRelease --no-daemon > /tmp/build-release.log 2>&1 || { tail -60 /tmp/build-release.log; exit 1; }
+        run: gradle assembleDebug assembleRelease --no-daemon > /tmp/build-release.log 2>&1 || { tail -60 /tmp/build-release.log; exit 1; }
 
       - name: Creer la release GitHub
         env:
@@ -208,9 +183,6 @@ jobs:
             echo "Echec du job **release** sur $GITHUB_REF_NAME (run #$GITHUB_RUN_NUMBER)."
             echo ""
             echo "Run : $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-            echo ""
-            echo "## Wrapper Gradle"
-            tail -40 /tmp/wrapper.log 2>/dev/null || echo "(pas de wrapper.log)"
             echo ""
             echo "## Fin du build-release.log"
             tail -60 /tmp/build-release.log 2>/dev/null || echo "(pas de build-release.log)"
