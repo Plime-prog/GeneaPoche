@@ -1,6 +1,9 @@
 package com.plime.geneapoche
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 // v0.65 : tests du correctif des champs meles (diagnostic externe).
@@ -55,7 +58,7 @@ class RemplirParentsTest {
             pere = 11, mere = 12, conjoint = 14
         )
         val tous = listOf(homme, pere, mere, belleMere, epouse)
-        val a = prefillActe(homme, tous, emptyList(), "N")
+        val a = prefillActe(homme, tous, "N")
         // La personne concernee reste ELLE-MEME.
         assertEquals("HOMME", a.nom)
         assertEquals("Henri", a.prenoms)
