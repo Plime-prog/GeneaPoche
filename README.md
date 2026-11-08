@@ -7,6 +7,7 @@ Application Android de généalogie de poche : recherches généalogiques en Fra
 Un outil léger pour :
 - saisir au fil de l'eau des personnes (père, mère, époux/épouse, **tous** les enfants) ;
 - savoir quelles futures recherches faire (journal de recherches intelligent) ;
+- alertes locales : anniversaires du jour (naissances, mariages, décès tombant un jour comme aujourd'hui, dates républicaines comprises) affichés dans l'onglet Journal et annoncés à l'ouverture de l'application
 - stocker captures d'écran et photos d'actes **dans chaque bloc d'événement** (chiffrées sur l'appareil) ;
 - suivre ce qui est vérifié (pastilles vertes) ou à vérifier (rouge doux) ;
 - **exporter en GEDCOM 5.5.1** pour alimenter Heredis, et importer depuis Heredis.
