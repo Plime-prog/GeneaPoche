@@ -36,7 +36,15 @@ jobs:
       # puis construire avec ./gradlew, reproductible pour les developpeurs.
       - name: Wrapper Gradle
         run: |
-          gradle wrapper --gradle-version 9.4.1 --no-daemon
+          # 8/11/2026 : etapes wrapper en echec aleatoire sur les runners
+          # GitHub (telechargement Gradle) -> 4 tentatives avec pause.
+          ok=0
+          for i in 1 2 3 4; do
+            if gradle wrapper --gradle-version 9.4.1 --no-daemon; then ok=1; break; fi
+            echo "Echec du wrapper (essai $i/4), nouvelle tentative dans 20 s"
+            sleep 20
+          done
+          if [ "$ok" != "1" ]; then echo "Wrapper Gradle en echec apres 4 essais"; exit 1; fi
           chmod +x gradlew
 
       # G2-12 : lintDebug + testDebugUnitTest dans la CI.
@@ -55,7 +63,8 @@ jobs:
             echo "GP_KEY_ALIAS=$KEY_ALIAS" >> $GITHUB_ENV
             echo "GP_KEY_PASSWORD=$KEY_PASSWORD" >> $GITHUB_ENV
           else
-            echo "Secrets de signature absents : APK release signe avec la cle debug (non debuggable)."
+            echo "Secrets de signatur
+e absents : APK release signe avec la cle debug (non debuggable)."
           fi
 
       - name: Compiler les APK debug et release
@@ -100,6 +109,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/heads/release-')
     needs: build
     runs-on: ubuntu-24.04
+
     permissions:
       contents: write
     steps:
@@ -119,7 +129,15 @@ jobs:
 
       - name: Wrapper Gradle
         run: |
-          gradle wrapper --gradle-version 9.4.1 --no-daemon
+          # 8/11/2026 : etapes wrapper en echec aleatoire sur les runners
+          # GitHub (telechargement Gradle) -> 4 tentatives avec pause.
+          ok=0
+          for i in 1 2 3 4; do
+            if gradle wrapper --gradle-version 9.4.1 --no-daemon; then ok=1; break; fi
+            echo "Echec du wrapper (essai $i/4), nouvelle tentative dans 20 s"
+            sleep 20
+          done
+          if [ "$ok" != "1" ]; then echo "Wrapper Gradle en echec apres 4 essais"; exit 1; fi
           chmod +x gradlew
 
       - name: Cle de signature release
@@ -150,7 +168,8 @@ jobs:
           if [[ "$GITHUB_REF_NAME" == release-* ]]; then TAG="v${GITHUB_REF_NAME#release-}"; fi
           VERSION="${TAG#v}"
           # v0.45 : le numero de version figure dans le NOM du fichier telecharge.
-          cp app/build/outputs/apk/release/app-release.apk "GeneaPoche-v${VERSION}-release.apk"
+          cp app/build/outputs/apk/release/app-release.apk "GeneaPoche-v${VERSION}
+-release.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "GeneaPoche-v${VERSION}-debug.apk"
           gh release create "$TAG" \
             --target "$GITHUB_SHA" \
