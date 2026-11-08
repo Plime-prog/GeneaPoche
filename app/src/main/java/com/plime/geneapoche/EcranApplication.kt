@@ -143,7 +143,6 @@ class EtatApplication(
     val personnes: List<Personne>,
     val cujus: Personne?,
     val pistes: List<Piste>,
-    val actes: List<Acte>,
     val charge: Boolean,
     val message: String,
     val idOuvert: Long,
@@ -195,9 +194,8 @@ class ActionsApplication(
     val choisirCujus: () -> Unit,
     val renumeroter: (Long) -> Unit,
     val supprimerPiste: (Piste) -> Unit,
-    val ajouterActe: (Long, Uri, String, String) -> Unit,
-    val onSupprimerActe: (Acte) -> Unit,
-    val onVoirActe: (Acte) -> Unit,
+    // Chantier 12.0 : coche "Enregistré" par type d'acte sur la fiche.
+    val onBasculerEnregistre: (String) -> Unit = {},
     val onArbreCentre: (Long) -> Unit,
     val exporterGedcom: (Uri, Set<Long>?, Boolean, String) -> Unit,
     val importerGedcom: (Uri) -> Unit,
@@ -298,7 +296,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.82",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.83",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -665,13 +663,12 @@ fun EcranApplication(
                 } else {
                     EcranSaisieActe(
                         personnes = personnes,
-                        actes = actes,
                         onEnregistrer = enregistrerActe,
                         // v0.60 : l'onglet Saisie demarre sur la derniere
                         // fiche ouverte (pre-remplissage) au lieu d'un
                         // formulaire vierge.
                         initial = if (saisieParentEnfant == 0L && idOuvert != 0L && saisieType != "E") {
-                            personneParId(personnes, idOuvert)?.let { cand -> prefillActe(cand, personnes, actes, saisieType) }
+                            personneParId(personnes, idOuvert)?.let { cand -> prefillActe(cand, personnes, saisieType) }
                                 ?: ActeSaisie(type = saisieType ?: "N")
                         } else {
                             ActeSaisie(type = saisieType ?: "N", parentPourEnfant = saisieParentEnfant)
@@ -696,7 +693,6 @@ fun EcranApplication(
                 EcranJournal(
                     pistes = pistes,
                     personnes = personnes,
-                    actes = actes,
                     onSupprimer = { supprimerPiste(it) },
                     onOuvrirPersonne = { onIdOuvert(it) },
                     onSauver = enregistrer,
@@ -829,7 +825,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.82", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.83", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -967,7 +963,7 @@ fun EcranApplication(
                         Column {
                             Text(
                                 if (demandePhraseExport)
-                                    "La sauvegarde contiendra toute la base (personnes, journal, actes, notes et images), chiffr\u00E9e par votre phrase secr\u00E8te. Sans elle, le fichier est indechiffrable."
+                                    "La sauvegarde contiendra toute la base (personnes et journal), chiffr\u00E9e par votre phrase secr\u00E8te. Sans elle, le fichier est indechiffrable."
                                 else
                                     "Choisissez le fichier .gpbak : la base actuelle sera remplace\u00E9e par son contenu.",
                                 style = MaterialTheme.typography.bodySmall
@@ -1093,7 +1089,7 @@ fun EcranApplication(
                     onDismissRequest = { confirmeVider = false },
                     title = { Text("Vider toute la base ?") },
                     text = {
-                        Text("Toutes les personnes, le journal, les actes et leurs images seront d\u00E9finitivement supprim\u00E9s. Confirmez seulement si vous avez export\u00E9 une sauvegarde GEDCOM.")
+                        Text("Toutes les personnes et tout le journal seront d\u00E9finitivement supprim\u00E9s. Confirmez seulement si vous avez export\u00E9 une sauvegarde GEDCOM.")
                     },
                     confirmButton = {
                         TextButton(onClick = {
@@ -1117,7 +1113,6 @@ fun EcranApplication(
                 LaunchedEffect(p.id) { onArbreCentre(p.id) }
                 EcranPersonne(
             personnes = personnes,
-            actes = actes,
             p = p,
             enregistrer = enregistrer,
             onOuvrir = { onIdOuvert(it) },
@@ -1140,21 +1135,12 @@ fun EcranApplication(
             onNouvelEnfant = { nom, prenoms, sexe, date ->
                 ajouterEnfant(nom, prenoms, sexe, date)
             },
-            onAjouterActe = { uri, type, titre -> ajouterActe(p.id, uri, type, titre) },
-            picker = picker,
-            onSupprimerActe = { onSupprimerActe(it) },
-            onVoirActe = { onVoirActe(it) },
+            onBasculerEnregistre = { onBasculerEnregistre(it) },
             onValider = { section, valide -> validerInfo(p, section, valide) },
             onValiderIdentite = { etat -> validerIdentite(p, etat) },
             onEditerIdentite = { onEditionCible(p); onEditionOuverte(true) },
             onModifierEvenementLibre = { ev -> majEvenementLibre(p, ev) },
             onSupprimerEvenementLibre = { idEv -> supprimerEvenementLibre(p, idEv) },
-            // v0.65 : réparation des actes mal rattachés.
-            onReattribuerActe = { acte, id ->
-                acte.personneId = id
-                enregistrer()
-                onMessage("Acte rattach\u00E9 \u00E0 " + (personneParId(personnes, id)?.titre() ?: ""))
-            },
             // G\u00E9n\u00E9aPoche 9 : plus de bouton Arbre sur la fiche ;
             // l'arbre et la ligne de vie suivent la fiche ouverte.
         )

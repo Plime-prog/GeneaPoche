@@ -24,12 +24,10 @@ class LienAvant(
 )
 
 // G3-19 : tout ce que la suppression d'une personne a retire, pour
-// pouvoir la restaurer integralement (personne, liens, actes et leurs
-// images chiffrees, pistes).
+// pouvoir la restaurer integralement (personne, liens, pistes ; depuis
+// la v0.83 les actes ne sont plus stockes dans l'application).
 class AnnulationSuppression(
     val personne: Personne,
-    val actes: List<Acte>,
-    val images: Map<Long, ByteArray>,
     val pistes: List<Piste>,
     val liens: List<LienAvant>
 )
@@ -37,7 +35,6 @@ class AnnulationSuppression(
 class ModeleVueGeneaPoche : ViewModel() {
     val personnes = mutableStateListOf<Personne>()
     val pistes = mutableStateListOf<Piste>()
-    val actes = mutableStateListOf<Acte>()
     // Pile de navigation des fiches : retour = fiche precedemment ouverte
     // (la liste n'apparait qu'une fois la pile vide).
     val pileFiches = mutableStateListOf<Long>()
@@ -53,7 +50,6 @@ class ModeleVueGeneaPoche : ViewModel() {
     var editionCible by mutableStateOf<Personne?>(null)
     var pickerRole by mutableStateOf("")
     var confirmSuppression by mutableStateOf<Personne?>(null)
-    var acteVisionne by mutableStateOf<Acte?>(null)
     var acteAConfirmer by mutableStateOf<ActeSaisie?>(null)
     var arbreCentre by mutableStateOf(0L)
     var sosaCujus by mutableStateOf(1L)

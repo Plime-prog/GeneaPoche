@@ -68,10 +68,10 @@ fun anneeCourante(): Int = java.util.Calendar.getInstance().get(java.util.Calend
 // La notion de deces ou de sepulture ne s'affiche (fiche, frise, boutons,
 // journal, arbre) que si la personne peut avoir PLUS de 100 ans a la date du
 // jour, ou si son deces est deja connu (date, lieu ou acte rattache).
-fun decesAffichable(p: Personne, actes: List<Acte> = emptyList()): Boolean {
+fun decesAffichable(p: Personne): Boolean {
     if (p.dateDeces.isNotBlank() || p.heureDeces.isNotBlank() || p.lieuDeces.isNotBlank()) return true
     if (p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank()) return true
-    if (actes.any { it.personneId == p.id && (it.type == "D" || it.type == "S") }) return true
+    if (p.enregistreDe("D") || p.enregistreDe("S")) return true
     val n = anneeDe(p.dateNaissance) ?: return true
     return anneeCourante() - n >= 100
 }
@@ -212,16 +212,6 @@ fun brancheIsolee(p: Personne, personnes: List<Personne>): Boolean =
                 it.enfants.contains(p.id))
         }
 
-// Un acte du type avec une IMAGE (les actes transcrits sans image ont un contenu).
-fun aUneImage(actes: List<Acte>, personneId: Long, type: String): Boolean {
-    return actes.any { it.personneId == personneId && it.type == type && it.contenu.isBlank() }
-}
-
-// Un acte du type avec une TRANSCRIPTION (saisie par acte).
-fun aUneTranscription(actes: List<Acte>, personneId: Long, type: String): Boolean {
-    return actes.any { it.personneId == personneId && it.type == type && it.contenu.isNotBlank() }
-}
-
 // Libelles grammatiquement corrects pour chaque type d'evenement.
 data class LibellesEv(
     val acte: String,
@@ -238,7 +228,7 @@ val LibellesSepulture = LibellesEv("l'acte de s\u00E9pulture", "l'heure de s\u00
 
 // TOUTES les informations manquantes d'une personne. Naissance, mariage et
 // deces pour tous ; baptismes et sepultures seulement si le bloc est ouvert.
-fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): List<Suggestion> {
+fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
     val res = mutableListOf<Suggestion>()
 
     fun suffixe(lieu: String, dept: String): String {
@@ -256,12 +246,7 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
     // debut/fin : plage d'annees visee (regle des 75 ans et tri du journal).
     fun evenement(cleBase: String, type: String, lib: LibellesEv, ch: EvChamps, ouvert: Boolean, debut: String = "", fin: String = "") {
         if (!ouvert) return
-        val img = aUneImage(actes, p.id, type)
-        val trans = aUneTranscription(actes, p.id, type)
-        // Reponse utilisateur : PLUS AUCUNE recherche sur un acte
-        // manquant ; seules les donnees d un acte DEJA localise (date ou
-        // image) completent encore le journal.
-        if (ch.date.isBlank() && !img) return
+        if (ch.date.isBlank()) return
         // Acte localise : chaque champ manquant est une recherche a part entiere.
         // (L'HEURE manquante ne cree PAS de recherche : information annexe.)
         if (ch.lieu.isBlank()) {
@@ -270,8 +255,10 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
         if (ch.dept.isBlank()) {
             ajouter(cleBase + "_dept", "Compl\u00E9ter " + lib.dept + " de " + titreCourt(p), type, "", "", debut, fin)
         }
-        if (!img && !trans) {
-            ajouter(cleBase + "_copie", "Photographier ou transcrire " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
+        // Chantier 12.0 : l'acte n'est plus stocke dans l'app ; une coche
+        // "Enregistre" par type. Pas de coche = acte manquant = une recherche.
+        if (!p.enregistreDe(type)) {
+            ajouter(cleBase + "_enregistrer", "Enregistrer " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
         }
     }
 
@@ -284,14 +271,14 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
     val anneeD = anneeDe(p.dateDeces)
     val dDebut = anneeD?.toString() ?: (if (anneeN != null) (anneeN + 50).toString() else "")
     val dFin = anneeD?.toString() ?: (if (anneeN != null) (anneeN + 95).toString() else "")
-    val decesPossible = decesAffichable(p, actes)
+    val decesPossible = decesAffichable(p)
 
     evenement("naissance", "N", LibellesNaissance, champsEvenement(p, "N"), true, strN, strN)
-    evenement("bapteme", "B", LibellesBapteme, champsEvenement(p, "B"), p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank() || aUneImage(actes, p.id, "B") || aUneTranscription(actes, p.id, "B"), strN, strN)
+    evenement("bapteme", "B", LibellesBapteme, champsEvenement(p, "B"), p.blocsOuverts.contains("bapteme") || p.dateBapteme.isNotBlank() || p.heureBapteme.isNotBlank() || p.lieuBapteme.isNotBlank(), strN, strN)
     evenement("mariage", "M", LibellesMariage, champsEvenement(p, "M"), true, mDebut, mFin)
     // Deces et sepulture : uniquement si la personne peut avoir plus de 100 ans.
     evenement("deces", "D", LibellesDeces, champsEvenement(p, "D"), decesPossible, dDebut, dFin)
-    evenement("sepulture", "S", LibellesSepulture, champsEvenement(p, "S"), decesPossible && (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank() || aUneImage(actes, p.id, "S") || aUneTranscription(actes, p.id, "S")), dDebut, dFin)
+    evenement("sepulture", "S", LibellesSepulture, champsEvenement(p, "S"), decesPossible && (p.blocsOuverts.contains("sepulture") || p.dateSepulture.isNotBlank() || p.heureSepulture.isNotBlank() || p.lieuSepulture.isNotBlank()), dDebut, dFin)
 
     // --- Identite (plus de recherche sur la profession : demande utilisateur)
     if (p.sexe.isBlank()) {
@@ -328,10 +315,10 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>, actes: List<Acte>): 
 
 // Recalcule le texte d'une recherche a partir de l'etat actuel des donnees
 // (les donnees saisies entre-temps sont immediatement refl\u00E9t\u00E9es).
-fun textePisteActuel(piste: Piste, personnes: List<Personne>, actes: List<Acte>): String {
+fun textePisteActuel(piste: Piste, personnes: List<Personne>): String {
     if (piste.type != "A" || piste.categorie.isEmpty()) return piste.texte
     val pers = personneParId(personnes, piste.personneId) ?: return piste.texte
-    val suggestion = suggestionsPour(pers, personnes, actes).firstOrNull { it.cle == piste.categorie }
+    val suggestion = suggestionsPour(pers, personnes).firstOrNull { it.cle == piste.categorie }
     return suggestion?.titre ?: piste.texte
 }
 
@@ -370,7 +357,6 @@ fun numeroDePiste(piste: Piste, personnes: List<Personne>): List<Int> {
 fun EcranJournal(
     pistes: List<Piste>,
     personnes: List<Personne>,
-    actes: List<Acte>,
     onSupprimer: (Piste) -> Unit,
     onOuvrirPersonne: (Long) -> Unit,
     onSauver: () -> Unit,
@@ -606,7 +592,6 @@ fun EcranJournal(
                 CarteRecherche(
                     piste = ps,
                     personnes = personnes,
-                    actes = actes,
                     onSupprimer = onSupprimer,
                     onOuvrirPersonne = onOuvrirPersonne,
                     onSauver = onSauver
@@ -656,13 +641,12 @@ fun EcranJournal(
 fun CarteRecherche(
     piste: Piste,
     personnes: List<Personne>,
-    actes: List<Acte>,
     onSupprimer: (Piste) -> Unit,
     onOuvrirPersonne: (Long) -> Unit,
     onSauver: () -> Unit
 ) {
     val pers = personneParId(personnes, piste.personneId)
-    val texte = textePisteActuel(piste, personnes, actes)
+    val texte = textePisteActuel(piste, personnes)
     // Num\u00E9ro d'Aboville de la personne (ou Sosa) : rappel\u00E9 sur la pastille.
     val numeroAboville = pers?.numeroAffiche()?.ifEmpty { "?" } ?: "?"
     // Type d acte vise par la recherche : N, M, D (B, S aussi).

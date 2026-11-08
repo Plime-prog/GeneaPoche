@@ -154,7 +154,7 @@ class TestsFonctions {
         )
         val pere = Personne(id = 2L, nom = "Dupont", prenoms = "Pierre", sexe = "M")
         val mere = Personne(id = 3L, nom = "Dupont", prenoms = "Marie", sexe = "F")
-        val ged = construireGedcom(listOf(cujus, pere, mere), actes = listOf())
+        val ged = construireGedcom(listOf(cujus, pere, mere))
         val import = importerGedcomRapporte(ged)
         assertEquals(3, import.personnes.size)
         val j = import.personnes.first { it.prenoms == "Jean" }
@@ -231,7 +231,7 @@ class TestsFonctions {
     }
 
     @Test
-    fun personneNormaliseALaConstruction() {
+    fun personneNormaliseeALaConstruction() {
         val p = Personne(id = 1L, nom = "dupont", prenoms = "jean")
         assertEquals("DUPONT", p.nom)
         assertEquals("Jean", p.prenoms)

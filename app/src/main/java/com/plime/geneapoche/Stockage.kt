@@ -454,9 +454,6 @@ object Stockage {
     fun sauverTexteJournal(ctx: Context, texte: String): Boolean =
         ecrireFichierChiffre(ctx, FICHIER_JOURNAL, texte)
 
-    fun sauverTexteActes(ctx: Context, texte: String): Boolean =
-        ecrireFichierChiffre(ctx, FICHIER_ACTES, texte)
-
     private fun ecrireFichierChiffre(ctx: Context, nom: String, texte: String): Boolean {
         return try {
             val chiffre = chiffrer(texte.toByteArray()) ?: return false
@@ -521,51 +518,43 @@ object Stockage {
         }
     }
 
-    // ------------------------------------------------------------ Actes (index chiffre + images chiffrees)
-
-    fun chargerActes(ctx: Context): ResultatLecture<Acte> =
-        lireChiffreToutOuRien(ctx, FICHIER_ACTES) { texte ->
-            val tableau = JSONArray(texte)
-            val liste = mutableListOf<Acte>()
-            for (i in 0 until tableau.length()) liste.add(Acte.depuisJson(tableau.getJSONObject(i)))
-            liste
-        }
-
-    fun sauverActes(ctx: Context, liste: List<Acte>): Boolean {
+    // --------------------------------------- 12.0 : actes (lecture legacy + purge)
+    // Les actes ne sont PLUS stockes dans l'application (chantier 12.0) :
+    // une coche « Enregistré » par type d'événement vit sur la fiche. Au
+    // premier chargement v0.83, l'index actes.bin est lu UNE DERNIERE
+    // FOIS (pour poser automatiquement les coches des actes existants),
+    // PUIS tout est purgé (index, images chiffrees, copies d'import).
+    fun lireTexteActesLegacy(ctx: Context): String? {
         return try {
-            val tableau = JSONArray()
-            liste.forEach { tableau.put(it.versJson()) }
-            val chiffre = chiffrer(tableau.toString().toByteArray()) ?: return false
-            ecrireFichier(ctx, FICHIER_ACTES, chiffre)
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    // Images chiffrees, une par acte : actes_img/acte_<id>.bin
-    fun sauverImage(ctx: Context, id: Long, octets: ByteArray): Boolean {
-        return try {
-            val dossier = File(ctx.filesDir, DOSSIER_IMAGES)
-            if (!dossier.exists()) dossier.mkdirs()
-            val chiffre = chiffrer(octets) ?: return false
-            remplacerFichier(File(dossier, "acte_" + id + ".bin"), chiffre)
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    fun lireImage(ctx: Context, id: Long): ByteArray? {
-        return try {
-            val f = File(File(ctx.filesDir, DOSSIER_IMAGES), "acte_" + id + ".bin")
-            if (!f.exists()) null else dechiffrer(f.readBytes())
+            val principal = File(ctx.filesDir, FICHIER_ACTES)
+            if (principal.exists()) {
+                val clair = dechiffrer(principal.readBytes()) ?: return null
+                String(clair, Charsets.UTF_8)
+            } else {
+                val bak = File(ctx.filesDir, FICHIER_ACTES + ".bak")
+                if (bak.exists()) dechiffrer(bak.readBytes())?.toString(Charsets.UTF_8) else null
+            }
         } catch (e: Exception) {
             null
         }
     }
 
-    fun supprimerImage(ctx: Context, id: Long) {
+    fun purgerActes(ctx: Context) {
         try {
-            File(File(ctx.filesDir, DOSSIER_IMAGES), "acte_" + id + ".bin").delete()
+            listOf("", ".bak", ".old", ".tmp").forEach { suffixe ->
+                File(ctx.filesDir, FICHIER_ACTES + suffixe).delete()
+            }
+            File(ctx.filesDir, DOSSIER_IMAGES).deleteRecursively()
+            // Copies d'avant import v0.39 : les actes y figuraient aussi.
+            val racine = File(ctx.filesDir, DOSSIER_IMPORTBAK)
+            if (racine.isDirectory) {
+                racine.listFiles()?.forEach { dossier ->
+                    listOf(FICHIER_ACTES, FICHIER_ACTES + ".bak", FICHIER_ACTES + ".old").forEach { nom ->
+                        File(dossier, nom).delete()
+                    }
+                    File(dossier, DOSSIER_IMAGES).deleteRecursively()
+                }
+            }
         } catch (e: Exception) {
             // rien a faire
         }
@@ -600,22 +589,6 @@ object Stockage {
         }
     }
 
-    // G2-18 : images chiffrees orphelines (leur acte a ete supprime).
-    fun supprimerImagesOrphelines(ctx: Context, idsActes: Set<Long>): Int {
-        var supprimees = 0
-        try {
-            val dossier = File(ctx.filesDir, DOSSIER_IMAGES)
-            dossier.listFiles()?.forEach { f ->
-                val m = Regex("^acte_(\\d+)\\.bin$").find(f.name) ?: return@forEach
-                val id = m.groupValues[1].toLongOrNull() ?: return@forEach
-                if (!idsActes.contains(id) && f.delete()) supprimees++
-            }
-        } catch (e: Exception) {
-            // rien a faire
-        }
-        return supprimees
-    }
-
     // v0.39 : sauvegarde avant import GEDCOM en COPIE (jamais un deplacement :
     // la base courante reste en place meme si l import est annule), dans un
     // emplacement tournant : les NB_SAUVEGARDES_IMPORT dernieres sauvegardes
@@ -631,7 +604,7 @@ object Stockage {
             if (dossier.exists()) dossier.deleteRecursively()
             if (!dossier.mkdirs()) return false
             var ok = true
-            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
+            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL).forEach { nom ->
                 val src = File(ctx.filesDir, nom)
                 if (src.exists()) {
                     if (!copierFichier(src, File(dossier, nom))) ok = false
@@ -679,7 +652,7 @@ object Stockage {
                 }
                 if (dossier != null) {
                     var ok = true
-                    listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
+                    listOf(FICHIER_PERSONNES, FICHIER_JOURNAL).forEach { nom ->
                         val bak = File(dossier, nom)
                         if (bak.exists()) {
                             if (!copierFichier(bak, File(ctx.filesDir, nom))) ok = false
@@ -691,7 +664,7 @@ object Stockage {
             val platExiste = File(ctx.filesDir, FICHIER_PERSONNES + ".importbak").exists()
             if (platExiste) {
                 var ok = true
-                listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
+                listOf(FICHIER_PERSONNES, FICHIER_JOURNAL).forEach { nom ->
                     val bak = File(ctx.filesDir, nom + ".importbak")
                     if (bak.exists()) {
                         val principal = File(ctx.filesDir, nom)
@@ -735,7 +708,7 @@ object Stockage {
             val dossier = File(File(ctx.filesDir, DOSSIER_IMPORTBAK), slot.toString())
             if (!dossier.isDirectory) return false
             var ok = true
-            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_ACTES).forEach { nom ->
+            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL).forEach { nom ->
                 val bak = File(dossier, nom)
                 if (bak.exists()) {
                     if (!copierFichier(bak, File(ctx.filesDir, nom))) ok = false
@@ -839,21 +812,6 @@ object Stockage {
         }
     }
 
-    // G1-07 : remplacement atomique par fichier temporaire + verification.
-    private fun remplacerFichier(f: File, octets: ByteArray): Boolean {
-        val tmp = File(f.parentFile, f.name + ".tmp")
-        if (!ecrireOctetsDurables(tmp, octets)) return false
-        if (!MessageDigest.isEqual(tmp.readBytes(), octets)) {
-            tmp.delete()
-            return false
-        }
-        if (!tmp.renameTo(f)) {
-            tmp.delete()
-            return false
-        }
-        return true
-    }
-
     // Ecriture securisee (G1-06) : ecriture durable du tmp, relecture et
     // comparaison, PUIS rotation bak ; l'ancien .bak n'est supprime qu'apres
     // ecriture ET relecture reussies du nouveau contenu. Une coupure entre
@@ -908,4 +866,3 @@ object Stockage {
         }
     }
 }
-

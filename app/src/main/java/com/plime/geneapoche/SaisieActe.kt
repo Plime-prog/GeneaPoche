@@ -75,12 +75,9 @@ data class ActeSaisie(
     val type: String = "N",
     val commune: String = "",
     val dept: String = "",
-    // R\u00E9f\u00E9rence de l'acte aux Archives d\u00E9partementales (cote)
-    val reference: String = "",
-    // G\u00E9n\u00E9aPoche 11 (11.4) : source et niveau de preuve.
-    val depot: String = "",
-    val dateConsultation: String = "",
-    val fiabilite: Int = -1,
+    // Chantier 12.0 : l'acte n'est plus stocke dans l'app ; une coche
+    // "Enregistr\u00E9" par type (l'utilisateur garde ses actes ailleurs).
+    val enregistre: Boolean = false,
     val date: String = "",
     val heure: String = "",
     // G\u00E9n\u00E9aPoche 3 : intitul\u00E9 libre d'un \u00E9v\u00E9nement (type "E").
@@ -270,19 +267,13 @@ fun EcranSaisieActe(
     initial: ActeSaisie? = null,
     // Fermeture du formulaire (plein ecran depuis la fiche) ; null = onglet Saisie.
     onFermer: (() -> Unit)? = null,
-    // Actes existants : permet de PRE-REMPLIR avec l'acte deja saisi quand
-    // on choisit une personne existante (aucun doublon, edition de l'acte).
-    actes: List<Acte> = emptyList(),
     // GeneaPoche 4 : type impose par l'appui long sur un bloc de la fiche.
     typeImpose: String? = null
 ) {
     var type by remember(initial) { mutableStateOf(typeImpose ?: initial?.type ?: "N") }
     var commune by remember(initial) { mutableStateOf(initial?.commune ?: "") }
     var dept by remember(initial) { mutableStateOf(initial?.dept ?: "") }
-    var reference by remember(initial) { mutableStateOf(initial?.reference ?: "") }
-    var depot by remember(initial) { mutableStateOf(initial?.depot ?: "") }
-    var dateConsultation by remember(initial) { mutableStateOf(initial?.dateConsultation ?: "") }
-    var fiabilite by remember(initial) { mutableStateOf(initial?.fiabilite ?: -1) }
+    var enregistre by remember(initial) { mutableStateOf(initial?.enregistre ?: false) }
     var date by remember(initial) { mutableStateOf(initial?.date ?: "") }
     var heure by remember(initial) { mutableStateOf(initial?.heure ?: "") }
     var intitule by remember(initial) { mutableStateOf(initial?.intitule ?: "") }
@@ -375,10 +366,7 @@ fun EcranSaisieActe(
         acteId = a.acteId
         commune = a.commune
         dept = a.dept
-        reference = a.reference
-        depot = a.depot
-        dateConsultation = a.dateConsultation
-        fiabilite = a.fiabilite
+        enregistre = a.enregistre
         date = a.date
         heure = a.heure
         intitule = a.intitule
@@ -428,7 +416,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.82",
+                "  v0.83",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -500,25 +488,14 @@ fun EcranSaisieActe(
             Champ("Commune", commune, { commune = it }, modifier = Modifier.weight(1f))
             Champ("D\u00E9p.", dept, { dept = it }, modifier = Modifier.width(46.dp))
         }
-        Champ("D\u00E9p\u00F4t (ex AD du Nord)", depot, { depot = it })
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Champ("R\u00E9f. AD", reference, { reference = it }, modifier = Modifier.weight(1f))
-            Champ("Consult\u00E9 le", dateConsultation, { dateConsultation = it }, erreur = !dateValide(dateConsultation), aide = "jj/mm/aaaa", modifier = Modifier.width(112.dp))
-        }
-        Text(
-            "Niveau de preuve :",
-            fontSize = 13.sp,
-            modifier = Modifier.padding(top = 6.dp)
-        )
-        Row(Modifier.horizontalScroll(rememberScrollState())) {
-            listOf(0, 1, 2, 3).forEach { n ->
-                FilterChip(
-                    selected = fiabilite == n,
-                    onClick = { fiabilite = if (fiabilite == n) -1 else n },
-                    label = { Text(n.toString() + " \u00B7 " + libelleFiabilite(n), fontSize = 11.sp) },
-                    modifier = Modifier.padding(end = 6.dp)
-                )
-            }
+        // Chantier 12.0 : coche "Enregistr\u00E9" (l'acte est conserve ailleurs,
+        // plus aucun stockage d'image/transcription dans l'application).
+        Row(
+            Modifier.fillMaxWidth().padding(top = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(checked = enregistre, onCheckedChange = { enregistre = it })
+            Text("Enregistr\u00E9", fontSize = 13.sp)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Champ(
@@ -896,10 +873,7 @@ fun EcranSaisieActe(
                     type = type,
                     commune = commune.trim(),
                     dept = normaliserDept(dept),
-                    reference = reference.trim(),
-                    depot = depot.trim(),
-                    dateConsultation = normaliserDate(dateConsultation.trim()),
-                    fiabilite = fiabilite,
+                    enregistre = enregistre,
                     date = date.trim(),
                     heure = heure.trim(),
                     intitule = intitule.trim(),
@@ -984,7 +958,7 @@ fun EcranSaisieActe(
             titre = "Personne concern\u00E9e : fiches homonymes",
             candidats = homonymesPers,
             onChoisir = { q ->
-                remplirDepuis(prefillActe(q, personnes, actes, type))
+                remplirDepuis(prefillActe(q, personnes, type))
                 persNouvelle = false
                 homonymesOuvert = null
             },
@@ -1014,7 +988,7 @@ fun EcranSaisieActe(
                                         // PROPOSEE avec tout ce qui est connu d'elle ;
                                         // si son acte de ce type existe deja, il est
                                         // EDITE (aucun doublon).
-                                        remplirDepuis(prefillActe(cand, personnes, actes, type))
+                                        remplirDepuis(prefillActe(cand, personnes, type))
                                     } else {
                                         marieeId = cand.id
                                         marieeNom = cand.nom

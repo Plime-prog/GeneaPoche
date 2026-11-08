@@ -1,20 +1,10 @@
 package com.plime.geneapoche
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +41,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -74,11 +65,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -137,7 +124,6 @@ fun PastilleNumero(p: Personne, diametre: Int) {
 @Composable
 fun EcranPersonne(
     personnes: List<Personne>,
-    actes: List<Acte>,
     p: Personne,
     enregistrer: () -> Unit,
     onOuvrir: (Long) -> Unit,
@@ -156,13 +142,9 @@ fun EcranPersonne(
     // G\u00E9n\u00E9aPoche 2 : enregistrement d'un acte saisi depuis la fiche
     // (bloc \u00C9v\u00E9nement ou appui long sur un bloc N/B/M/S/D).
     onEnregistrerActe: (ActeSaisie) -> Unit,
-    onAjouterActe: (Uri, String, String) -> Unit,
-    // GeneaPoche 12 : le selecteur d'images ne reverrouille plus l'app.
-    picker: (Boolean) -> Unit = {},
-    onSupprimerActe: (Acte) -> Unit,
-    onVoirActe: (Acte) -> Unit,
-    // v0.62 : réattribution d'un acte stocké à une autre fiche.
-    onReattribuerActe: (Acte, Long) -> Unit = { _, _ -> },
+    // Chantier 12.0 : coche "Enregistré" par type d'acte (l'acte est
+    // conservé ailleurs, plus rien n'est stocké dans l'app).
+    onBasculerEnregistre: (String) -> Unit = {},
     // Coche de validation d'une information : (section, valide).
     // Une coche negative cree automatiquement une recherche dans le journal.
     onValider: (String, Boolean) -> Unit,
@@ -208,7 +190,7 @@ fun EcranPersonne(
     // R\u00E8gle des 100 ans : la notion de d\u00E9c\u00E8s ou de s\u00E9pulture ne s'affiche
     // que si la personne peut avoir plus de 100 ans \u00E0 la date du jour (ou si
     // son d\u00E9c\u00E8s est d\u00E9j\u00E0 connu).
-    val decesAffiche = decesAffichable(p, actes)
+    val decesAffiche = decesAffichable(p)
     // GÃ©nÃ©aPoche 10 : ordre NBMDS TOUJOURS respectÃ©, mÃªme si les
     // informations sont vides : N, B, M, D puis S (la sÃ©pulture est APRÃS
     // le dÃ©cÃ¨s, le mariage APRÃS la naissance, mÃªme sans dates).
@@ -219,7 +201,7 @@ fun EcranPersonne(
     // v0.75 : un acte ENREGISTRE suffit - un baptême (ou un décès
     // ou une sépulture) saisi sans reporter sa date sur la fiche ne
     // disparaît PLUS de la frise des événements.
-    val actePresent = { t: String -> actes.any { it.personneId == p.id && it.type == t } }
+    val actePresent = { t: String -> p.enregistreDe(t) }
     val baptemePresent = listOf(p.dateBapteme, p.heureBapteme, p.lieuBapteme, p.deptBapteme).any { it.isNotBlank() } || actePresent("B")
     val sepulturePresente = listOf(p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture).any { it.isNotBlank() } || actePresent("S")
     val typesPresents = mutableListOf("N", "M")
@@ -634,18 +616,13 @@ fun EcranPersonne(
                                             typeActe = t,
                                             p = p,
                                             personnes = personnes,
-                                            actes = actes.filter { it.personneId == p.id && it.type == t },
                                             onEditer = { saisieOuverte = t },
                                             onOuvrir = onOuvrir,
                                             onChoisir = onChoisir,
                                             onRetirer = onRetirer,
                                             onOuvrirMariage = { mariageOuvert = true },
                                             onOuvrirParent = { parentRole = it },
-                                            onAjouterActe = onAjouterActe,
-                                            picker = picker,
-                                            onSupprimerActe = onSupprimerActe,
-                                            onVoirActe = onVoirActe,
-                                            onReattribuer = onReattribuerActe,
+                                            onBasculerEnregistre = onBasculerEnregistre,
                                             onEnregistrer = enregistrer,
                                             pistes = pistes,                                            modifier = Modifier
                                         )
@@ -682,7 +659,7 @@ fun EcranPersonne(
                                     // Reponse utilisateur : sur la FICHE, le nom de la
                                     // personne concernee ne se repete pas (dans le
                                     // journal, il reste affiche).
-                                    val texteFiche = textePisteActuel(ps, personnes, actes)
+                                    val texteFiche = textePisteActuel(ps, personnes)
                                         .replace(titreCourt(p), "")
                                         .replace(Regex("\\s+de\\s*$"), "")
                                         .replace(Regex("\\s{2,}"), " ")
@@ -828,8 +805,7 @@ fun EcranPersonne(
                 key(p.id, tPre, saisieCompteur) {
                 EcranSaisieActe(
                     personnes = personnes,
-                    actes = actes,
-                    initial = remember(saisieCompteur, tPre, p.id) { prefillActe(p, personnes, actes, tPre.ifEmpty { null }, editionFiche = tPre.isNotEmpty()) },
+                    initial = remember(saisieCompteur, tPre, p.id) { prefillActe(p, personnes, tPre.ifEmpty { null }, editionFiche = tPre.isNotEmpty()) },
                     // GeneaPoche 4 : appui long sur un bloc = SEUL ce type d'acte.
                     typeImpose = tPre.ifEmpty { null },
                     onEnregistrer = { a ->                        onEnregistrerActe(a)
@@ -1087,11 +1063,9 @@ data class EvChamps(val date: String, val heure: String, val lieu: String, val d
 // parents, conjoint, t\u00E9moins, signataires) et de l'\u00E9v\u00E9nement demand\u00E9.
 // t = null (nouvel \u00E9v\u00E9nement depuis le bloc vert) : identit\u00E9 seule.
 
-fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: String?, editionFiche: Boolean = false): ActeSaisie {
+fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche: Boolean = false): ActeSaisie {
     val type = t ?: "N"
     val c = if (t == null || type == "E") null else champsEvenement(p, type)
-    val acteEdit = actes.filter { it.personneId == p.id && it.type == type }
-        .maxByOrNull { it.creation }
     val pere = personneParId(personnes, p.pere)
     val mere = personneParId(personnes, p.mere)
     // GÃ©nÃ©aPoche 10 : le conjoint (et ses parents) sont proposÃ©s pour
@@ -1124,8 +1098,7 @@ fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: St
     // v0.80 : conjoint du d\u00E9funt EN VIE ou D\u00C9C\u00C9D\u00C9 AVANT (veuf/veuve),
     // relu depuis la transcription de l'acte puis l'\u00E9tat de la fiche ;
     // enfant D\u00C9CLARANT d'un d\u00E9c\u00E8s (coche de signature persist\u00E9e).
-    val conjointEnVie = if (acteEdit?.contenu?.contains("Conjoint d\u00E9c\u00E9d\u00E9 avant") == true) false
-        else if (acteEdit?.contenu?.contains("Conjoint survivant") == true) true
+    val conjointEnVie = if (type == "D" || type == "S") p.conjointEnVieDeces
         else conj == null || conj.dateDeces.isBlank()
     val declarantEnfantId = if (type == "D") p.signatairesDe(type).firstOrNull { id ->
         id != 0L && id != p.id &&
@@ -1134,15 +1107,12 @@ fun prefillActe(p: Personne, personnes: List<Personne>, actes: List<Acte>, t: St
     val signatairesListe = signataires.toMutableList()
     if (declarantEnfantId != 0L) signatairesListe.add("Enfant d\u00E9clarant")
     return ActeSaisie(
-        acteId = acteEdit?.id ?: 0L,
+        acteId = 0L,
         editionFiche = editionFiche,
         type = type,
         commune = c?.lieu?.trim() ?: "",
         dept = c?.dept?.trim() ?: "",
-        reference = acteEdit?.reference?.trim() ?: "",
-        depot = acteEdit?.depot?.trim() ?: "",
-        dateConsultation = acteEdit?.dateConsultation?.trim() ?: "",
-        fiabilite = acteEdit?.fiabilite ?: -1,
+        enregistre = p.enregistreDe(type),
         date = c?.date?.trim() ?: "",
         heure = c?.heure?.trim() ?: "",
         personneId = p.id,
@@ -1284,27 +1254,13 @@ fun EvenementsFamille(p: Personne, personnes: List<Personne>) {
 }
 
 // Extrait une ligne de la transcription du dernier acte du type (ex "T\u00E9moins : ...").
-fun partieContenu(actes: List<Acte>, prefixe: String): String {
-    val a = actes.filter { it.contenu.isNotBlank() }.maxByOrNull { it.creation } ?: return ""
-    val ligne = a.contenu.split("\n").firstOrNull { it.startsWith(prefixe) } ?: return ""
-    return ligne.removePrefix(prefixe).trim()
-}
-
-// Age du parent declare dans la transcription ("... (35 ans \u00E0 l'acte)").
-fun ageDansContenu(actes: List<Acte>, prefixe: String): Int? {
-    val a = actes.filter { it.contenu.isNotBlank() }.maxByOrNull { it.creation } ?: return null
-    val ligne = a.contenu.split("\n").firstOrNull { it.startsWith(prefixe) } ?: return null
-    return Regex("([0-9]{1,3}) ans \u00E0 l'acte").find(ligne)?.groupValues?.get(1)?.toIntOrNull()
-}
-
 // Ligne d'une personne liee (pere, mere, conjoint) : nom, profession, naissance,
-// age a l'acte ou date de naissance deduite a l'annee, deces. Grisee si absente.
+// age a l'acte, deces. Grisee si absente.
 @Composable
 fun LignePersonneG(
     libelle: String,
     q: Personne?,
     anneeActe: Int?,
-    ageActeContenu: Int?,
     onOuvrir: (() -> Unit)? = null
 ) {
     Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
@@ -1320,8 +1276,6 @@ fun LignePersonneG(
                 var s = "n\u00E9(e) le " + dateAffichee(q.dateNaissance)
                 if (anneeActe != null) s = s + " (" + (anneeActe - an).coerceAtLeast(0).toString() + " ans \u00E0 l'acte)"
                 m.add(s)
-            } else if (ageActeContenu != null && anneeActe != null) {
-                m.add("n\u00E9(e) vers " + (anneeActe - ageActeContenu).toString())
             }
             if (q.lieuNaissance.isNotBlank()) m.add("\u00E0 " + q.lieuNaissance.trim())
             if (q.dateDeces.isNotBlank()) m.add("d\u00E9c\u00E9d\u00E9(e) le " + dateAffichee(q.dateDeces))
@@ -1364,20 +1318,14 @@ fun CarteEvenement(
     typeActe: String,
     p: Personne,
     personnes: List<Personne>,
-    actes: List<Acte>,
     onEditer: () -> Unit,
     onOuvrir: (Long) -> Unit,
     onChoisir: (String) -> Unit,
     onRetirer: (String, Long) -> Unit,
     onOuvrirMariage: () -> Unit,
     onOuvrirParent: (String) -> Unit,
-    onSupprimerActe: (Acte) -> Unit,
-    onVoirActe: (Acte) -> Unit,
-    // v0.62 : réattribution d'un acte stocké à une autre personne.
-    onReattribuer: (Acte, Long) -> Unit = { _, _ -> },
-    // GeneaPoche 12 : photo d'acte remise dans l'en-tete du bloc.
-    onAjouterActe: (Uri, String, String) -> Unit = { _, _, _ -> },
-    picker: (Boolean) -> Unit = {},
+    // Chantier 12.0 : coche "Enregistré" dans l'en-tête du bloc.
+    onBasculerEnregistre: (String) -> Unit = {},
     onEnregistrer: () -> Unit,    // Recherches ouvertes (la premiere de la section alimente le sous-bloc).
     pistes: List<Piste> = emptyList(),
     modifier: Modifier = Modifier
@@ -1389,21 +1337,23 @@ fun CarteEvenement(
     val dp = c.dept.trim()
     val anneeActe = anneeDe(d)
     val numDept = dp.toIntOrNull() ?: numeroDepartement(dp) ?: numeroDepartement(l)
-    val pisteEv = pistes.firstOrNull { it.personneId == p.id && !it.faite && it.categorie.startsWith(sectionDe(typeActe)) }
     // Le bloc est maintenant affiche DANS la carte de l'evenement (v0.28) :
     // simple colonne, plus de carte imbriquee.
     Column(modifier.fillMaxWidth().padding(top = 4.dp)) {
-        // Entete : titre + coche + photo d'acte. Plus de crayon (reponse
-        // utilisateur) : l'edition du bloc ouvert se fait par APPUI LONG sur
-        // cette entete (ou sur la ligne repliee de la frise).
+        // Entete : titre + coche "Enregistré" (chantier 12.0 : l'acte n'est
+        // plus stocké dans l'app, la coche marque un acte conservé ailleurs).
+        // Plus de crayon (reponse utilisateur) : l'edition du bloc ouvert se
+        // fait par APPUI LONG sur cette entete (ou sur la ligne repliee).
         Row(
             Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = onEditer, onLongClickLabel = "Modifier ce bloc"),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(titre, Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            // GeneaPoche 12 : icone photo d'acte remise dans l'en-tete du
-            // bloc (perdue lors d'une refonte) + garde anti-reverrouillage.
-            AjoutActeIcone(typeActe, onAjouterActe, picker)
+            Checkbox(
+                checked = p.enregistreDe(typeActe),
+                onCheckedChange = { onBasculerEnregistre(typeActe) }
+            )
+            Text("Enregistr\u00E9", fontSize = 12.sp)
         }
         // Date et heure sur la meme ligne.
         Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1431,7 +1381,7 @@ fun CarteEvenement(
             }
         }
 
-        // (La reference de la cote AD est dans le sous-bloc de chaque acte.)
+        // (Chantier 12.0 : plus aucune cote AD stockee - l'acte est conserve ailleurs.)
 
         // Naissance : pere (avec coche de signature) et mere, choisies parmi
         // les fiches existantes ou creees ; la synchronisation a lieu a la
@@ -1441,7 +1391,6 @@ fun CarteEvenement(
                 libelle = "P\u00E8re",
                 q = personneParId(personnes, p.pere),
                 anneeActe = anneeActe,
-                ageActeContenu = ageDansContenu(actes, "P\u00E8re : "),
                 onOuvrir = { onOuvrir(p.pere) }
             )
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1465,7 +1414,6 @@ fun CarteEvenement(
                 libelle = "M\u00E8re",
                 q = personneParId(personnes, p.mere),
                 anneeActe = anneeActe,
-                ageActeContenu = ageDansContenu(actes, "M\u00E8re : "),
                 onOuvrir = { onOuvrir(p.mere) }
             )
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1494,7 +1442,6 @@ fun CarteEvenement(
                 libelle = "Conjoint(e)",
                 q = personneParId(personnes, p.conjoint),
                 anneeActe = anneeActe,
-                ageActeContenu = ageDansContenu(actes, "Mari\u00E9e : "),
                 onOuvrir = { onOuvrir(p.conjoint) }
             )
             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1517,224 +1464,6 @@ fun CarteEvenement(
         }
         // GeneaPoche 4 : temoins et signature retires du bloc ; ils se
         // saisissent uniquement par le formulaire d'acte.
-        // Actes stockes pour cet evenement (images + transcriptions) :
-        // chacun dans son SOUS-BLOC avec sources et recherche libre.
-        if (actes.isNotEmpty()) {
-            Text(
-                "Actes stock\u00E9s (" + actes.size.toString() + ")",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 6.dp)
-            )
-            actes.forEach { acte ->
-                SousBlocActe(
-                    acte = acte,
-                    piste = pisteEv,
-                    onVoir = { onVoirActe(acte) },
-                    onSupprimer = { onSupprimerActe(acte) },
-                    onEnregistrer = onEnregistrer,
-                    personnes = personnes.filter { it.id != p.id }.sortedBy { it.titre() },
-                    onReattribuer = onReattribuer
-                )
-            }
-        }
-    }
-}
-
-// Icone d'ajout d'une photo d'acte dans un bloc.
-@Composable
-fun AjoutActeIcone(
-    typeActe: String,
-    onAjouterActe: (Uri, String, String) -> Unit,
-    // GeneaPoche 12 : BUG reverrouillage au retour du selecteur CORRIGE,
-    // le drapeau verrou.pickerOuvert couvre AUSSI le selecteur d'images.
-    picker: (Boolean) -> Unit = {}
-) {
-    var dialogueOuvert by remember { mutableStateOf(false) }
-    val lanceur = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        picker(false)
-        if (uri != null) onAjouterActe(uri, typeActe, "")
-    }
-    IconButton(onClick = { dialogueOuvert = true }) {
-        Icon(Icons.Filled.Add, contentDescription = "Ajouter une photo d'acte")
-    }
-    if (dialogueOuvert) {
-        AlertDialog(
-            onDismissRequest = { dialogueOuvert = false },
-            title = { Text("Ajouter un acte : " + libelleType(typeActe)) },
-            text = {
-                Text(
-                    "L'image reste sur l'appareil, chiffr\u00E9e. Rien n'est transmis.\nChoisissez l'image \u00E0 associer \u00E0 cet \u00E9v\u00E9nement."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    dialogueOuvert = false
-                    picker(true)
-                    lanceur.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }) { Text("Choisir l'image") }
-            },
-            dismissButton = {
-                TextButton(onClick = { dialogueOuvert = false }) { Text("Annuler") }
-            }
-        )
-    }
-}
-
-// Sous-bloc de detail d'un acte (v0.28) : titre (toucher = voir l'image,
-// appui long = pages/reference), reference de la cote, zone de recherche
-// libre, le tout regroupe au meme endroit.
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun SousBlocActe(
-    acte: Acte,
-    piste: Piste?,
-    onVoir: () -> Unit,
-    onSupprimer: () -> Unit,
-    onEnregistrer: () -> Unit,
-    // v0.62 : réparation des actes mal rattachés — cet acte peut être
-    // réattribué à une autre fiche depuis la fiche où il s'affiche.
-    personnes: List<Personne> = emptyList(),
-    onReattribuer: (Acte, Long) -> Unit = { _, _ -> }
-) {
-    Card(
-        Modifier.fillMaxWidth().padding(top = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = CouleurCarte),
-        border = BorderStroke(1.dp, CouleurBordVert)
-    ) {
-        Column(Modifier.fillMaxWidth().padding(6.dp)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    if (acte.titre.trim().isNotEmpty()) acte.titre.trim() else "(sans titre)",
-                    Modifier.weight(1f).clickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte"),                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                if (acte.numPage.isNotEmpty()) {
-                    Text(
-                        "p. " + acte.numPage + "/" + acte.totalPage,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
-                }
-                IconButton(onClick = onSupprimer, Modifier.size(28.dp)) {
-                    Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(14.dp))
-                }
-            }
-            if (acte.reference.isNotBlank()) {
-                Text(
-                    "R\u00E9f. " + acte.reference.trim(),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            // G\u00E9n\u00E9aPoche 11 (11.4) : source et niveau de preuve.
-            if (acte.depot.isNotBlank()) {
-                Text(
-                    "D\u00E9p\u00F4t : " + acte.depot.trim(),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            if (acte.dateConsultation.isNotBlank()) {
-                Text(
-                    "Consult\u00E9 le " + acte.dateConsultation.trim(),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            if (acte.fiabilite >= 0) {
-                Text(
-                    "Preuve : " + libelleFiabilite(acte.fiabilite) + " (" + acte.fiabilite + "/3)",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            // Zone de saisie libre de la recherche en cours.
-            // G\u00E9n\u00E9aPoche 9 : note LI\u00C9E directement \u00E0 la piste
-            // (piste.enCours), synchronis\u00E9e avec le journal.
-            if (piste != null) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    var noteSousBloc by remember(piste.id) { mutableStateOf(piste.enCours) }
-                    // v0.49 : etat local, la liaison directe ne rafraichissait pas le cadre.
-                    OutlinedTextField(
-                        value = noteSousBloc,
-                        onValueChange = { noteSousBloc = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Recherche : pages, cotes, notes...", style = MaterialTheme.typography.bodySmall) },
-                        textStyle = MaterialTheme.typography.bodySmall
-                    )
-                    TextButton(onClick = { piste.enCours = noteSousBloc; onEnregistrer() }) {
-                        Text("Enregistrer", fontSize = 12.sp)
-                    }
-                }
-            }
-            // v0.62 : outil de réparation — rattacher cet acte stocké à une
-            // autre fiche (cas des actes saisis autrefois sur la mauvaise
-            // personne).
-            if (personnes.isNotEmpty()) {
-                var reattribueOuvert by remember { mutableStateOf(false) }
-                TextButton(onClick = { reattribueOuvert = true }) {
-                    Text("Cet acte concerne une autre personne", fontSize = 11.sp)
-                }
-                if (reattribueOuvert) {
-                    AlertDialog(
-                        onDismissRequest = { reattribueOuvert = false },
-                        title = { Text("Rattacher cet acte à :") },
-                        text = {
-                            LazyColumn {
-                                items(personnes.sortedBy { it.titre() }) { cand ->
-                                    // v0.79 : identifiant unique, compact, aligne a gauche.
-                                    Text(
-                                        libelleUnique(cand),
-                                        Modifier.fillMaxWidth().clickable {
-                                            reattribueOuvert = false
-                                            onReattribuer(acte, cand.id)
-                                        }.padding(vertical = 0.dp),
-                                        fontSize = 13.sp, lineHeight = 16.sp
-                                    )
-                                }
-                            }
-                        },
-                        confirmButton = {},
-                        dismissButton = {
-                            TextButton(onClick = { reattribueOuvert = false }) {
-                                Text("Annuler")
-                            }
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun LigneActe(
-    acte: Acte,
-    onVoir: () -> Unit,
-    onSupprimer: () -> Unit,
-    onEnregistrer: () -> Unit
-) {
-    Row(        Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            if (acte.titre.trim().isNotEmpty()) acte.titre.trim() else "(sans titre)",
-            Modifier.weight(1f).clickable(onClick = onVoir, onClickLabel = "Voir l'image de l'acte"),            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        if (acte.numPage.isNotEmpty()) {
-            Text(
-                "p. " + acte.numPage + "/" + acte.totalPage,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(end = 4.dp)
-            )
-        }
-        IconButton(onClick = onSupprimer) {            Icon(Icons.Filled.Close, contentDescription = "Supprimer")
-        }
     }
 }
 // GeneaPoche 4 : ecran "Page et reference de l'acte" supprime.// Ligne masquee si vide (liens de la famille).
@@ -1748,110 +1477,6 @@ fun Ligne(libelle: String, valeur: String) {
 }
 
 
-// ---------------------------------------------------------------- Actes : image + zoom
-
-// Import d'une image (capture d'ecran ou photo) : redimensionnee puis compressee en JPEG.
-fun compresserVersJpeg(ctx: Context, uri: Uri): ByteArray? {
-    return try {
-        val donnees = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
-        val bornes = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(donnees, 0, donnees.size, bornes)
-        var ech = 1
-        while ((bornes.outWidth / (ech * 2)) >= 1200 || (bornes.outHeight / (ech * 2)) >= 1200) {
-            ech *= 2
-        }
-        val opts = BitmapFactory.Options().apply { inSampleSize = ech }
-        val brut = BitmapFactory.decodeByteArray(donnees, 0, donnees.size, opts) ?: return null
-        val sortie = java.io.ByteArrayOutputStream()
-        brut.compress(Bitmap.CompressFormat.JPEG, 85, sortie)
-        brut.recycle()
-        sortie.toByteArray()
-    } catch (e: Exception) {
-        null
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun VisionneuseActe(ctx: Context, acte: Acte, onFermer: () -> Unit) {
-    val bmp = remember(acte.id) {
-        val octets = Stockage.lireImage(ctx, acte.id)
-        if (octets != null) BitmapFactory.decodeByteArray(octets, 0, octets.size) else null
-    }
-    var echelle by remember { mutableStateOf(1f) }
-    var decalage by remember { mutableStateOf(Offset.Zero) }
-    val etat = rememberTransformableState { zoom, pan, _ ->
-        echelle = (echelle * zoom).coerceIn(1f, 6f)
-        decalage = if (echelle > 1f) decalage + pan else Offset.Zero
-    }
-    Dialog(
-        onDismissRequest = onFermer,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(Modifier.fillMaxSize()) {
-            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(12.dp)) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val t = acte.titre.trim()
-                    Text(
-                        if (t.isNotEmpty()) libelleType(acte.type) + " \u2013 " + t else libelleType(acte.type),
-                        Modifier.weight(1f),
-                        fontWeight = FontWeight.Bold
-                    )
-                    IconButton(onClick = onFermer) {
-                        Icon(Icons.Filled.Close, contentDescription = "Fermer")
-                    }
-                }
-                if (bmp == null) {
-                    if (acte.contenu.isNotBlank()) {
-                        // Acte transcrit sans image : la transcription s'affiche ici.
-                        Text(
-                            "Transcription de l'acte",
-                            fontWeight = FontWeight.Bold,
-                            color = CouleurVertFonce
-                        )
-                        Column(
-                            Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())
-                        ) {
-                            acte.contenu.split("\n").forEach { ligne ->
-                                Text(
-                                    ligne,
-                                    Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-                    } else {
-                        Text("Image illisible.", color = CouleurRouge)
-                    }
-                } else {
-                    Text(
-                        "Pincez pour zoomer, glissez pour d\u00E9placer.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Image(
-                        bitmap = bmp.asImageBitmap(),
-                        contentDescription = "Image de l'acte " + acte.titre.trim(),
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .transformable(etat)
-                            .graphicsLayer {
-                                scaleX = echelle
-                                scaleY = echelle
-                                translationX = decalage.x
-                                translationY = decalage.y
-                            }
-                    )
-                }
-            }
-        }
-    }
-}
 
 
 
