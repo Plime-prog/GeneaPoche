@@ -243,7 +243,7 @@ fun BlocParent(
                     aide = if (age.isNotEmpty()) "\u00C2ge \u00E0 l'acte : " + age else "\u00C2ge calcul\u00E9 automatiquement",
                     modifier = Modifier.weight(1.1f)
                 )
-                Champ("Lieu", e.lieu, { e.lieu = it }, modifier = Modifier.weight(1f))
+                Champ("Lieu", e.lieu, { e.lieu = it }, modifier = Modifier.weight(1f), communes = true, onDept = { e.dept = it })
                 Champ("D\u00E9p.", e.dept, { e.dept = it }, modifier = Modifier.width(40.dp))
             }
         }
@@ -253,7 +253,7 @@ fun BlocParent(
             }
             if (avecDeces) {
                 Champ("D\u00E9c. le", e.deces, { e.deces = it }, erreur = !dateValide(e.deces), modifier = Modifier.weight(1f))
-                Champ("Lieu d\u00E9c\u00E8s", e.lieuDeces, { e.lieuDeces = it }, modifier = Modifier.weight(1f))
+                Champ("Lieu d\u00E9c\u00E8s", e.lieuDeces, { e.lieuDeces = it }, modifier = Modifier.weight(1f), communes = true)
             }
         }
     }
@@ -416,7 +416,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.87",
+                "  v0.88",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -485,7 +485,7 @@ fun EcranSaisieActe(
 
         // v0.58 : champs compactes, deux par ligne.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Champ("Commune", commune, { commune = it }, modifier = Modifier.weight(1f))
+            Champ("Commune", commune, { commune = it }, modifier = Modifier.weight(1f), communes = true, onDept = { dept = it })
             Champ("D\u00E9p.", dept, { dept = it }, modifier = Modifier.width(46.dp))
         }
         // Chantier 12.0 : coche "Enregistr\u00E9" (l'acte est conserve ailleurs,
