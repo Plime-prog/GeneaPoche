@@ -40,6 +40,13 @@ fun numeroDepartement(t: String): Int? {
     }
     val dep = Regex("\\((\\d[A-B])\\)").find(t)
     if (dep != null) return null // corse 2A/2B : non g\u00E9r\u00E9
+    // v0.88 : code INSEE ou code postal 5 chiffres dans le lieu
+    // ("Arvert, 17010, Charente-Maritime, France") -> 17.
+    val insee = Regex("\\b(\\d{2})\\d{3}\\b").find(t)
+    if (insee != null) {
+        val d = insee.groupValues[1].toIntOrNull()
+        if (d != null && NomsDepartements.containsKey(d)) return d
+    }
     for ((n, nom) in NomsDepartements) {
         if (Regex("(?i)\\b" + Regex.escape(nom) + "\\b").containsMatchIn(t)) return n
     }

@@ -1005,8 +1005,8 @@ fun DialogueEvenementLibre(
                 OutlinedTextField(value = intitule, onValueChange = { intitule = it }, label = { Text("Intitul\u00E9") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = date, onValueChange = { date = it }, label = { Text("Date (jj/mm/aaaa)") }, isError = !dateValide(date), supportingText = { if (!dateValide(date)) Text("jj/mm/aaaa ou aaaa", style = MaterialTheme.typography.bodySmall) }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = heure, onValueChange = { heure = it }, label = { Text("Heure") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = lieu, onValueChange = { lieu = it }, label = { Text("Commune") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = dept, onValueChange = { dept = it }, label = { Text("D\u00E9partement") }, modifier = Modifier.fillMaxWidth())
+                Champ("Commune", lieu, { lieu = it }, communes = true, onDept = { dept = it })
+                Champ("D\u00E9partement", dept, { dept = it })
             }
         },
         confirmButton = {
