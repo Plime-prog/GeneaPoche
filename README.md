@@ -18,6 +18,8 @@ un enfant né avant son parent est refusé partout : saisie, choix de fiche, nou
 
 GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque fiche (indicateur automatique sur 6 renseignements, sur 4 pour une personne supposée en vie — naissance et mariage —, sur 2 pour un mineur, synchronisé entre la fiche et la liste des noms ; ✘ si rien, choix manuel possible au toucher), diagnostic de l'arbre dans le journal (anomalies, doublons avec fusion guidée « Garder A / Garder B » sans aucune perte, branches isolées, identités non certifiées), sources et preuves sur chaque acte (dépôt d'archives, date de consultation, fiabilité 0-3 échelle QUAY) exportées en GEDCOM (AGNC, NOTE, QUAY).
 
+**Boîte à outils (v0.87)** — accessible depuis les paramétrages, 100 % locale : convertisseur calendrier républicain ↔ grégorien (jour de la semaine, nom du jour, décade, fête du jour, années sextile et bissextile, calendrier julien), calculateur de dates (âge à une date, écart entre deux événements, date ± durée, intervalle d'années) et calculateur de parenté (« Marie est la cousine germaine de Pierre »). Chaque résultat peut être ajouté à la note de recherche d'une fiche.
+
 ## Modèle de sécurité — exact, avec ses limites
 
 - **Aucune permission Internet** dans le manifeste : l'application elle-même ne transmet rien.
@@ -36,7 +38,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.81)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.81-release.apk` (signé) ou `GeneaPoche-v0.81-debug.apk`.
+**Téléchargement direct de la dernière version (v0.87)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.87-release.apk` (signé) ou `GeneaPoche-v0.87-debug.apk`.
 
 Sinon, depuis les sources :
 
@@ -48,6 +50,6 @@ Sinon, depuis les sources :
 
 - Android Kotlin + Jetpack Compose, Material 3 (thème clair/sombre, palette verte).
 - AGP 9.2.0, Kotlin 2.4.21, compileSdk 37, targetSdk 36, JDK 17, BOM Compose 2026.08.00.
-- CI GitHub Actions : lint, tests unitaires JVM (~25), APK debug et release signé à chaque push.
+- CI GitHub Actions : lint, tests unitaires JVM (~50), APK debug et release signé à chaque push.
 - Contribuer : voir [CONTRIBUTING.md](CONTRIBUTING.md). Historique détaillé des versions : [CHANGELOG.md](CHANGELOG.md).
 - Licence : MIT (voir [LICENSE](LICENSE)).

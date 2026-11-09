@@ -122,8 +122,8 @@ val RomainsRepubli = listOf(
 val DebutAnRepubli = listOf(
     Triple(22, 9, 1792), Triple(22, 9, 1793), Triple(22, 9, 1794), Triple(23, 9, 1795),
     Triple(22, 9, 1796), Triple(22, 9, 1797), Triple(22, 9, 1798), Triple(23, 9, 1799),
-    Triple(23, 9, 1800), Triple(23, 9, 1801), Triple(23, 9, 1802), Triple(23, 9, 1803),
-    Triple(22, 9, 1804), Triple(23, 9, 1805)
+    Triple(23, 9, 1800), Triple(23, 9, 1801), Triple(23, 9, 1802), Triple(24, 9, 1803),
+    Triple(23, 9, 1804), Triple(23, 9, 1805)
 )
 
 fun anneeRepubli(s: String): Int? {
@@ -138,7 +138,10 @@ fun anneeRepubli(s: String): Int? {
 }
 
 fun moisRepubli(s: String): Int? {
-    val t = s.trim().lowercase().replace("[^a-z]".toRegex(), "")
+    // v0.87 : les accents sont retires AVANT de filtrer (Vendemiaire,
+    // Pluviose, Ventose, Floreal saisis avec leurs accents etaient refuses).
+    val t = java.text.Normalizer.normalize(s.trim().lowercase(), java.text.Normalizer.Form.NFD)
+        .replace("\\p{M}+".toRegex(), "").replace("[^a-z]".toRegex(), "")
     if (t.length < 3) return null
     MoisRepubli.forEachIndexed { i, m -> if (m.startsWith(t)) return i + 1 }
     // Jours complementaires (sansculottides) : "complementaire", "sansculottide".

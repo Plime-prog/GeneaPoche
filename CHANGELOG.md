@@ -1,5 +1,17 @@
 # Historique des versions — GénéaPoche
 
+## v0.87 – Boîte à outils du généalogiste
+
+- **Nouvelle « Boîte à outils »** (paramétrages ▸ « Boîte à outils ») : trois outils de recherche, entièrement locaux (aucun accès réseau, aucune nouvelle permission).
+  - **Calendrier républicain ↔ grégorien** : saisir « 14 Vendémiaire an VII » ou « 5 octobre 1798 » donne l'autre date, le jour de la semaine (vendredi), le nom du jour républicain, la décade, la fête du jour (noms de la table officielle), l'an sextile ou commun, les années bissextiles et la date du calendrier julien (24 septembre 1798). Jours complémentaires gérés, bornes réelles du calendrier (22/09/1792 – 31/12/1805).
+  - **Calculateur de dates** : âge ou écart entre deux événements (« 12 février 1843 → 7 juin 1867 : 24 ans, 3 mois, 26 jours », avec le total en jours), dates incomplètes acceptées (mois et année, année seule : « 1821 → 1874 = 53 ans »), alerte si la seconde date précède la première, date ± une durée (« 12 mars 1842 + 73 ans, 4 mois, 12 jours »), avec jour de la semaine et conversions républicaine et julienne du résultat. Le bouton « Fiche » reprend directement une date de naissance, baptême, mariage, décès, sépulture ou événement libre.
+  - **Calculateur de parenté** : entre deux personnes de l'arbre, donne le lien exact (« Marie est la cousine germaine de Pierre »), le lien inverse, le degré civil, les ancêtres communs ; demi-frères et sœurs, oncles/tantes, neveux/nièces, cousins de rang n, « à la mode de Bretagne », et alliances (époux, beau-père, beau-frère, gendre, bru…).
+  - **« Ajouter ce résultat à la note de recherche »** sur chaque outil : le texte (modifiable) est ajouté à la fin de la note libre de la fiche choisie.
+- **Correction** : le début de l'an XII (24/09/1803) et de l'an XIII (23/09/1804) était décalé d'un jour dans le convertisseur républicain existant.
+- **Correction** : les noms de mois républicains saisis avec accents (Vendémiaire, Pluviôse, Ventôse, Floréal…) étaient refusés ; ils sont maintenant acceptés.
+- Nouveaux tests unitaires JVM (conversion sur les 4 848 jours du calendrier, âges, écarts, parenté).
+- Bumps v0.87 (gradle 87/« 0.87 », export GEDCOM « 2 VERS 0.87 », badge de saisie « v0.87 », écran d'application).
+
 ## v0.86 – Alertes locales (12.3)
 
 - Anniversaires du jour : naissances, mariages et décès tombant un jour comme aujourd'hui (jour et mois identiques, quelle que soit l'année) ; les dates républicaines sont converties pour la comparaison.
