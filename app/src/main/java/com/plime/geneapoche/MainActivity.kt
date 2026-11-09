@@ -1850,7 +1850,7 @@ fun AppEcran(
                 val age = ageActe(a.date, ne)
                 m.add("n\u00E9(e) le " + dateAffichee(ne) + (if (age.isNotEmpty()) " (" + age + " \u00E0 l'acte)" else ""))
             }
-            if (lieu.isNotBlank()) m.add("\u00E0 " + lieuAffiche(lieu) + (if (dept.isNotBlank() && !Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(lieu)) " (" + dept.trim() + ")" else ""))
+            if (lieu.isNotBlank()) m.add("\u00E0 " + lieuAffiche(lieu))
             if (prof.isNotBlank()) m.add(prof.trim())
             if (dec.isNotBlank()) m.add("d\u00E9c\u00E9d\u00E9(e) le " + dateAffichee(dec) + (if (lieuDec.isNotBlank()) " \u00E0 " + lieuAffiche(lieuDec) else ""))
             return m.joinToString(", ")

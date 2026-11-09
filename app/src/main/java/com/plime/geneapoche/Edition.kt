@@ -136,35 +136,30 @@ fun DialogueEdition(
                 Champ("Date (JJ/MM/AAAA)", dateNaissance, { dateNaissance = it }, erreur = !dateValide(dateNaissance), aide = "jj/mm/aaaa, aaaa ou date republicaine")
                 Champ("Heure (HH:mm)", heureNaissance, { heureNaissance = it }, erreur = !heureValide(heureNaissance), aide = "hh:mm")
                 Champ("Lieu (commune)", lieuNaissance, { lieuNaissance = it }, communes = true, onDept = { deptNaissance = it })
-                Champ("D\u00E9partement (ex 59)", deptNaissance, { deptNaissance = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("Bapt\u00EAme", fontWeight = FontWeight.Bold)
                 Champ("Date", dateBapteme, { dateBapteme = it }, erreur = !dateValide(dateBapteme), aide = "jj/mm/aaaa, aaaa ou date republicaine")
                 Champ("Heure", heureBapteme, { heureBapteme = it }, erreur = !heureValide(heureBapteme), aide = "hh:mm")
                 Champ("Lieu", lieuBapteme, { lieuBapteme = it }, communes = true, onDept = { deptBapteme = it })
-                Champ("D\u00E9partement", deptBapteme, { deptBapteme = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("Mariage", fontWeight = FontWeight.Bold)
                 Champ("Date", dateMariage, { dateMariage = it }, erreur = !dateValide(dateMariage), aide = "jj/mm/aaaa, aaaa ou date republicaine")
                 Champ("Heure", heureMariage, { heureMariage = it }, erreur = !heureValide(heureMariage), aide = "hh:mm")
                 Champ("Lieu", lieuMariage, { lieuMariage = it }, communes = true, onDept = { deptMariage = it })
-                Champ("D\u00E9partement", deptMariage, { deptMariage = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("D\u00E9c\u00E8s", fontWeight = FontWeight.Bold)
                 Champ("Date", dateDeces, { dateDeces = it }, erreur = !dateValide(dateDeces), aide = "jj/mm/aaaa, aaaa ou date republicaine")
                 Champ("Heure", heureDeces, { heureDeces = it }, erreur = !heureValide(heureDeces), aide = "hh:mm")
                 Champ("Lieu", lieuDeces, { lieuDeces = it }, communes = true, onDept = { deptDeces = it })
-                Champ("D\u00E9partement", deptDeces, { deptDeces = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("S\u00E9pulture", fontWeight = FontWeight.Bold)
                 Champ("Date", dateSepulture, { dateSepulture = it }, erreur = !dateValide(dateSepulture), aide = "jj/mm/aaaa, aaaa ou date republicaine")
                 Champ("Heure", heureSepulture, { heureSepulture = it }, erreur = !heureValide(heureSepulture), aide = "hh:mm")
                 Champ("Lieu", lieuSepulture, { lieuSepulture = it }, communes = true, onDept = { deptSepulture = it })
-                Champ("D\u00E9partement", deptSepulture, { deptSepulture = it })
             }
         },
         confirmButton = {
@@ -216,7 +211,6 @@ fun DialogueNouveauMariage(
                 Champ("Pr\u00E9noms du conjoint", prenoms, { prenoms = it })
                 Champ("Date du mariage (jj/mm/aaaa, aaaa ou 22 Germinal An II)", date, { date = it }, !dateValide(date), "jj/mm/aaaa, aaaa ou 22 Germinal An II")
                 Champ("Commune", commune, { commune = it }, communes = true, onDept = { dept = it })
-                Champ("D\u00E9partement (ex 59)", dept, { dept = it })
             }
         },
         confirmButton = {
@@ -224,7 +218,9 @@ fun DialogueNouveauMariage(
                 onClick = {
                     onValider(nom.trim(), prenoms.trim(), date.trim(), commune.trim(), dept.trim())
                 },
-                enabled = (date.isNotBlank() || commune.isNotBlank() || nom.isNotBlank() || prenoms.isNotBlank()) && dateValide(date)
+                // v0.91 : une date ancienne hors format ne BLOQUE plus
+                // l'enregistrement (elle reste signalee dans le journal).
+                enabled = (date.isNotBlank() || commune.isNotBlank() || nom.isNotBlank() || prenoms.isNotBlank())
             ) { Text("Enregistrer") }
         },
         dismissButton = {
@@ -424,7 +420,6 @@ fun DialogueEditionBloc(
                     )
                 }
                 Champ("Commune", commune, { commune = it }, communes = true, onDept = { dept = it })
-                Champ("D\u00E9partement (ex 59)", dept, { dept = it })
                 Champ("R\u00E9f\u00E9rence (cote AD)", ref, { ref = it })
             }
         },
@@ -433,7 +428,10 @@ fun DialogueEditionBloc(
                 onClick = {
                     onValider(date.trim(), heure.trim(), commune.trim(), normaliserDept(dept), ref.trim())
                 },
-                enabled = dateValide(date) && heureValide(heure)
+                // v0.91 : corriger un acte dont la date ancienne est hors
+                // format ne doit plus jamais bloquer l'enregistrement
+                // (la date reste signalee en rouge et dans le journal).
+                enabled = heureValide(heure)
             ) { Text("Enregistrer") }
         },
         dismissButton = {

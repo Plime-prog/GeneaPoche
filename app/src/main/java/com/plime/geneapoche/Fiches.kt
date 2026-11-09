@@ -489,7 +489,7 @@ fun EcranPersonne(
                                                 val dpEnf = paire.second.third.trim()
                                                 val numEnf = dpEnf.toIntOrNull() ?: numeroDepartement(dpEnf) ?: numeroDepartement(lEnf)
                                                 val dTxtEnf = dateLigne(dEnf).ifEmpty { "  /  /    " }
-                                                val lTxtEnf = if (lEnf.isNotEmpty()) (if (Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(lEnf)) lieuAffiche(lEnf) else lEnf + (if (numEnf != null) " (" + numEnf.toString() + ")" else "")) else ""
+                                                val lTxtEnf = if (lEnf.isNotEmpty()) lieuAffiche(lEnf) else ""
                                                 // G\u00E9n\u00E9aPoche 7 : l'\u00E2ge du PARENT \u00E0 la
                                                 // naissance ou au d\u00E9c\u00E8s de l'enfant.
                                                 val aTxtEnf = ageAffiche(p.dateNaissance, dEnf)
@@ -569,7 +569,7 @@ fun EcranPersonne(
                                         Spacer(Modifier.width(8.dp))
                                         val dTxt = dateLigne(dEv).ifEmpty { "  /  /    " }
                                         val aTxt = if (t == "N") "" else ageAffiche(p.dateNaissance, dEv)
-                                        val lTxt = if (lEv.isNotEmpty()) (if (Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(lEv)) lieuAffiche(lEv) else lEv + (if (numDept != null) " (" + numDept.toString() + ")" else "")) else ""
+                                        val lTxt = if (lEv.isNotEmpty()) lieuAffiche(lEv) else ""
                                         Text(
                                             dTxt + (if (aTxt.isNotEmpty()) " " + aTxt else "") + " " + t +
                                                 (if (t == "M") conjointDeTxt(p, personnes) else "") +
@@ -1006,11 +1006,11 @@ fun DialogueEvenementLibre(
                 OutlinedTextField(value = date, onValueChange = { date = it }, label = { Text("Date (jj/mm/aaaa)") }, isError = !dateValide(date), supportingText = { if (!dateValide(date)) Text("jj/mm/aaaa ou aaaa", style = MaterialTheme.typography.bodySmall) }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = heure, onValueChange = { heure = it }, label = { Text("Heure") }, modifier = Modifier.fillMaxWidth())
                 Champ("Commune", lieu, { lieu = it }, communes = true, onDept = { dept = it })
-                Champ("D\u00E9partement", dept, { dept = it })
             }
         },
         confirmButton = {
-            TextButton(onClick = { onValider(intitule, date, heure, lieu, dept) }, enabled = dateValide(date)) { Text("Enregistrer") }
+            // v0.91 : plus jamais de blocage par la date.
+            TextButton(onClick = { onValider(intitule, date, heure, lieu, dept) }) { Text("Enregistrer") }
         },
         dismissButton = {
             Row {
@@ -1168,16 +1168,10 @@ fun conjointDeTxt(p: Personne, personnes: List<Personne>): String {
 // des enfants. Chaque ligne : (annee, "jj/mm/aaaa Texte a Lieu (dep)"),
 // triee par annee croissante.
 fun evenementsFamille(p: Personne, personnes: List<Personne>): List<Pair<Int, String>> {
-    fun lieuAvecDept(lieu: String, dept: String): String {
-        val l = lieu.trim()
-        if (l.isEmpty()) return ""
-        // v0.90 : lieu normalisé (code INSEE présent) : affichage sans
-        // le code ni numéro de département redondants.
-        if (Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(l)) return lieuAffiche(l)
-        val d = dept.trim()
-        val num = d.toIntOrNull() ?: numeroDepartement(d) ?: numeroDepartement(l)
-        return l + (if (num != null) " (" + num.toString() + ")" else "")
-    }
+    // v0.91 : le d\u00E9partement n'est plus jamais affich\u00E9 ; le lieu
+    // appara\u00EEt sans son code INSEE ("Roubaix, 59512, Nord" ->
+    // "Roubaix, Nord").
+    fun lieuAvecDept(lieu: String, dept: String): String = lieuAffiche(lieu)
     fun ligne(date: String, lieu: String, dept: String, texte: String): Pair<Int, String>? {
         val d = date.trim()
         if (d.isEmpty()) return null
@@ -1373,7 +1367,7 @@ fun CarteEvenement(
                 Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
             } else {
                 Text(
-                    (if (Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(l)) lieuAffiche(l) else l + (if (numDept != null) " (" + numDept.toString() + ")" else "")),
+                    lieuAffiche(l),
                     style = MaterialTheme.typography.bodySmall
                 )
             }

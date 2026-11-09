@@ -17,9 +17,12 @@ import java.text.Normalizer
 
 data class Commune(val code: String, val nom: String, val dept: String, val cle: String)
 
-// Recherche sans accents ni casse.
+// Recherche sans accents ni casse ni séparateurs : "Saint Denis",
+// "Saint-Denis" et "saintdenis" trouvent tous la commune "Saint-Denis".
 private fun normaliserCle(s: String): String =
-    Normalizer.normalize(s.uppercase(), Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "")
+    Normalizer.normalize(s.uppercase(), Normalizer.Form.NFD)
+        .replace(Regex("\\p{Mn}+"), "")
+        .replace(Regex("[^A-Z0-9]"), "")
 
 object BaseCommunes {
     @Volatile private var chargees = false
@@ -68,9 +71,11 @@ object BaseCommunes {
         }
     }
 
-    // Suggestions : par code INSEE (ex "17010", "2A004"), puis par début
-    // de nom, puis n'importe où dans le nom. Six au maximum.
-    fun suggestions(q: String, max: Int = 6): List<Commune> {
+    // Suggestions : par code INSEE (ex "17010", "2A004"), puis par nom
+    // (egalite exacte d'abord, debut de nom, puis n'importe ou). Huit
+    // au maximum, pour retrouver aussi les homonymes ("Saint-Denis"
+    // 93 et 974 cote a cote).
+    fun suggestions(q: String, max: Int = 8): List<Commune> {
         if (!chargees) return emptyList()
         val t = q.trim()
         if (t.length < 2) return emptyList()
@@ -80,10 +85,10 @@ object BaseCommunes {
             val parCode = liste.filter { it.code == n || it.code.startsWith(n) }
             if (parCode.isNotEmpty()) return parCode.take(max)
         }
-        val debut = liste.filter { it.cle.startsWith(n) }
-        if (debut.size >= max) return debut.take(max)
-        val ailleurs = liste.filter { it.cle.contains(n) && !debut.contains(it) }
-        return (debut + ailleurs).take(max)
+        val exactes = liste.filter { it.cle == n }
+        val debut = liste.filter { it.cle.startsWith(n) && it.cle != n }
+        val ailleurs = liste.filter { it.cle.contains(n) && !it.cle.startsWith(n) }
+        return (exactes + debut + ailleurs).take(max)
     }
 }
 
