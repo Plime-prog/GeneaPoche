@@ -1,0 +1,195 @@
+87001|Aixe-sur-Vienne
+87002|Ambazac
+87003|Arnac-la-Poste
+87004|Augne
+87005|Aureil
+87006|Azat-le-Ris
+87007|Balledent
+87008|La Bazeuge
+87009|Beaumont-du-Lac
+87011|Bellac
+87012|Berneuil
+87013|Bersac-sur-Rivalier
+87014|Bessines-sur-Gartempe
+87015|Beynac
+87016|Les Billanges
+87017|Blanzac
+87018|Blond
+87019|Boisseuil
+87020|Bonnac-la-Côte
+87021|Bosmie-l'Aiguille
+87022|Breuilaufa
+87023|Le Buis
+87024|Bujaleuf
+87025|Burgnac
+87027|Bussière-Galant
+87028|Val-d'Oire-et-Gartempe
+87029|Les Cars
+87030|Chaillac-sur-Vienne
+87031|Le Chalard
+87032|Châlus
+87033|Chamboret
+87034|Champagnac-la-Rivière
+87035|Champnétery
+87036|Champsac
+87037|La Chapelle-Montbrandeix
+87038|Chaptelat
+87039|Château-Chervix
+87040|Châteauneuf-la-Forêt
+87041|Châteauponsac
+87042|Le Châtenet-en-Dognon
+87043|Cheissoux
+87044|Chéronnac
+87045|Cieux
+87046|Cognac-la-Forêt
+87047|Compreignac
+87048|Condat-sur-Vienne
+87049|Coussac-Bonneval
+87050|Couzeix
+87051|La Croisille-sur-Briance
+87052|La Croix-sur-Gartempe
+87053|Cromac
+87054|Cussac
+87056|Dinsac
+87057|Dompierre-les-Églises
+87058|Domps
+87059|Le Dorat
+87060|Dournazac
+87061|Droux
+87062|Eybouleuf
+87063|Eyjeaux
+87064|Eymoutiers
+87065|Feytiat
+87066|Flavignac
+87067|Folles
+87068|Fromental
+87069|Gajoubert
+87070|La Geneytouse
+87071|Glandon
+87072|Glanges
+87073|Gorre
+87074|Les Grands-Chézeaux
+87075|Isle
+87076|Jabreilles-les-Bordes
+87077|Janailhac
+87078|Javerdat
+87079|La Jonchère-Saint-Maurice
+87080|Jouac
+87081|Jourgnac
+87082|Ladignac-le-Long
+87083|Laurière
+87084|Lavignac
+87085|Limoges
+87086|Linards
+87087|Lussac-les-Églises
+87088|Magnac-Bourg
+87089|Magnac-Laval
+87090|Mailhac-sur-Benaize
+87091|Maisonnais-sur-Tardoire
+87092|Marval
+87093|Masléon
+87094|Meilhac
+87095|Meuzac
+87096|La Meyze
+87097|Val d'Issoire
+87099|Moissannes
+87100|Montrol-Sénard
+87101|Mortemart
+87103|Nantiat
+87104|Nedde
+87105|Neuvic-Entier
+87106|Nexon
+87107|Nieul
+87108|Nouic
+87109|Oradour-Saint-Genest
+87110|Oradour-sur-Glane
+87111|Oradour-sur-Vayres
+87112|Pageas
+87113|Le Palais-sur-Vienne
+87114|Panazol
+87115|Pensol
+87116|Peyrat-de-Bellac
+87117|Peyrat-le-Château
+87118|Peyrilhac
+87119|Pierre-Buffière
+87120|La Porcherie
+87121|Rancon
+87122|Razès
+87123|Rempnat
+87124|Rilhac-Lastours
+87125|Rilhac-Rancon
+87126|Rochechouart
+87127|La Roche-l'Abeille
+87128|Saint-Pardoux-le-Lac
+87129|Royères
+87130|Roziers-Saint-Georges
+87131|Saillat-sur-Vienne
+87132|Saint-Amand-le-Petit
+87133|Saint-Amand-Magnazeix
+87134|Sainte-Anne-Saint-Priest
+87135|Saint-Auvent
+87137|Saint-Bazile
+87138|Saint-Bonnet-Briance
+87139|Saint-Bonnet-de-Bellac
+87140|Saint-Brice-sur-Vienne
+87141|Saint-Cyr
+87142|Saint-Denis-des-Murs
+87143|Saint-Gence
+87144|Saint-Genest-sur-Roselle
+87145|Saint-Georges-les-Landes
+87146|Saint-Germain-les-Belles
+87147|Saint-Gilles-les-Forêts
+87148|Saint-Hilaire-Bonneval
+87149|Saint-Hilaire-la-Treille
+87150|Saint-Hilaire-les-Places
+87151|Saint-Jean-Ligoure
+87152|Saint-Jouvent
+87153|Saint-Julien-le-Petit
+87154|Saint-Junien
+87155|Saint-Junien-les-Combes
+87156|Saint-Just-le-Martel
+87157|Saint-Laurent-les-Églises
+87158|Saint-Laurent-sur-Gorre
+87159|Saint-Léger-la-Montagne
+87160|Saint-Léger-Magnazeix
+87161|Saint-Léonard-de-Noblat
+87162|Sainte-Marie-de-Vaux
+87163|Saint-Martial-sur-Isop
+87164|Saint-Martin-de-Jussac
+87165|Saint-Martin-le-Mault
+87166|Saint-Martin-le-Vieux
+87167|Saint-Martin-Terressus
+87168|Saint-Mathieu
+87169|Saint-Maurice-les-Brousses
+87170|Saint-Méard
+87172|Saint-Ouen-sur-Gartempe
+87174|Saint-Paul
+87176|Saint-Priest-Ligoure
+87177|Saint-Priest-sous-Aixe
+87178|Saint-Priest-Taurion
+87179|Saint-Sornin-la-Marche
+87180|Saint-Sornin-Leulac
+87181|Saint-Sulpice-Laurière
+87182|Saint-Sulpice-les-Feuilles
+87183|Saint-Sylvestre
+87185|Saint-Victurnien
+87186|Saint-Vitte-sur-Briance
+87187|Saint-Yrieix-la-Perche
+87188|Saint-Yrieix-sous-Aixe
+87189|Les Salles-Lavauguyon
+87190|Sauviat-sur-Vige
+87191|Séreilhac
+87192|Solignac
+87193|Surdoux
+87194|Sussac
+87195|Tersannes
+87197|Thouron
+87198|Vaulry
+87199|Vayres
+87200|Verneuil-Moustiers
+87201|Verneuil-sur-Vienne
+87202|Veyrac
+87203|Vicq-sur-Breuilh
+87204|Videix
+87205|Le Vigen
+87206|Villefavard

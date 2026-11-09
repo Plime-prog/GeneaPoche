@@ -1,0 +1,47 @@
+94001|Ablon-sur-Seine
+94002|Alfortville
+94003|Arcueil
+94004|Boissy-Saint-Léger
+94011|Bonneuil-sur-Marne
+94015|Bry-sur-Marne
+94016|Cachan
+94017|Champigny-sur-Marne
+94018|Charenton-le-Pont
+94019|Chennevières-sur-Marne
+94021|Chevilly-Larue
+94022|Choisy-le-Roi
+94028|Créteil
+94033|Fontenay-sous-Bois
+94034|Fresnes
+94037|Gentilly
+94038|L'Haÿ-les-Roses
+94041|Ivry-sur-Seine
+94042|Joinville-le-Pont
+94043|Le Kremlin-Bicêtre
+94044|Limeil-Brévannes
+94046|Maisons-Alfort
+94047|Mandres-les-Roses
+94048|Marolles-en-Brie
+94052|Nogent-sur-Marne
+94053|Noiseau
+94054|Orly
+94055|Ormesson-sur-Marne
+94056|Périgny
+94058|Le Perreux-sur-Marne
+94059|Le Plessis-Trévise
+94060|La Queue-en-Brie
+94065|Rungis
+94067|Saint-Mandé
+94068|Saint-Maur-des-Fossés
+94069|Saint-Maurice
+94070|Santeny
+94071|Sucy-en-Brie
+94073|Thiais
+94074|Valenton
+94075|Villecresnes
+94076|Villejuif
+94077|Villeneuve-le-Roi
+94078|Villeneuve-Saint-Georges
+94079|Villiers-sur-Marne
+94080|Vincennes
+94081|Vitry-sur-Seine

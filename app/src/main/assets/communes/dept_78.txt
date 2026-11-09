@@ -1,0 +1,259 @@
+78003|Ablis
+78005|Achères
+78006|Adainville
+78007|Aigremont
+78009|Allainville
+78010|Les Alluets-le-Roi
+78013|Andelu
+78015|Andrésy
+78020|Arnouville-lès-Mantes
+78029|Aubergenville
+78030|Auffargis
+78031|Auffreville-Brasseuil
+78033|Aulnay-sur-Mauldre
+78034|Auteuil
+78036|Autouillet
+78043|Bailly
+78048|Bazainville
+78049|Bazemont
+78050|Bazoches-sur-Guyonne
+78053|Béhoust
+78057|Bennecourt
+78062|Beynes
+78068|Blaru
+78070|Boinville-en-Mantois
+78071|Boinville-le-Gaillard
+78072|Boinvilliers
+78073|Bois-d'Arcy
+78076|Boissets
+78077|La Boissière-École
+78082|Boissy-Mauvoisin
+78084|Boissy-sans-Avoir
+78087|Bonnelles
+78089|Bonnières-sur-Seine
+78090|Bouafle
+78092|Bougival
+78096|Bourdonné
+78104|Breuil-Bois-Robert
+78107|Bréval
+78108|Les Bréviaires
+78113|Brueil-en-Vexin
+78117|Buc
+78118|Buchelay
+78120|Bullion
+78123|Carrières-sous-Poissy
+78124|Carrières-sur-Seine
+78125|La Celle-les-Bordes
+78126|La Celle-Saint-Cloud
+78128|Cernay-la-Ville
+78133|Chambourcy
+78138|Chanteloup-les-Vignes
+78140|Chapet
+78143|Châteaufort
+78146|Chatou
+78147|Chaufour-lès-Bonnières
+78152|Chavenay
+78158|Le Chesnay-Rocquencourt
+78160|Chevreuse
+78162|Choisel
+78163|Civry-la-Forêt
+78164|Clairefontaine-en-Yvelines
+78165|Les Clayes-sous-Bois
+78168|Coignières
+78171|Condé-sur-Vesgre
+78172|Conflans-Sainte-Honorine
+78185|Courgent
+78188|Cravent
+78189|Crespières
+78190|Croissy-sur-Seine
+78192|Dammartin-en-Serve
+78193|Dampierre-en-Yvelines
+78194|Dannemarie
+78196|Davron
+78202|Drocourt
+78206|Ecquevilly
+78208|Élancourt
+78209|Émancé
+78217|Épône
+78220|Les Essarts-le-Roi
+78224|L'Étang-la-Ville
+78227|Évecquemont
+78230|La Falaise
+78231|Favrieux
+78233|Feucherolles
+78234|Flacourt
+78236|Flexanville
+78237|Flins-Neuve-Église
+78238|Flins-sur-Seine
+78239|Follainville-Dennemont
+78242|Fontenay-le-Fleury
+78245|Fontenay-Mauvoisin
+78246|Fontenay-Saint-Père
+78255|Freneuse
+78261|Gaillon-sur-Montcient
+78262|Galluis
+78263|Gambais
+78264|Gambaiseuil
+78265|Garancières
+78267|Gargenville
+78269|Gazeran
+78276|Gommecourt
+78278|Goupillières
+78281|Goussonville
+78283|Grandchamp
+78285|Gressey
+78289|Grosrouvre
+78290|Guernes
+78291|Guerville
+78296|Guitrancourt
+78297|Guyancourt
+78299|Hardricourt
+78300|Hargeville
+78302|La Hauteville
+78305|Herbeville
+78307|Hermeray
+78310|Houdan
+78311|Houilles
+78314|Issou
+78317|Jambville
+78320|Notre-Dame-de-la-Mer
+78321|Jouars-Pontchartrain
+78322|Jouy-en-Josas
+78324|Jouy-Mauvoisin
+78325|Jumeauville
+78327|Juziers
+78329|Lainville-en-Vexin
+78334|Lévis-Saint-Nom
+78335|Limay
+78337|Limetz-Villez
+78343|Les Loges-en-Josas
+78344|Lommoye
+78346|Longnes
+78349|Longvilliers
+78350|Louveciennes
+78354|Magnanville
+78356|Magny-les-Hameaux
+78358|Maisons-Laffitte
+78361|Mantes-la-Jolie
+78362|Mantes-la-Ville
+78364|Marcq
+78366|Mareil-le-Guyon
+78367|Mareil-Marly
+78368|Mareil-sur-Mauldre
+78372|Marly-le-Roi
+78380|Maule
+78381|Maulette
+78382|Maurecourt
+78383|Maurepas
+78384|Médan
+78385|Ménerville
+78389|Méré
+78391|Méricourt
+78396|Le Mesnil-le-Roi
+78397|Le Mesnil-Saint-Denis
+78398|Les Mesnuls
+78401|Meulan-en-Yvelines
+78402|Mézières-sur-Seine
+78403|Mézy-sur-Seine
+78404|Millemont
+78406|Milon-la-Chapelle
+78407|Mittainville
+78410|Moisson
+78413|Mondreville
+78415|Montainville
+78416|Montalet-le-Bois
+78417|Montchauvet
+78418|Montesson
+78420|Montfort-l'Amaury
+78423|Montigny-le-Bretonneux
+78431|Morainvilliers
+78437|Mousseaux-sur-Seine
+78439|Mulcent
+78440|Les Mureaux
+78442|Neauphle-le-Château
+78443|Neauphle-le-Vieux
+78444|Neauphlette
+78451|Nézel
+78455|Noisy-le-Roi
+78460|Oinville-sur-Montcient
+78464|Orcemont
+78465|Orgerus
+78466|Orgeval
+78470|Orphin
+78472|Orsonville
+78474|Orvilliers
+78475|Osmoy
+78478|Paray-Douaville
+78481|Le Pecq
+78484|Perdreauville
+78486|Le Perray-en-Yvelines
+78490|Plaisir
+78497|Poigny-la-Forêt
+78498|Poissy
+78499|Ponthévrard
+78501|Porcheville
+78502|Le Port-Marly
+78505|Prunay-le-Temple
+78506|Prunay-en-Yvelines
+78513|La Queue-les-Yvelines
+78516|Raizeux
+78517|Rambouillet
+78518|Rennemoulin
+78520|Richebourg
+78522|Rochefort-en-Yvelines
+78528|Rolleboise
+78530|Rosay
+78531|Rosny-sur-Seine
+78536|Sailly
+78537|Saint-Arnoult-en-Yvelines
+78545|Saint-Cyr-l'École
+78548|Saint-Forget
+78550|Saint-Germain-de-la-Grange
+78551|Saint-Germain-en-Laye
+78557|Saint-Hilarion
+78558|Saint-Illiers-la-Ville
+78559|Saint-Illiers-le-Bois
+78561|Saint-Lambert
+78562|Saint-Léger-en-Yvelines
+78564|Saint-Martin-de-Bréthencourt
+78565|Saint-Martin-des-Champs
+78567|Saint-Martin-la-Garenne
+78569|Sainte-Mesme
+78571|Saint-Nom-la-Bretèche
+78575|Saint-Rémy-lès-Chevreuse
+78576|Saint-Rémy-l'Honoré
+78586|Sartrouville
+78588|Saulx-Marchais
+78590|Senlisse
+78591|Septeuil
+78597|Soindres
+78601|Sonchamp
+78605|Tacoignières
+78606|Le Tartre-Gaudran
+78608|Le Tertre-Saint-Denis
+78609|Tessancourt-sur-Aubette
+78615|Thiverval-Grignon
+78616|Thoiry
+78618|Tilly
+78620|Toussus-le-Noble
+78621|Trappes
+78623|Le Tremblay-sur-Mauldre
+78624|Triel-sur-Seine
+78638|Vaux-sur-Seine
+78640|Vélizy-Villacoublay
+78642|Verneuil-sur-Seine
+78643|Vernouillet
+78644|La Verrière
+78646|Versailles
+78647|Vert
+78650|Le Vésinet
+78653|Vicq
+78655|Vieille-Église-en-Yvelines
+78668|La Villeneuve-en-Chevrie
+78672|Villennes-sur-Seine
+78674|Villepreux
+78677|Villette
+78681|Villiers-le-Mahieu
+78683|Villiers-Saint-Frédéric
+78686|Viroflay
+78688|Voisins-le-Bretonneux
