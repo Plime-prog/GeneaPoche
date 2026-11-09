@@ -142,7 +142,7 @@ private fun lignesDates(p: NoeudCoh): String {
     return if (l.isEmpty()) nom + " : aucune date" else nom + " : " + l.joinToString(", ")
 }
 
-private fun normaliserDept(s: String): String =
+private fun cleDeptCoh(s: String): String =
     sansAccents(s).lowercase().replace(Regex("[^a-z0-9]+"), "")
 
 fun anomaliesAVerifier(
@@ -319,7 +319,7 @@ fun anomaliesAVerifier(
             val iv = intervalleDe(ev.date)
             if (iv != null && iv.exact && dept.isNotEmpty()) {
                 val autre = dejaUnJour[iv.debut]
-                if (autre != null && normaliserDept(autre.dept) != normaliserDept(dept)) {
+                if (autre != null && cleDeptCoh(autre.dept) != cleDeptCoh(dept)) {
                     add(
                         "lieux-incompatibles", 2, listOf(p.id),
                         t + " : " + autre.type + " et " + ev.type + " le m\u00eame jour (" + ev.date.trim() +
