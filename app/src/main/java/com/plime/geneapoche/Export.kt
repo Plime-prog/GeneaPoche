@@ -102,10 +102,17 @@ fun brancheDe(personnes: List<Personne>, idCentre: Long): Set<Long> {
 // Le numero de departement peut venir du champ dept, du lieu lui-meme ("Roubaix (59)"),
 // ou du nom du departement ("Nord" -> 59).
 fun lieuGedcom(commune: String, dept: String): String {
-    val c = commune.trim()
+    // v0.90 : "France" n'est PAS stocke dans la base ; il est ajoute
+    // uniquement ici, a l'export GEDCOM. Un lieu deja normalise (il
+    // contient le code INSEE) part tel quel ; sinon l'ancien format
+    // "Commune, numero, nom de departement" est reconstruit.
+    val c = sansPays(commune)
+    val parties = c.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    val code = parties.firstOrNull { Regex("^\\d{5}$").matches(it) || Regex("^2[AB]\\d{3}$").matches(it) }
+    if (code != null) return listOf(c, "France").joinToString(", ")
     val n = dept.trim().toIntOrNull() ?: numeroDepartement(dept) ?: numeroDepartement(c)
     if (n == null) return c
-    return listOf(c, n.toString(), NomsDepartements[n] ?: "").filter { it.isNotEmpty() }.joinToString(", ")
+    return listOf(c, n.toString(), NomsDepartements[n] ?: "", "France").filter { it.isNotEmpty() }.joinToString(", ")
 }
 
 // Tag GEDCOM d'un type d'acte (SOUR DATA/EVEN).
@@ -170,7 +177,7 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ve
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.89") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
+    lignes.add("2 VERS 0.90") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
@@ -325,7 +332,22 @@ fun dateFrancaise(s: String): String {
 // doit se REIMPORTER en commune + numero de departement separes, pas en
 // un seul bloc avec une virgule et un mauvais departement.
 fun couperLieu(plac: String): Pair<String, String> {
-    val parties = plac.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    // v0.90 : un PLAC importe se termine souvent par "France" : ce
+    // segment est retire (le pays n'est pas stocke dans la base). Si un
+    // code INSEE est present, le lieu interne garde le format
+    // "Commune, code, nom de departement" et le numero de departement
+    // est deduit du code ("17010" -> "17", "2A004" -> "2A").
+    var parties = plac.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    if (parties.isNotEmpty() && parties.last().equals("France", ignoreCase = true)) {
+        parties = parties.dropLast(1)
+    }
+    val i = parties.indexOfFirst { Regex("^\\d{5}$").matches(it) || Regex("^2[AB]\\d{3}$").matches(it) }
+    if (i >= 0) {
+        val deptNum = parties[i].take(2)
+        val nomDept = parties.drop(i + 1).firstOrNull() ?: BaseCommunes.nomDept(deptNum)
+        val lieu = (parties.take(i) + parties[i] + nomDept).filter { it.isNotEmpty() }.joinToString(", ")
+        return lieu to deptNum
+    }
     if (parties.size >= 2 && parties[1].toIntOrNull() != null) {
         return parties[0] to parties[1]
     }

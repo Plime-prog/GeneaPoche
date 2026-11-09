@@ -17,6 +17,12 @@ import org.json.JSONObject
 // "JEAN BAPTISTE" -> "Jean Baptiste").
 fun normaliserNom(s: String): String = s.trim().uppercase()
 
+// v0.90 : "France" n'est plus stocké dans les lieux ; le pays est
+// ajouté uniquement à l'export GEDCOM. Cette fonction retire un
+// éventuel ", France" (ou "; France") résiduel des anciennes saisies.
+fun sansPays(s: String): String =
+    s.trim().replace(Regex("[,;]\\s*France\\s*$", RegexOption.IGNORE_CASE), "").trim()
+
 // G\u00E9n\u00E9aPoche 5 : commune transcrite avec une initiale en MAJUSCULES
 // (norme fran\u00E7aise) : chaque mot est en minuscules sauf sa premiere
 // lettre, y compris apres un tiret ou une apostrophe
@@ -73,16 +79,17 @@ fun normaliserLieux(p: Personne) {
     p.dateSepulture = normaliserDate(p.dateSepulture); p.heureSepulture = normaliserHeure(p.heureSepulture)
     p.evenementsLibres.forEach { ev ->
         ev.date = normaliserDate(ev.date); ev.heure = normaliserHeure(ev.heure)
+        ev.lieu = sansPays(ev.lieu)
     }
-    p.lieuNaissance = normaliserCommune(p.lieuNaissance)
+    p.lieuNaissance = sansPays(normaliserCommune(p.lieuNaissance))
     p.deptNaissance = normaliserDept(p.deptNaissance)
-    p.lieuBapteme = normaliserCommune(p.lieuBapteme)
+    p.lieuBapteme = sansPays(normaliserCommune(p.lieuBapteme))
     p.deptBapteme = normaliserDept(p.deptBapteme)
-    p.lieuMariage = normaliserCommune(p.lieuMariage)
+    p.lieuMariage = sansPays(normaliserCommune(p.lieuMariage))
     p.deptMariage = normaliserDept(p.deptMariage)
-    p.lieuDeces = normaliserCommune(p.lieuDeces)
+    p.lieuDeces = sansPays(normaliserCommune(p.lieuDeces))
     p.deptDeces = normaliserDept(p.deptDeces)
-    p.lieuSepulture = normaliserCommune(p.lieuSepulture)
+    p.lieuSepulture = sansPays(normaliserCommune(p.lieuSepulture))
     p.deptSepulture = normaliserDept(p.deptSepulture)
 }
 
