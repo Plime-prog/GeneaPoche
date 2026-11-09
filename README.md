@@ -22,6 +22,8 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 
 **Anomalies à vérifier (v0.88)** — le diagnostic de l'arbre (onglet Journal) signale les dates et liens improbables (enfant né après le décès de son père, mère trop jeune ou trop âgée, mariage après décès, fratrie trop rapprochée, sexe incompatible avec un lien, doublons potentiels…) sans jamais parler d'erreur : chaque anomalie propose **Ignorer**, **Corriger** ou **Examiner**.
 
+**Communes et lieux (v0.88 – v0.91)** — base hors ligne des 34 015 communes françaises (code INSEE) intégrée à l'application : la saisie d'un lieu propose les communes au fil de la frappe (insensible aux accents, aux espaces et à la ponctuation — « Saint Denis » trouve « Saint-Denis ») et insère « Commune, code INSEE, département » ; le lieu-dit se tape devant, à la virgule. Le code INSEE est masqué à l'affichage, « France » n'est ajouté qu'à l'export GEDCOM, et le champ Département a disparu des formulaires : le département est déduit automatiquement du code INSEE (17010 → 17) et reste stocké pour de futures statistiques. Le journal propose de corriger en un clic les anciens lieux non conformes.
+
 ## Modèle de sécurité — exact, avec ses limites
 
 - **Aucune permission Internet** dans le manifeste : l'application elle-même ne transmet rien.
@@ -40,7 +42,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.88)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.88-release.apk` (signé) ou `GeneaPoche-v0.88-debug.apk`.
+**Téléchargement direct de la dernière version (v0.91)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.91-release.apk` (signé) ou `GeneaPoche-v0.91-debug.apk`.
 
 Sinon, depuis les sources :
 
