@@ -296,7 +296,6 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
     fun suffixe(lieu: String, dept: String): String {
         var s = ""
         if (lieu.isNotBlank()) s = " \u00E0 " + lieuAffiche(lieu)
-        if (dept.isNotBlank() && !Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(lieu)) s = s + " (" + dept.trim() + ")"
         return s
     }
 
@@ -314,9 +313,8 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
         if (ch.lieu.isBlank()) {
             ajouter(cleBase + "_lieu", "Compl\u00E9ter " + lib.lieu + " de " + titreCourt(p), type, "", "", debut, fin)
         }
-        if (ch.dept.isBlank()) {
-            ajouter(cleBase + "_dept", "Compl\u00E9ter " + lib.dept + " de " + titreCourt(p), type, "", "", debut, fin)
-        }
+        // v0.91 : plus de recherche "Compl\u00E9ter le d\u00E9partement" : le
+        // d\u00E9partement est d\u00E9riv\u00E9 du code INSEE, il n'est plus saisi.
         // Chantier 12.0 : l'acte n'est plus stocke dans l'app ; une coche
         // "Enregistre" par type. Pas de coche = acte manquant = une recherche.
         if (!p.enregistreDe(type)) {
@@ -434,10 +432,30 @@ data class ErreurSaisie(
     val dates: Boolean = false
 )
 
+// v0.91 : proposition robuste - la partie "commune" doit ressembler a
+// un NOM (pas un numero de departement restant d'une ancienne saisie),
+// et le lieu-dit devant est conserve SANS les anciens segments techniques
+// (numero ou nom de departement seuls), sinon la correction insere la
+// commune derriere des restes qui n'ont rien a voir.
 private fun propositionLieu(l: String): String {
     if (!BaseCommunes.pret()) return ""
-    val s = BaseCommunes.suggestions(partieSaisie(l), 2)
-    return if (s.size == 1) insererLieu(l, s.first()) else ""
+    val partie = partieSaisie(l).trim()
+    if (partie.length < 2) return ""
+    // La partie tapee doit contenir des lettres (un "59" ou "Nord" seul
+    // n'est pas une commune).
+    if (!Regex("[A-Za-z\u00C0-\u017F]").containsMatchIn(partie)) return ""
+    val s = BaseCommunes.suggestions(partie, 2)
+    if (s.size != 1) return ""
+    // Lieu-dit = ce qui precede, nettoye des anciens segments dept.
+    val i = l.lastIndexOf(',')
+    var prefixe = (if (i >= 0) l.substring(0, i) else "").trim().trimEnd(',', ';')
+    val m = Regex("[,; ](\\d{1,3}|2[AB]\\d{0,3}|\\d{5})$").find(prefixe)
+    if (m != null) prefixe = prefixe.substring(0, m.range.first).trim().trimEnd(',', ';')
+    // ...et un nom de d\u00E9partement seul \u00E0 la fin ("Roubaix, Nord").
+    val segs = prefixe.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    if (segs.size >= 2 && numeroDepartement(segs.last()) != null) prefixe = segs.dropLast(1).joinToString(", ")
+    return (if (prefixe.isNotEmpty()) prefixe + ", " else "") +
+        s.first().nom + ", " + s.first().code + ", " + BaseCommunes.nomDept(s.first().dept)
 }
 
 fun erreursSaisie(personnes: List<Personne>): List<ErreurSaisie> {
@@ -573,9 +591,19 @@ fun EcranJournal(
                                     if (!e.dates && e.valeur.isNotEmpty()) {
                                         Text(e.valeur, style = MaterialTheme.typography.bodySmall, color = Color(0xFF6B4A12))
                                     }
+                                    // v0.91 : la valeur qui sera enregistree
+                                    // est montree AVANT le clic.
+                                    if (e.proposition.isNotEmpty()) {
+                                        Text(
+                                            "\u2192 " + e.proposition,
+                                            style = MaterialTheme.typography.bodySmall, color = CouleurVertFonce
+                                        )
+                                    }
                                 }
                                 if (e.proposition.isNotEmpty()) {
-                                    TextButton(onClick = { onCorrigerLieu(e.personneId, e.champ, e.proposition) }) {
+                                    // v0.91 : rafraichir++ force la liste
+                                    // "A corriger" a se recalculer aussitot.
+                                    TextButton(onClick = { onCorrigerLieu(e.personneId, e.champ, e.proposition); rafraichir++ }) {
                                         Text("Corriger")
                                     }
                                 }
