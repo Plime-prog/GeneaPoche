@@ -170,7 +170,7 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ve
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.88") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
+    lignes.add("2 VERS 0.89") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
@@ -228,6 +228,12 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ve
         }
         if (p.profession.trim().isNotEmpty()) lignes.add("1 OCCU " + texteGedcom(p.profession.trim()))
         if (p.sosa.trim().isNotEmpty()) lignes.add("1 RFN Sosa " + p.sosa.trim())
+        // v0.89 : la certification d'identit\u00E9 (coche ou croix manuelle)
+        // part dans un tag d\u00E9di\u00E9 et est relue \u00E0 l'import : elle survit
+        // \u00E0 l'export/r\u00E9import GEDCOM ("auto" est recalcul\u00E9, jamais export\u00E9).
+        if (p.identiteVerifiee == "coche" || p.identiteVerifiee == "croix") {
+            lignes.add("1 _GPVERIF " + p.identiteVerifiee)
+        }
         // G2-02 : le bloc "sans titre" de la fiche part en NOTE (relue a l'import).
         if (p.notesLibres.trim().isNotEmpty()) ajouterNote(lignes, 1, "NOTE", p.notesLibres.trim())
         if (p.pere != 0L && p.mere != 0L &&
@@ -391,6 +397,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
         var sexe = ""
         var occu = ""
         var rfn = ""
+        // v0.89 : certification d'identit\u00E9 relue ("coche"/"croix").
+        var verif = ""
         var note = ""
         var nD = ""; var nH = ""; var nL = ""; var nDpt = ""
         var bD = ""; var bH = ""; var bL = ""; var bDpt = ""
@@ -470,6 +478,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                         val numR = Regex("\\d+(\\.\\d+)*").find(contenu.removePrefix("RFN"))?.value
                         if (numR != null) ind.rfn = numR
                     }
+                    // v0.89 : certification d'identit\u00E9 (export GeneaPoche).
+                    "_GPVERIF" -> ind.verif = contenu.removePrefix("_GPVERIF").trim()
                     "NOTE" -> ind.note = contenu.removePrefix("NOTE").trim().replace("@@", "@")
                     // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement libre (intitul\u00E9 en 2 TYPE).
                     "EVEN" -> ind.evLibres.add(EvenementLibre())
@@ -555,6 +565,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                 sexe = ind.sexe,
                 profession = ind.occu,
                 sosa = ind.rfn,
+                identiteVerifiee = if (ind.verif == "coche" || ind.verif == "croix") ind.verif else "auto",
                 notesLibres = ind.note,
                 dateNaissance = ind.nD, heureNaissance = ind.nH, lieuNaissance = ind.nL, deptNaissance = ind.nDpt,
                 dateBapteme = ind.bD, heureBapteme = ind.bH, lieuBapteme = ind.bL, deptBapteme = ind.bDpt,
