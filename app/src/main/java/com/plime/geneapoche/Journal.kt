@@ -35,10 +35,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.key
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -293,8 +295,8 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
 
     fun suffixe(lieu: String, dept: String): String {
         var s = ""
-        if (lieu.isNotBlank()) s = " \u00E0 " + lieu.trim()
-        if (dept.isNotBlank()) s = s + " (" + dept.trim() + ")"
+        if (lieu.isNotBlank()) s = " \u00E0 " + lieuAffiche(lieu)
+        if (dept.isNotBlank() && !Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(lieu)) s = s + " (" + dept.trim() + ")"
         return s
     }
 
@@ -418,6 +420,57 @@ fun numeroDePiste(piste: Piste, personnes: List<Personne>): List<Int> {
     return cleNumero(p)
 }
 
+// v0.90 : "À corriger" — TOUT ce qui est corrigeable dans les ANCIENNES
+// saisies : lieu non conforme (sans code INSEE, éventuellement avec un
+// "France" résiduel) et dates invalides. La proposition est la
+// normalisation automatique quand la partie "commune" du lieu matche
+// UNE seule commune de la base ; vide sinon (ressaisie à la main).
+data class ErreurSaisie(
+    val personneId: Long,
+    val champ: String,      // "naissance", "deces", "evl:3"... "" = dates
+    val libelle: String,    // "Prénom Nom" ou "événement : ..."
+    val valeur: String,     // valeur actuelle
+    val proposition: String, // correction proposée, "" si aucune
+    val dates: Boolean = false
+)
+
+private fun propositionLieu(l: String): String {
+    if (!BaseCommunes.pret()) return ""
+    val s = BaseCommunes.suggestions(partieSaisie(l), 2)
+    return if (s.size == 1) insererLieu(l, s.first()) else ""
+}
+
+fun erreursSaisie(personnes: List<Personne>): List<ErreurSaisie> {
+    val res = mutableListOf<ErreurSaisie>()
+    val normalise = Regex(", (\\d{5}|2[AB]\\d{3})(,|$)")
+    for (p in personnes) {
+        val champs = listOf(
+            "naissance" to p.lieuNaissance,
+            "bapteme" to p.lieuBapteme,
+            "mariage" to p.lieuMariage,
+            "deces" to p.lieuDeces,
+            "sepulture" to p.lieuSepulture
+        )
+        for ((champ, valeur) in champs) {
+            val l = valeur.trim()
+            if (l.isNotEmpty() && !normalise.containsMatchIn(l)) {
+                res.add(ErreurSaisie(p.id, champ, p.titre().trim(), l, propositionLieu(l)))
+            }
+        }
+        p.evenementsLibres.forEach { ev ->
+            val l = ev.lieu.trim()
+            if (l.isNotEmpty() && !normalise.containsMatchIn(l)) {
+                res.add(ErreurSaisie(p.id, "evl:" + ev.id, "événement : " + ev.intitule.trim(), l, propositionLieu(l)))
+            }
+        }
+        val datesKO = datesInvalides(p)
+        if (datesKO.isNotEmpty()) {
+            res.add(ErreurSaisie(p.id, "", p.titre().trim(), datesKO.joinToString(", "), "", dates = true))
+        }
+    }
+    return res
+}
+
 @Composable
 fun EcranJournal(
     pistes: List<Piste>,
@@ -433,13 +486,20 @@ fun EcranJournal(
     // v0.88 : "Anomalies \u00E0 v\u00E9rifier" (Ignorer / Corriger / Examiner).
     anomaliesIgnorees: Set<String> = emptySet(),
     onIgnorerAnomalie: (String) -> Unit = {},
-    onReafficherAnomalies: () -> Unit = {}
+    onReafficherAnomalies: () -> Unit = {},
+    // v0.90 : corriger en un clic un lieu des anciennes saisies
+    // (personneId, champ, nouvelle valeur).
+    onCorrigerLieu: (Long, String, String) -> Unit = { _, _, _ -> }
 ) {
     // GeneaPoche 12 : bouton d'actualisation du diagnostic A LA DEMANDE.
     // key(rafraichir) force le recalcul complet des listes du diagnostic
     // (les corrections de fiche modifient des champs SANS invalidation
     // automatique de la composition).
     var rafraichir by remember { mutableStateOf(0) }
+    // v0.90 : la base des communes doit \u00EAtre charg\u00E9e pour proposer les
+    // corrections automatiques de lieux.
+    val ctxJournal = LocalContext.current
+    LaunchedEffect(Unit) { BaseCommunes.charger(ctxJournal) }
     key(rafraichir) {
     val ouvertes = pistes.filter { !it.faite }
     // REGLE DES 75 ANS : seules les recherches dont l'\u00E9v\u00E9nement vis\u00E9 est
@@ -455,6 +515,8 @@ fun EcranJournal(
         .sortedWith { a, b -> comparerNumeros(numeroDePiste(a, personnes), numeroDePiste(b, personnes)) }
         .take(10)
     val anomalies = anomaliesDeLArbre(personnes, anomaliesIgnorees)
+    // v0.90 : anciennes saisies \u00E0 corriger (lieux, dates).
+    val aCorriger = erreursSaisie(personnes)
     // G\u00E9n\u00E9aPoche 11 (11.2) : diagnostic complet de l'arbre.
     val doublons = doublonsPotentiels(personnes, gardes)
     val isolees = personnes.filter { brancheIsolee(it, personnes) }
@@ -484,6 +546,46 @@ fun EcranJournal(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+        // v0.90 : "\u00C0 corriger" - anciennes saisies non conformes (lieux
+        // sans code INSEE, dates invalides), normalisables en un clic
+        // quand la commune matche une seule entr\u00E9e de la base.
+        if (aCorriger.isNotEmpty()) {
+            item {
+                Card(
+                    Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                    border = BorderStroke(1.dp, Color(0xFFE6A23C))
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                        Text(
+                            "\u00C0 corriger : " + aCorriger.size.toString() + " saisie(s) d'ancienne version",
+                            fontWeight = FontWeight.Bold, color = Color(0xFF9C5A00)
+                        )
+                        aCorriger.take(20).forEach { e ->
+                            Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        e.libelle + (if (e.dates) " : dates invalides (" + e.valeur + ")" else " : lieu non conforme"),
+                                        style = MaterialTheme.typography.bodySmall, color = Color(0xFF6B4A12)
+                                    )
+                                    if (!e.dates && e.valeur.isNotEmpty()) {
+                                        Text(e.valeur, style = MaterialTheme.typography.bodySmall, color = Color(0xFF6B4A12))
+                                    }
+                                }
+                                if (e.proposition.isNotEmpty()) {
+                                    TextButton(onClick = { onCorrigerLieu(e.personneId, e.champ, e.proposition) }) {
+                                        Text("Corriger")
+                                    }
+                                }
+                                TextButton(onClick = { onOuvrirPersonne(e.personneId) }) {
+                                    Text("Fiche")
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         // G\u00E9n\u00E9aPoche 12 (12.3) : anniversaires du jour (alertes locales),
