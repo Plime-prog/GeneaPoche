@@ -55,6 +55,18 @@ fun heureAffichee(s: String): String {
     return t
 }
 
+// v0.90 : lieu affiche sans pays ("France" n'est plus stocke dans la
+// base) et sans le segment code INSEE : "Arvert, 17010,
+// Charente-Maritime" -> "Arvert, Charente-Maritime". Le code reste
+// present en base pour l'export GEDCOM.
+fun lieuAffiche(s: String): String {
+    val sans = sansPays(s)
+    val parties = sans.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    val i = parties.indexOfFirst { Regex("^\\d{5}$").matches(it) || Regex("^2[AB]\\d{3}$").matches(it) }
+    if (i < 0) return sans
+    return (parties.take(i) + parties.drop(i + 1)).joinToString(", ")
+}
+
 // Format unique impose : jj/mm/aaaa (ou, a defaut, l'annee seule aaaa),
 // ou une date du calendrier republicain (ex "22 Germinal An II"), gardee
 // telle quelle et completee de sa conversion gregorienne a l'affichage.

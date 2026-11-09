@@ -230,6 +230,8 @@ class ActionsApplication(
     // v0.88 : Ignorer une anomalie a verifier, ou les reafficher toutes.
     val ignorerAnomalie: (String) -> Unit,
     val reafficherAnomalies: () -> Unit,
+    // v0.90 : corriger en un clic un lieu d'ancienne saisie (journal).
+    val corrigerLieu: (Long, String, String) -> Unit = { _, _, _ -> },
     // 12.1 : sauvegarde automatique apr\u00E8s N modifications dans un dossier
     // choisi + cl\u00E9 de r\u00E9cup\u00E9ration \u00E0 imprimer.
     val sauvegardeAuto: (Uri) -> Unit,
@@ -310,7 +312,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.89",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.90",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -723,7 +725,8 @@ fun EcranApplication(
                     onGarderDeux = { a, b -> garderDoublon(a, b) },
                     anomaliesIgnorees = anomaliesIgnorees,
                     onIgnorerAnomalie = { cle -> ignorerAnomalie(cle) },
-                    onReafficherAnomalies = { reafficherAnomalies() }
+                    onReafficherAnomalies = { reafficherAnomalies() },
+                    onCorrigerLieu = { id, champ, valeur -> corrigerLieu(id, champ, valeur) }
                 )
                 }
             }
@@ -875,7 +878,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.89", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.90", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; outilsOuverts = true },

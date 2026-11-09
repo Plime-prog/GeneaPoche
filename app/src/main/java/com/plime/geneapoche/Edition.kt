@@ -28,8 +28,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -276,6 +280,25 @@ fun DialogueNouvelEnfant(
     )
 }
 
+// v0.90 : le code INSEE reste stocké (export GEDCOM) mais le champ
+// l'affiche sans son segment ", 17010" : transformation visuelle
+// réversible, le texte saisi n'est jamais modifié.
+private class SansCodeInsee : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val m = Regex(", (\\d{5}|2[AB]\\d{3})(?=,|$)").find(text.text)
+        if (m == null) return TransformedText(text, OffsetMapping.Identity)
+        val debut = m.range.first
+        val longueur = m.value.length
+        val affiche = text.text.substring(0, debut) + text.text.substring(debut + longueur)
+        return TransformedText(AnnotatedString(affiche), object : OffsetMapping {
+            override fun originalToTransformed(o: Int): Int =
+                if (o <= debut) o else if (o >= debut + longueur) o - longueur else debut
+            override fun transformedToOriginal(t: Int): Int =
+                if (t <= debut) t else t + longueur
+        })
+    }
+}
+
 @Composable
 fun Champ(
     libelle: String,
@@ -302,6 +325,7 @@ fun Champ(
             onValueChange = onChange,
             singleLine = true,
             textStyle = TextStyle(fontSize = 14.sp),
+            visualTransformation = if (communes) SansCodeInsee() else VisualTransformation.None,
             modifier = Modifier
                 .fillMaxWidth()
                 .border(

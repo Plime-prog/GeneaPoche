@@ -116,6 +116,32 @@ class TestsFonctions {
     fun couperLieuPlac() {
         assertEquals("Roubaix" to "59", couperLieu("Roubaix, 59, Nord"))
         assertEquals("Roubaix" to "", couperLieu("Roubaix"))
+        // v0.90 : PLAC Heredis "Commune, code INSEE, dept, France" ->
+        // format interne SANS France, dept deduit du code.
+        assertEquals("Roubaix, 59512, Nord" to "59", couperLieu("Roubaix, 59512, Nord, France"))
+        assertEquals("Arvert, 17010, Charente-Maritime" to "17", couperLieu("Arvert, 17010, Charente-Maritime, France"))
+        // Lieu-dit conserve devant la commune.
+        assertEquals("Le Moulin, Arvert, 17010, Charente-Maritime" to "17", couperLieu("Le Moulin, Arvert, 17010, Charente-Maritime, France"))
+    }
+
+    @Test
+    fun lieuxSansPays() {
+        // v0.90 : "France" n'est plus stocke dans la base.
+        assertEquals("Roubaix, 59, Nord", sansPays("Roubaix, 59, Nord, France"))
+        assertEquals("Roubaix", sansPays("Roubaix, france "))
+        assertEquals("Roubaix", sansPays("Roubaix"))
+    }
+
+    @Test
+    fun lieuxGedcomEtAffiche() {
+        // v0.90 : "France" ajouté uniquement à l'export, code INSEE non dupliqué.
+        assertEquals("Arvert, 17010, Charente-Maritime, France", lieuGedcom("Arvert, 17010, Charente-Maritime", "17"))
+        assertEquals("Roubaix, 59, Nord, France", lieuGedcom("Roubaix", "59"))
+        assertEquals("Roubaix", lieuGedcom("Roubaix", ""))
+        // Affichage : code INSEE cache, lieu-dit conserve.
+        assertEquals("Arvert, Charente-Maritime", lieuAffiche("Arvert, 17010, Charente-Maritime"))
+        assertEquals("Le Moulin, Arvert, Charente-Maritime", lieuAffiche("Le Moulin, Arvert, 17010, Charente-Maritime"))
+        assertEquals("Roubaix", lieuAffiche("Roubaix"))
     }
 
     @Test

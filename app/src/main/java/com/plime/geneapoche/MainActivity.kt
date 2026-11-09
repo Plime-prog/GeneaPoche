@@ -1025,6 +1025,30 @@ fun AppEcran(
         message = "Fusion effectu\u00E9e : " + supprime.titre() + " a \u00E9t\u00E9 regroup\u00E9(e) avec " + garde.titre() + "."
     }
 
+    // v0.90 : correction en un clic d'un lieu d'ancienne saisie depuis le
+    // journal : la valeur normalis\u00E9e "Commune, code INSEE, d\u00E9partement"
+    // remplace l'ancienne, et le champ "D\u00E9partement" suit le code INSEE.
+    fun corrigerLieu(personneId: Long, champ: String, valeur: String) {
+        val p = personnes.firstOrNull { it.id == personneId } ?: return
+        val code = Regex("(\\d{5}|2[AB]\\d{3})").find(valeur)?.value ?: ""
+        val num = if (code.isNotEmpty()) code.take(2) else ""
+        when (champ) {
+            "naissance" -> { p.lieuNaissance = valeur; p.deptNaissance = num }
+            "bapteme" -> { p.lieuBapteme = valeur; p.deptBapteme = num }
+            "mariage" -> { p.lieuMariage = valeur; p.deptMariage = num }
+            "deces" -> { p.lieuDeces = valeur; p.deptDeces = num }
+            "sepulture" -> { p.lieuSepulture = valeur; p.deptSepulture = num }
+            else -> if (champ.startsWith("evl:")) {
+                val idEv = champ.removePrefix("evl:").toLongOrNull()
+                p.evenementsLibres.firstOrNull { it.id == idEv }?.let { ev ->
+                    ev.lieu = valeur; ev.dept = num
+                }
+            }
+        }
+        enregistrer(false, setOf(personneId))
+        message = "Lieu normalis\u00E9."
+    }
+
     // Definit le de cujus et son n Sosa (pas forcement 1) : toute la numerotation
     // Sosa et d'Aboville en decoule automatiquement.
     fun definirCujus(p: Personne, sosa: Long) {
@@ -1826,9 +1850,9 @@ fun AppEcran(
                 val age = ageActe(a.date, ne)
                 m.add("n\u00E9(e) le " + dateAffichee(ne) + (if (age.isNotEmpty()) " (" + age + " \u00E0 l'acte)" else ""))
             }
-            if (lieu.isNotBlank()) m.add("\u00E0 " + lieu.trim() + (if (dept.isNotBlank()) " (" + dept.trim() + ")" else ""))
+            if (lieu.isNotBlank()) m.add("\u00E0 " + lieuAffiche(lieu) + (if (dept.isNotBlank() && !Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(lieu)) " (" + dept.trim() + ")" else ""))
             if (prof.isNotBlank()) m.add(prof.trim())
-            if (dec.isNotBlank()) m.add("d\u00E9c\u00E9d\u00E9(e) le " + dateAffichee(dec) + (if (lieuDec.isNotBlank()) " \u00E0 " + lieuDec.trim() else ""))
+            if (dec.isNotBlank()) m.add("d\u00E9c\u00E9d\u00E9(e) le " + dateAffichee(dec) + (if (lieuDec.isNotBlank()) " \u00E0 " + lieuAffiche(lieuDec) else ""))
             return m.joinToString(", ")
         }
 
@@ -2155,6 +2179,8 @@ fun AppEcran(
                     Stockage.reafficherAnomalies(ctx)
                     anomaliesIgnorees = emptySet()
                 },
+                // v0.90 : correction d'un lieu d'ancienne saisie (journal).
+                corrigerLieu = { id, champ, valeur -> corrigerLieu(id, champ, valeur) },
                 // 12.1 : sauvegarde automatique + cle de recuperation.
                 sauvegardeAuto = { uri -> activerSauvegardeAuto(uri) },
                 sauvegardeAutoOff = { desactiverSauvegardeAuto() },

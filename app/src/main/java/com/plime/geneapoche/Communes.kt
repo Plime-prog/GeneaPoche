@@ -9,9 +9,11 @@ import java.text.Normalizer
 // Chantier 12.4 (v0.88) : communes françaises du COG intégrées à l'APK
 // (assets/communes : un fichier par département, lignes "code INSEE|nom").
 // Saisie assistée : pendant la frappe d'un lieu, le champ propose les
-// communes ; la sélection insère le format Heredis recommandé
-// "[Paroisse/lieu-dit] – Commune, Code INSEE, Département, France"
-// et remplit le champ "Département".
+// communes ; la sélection insère le format interne
+// "[Paroisse/lieu-dit], Commune, Code INSEE, Département" (v0.90 : la
+// virgule sépare aussi le lieu-dit de la commune, et "France" n'est plus
+// stocké : il est ajouté uniquement à l'export GEDCOM) et remplit le
+// champ "Département".
 
 data class Commune(val code: String, val nom: String, val dept: String, val cle: String)
 
@@ -86,9 +88,11 @@ object BaseCommunes {
 }
 
 // Partie "commune" en cours de frappe : ce qui suit le dernier
-// séparateur (tiret long ou crochet fermant), le lieu-dit/paroisse
-// saisi devant étant conservé.
+// séparateur (virgule, tiret long ou crochet fermant), le lieu-dit/
+// paroisse saisi devant étant conservé.
 fun partieSaisie(v: String): String {
+    val c = v.indexOfLast { it == ',' }
+    if (c >= 0) return v.substring(c + 1).trim()
     val f = v.indexOfLast { it == '\u2013' }
     if (f >= 0) return v.substring(f + 1).trim()
     val b = v.indexOfLast { it == ']' }
@@ -96,14 +100,16 @@ fun partieSaisie(v: String): String {
     return v.trim()
 }
 
-// Insère la commune choisie au format Heredis, derrière le lieu-dit.
+// Insère la commune choisie au format interne, derrière le lieu-dit.
 fun insererLieu(v: String, c: Commune): String {
+    val co = v.indexOfLast { it == ',' }
     val f = v.indexOfLast { it == '\u2013' }
     val b = v.indexOfLast { it == ']' }
     val prefixe = when {
+        co >= 0 -> v.substring(0, co + 1).trim() + " "
         f >= 0 -> v.substring(0, f + 1).trim() + " "
-        b >= 0 -> v.substring(0, b + 1) + " – "
+        b >= 0 -> v.substring(0, b + 1) + " \u2013 "
         else -> ""
     }
-    return prefixe + c.nom + ", " + c.code + ", " + BaseCommunes.nomDept(c.dept) + ", France"
+    return prefixe + c.nom + ", " + c.code + ", " + BaseCommunes.nomDept(c.dept)
 }
