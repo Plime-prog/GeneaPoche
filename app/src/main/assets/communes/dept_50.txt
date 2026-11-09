@@ -1,0 +1,445 @@
+50002|Agneaux
+50003|Agon-Coutainville
+50004|Airel
+50006|Amigny
+50008|Anctoville-sur-Boscq
+50013|Anneville-en-Saire
+50016|Appeville
+50019|Aucey-la-Plaine
+50021|Audouville-la-Hubert
+50022|Aumeville-Lestre
+50023|Auvers
+50024|Auxais
+50025|Avranches
+50026|Azeville
+50027|Bacilly
+50028|La Baleine
+50029|Barenton
+50030|Barfleur
+50031|Barneville-Carteret
+50032|La Barre-de-Semilly
+50033|Baubigny
+50034|Baudre
+50036|Baupte
+50038|Beauchamps
+50039|Beaucoudray
+50040|Beauficel
+50041|La Hague
+50042|Beauvoir
+50044|Belval
+50045|Benoîtville
+50046|Bérigny
+50048|Beslon
+50049|Besneville
+50050|Beuvrigny
+50052|Beuzeville-la-Bastille
+50054|Biéville
+50055|Biniville
+50058|Blainville-sur-Mer
+50059|Blosville
+50060|La Bloutière
+50062|Boisyvon
+50064|La Bonneville
+50066|Jullouville
+50069|Bourguenolles
+50070|Boutteville
+50072|Brainville
+50074|Brécey
+50076|Bréhal
+50077|Bretteville
+50078|Bretteville-sur-Ay
+50079|Breuville
+50081|Bréville-sur-Mer
+50082|Bricquebec-en-Cotentin
+50083|Bricquebosq
+50084|Bricqueville-la-Blouette
+50085|Bricqueville-sur-Mer
+50086|Brillevast
+50087|Brix
+50088|Brouains
+50090|Buais-Les-Monts
+50092|Cambernon
+50093|Cametours
+50094|Camprond
+50095|Canisy
+50096|Canteloup
+50097|Canville-la-Rocque
+50098|Carantilly
+50099|Carentan-les-Marais
+50101|Carneville
+50102|Carolles
+50105|Catteville
+50106|Cavigny
+50108|Céaux
+50109|Cérences
+50110|Cerisy-la-Forêt
+50111|Cerisy-la-Salle
+50112|La Chaise-Baudouin
+50115|Le Grippon
+50117|Champeaux
+50118|Champrepus
+50120|Chanteloup
+50121|La Chapelle-Cécelin
+50124|La Chapelle-Urée
+50126|Chavoy
+50129|Cherbourg-en-Cotentin
+50130|Chérencé-le-Héron
+50135|Clitourps
+50137|La Colombe
+50138|Colomby
+50139|Condé-sur-Vire
+50142|Vicq-sur-Mer
+50143|Coudeville-sur-Mer
+50144|Coulouvray-Boisbenâtre
+50145|Courcy
+50146|Courtils
+50147|Coutances
+50148|Couvains
+50149|Couville
+50150|Crasville
+50151|Créances
+50152|Les Cresnays
+50155|Crollon
+50156|Crosville-sur-Douve
+50158|Cuves
+50159|Dangy
+50161|Le Dézert
+50162|Digosville
+50164|Domjean
+50165|Donville-les-Bains
+50166|Doville
+50167|Dragey-Ronthon
+50168|Ducey-Les Chéris
+50169|Écausseville
+50172|Émondeville
+50174|Équilly
+50175|Éroudeville
+50176|L'Étang-Bertrand
+50177|Étienville
+50178|Fermanville
+50181|Feugères
+50182|La Feuillie
+50183|Fierville-les-Mines
+50184|Flamanville
+50185|Fleury
+50186|Flottemanville
+50188|Folligny
+50190|Fontenay-sur-Mer
+50192|Fourneaux
+50193|Le Fresne-Poret
+50194|Fresville
+50195|Gathemo
+50196|Gatteville-le-Phare
+50197|Gavray-sur-Sienne
+50198|Geffosses
+50199|Genêts
+50200|Ger
+50205|La Godefroy
+50207|Golleville
+50208|Gonfreville
+50209|Gonneville-Le Theil
+50210|Gorges
+50214|Gouvets
+50215|Gouville-sur-Mer
+50216|Graignes-Mesnil-Angot
+50217|Le Grand-Celland
+50218|Granville
+50219|Gratot
+50221|Grimesnil
+50222|Grosville
+50225|Le Guislain
+50227|Le Ham
+50228|Hambye
+50229|Hamelin
+50230|Hardinvast
+50231|Hauteville-sur-Mer
+50232|Hauteville-la-Guichard
+50233|Hautteville-Bocage
+50234|La Haye-Bellefond
+50235|La Haye-d'Ectot
+50236|La Haye
+50237|La Haye-Pesnel
+50238|Héauville
+50239|Thèreval
+50240|Helleville
+50241|Hémevez
+50243|Heugueville-sur-Sienne
+50246|Hiesville
+50247|Hocquigny
+50251|Huberville
+50252|Hudimesnil
+50253|Huisnes-sur-Mer
+50256|Isigny-le-Buat
+50258|Joganville
+50259|Juilley
+50260|Juvigny les Vallées
+50261|Lamberville
+50262|La Lande-d'Airou
+50263|Lapenty
+50265|Laulne
+50266|Lengronne
+50267|Lessay
+50268|Lestre
+50269|Liesville-sur-Douve
+50270|Lieusaint
+50271|Lingeard
+50272|Tourneville-sur-Mer
+50273|Montsenelle
+50274|Les Loges-Marchis
+50275|Les Loges-sur-Brécey
+50276|Lolif
+50277|Longueville
+50278|Le Loreur
+50279|Le Lorey
+50281|La Lucerne-d'Outremer
+50282|Le Luot
+50283|La Luzerne
+50285|Magneville
+50288|Marcey-les-Grèves
+50289|Marchésieux
+50290|Marcilly
+50291|Margueray
+50292|Marigny-Le-Lozon
+50294|Martinvast
+50295|Maupertuis
+50296|Maupertus-sur-Mer
+50297|La Meauffe
+50298|Méautis
+50299|Le Mesnil
+50300|Le Mesnil-Adelée
+50302|Le Mesnil-Amey
+50304|Le Mesnil-Aubert
+50305|Le Mesnil-au-Val
+50310|Le Mesnil-Eury
+50311|Le Mesnil-Garnier
+50312|Le Mesnil-Gilbert
+50315|Le Mesnillard
+50317|Le Mesnil-Ozenne
+50321|Le Mesnil-Rouxelin
+50324|Le Mesnil-Véneron
+50326|Le Mesnil-Villeman
+50327|La Meurdraquière
+50328|Millières
+50332|Les Moitiers-d'Allonne
+50334|Montabot
+50335|Montaigu-la-Brisette
+50336|Montaigu-les-Bois
+50338|Montbray
+50340|Montcuit
+50341|Montebourg
+50342|Montfarville
+50345|Monthuchon
+50347|Montjoie-Saint-Martin
+50349|Montmartin-sur-Mer
+50350|Montpinchon
+50351|Montrabot
+50352|Montreuil-sur-Lozon
+50353|Le Mont-Saint-Michel
+50356|Moon-sur-Elle
+50357|Morigny
+50359|Mortain-Bocage
+50360|Morville
+50361|La Mouche
+50362|Moulines
+50363|Moyon Villages
+50364|Muneville-le-Bingard
+50365|Muneville-sur-Mer
+50368|Nay
+50369|Négreville
+50370|Néhou
+50371|Le Neufbourg
+50372|Neufmesnil
+50373|Neuville-au-Plain
+50374|Neuville-en-Beaumont
+50376|Nicorps
+50378|Notre-Dame-de-Cenilly
+50379|Notre-Dame-de-Livoye
+50382|Nouainville
+50384|Octeville-l'Avenel
+50387|Orglandes
+50388|Orval sur Sienne
+50389|Ouville
+50390|Ozeville
+50391|Grandparigny
+50393|Percy-en-Normandie
+50394|Périers
+50395|La Pernelle
+50397|Perriers-en-Beauficel
+50398|Le Perron
+50399|Le Petit-Celland
+50400|Picauville
+50401|Pierreville
+50402|Les Pieux
+50403|Pirou
+50405|Le Plessis-Lastelle
+50407|Poilley
+50408|Pontaubault
+50409|Pont-Hébert
+50410|Pontorson
+50411|Ponts
+50412|Port-Bail-sur-Mer
+50413|Précey
+50417|Quettehou
+50419|Quettreville-sur-Sienne
+50420|Quibou
+50421|Quinéville
+50422|Raids
+50423|Rampan
+50425|Rauville-la-Bigot
+50426|Rauville-la-Place
+50428|Reffuveille
+50429|Regnéville-sur-Mer
+50430|Reigneville-Bocage
+50431|Remilly Les Marais
+50433|Réville
+50435|Rocheville
+50436|Romagny Fontenay
+50437|Roncey
+50442|Le Rozel
+50443|Sacey
+50444|Saint-Amand-Villages
+50445|Saint-André-de-Bohon
+50446|Saint-André-de-l'Épine
+50447|Saint-Aubin-des-Préaux
+50448|Saint-Aubin-de-Terregatte
+50450|Saint-Barthélemy
+50451|Saint-Brice
+50452|Saint-Brice-de-Landelles
+50453|Sainte-Cécile
+50454|Saint-Christophe-du-Foc
+50455|Saint-Clair-sur-l'Elle
+50456|Saint-Clément-Rancoudray
+50457|Sainte-Colombe
+50461|Saint-Cyr-Bocage
+50462|Saint-Cyr-du-Bailleul
+50463|Saint-Denis-le-Gast
+50464|Saint-Denis-le-Vêtu
+50467|Saint-Floxel
+50468|Saint-Fromond
+50469|Sainte-Geneviève
+50471|Saint-Georges-de-la-Rivière
+50472|Saint-Georges-de-Livoye
+50473|Saint-Georges-d'Elle
+50474|Saint-Georges-de-Rouelley
+50475|Saint-Georges-Montcocq
+50476|Saint-Germain-d'Elle
+50478|Saint-Germain-de-Tournebut
+50479|Saint-Germain-de-Varreville
+50480|Saint-Germain-le-Gaillard
+50481|Saint-Germain-sur-Ay
+50482|Saint-Germain-sur-Sèves
+50483|Saint-Gilles
+50484|Saint-Hilaire-du-Harcouët
+50486|Saint-Jacques-de-Néhou
+50487|Saint-James
+50488|Saint-Jean-de-Daye
+50489|Saint-Jean-de-la-Haize
+50490|Saint-Jean-de-la-Rivière
+50491|Saint-Jean-de-Savigny
+50492|Saint-Jean-d'Elle
+50493|Saint-Jean-des-Champs
+50495|Saint-Jean-du-Corail-des-Bois
+50496|Saint-Jean-le-Thomas
+50498|Saint-Joseph
+50499|Saint-Laurent-de-Cuves
+50500|Saint-Laurent-de-Terregatte
+50502|Saint-Lô
+50504|Saint-Louet-sur-Vire
+50505|Saint-Loup
+50506|Saint-Malo-de-la-Lande
+50507|Saint-Marcouf
+50509|Sainte-Marie-du-Mont
+50510|Saint-Martin-d'Aubigny
+50511|Saint-Martin-d'Audouville
+50512|Saint-Martin-de-Bonfossé
+50513|Saint-Martin-de-Cenilly
+50514|Chaulieu
+50517|Saint-Martin-de-Varreville
+50518|Saint-Martin-le-Bouillant
+50519|Saint-Martin-le-Gréard
+50521|Saint-Maur-des-Bois
+50522|Saint-Maurice-en-Cotentin
+50523|Sainte-Mère-Église
+50525|Saint-Michel-de-Montjoie
+50528|Saint-Nicolas-de-Pierrepont
+50529|Saint-Nicolas-des-Bois
+50531|Saint-Ovin
+50532|Saint-Pair-sur-Mer
+50533|Saint-Patrice-de-Claids
+50535|Le Parc
+50536|Saint-Pierre-d'Arthéglise
+50537|Saint-Pierre-de-Coutances
+50538|Saint-Pierre-de-Semilly
+50539|Saint-Pierre-Église
+50540|Saint-Pierre-Langers
+50541|Saint-Planchers
+50542|Saint-Pois
+50543|Saint-Quentin-sur-le-Homme
+50546|Bourgvallées
+50548|Saint-Sauveur-de-Pierrepont
+50549|Saint-Sauveur-la-Pommeraye
+50550|Saint-Sauveur-Villages
+50551|Saint-Sauveur-le-Vicomte
+50552|Saint-Sébastien-de-Raids
+50553|Saint-Senier-de-Beuvron
+50554|Saint-Senier-sous-Avranches
+50556|Sainte-Suzanne-sur-Vire
+50562|Saint-Vaast-la-Hougue
+50563|Saint-Vigor-des-Monts
+50564|Terre-et-Marais
+50565|Sartilly-Baie-Bocage
+50567|Saussemesnil
+50568|Saussey
+50569|Savigny
+50570|Savigny-le-Vieux
+50571|Sébeville
+50572|Sénoville
+50574|Servon
+50575|Sideville
+50576|Siouville-Hague
+50577|Sortosville-en-Beaumont
+50578|Sortosville
+50579|Sottevast
+50580|Sotteville
+50582|Sourdeval
+50584|Subligny
+50585|Surtainville
+50587|Taillepied
+50588|Tamerville
+50589|Tanis
+50590|Le Tanu
+50591|Le Teilleul
+50592|Tessy-Bocage
+50593|Teurthéville-Bocage
+50594|Teurthéville-Hague
+50596|Théville
+50597|Tirepied-sur-Sée
+50598|Tocqueville
+50599|Tollevast
+50601|Torigny-les-Villes
+50603|Tourville-sur-Sienne
+50604|Tréauville
+50606|Tribehou
+50607|La Trinité
+50609|Turqueville
+50610|Urville
+50612|Vains
+50613|Valcanville
+50615|Valognes
+50616|Le Val-Saint-Père
+50617|Varenguebec
+50618|Varouville
+50619|Le Vast
+50621|Vaudreville
+50624|La Vendelée
+50626|Ver
+50628|Vernix
+50629|Vesly
+50633|Le Vicel
+50634|Videcosville
+50637|Villebaudon
+50639|Villedieu-les-Poêles-Rouffigny
+50641|Villiers-Fossard
+50643|Virandeville
+50647|Yquelon
+50648|Yvetot-Bocage

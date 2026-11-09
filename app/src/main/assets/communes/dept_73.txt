@@ -1,0 +1,273 @@
+73001|Aiguebelette-le-Lac
+73003|Grand-Aigueblanche
+73004|Aillon-le-Jeune
+73005|Aillon-le-Vieux
+73006|Aime-la-Plagne
+73007|Aiton
+73008|Aix-les-Bains
+73010|Entrelacs
+73011|Albertville
+73012|Albiez-le-Jeune
+73013|Albiez-Montrond
+73014|Allondaz
+73015|Les Allues
+73017|Apremont
+73018|Arbin
+73019|Argentine
+73020|Arith
+73021|Arvillard
+73022|Attignat-Oncin
+73023|Aussois
+73024|Les Avanchers-Valmorel
+73025|Avressieux
+73026|Avrieux
+73027|Ayn
+73028|La Balme
+73029|Barberaz
+73030|Barby
+73031|Bassens
+73032|La Bâthie
+73033|La Bauche
+73034|Beaufort
+73036|Bellecombe-en-Bauges
+73039|Belmont-Tramonet
+73040|Bessans
+73041|Betton-Bettonet
+73042|Billième
+73043|La Biolle
+73047|Bonneval-sur-Arc
+73048|Bonvillard
+73049|Bonvillaret
+73050|Bourdeau
+73051|Le Bourget-du-Lac
+73052|Bourget-en-Huile
+73053|Bourgneuf
+73054|Bourg-Saint-Maurice
+73055|Bozel
+73057|Brides-les-Bains
+73058|La Bridoire
+73059|Brison-Saint-Innocent
+73061|Césarches
+73063|Cevins
+73064|Challes-les-Eaux
+73065|Chambéry
+73067|La Chambre
+73068|Chamousset
+73069|Chamoux-sur-Gelon
+73070|Champagneux
+73071|Champagny-en-Vanoise
+73072|Champ-Laurent
+73073|Chanaz
+73074|La Chapelle
+73075|La Chapelle-Blanche
+73076|La Chapelle-du-Mont-du-Chat
+73077|Les Chapelles
+73078|La Chapelle-Saint-Martin
+73079|Châteauneuf
+73081|Le Châtelard
+73082|La Chavanne
+73083|Les Chavannes-en-Maurienne
+73084|Chignin
+73085|Chindrieux
+73086|Cléry
+73087|Cognin
+73088|Cohennoz
+73089|Coise-Saint-Jean-Pied-Gauthier
+73090|La Compôte
+73091|Conjux
+73092|Corbel
+73094|Crest-Voland
+73095|La Croix-de-la-Rochette
+73096|Cruet
+73097|Curienne
+73098|Les Déserts
+73099|Détrier
+73100|Domessin
+73101|Doucy-en-Bauges
+73103|Drumettaz-Clarafond
+73104|Dullin
+73105|Les Échelles
+73106|École
+73107|Entremont-le-Vieux
+73109|Épierre
+73110|Esserts-Blay
+73113|Feissons-sur-Salins
+73114|Flumet
+73116|Fontcouverte-la-Toussuire
+73117|Fourneaux
+73119|Freney
+73120|Fréterive
+73121|Frontenex
+73122|Gerbaix
+73123|La Giettaz
+73124|Gilly-sur-Isère
+73128|Grésy-sur-Aix
+73129|Grésy-sur-Isère
+73130|Grignon
+73131|Hautecour
+73132|Hauteluce
+73133|Hauteville
+73135|La Tour-en-Maurienne
+73137|Jacob-Bellecombette
+73138|Jarrier
+73139|Jarsy
+73140|Jongieux
+73141|Laissaud
+73142|Landry
+73145|Lépin-le-Lac
+73146|Lescheraines
+73147|Loisieux
+73149|Lucey
+73150|La Plagne Tarentaise
+73151|Porte-de-Savoie
+73152|Marcieux
+73153|Marthod
+73154|Mercury
+73155|Méry
+73156|Meyrieux-Trouet
+73157|Modane
+73159|Les Mollettes
+73160|Montagnole
+73161|Montagny
+73162|Montailleur
+73164|Montcel
+73166|Montendry
+73168|Montgilbert
+73170|Monthion
+73171|Montmélian
+73173|Montricher-Albanne
+73175|Montsapey
+73176|Montvalezan
+73177|Montvernier
+73178|La Motte-en-Bauges
+73179|La Motte-Servolex
+73180|Motz
+73181|Moûtiers
+73182|Mouxy
+73183|Myans
+73184|Nances
+73186|Notre-Dame-de-Bellecombe
+73187|La Léchère
+73188|Notre-Dame-des-Millières
+73189|Notre-Dame-du-Cruet
+73190|Notre-Dame-du-Pré
+73191|Novalaise
+73192|Le Noyer
+73193|Ontex
+73194|Orelle
+73196|Pallud
+73197|Peisey-Nancroix
+73200|Planaise
+73201|Planay
+73202|Plancherine
+73204|Le Pont-de-Beauvoisin
+73205|Le Pontet
+73206|Pralognan-la-Vanoise
+73207|Presle
+73208|Pugny-Chatenod
+73210|Puygros
+73211|Queige
+73212|Val-d'Arc
+73213|La Ravoire
+73214|Rochefort
+73215|Valgelon-La Rochette
+73216|Rognaix
+73217|Rotherens
+73218|Ruffieux
+73219|Saint-Alban-de-Montbel
+73220|Saint-Alban-d'Hurtières
+73221|Saint-Alban-des-Villards
+73222|Saint-Alban-Leysse
+73223|Saint-André
+73224|Saint-Avre
+73225|Saint-Baldoph
+73226|Saint-Béron
+73227|Courchevel
+73228|Saint-Cassin
+73229|Saint-Christophe
+73230|Saint-Colomban-des-Villards
+73231|Saint-Étienne-de-Cuines
+73232|Sainte-Foy-Tarentaise
+73233|Saint-Franc
+73234|Saint-François-de-Sales
+73235|Saint François Longchamp
+73236|Saint-Genix-les-Villages
+73237|Saint-Georges-d'Hurtières
+73240|Sainte-Hélène-du-Lac
+73241|Sainte-Hélène-sur-Isère
+73242|Saint-Jean-d'Arves
+73243|Saint-Jean-d'Arvey
+73245|Saint-Jean-de-Chevelu
+73246|Saint-Jean-de-Couz
+73247|Saint-Jean-de-la-Porte
+73248|Saint-Jean-de-Maurienne
+73249|Saint-Jeoire-Prieuré
+73250|Saint-Julien-Mont-Denis
+73252|Saint-Léger
+73253|Saint-Marcel
+73254|Sainte-Marie-d'Alvey
+73255|Sainte-Marie-de-Cuines
+73256|Saint-Martin-d'Arc
+73257|Les Belleville
+73258|Saint-Martin-de-la-Porte
+73259|Saint-Martin-sur-la-Chambre
+73261|Saint-Michel-de-Maurienne
+73262|Saint-Nicolas-la-Chapelle
+73263|Saint-Offenge
+73265|Saint-Ours
+73267|Saint-Pancrace
+73268|Saint-Paul-sur-Isère
+73269|Saint-Paul-sur-Yenne
+73270|Saint-Pierre-d'Albigny
+73271|Saint-Pierre-d'Alvey
+73272|Saint-Pierre-de-Belleville
+73273|Saint-Pierre-de-Curtille
+73274|Saint-Pierre-d'Entremont
+73275|Saint-Pierre-de-Genebroz
+73276|Saint-Pierre-de-Soucy
+73277|Sainte-Reine
+73278|Saint-Rémy-de-Maurienne
+73280|Saint-Sorlin-d'Arves
+73281|Saint-Sulpice
+73282|Saint-Thibaud-de-Couz
+73283|Saint-Vital
+73284|Salins-Fontaine
+73285|Séez
+73286|Serrières-en-Chautagne
+73288|Sonnaz
+73289|La Table
+73290|Val-Cenis
+73292|Thénésol
+73293|Thoiry
+73294|La Thuile
+73296|Tignes
+73297|Tournon
+73298|Tours-en-Savoie
+73299|Traize
+73300|Tresserve
+73301|Trévignin
+73302|La Trinité
+73303|Ugine
+73304|Val-d'Isère
+73306|Valloire
+73307|Valmeinier
+73308|Venthon
+73309|Verel-de-Montbel
+73310|Verel-Pragondran
+73311|Le Verneil
+73312|Verrens-Arvey
+73313|Verthemex
+73314|Villard-d'Héry
+73315|Villard-Léger
+73316|Villard-Sallet
+73317|Villard-sur-Doron
+73318|Villarembert
+73320|Villargondran
+73322|Villarodin-Bourget
+73323|Villaroger
+73324|Villaroux
+73326|Vimines
+73327|Vions
+73328|Viviers-du-Lac
+73329|Voglans
+73330|Yenne
