@@ -1,6 +1,16 @@
 # Historique des versions — GénéaPoche
 
-## v0.88 – Anomalies à vérifier (cohérence de l'arbre)
+## v0.88 – Base des communes (12.4) et anomalies à vérifier
+
+### 12.4 – Base hors ligne des communes et saisie assistée
+
+- **Base hors ligne des communes françaises** : les 34 015 communes du code officiel géographique (métropole, Corse 2A/2B, DOM) sont intégrées dans l'application — un fichier texte par département (« code INSEE|nom »), chargé en tâche de fond à la première saisie d'un lieu. Aucune permission, aucun accès réseau.
+- **Saisie assistée des lieux** : pendant la frappe d'un champ de lieu (naissance, baptême, mariage, décès, sépulture, événement libre, bloc édité depuis la fiche, et dans le formulaire d'acte : commune de l'acte, lieu de naissance et lieu de décès des personnes citées), jusqu'à six communes sont proposées — recherche insensible aux accents, par début de nom, n'importe où dans le nom, ou par code INSEE.
+- **Format Heredis à la sélection** : le champ reçoit « Commune, Code INSEE, Département, France » (ex. « Arvert, 17010, Charente-Maritime, France ») et le champ « Département » est rempli automatiquement ; le lieu-dit ou la paroisse se tape devant la commune, entre crochets (« [St Étienne] – Arvert, … ») et est conservé à chaque nouvelle sélection.
+- **Département reconnu depuis le code INSEE** : un code INSEE ou postal à 5 chiffres dans un lieu (« 17010 » → 17) est désormais identifié comme département (liens vers les archives départementales, recherche, indicateurs de la liste des personnes).
+- Anciens noms et fusions de communes : reportés à une prochaine version (décision).
+
+### Anomalies à vérifier (cohérence de l'arbre)
 
 - **Nouvelle section « Anomalies à vérifier »** dans le diagnostic de l'arbre (onglet Journal), qui remplace l'ancien contrôle « Cohérence ». Le mot « erreur » est volontairement évité : ce sont des points à vérifier, et c'est vous qui jugez. Exemple : « ⚠️ Jean Dupont est né 4 mois après le décès supposé de son père Pierre Dupont (naissance posthume possible). »
 - **Trois boutons sous chaque anomalie** : **Ignorer** (l'anomalie disparaît, choix mémorisé ; « Réafficher les anomalies ignorées » les rétablit ; elle revient d'elle-même si les dates changent), **Corriger** (ouvre la fiche concernée) et **Examiner** (explication de la règle, dates saisies de chaque personne concernée, accès à chaque fiche).
