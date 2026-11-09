@@ -22,6 +22,8 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 
 **Anomalies à vérifier (v0.88)** — le diagnostic de l'arbre (onglet Journal) signale les dates et liens improbables (enfant né après le décès de son père, mère trop jeune ou trop âgée, mariage après décès, fratrie trop rapprochée, sexe incompatible avec un lien, doublons potentiels…) sans jamais parler d'erreur : chaque anomalie propose **Ignorer**, **Corriger** ou **Examiner**.
 
+**Base des communes (v0.88, chantier 12.4)** — les 34 015 communes françaises du code officiel géographique (métropole, Corse 2A/2B, DOM) sont intégrées **hors ligne** dans l'application. À la saisie d'un lieu (naissance, baptême, mariage, décès, sépulture, événement libre, formulaire d'acte), jusqu'à six communes sont proposées pendant la frappe — recherche insensible aux accents, par nom ou par code INSEE. La sélection insère le format recommandé pour Heredis « [Paroisse/lieu-dit] – Commune, Code INSEE, Département, France » et remplit automatiquement le champ département : moins de fautes de frappe, donc moins de doublons de lieux. Anciens noms et fusions de communes : à venir.
+
 ## Modèle de sécurité — exact, avec ses limites
 
 - **Aucune permission Internet** dans le manifeste : l'application elle-même ne transmet rien.
