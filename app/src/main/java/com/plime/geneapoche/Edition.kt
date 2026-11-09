@@ -280,7 +280,6 @@ fun DialogueNouvelEnfant(
     )
 }
 
-@Composable
 // v0.90 : le code INSEE reste stocké (export GEDCOM) mais le champ
 // l'affiche sans son segment ", 17010" : transformation visuelle
 // réversible, le texte saisi n'est jamais modifié.
@@ -300,6 +299,7 @@ private class SansCodeInsee : VisualTransformation {
     }
 }
 
+@Composable
 fun Champ(
     libelle: String,
     valeur: String,
