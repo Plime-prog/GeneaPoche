@@ -1,4 +1,15 @@
 # Historique des versions — GénéaPoche
+
+## v0.90 – Communes 2 : lieu-dit à la virgule, « France » retiré du stockage, code INSEE caché, journal « À corriger »
+
+- **Lieu-dit à la virgule** : le lieu-dit ou la paroisse se sépare désormais de la commune par une simple virgule — « Le Moulin, arv » suggère Arvert et insère « Le Moulin, Arvert, 17010, Charente-Maritime » (les crochets et le tiret long restent acceptés).
+- **« France » n'est plus stocké dans les lieux** : le pays est ajouté UNIQUEMENT à l'écriture du GEDCOM (« Arvert, 17010, Charente-Maritime, France ») — fini le « France » en double après un aller-retour export/import. Les anciens lieux contenant « France » sont nettoyés automatiquement à l'enregistrement.
+- **Import GEDCOM** : un PLAC « Commune, code INSEE, département, France » est converti au format interne sans France, avec le département déduit du code INSEE ; le lieu-dit devant la commune est conservé.
+- **Code INSEE caché partout** : fiche, chronologie, cartes d'événements, description d'acte, journal — « Arvert, 17010, Charente-Maritime » s'affiche « Arvert, Charente-Maritime ». En saisie aussi, une transformation visuelle masque le segment code sans jamais modifier la valeur stockée (il reste en base pour l'export GEDCOM).
+- **Journal : nouvel encadré « À corriger »** : il liste TOUTES les anciennes saisies non conformes — lieux sans code INSEE (bouton **Corriger** quand la partie « commune » matche une seule entrée de la base : normalisation en un clic, champ Département mis à jour ; sinon bouton **Fiche** pour ressaisir) et dates invalides (accès direct à la fiche).
+- Le champ Département est conservé tel quel (auto-rempli par la commune choisie).
+- Tests unitaires étendus (couperLieu avec code INSEE et France, sansPays, lieuGedcom, lieuAffiche).
+- Bumps v0.90 (gradle 90/« 0.90 », export GEDCOM « 2 VERS 0.90 », badge de saisie « v0.90 », écran d'application).
 ## v0.89 – Certification conservée en GEDCOM, conjoints dans la ligne de vie
 
 - **La coche « personne certifiée » survit à l'export/réimport GEDCOM** : la certification manuelle (coche ou croix de l'en-tête de fiche) était stockée dans la base chiffrée mais jamais écrite dans le fichier GEDCOM — elle repassait donc à « auto » au réimport. Désormais chaque fiche concernée emporte un tag dédié (`_GPVERIF`), relu à l'import ; les autres logiciels (Heredis…) ignorent simplement ce tag. Le mode « auto » reste recalculé automatiquement.
