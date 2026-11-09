@@ -413,7 +413,7 @@ fun EcranPersonne(
                                             Spacer(Modifier.width(8.dp))
                                             val dTxtEvl = dateLigne(ev.date.trim()).ifEmpty { "  /  /    " }
                                             val aTxtEvl = ageAffiche(p.dateNaissance, ev.date)
-                                            val lTxtEvl = if (ev.lieu.trim().isNotEmpty()) " \u00E0 " + ev.lieu.trim() else ""
+                                            val lTxtEvl = if (ev.lieu.trim().isNotEmpty()) " \u00E0 " + lieuAffiche(ev.lieu.trim()) else ""
                                             Text(
                                                 dTxtEvl +
                                                     (if (aTxtEvl.isNotEmpty()) " " + aTxtEvl else "") + " " +
@@ -489,7 +489,7 @@ fun EcranPersonne(
                                                 val dpEnf = paire.second.third.trim()
                                                 val numEnf = dpEnf.toIntOrNull() ?: numeroDepartement(dpEnf) ?: numeroDepartement(lEnf)
                                                 val dTxtEnf = dateLigne(dEnf).ifEmpty { "  /  /    " }
-                                                val lTxtEnf = if (lEnf.isNotEmpty()) lEnf + (if (numEnf != null) " (" + numEnf.toString() + ")" else "") else ""
+                                                val lTxtEnf = if (lEnf.isNotEmpty()) (if (Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(lEnf)) lieuAffiche(lEnf) else lEnf + (if (numEnf != null) " (" + numEnf.toString() + ")" else "")) else ""
                                                 // G\u00E9n\u00E9aPoche 7 : l'\u00E2ge du PARENT \u00E0 la
                                                 // naissance ou au d\u00E9c\u00E8s de l'enfant.
                                                 val aTxtEnf = ageAffiche(p.dateNaissance, dEnf)
@@ -569,7 +569,7 @@ fun EcranPersonne(
                                         Spacer(Modifier.width(8.dp))
                                         val dTxt = dateLigne(dEv).ifEmpty { "  /  /    " }
                                         val aTxt = if (t == "N") "" else ageAffiche(p.dateNaissance, dEv)
-                                        val lTxt = if (lEv.isNotEmpty()) lEv + (if (numDept != null) " (" + numDept.toString() + ")" else "") else ""
+                                        val lTxt = if (lEv.isNotEmpty()) (if (Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(lEv)) lieuAffiche(lEv) else lEv + (if (numDept != null) " (" + numDept.toString() + ")" else "")) else ""
                                         Text(
                                             dTxt + (if (aTxt.isNotEmpty()) " " + aTxt else "") + " " + t +
                                                 (if (t == "M") conjointDeTxt(p, personnes) else "") +
@@ -1171,6 +1171,9 @@ fun evenementsFamille(p: Personne, personnes: List<Personne>): List<Pair<Int, St
     fun lieuAvecDept(lieu: String, dept: String): String {
         val l = lieu.trim()
         if (l.isEmpty()) return ""
+        // v0.90 : lieu normalisé (code INSEE présent) : affichage sans
+        // le code ni numéro de département redondants.
+        if (Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(l)) return lieuAffiche(l)
         val d = dept.trim()
         val num = d.toIntOrNull() ?: numeroDepartement(d) ?: numeroDepartement(l)
         return l + (if (num != null) " (" + num.toString() + ")" else "")
@@ -1370,7 +1373,7 @@ fun CarteEvenement(
                 Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
             } else {
                 Text(
-                    l + (if (numDept != null) " (" + numDept.toString() + ")" else ""),
+                    (if (Regex(", (\\d{5}|2[AB]\\d{3})(,|$)").containsMatchIn(l)) lieuAffiche(l) else l + (if (numDept != null) " (" + numDept.toString() + ")" else "")),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
