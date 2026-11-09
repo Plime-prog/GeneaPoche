@@ -1,5 +1,12 @@
 # Historique des versions — GénéaPoche
 
+## v0.91 — Champ département supprimé
+
+- **Plus de champ Département** : supprimé de la fiche, du conjoint, du bloc-événement, de l'événement libre et de la saisie d'acte. Le département reste **stocké** et est désormais **déduit automatiquement du code INSEE** (17010 → 17, 2A004 → 2A) à chaque enregistrement — l'information reste disponible pour de futures statistiques par département.
+- **Saisie tolérante** : « Saint Denis » (avec espace) trouve désormais « Saint-Denis » — les clés de recherche ignorent tirets, espaces et ponctuation. Jusqu'à 8 suggestions, triées par pertinence (correspondance exacte d'abord).
+- **Enregistrement débloqué** : un acte à date hors format (ex « 27/10/90 ») peut de nouveau être enregistré — les boutons Enregistrer n'exigent plus une date valide, seule l'heure reste contrôlée. Les corrections d'actes ne sont plus perdues.
+- **Journal « À corriger »** : la proposition de lieu corrigée s'affiche en vert avant le clic ; plus de suggestion « Compléter le département ».
+
 ## v0.90 – Communes 2 : lieu-dit à la virgule, « France » retiré du stockage, code INSEE caché, journal « À corriger »
 
 - **Lieu-dit à la virgule** : le lieu-dit ou la paroisse se sépare désormais de la commune par une simple virgule — « Le Moulin, arv » suggère Arvert et insère « Le Moulin, Arvert, 17010, Charente-Maritime » (les crochets et le tiret long restent acceptés).
