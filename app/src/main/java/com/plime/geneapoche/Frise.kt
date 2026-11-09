@@ -60,7 +60,8 @@ class MembreVie(val p: Personne, val lien: String)
 
 // La famille proche d'une personne, dans l'ordre des générations :
 // grands-parents, parents, fratrie (par année de naissance), la
-// personne elle-même, puis ses enfants (par année de naissance).
+// personne elle-même (précédée de ses conjoints), puis ses enfants
+// (par année de naissance).
 fun membresLigneDeVie(choisie: Personne, personnes: List<Personne>): List<MembreVie> {
     val res = mutableListOf<MembreVie>()
     fun ajouter(id: Long, lien: String) {
@@ -83,6 +84,15 @@ fun membresLigneDeVie(choisie: Personne, personnes: List<Personne>): List<Membre
     }.sortedBy { anneeDe(it.dateNaissance) ?: 9999 }.forEach { q ->
         if (res.none { it.p.id == q.id }) {
             res.add(MembreVie(q, if (q.sexe == "F") "Sœur" else "Frère"))
+        }
+    }
+    // v0.89 : conjoints de la personne choisie (tous), juste avant elle.
+    choisie.tousConjoints().forEachIndexed { i, idC ->
+        if (idC != 0L && res.none { it.p.id == idC }) {
+            personneParId(personnes, idC)?.let { c ->
+                val base = if (c.sexe == "F") "Épouse" else "Époux"
+                res.add(MembreVie(c, if (i == 0) base else base + " " + (i + 1)))
+            }
         }
     }
     res.add(MembreVie(choisie, ""))
@@ -149,7 +159,7 @@ fun EcranFrise(
                 }
             }
             Text(
-                "Grands-parents, parents, fratrie et enfants : une ligne de vie par personne.",
+                "Grands-parents, parents, fratrie, conjoints et enfants : une ligne de vie par personne.",
                 Modifier.padding(vertical = 2.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
