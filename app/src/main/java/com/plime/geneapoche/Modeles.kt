@@ -23,6 +23,15 @@ fun normaliserNom(s: String): String = s.trim().uppercase()
 fun sansPays(s: String): String =
     s.trim().replace(Regex("[,;]\\s*France\\s*$", RegexOption.IGNORE_CASE), "").trim()
 
+// v0.91 : le champ "D\u00E9partement" n'est plus saisi ni affich\u00E9 nulle
+// part ; il est DERIV\u00C9 du code INSEE du lieu ("17010" -> "17",
+// "2A004" -> "2A") et conserv\u00E9 en stockage (statistiques futures,
+// compatibilit\u00E9 des anciennes bases). Vide si le lieu n'a pas de code.
+fun deptDuLieu(l: String): String {
+    val m = Regex("(^|, )(\\d{5}|2[AB]\\d{3})(,|$)").find(l.trim()) ?: return ""
+    return m.groupValues[2].take(2)
+}
+
 // G\u00E9n\u00E9aPoche 5 : commune transcrite avec une initiale en MAJUSCULES
 // (norme fran\u00E7aise) : chaque mot est en minuscules sauf sa premiere
 // lettre, y compris apres un tiret ou une apostrophe
@@ -80,17 +89,18 @@ fun normaliserLieux(p: Personne) {
     p.evenementsLibres.forEach { ev ->
         ev.date = normaliserDate(ev.date); ev.heure = normaliserHeure(ev.heure)
         ev.lieu = sansPays(ev.lieu)
+        ev.dept = deptDuLieu(ev.lieu).ifEmpty { normaliserDept(ev.dept) }
     }
     p.lieuNaissance = sansPays(normaliserCommune(p.lieuNaissance))
-    p.deptNaissance = normaliserDept(p.deptNaissance)
+    p.deptNaissance = deptDuLieu(p.lieuNaissance).ifEmpty { normaliserDept(p.deptNaissance) }
     p.lieuBapteme = sansPays(normaliserCommune(p.lieuBapteme))
-    p.deptBapteme = normaliserDept(p.deptBapteme)
+    p.deptBapteme = deptDuLieu(p.lieuBapteme).ifEmpty { normaliserDept(p.deptBapteme) }
     p.lieuMariage = sansPays(normaliserCommune(p.lieuMariage))
-    p.deptMariage = normaliserDept(p.deptMariage)
+    p.deptMariage = deptDuLieu(p.lieuMariage).ifEmpty { normaliserDept(p.deptMariage) }
     p.lieuDeces = sansPays(normaliserCommune(p.lieuDeces))
-    p.deptDeces = normaliserDept(p.deptDeces)
+    p.deptDeces = deptDuLieu(p.lieuDeces).ifEmpty { normaliserDept(p.deptDeces) }
     p.lieuSepulture = sansPays(normaliserCommune(p.lieuSepulture))
-    p.deptSepulture = normaliserDept(p.deptSepulture)
+    p.deptSepulture = deptDuLieu(p.lieuSepulture).ifEmpty { normaliserDept(p.deptSepulture) }
 }
 
 fun normaliserPrenoms(s: String): String {
