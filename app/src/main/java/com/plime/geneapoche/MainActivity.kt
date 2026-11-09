@@ -178,6 +178,8 @@ fun AppEcran(
     // v0.78 : paires de doublons "gardees les deux" (decision definitive,
     // persistee) : elles restent hors du diagnostic de l'arbre.
     var doublonsGardes by remember { mutableStateOf(Stockage.lireDoublonsGardes(ctx)) }
+    // v0.88 : anomalies a verifier que l'utilisateur a choisi d'ignorer.
+    var anomaliesIgnorees by remember { mutableStateOf(Stockage.lireAnomaliesIgnorees(ctx)) }
     // G\u00E9n\u00E9aPoche 12 (12.1) : sauvegarde automatique .gpbak dans un
     // dossier choisi apr\u00E8s N modifications + cl\u00E9 de r\u00E9cup\u00E9ration.
     var dossierSauvegarde by remember { mutableStateOf(Stockage.lireDossierSauvegarde(ctx)) }
@@ -2006,7 +2008,7 @@ fun AppEcran(
             idDuCujus().takeIf { it != 0L }?.let { idOuvert = it }
             // GeneaPoche 12 : diagnostic de l'arbre annonce a l'ouverture de
             // l'application (anomalies + doublons + branches isolees).
-            val nbDiag = anomaliesPour(personnes).size +
+            val nbDiag = anomaliesDeLArbre(personnes, anomaliesIgnorees).size +
                 doublonsPotentiels(personnes, doublonsGardes).size +
                 personnes.filter { brancheIsolee(it, personnes) }.size
             if (nbDiag > 0) {
@@ -2076,6 +2078,7 @@ fun AppEcran(
                 annulationPossible = modele.annulation != null,
                 // v0.78 : paires de doublons "gardees les deux".
                 doublonsGardes = doublonsGardes,
+                anomaliesIgnorees = anomaliesIgnorees,
                 // 12.1 : etat de la sauvegarde automatique.
                 dossierSauvegarde = dossierSauvegarde,
                 seuilSauvegarde = seuilSauvegarde,
@@ -2142,6 +2145,15 @@ fun AppEcran(
                 garderDoublon = { a, b ->
                     Stockage.garderDoublon(ctx, a, b)
                     doublonsGardes = doublonsGardes + cleDoublon(a, b)
+                },
+                // v0.88 : Ignorer une anomalie a verifier / les reafficher.
+                ignorerAnomalie = { cle ->
+                    Stockage.ignorerAnomalie(ctx, cle)
+                    anomaliesIgnorees = anomaliesIgnorees + cle
+                },
+                reafficherAnomalies = {
+                    Stockage.reafficherAnomalies(ctx)
+                    anomaliesIgnorees = emptySet()
                 },
                 // 12.1 : sauvegarde automatique + cle de recuperation.
                 sauvegardeAuto = { uri -> activerSauvegardeAuto(uri) },

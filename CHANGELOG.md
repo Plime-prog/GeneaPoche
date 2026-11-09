@@ -1,5 +1,15 @@
 # Historique des versions — GénéaPoche
 
+## v0.88 – Anomalies à vérifier (cohérence de l'arbre)
+
+- **Nouvelle section « Anomalies à vérifier »** dans le diagnostic de l'arbre (onglet Journal), qui remplace l'ancien contrôle « Cohérence ». Le mot « erreur » est volontairement évité : ce sont des points à vérifier, et c'est vous qui jugez. Exemple : « ⚠️ Jean Dupont est né 4 mois après le décès supposé de son père Pierre Dupont (naissance posthume possible). »
+- **Trois boutons sous chaque anomalie** : **Ignorer** (l'anomalie disparaît, choix mémorisé ; « Réafficher les anomalies ignorées » les rétablit ; elle revient d'elle-même si les dates changent), **Corriger** (ouvre la fiche concernée) et **Examiner** (explication de la règle, dates saisies de chaque personne concernée, accès à chaque fiche).
+- **Contrôles ajoutés** : enfant né avant son père ou sa mère ; mère trop jeune (moins de 15 ans) ou trop âgée (plus de 50 ans) ; père trop jeune (moins de 14 ans) ou trop âgé (plus de 80 ans) ; naissance après le décès de la mère ; naissance posthume possible (jusqu'à 300 jours après le décès du père) ou impossible au-delà ; mariage après le décès de la personne ou de son conjoint ; mariage avant la naissance de la personne ou de son conjoint ; mariage à un âge improbable (moins de 15 ans, plus de 85 ans) ; décès avant naissance ; baptême avant la naissance ou après le décès ; sépulture avant le décès ; événement libre avant la naissance ; âge de plus de 110 ans ; deux dates de mariage différentes sur les fiches d'un même couple ; enfant né avant le mariage de ses parents ; frères et sœurs de même mère nés à moins de 7 mois d'intervalle (jumeaux exclus) ; personne à la fois père et mère, ou père de sexe féminin, mère de sexe masculin ; numéro de département inexistant ; deux événements le même jour dans deux départements différents.
+- **Pas de fausse alerte par imprécision** : une anomalie n'est signalée que si la contradiction est certaine compte tenu de la précision des dates (une année seule couvre toute l'année, « avant 1850 », « après 1850 » et « vers 1750 » sont compris, les dates républicaines sont converties).
+- **Doublons potentiels mieux repérés** : comparaison insensible aux accents, à la casse et à la ponctuation, et même nom + même premier prénom + même année de naissance.
+- 16 nouveaux tests unitaires JVM. Les anomalies ignorées sont mémorisées sous forme de clés techniques (aucun nom, aucune date).
+- Bumps v0.88 (gradle 88/« 0.88 », export GEDCOM « 2 VERS 0.88 », badge de saisie « v0.88 », écran d'application).
+
 ## v0.87 – Boîte à outils du généalogiste
 
 - **Nouvelle « Boîte à outils »** (paramétrages ▸ « Boîte à outils ») : trois outils de recherche, entièrement locaux (aucun accès réseau, aucune nouvelle permission).

@@ -497,6 +497,22 @@ object Stockage {
             .commit()
     }
 
+    // v0.88 : "Anomalies a verifier" ignorees par l'utilisateur. Seules des
+    // cles techniques (type, numeros de fiches, empreinte du texte) sont
+    // conservees : aucun nom ni aucune date.
+    fun lireAnomaliesIgnorees(ctx: Context): Set<String> =
+        prefs(ctx).getStringSet("anomalies_ignorees", emptySet()) ?: emptySet()
+
+    fun ignorerAnomalie(ctx: Context, cle: String) {
+        prefs(ctx).edit()
+            .putStringSet("anomalies_ignorees", lireAnomaliesIgnorees(ctx) + cle)
+            .commit()
+    }
+
+    fun reafficherAnomalies(ctx: Context) {
+        prefs(ctx).edit().remove("anomalies_ignorees").commit()
+    }
+
     // ------------------------------------------------------------ Rappel partage (12.2)
     // 12.2 : rappel de suppression du dernier fichier exporte/partage
     // (GEDCOM .ged/.gpged ou sauvegarde .gpbak) : rappele a l'ouverture tant
