@@ -22,6 +22,9 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 
 **Anomalies à vérifier (v0.88)** — le diagnostic de l'arbre (onglet Journal) signale les dates et liens improbables (enfant né après le décès de son père, mère trop jeune ou trop âgée, mariage après décès, fratrie trop rapprochée, sexe incompatible avec un lien, doublons potentiels…) sans jamais parler d'erreur : chaque anomalie propose **Ignorer**, **Corriger** ou **Examiner**.
 
+**Certification et ligne de vie (v0.89)** — la coche de certification d'identité (✔ / ✘) est désormais conservée dans les exports et réimports GEDCOM (tag dédié ignoré par les autres logiciels) ; l'onglet Ligne de vie affiche une ligne de vie par membre de la famille proche — grands-parents, parents, fratrie, **conjoints** et enfants.
+
+
 ## Modèle de sécurité — exact, avec ses limites
 
 - **Aucune permission Internet** dans le manifeste : l'application elle-même ne transmet rien.
@@ -40,7 +43,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.88)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.88-release.apk` (signé) ou `GeneaPoche-v0.88-debug.apk`.
+**Téléchargement direct de la dernière version (v0.89)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.89-release.apk` (signé) ou `GeneaPoche-v0.89-debug.apk`.
 
 Sinon, depuis les sources :
 
