@@ -1,4 +1,10 @@
 # Historique des versions — GénéaPoche
+## v0.89 – Certification conservée en GEDCOM, conjoints dans la ligne de vie
+
+- **La coche « personne certifiée » survit à l'export/réimport GEDCOM** : la certification manuelle (coche ou croix de l'en-tête de fiche) était stockée dans la base chiffrée mais jamais écrite dans le fichier GEDCOM — elle repassait donc à « auto » au réimport. Désormais chaque fiche concernée emporte un tag dédié (`_GPVERIF`), relu à l'import ; les autres logiciels (Heredis…) ignorent simplement ce tag. Le mode « auto » reste recalculé automatiquement.
+- **Ligne de vie : les conjoints sont affichés** — tous les conjoints de la personne choisie (Épouse/Époux, numérotés s'il y en a plusieurs) occupent leur ligne de vie juste avant la sienne, avec leurs propres événements.
+- Bumps v0.89 (gradle 89/« 0.89 », export GEDCOM « 2 VERS 0.89 », badge de saisie « v0.89 », écran d'application).
+
 
 ## v0.88 – Base des communes (12.4) et anomalies à vérifier
 
