@@ -1,0 +1,512 @@
+38001|Les Abrets en Dauphiné
+38002|Les Adrets
+38003|Agnin
+38004|L'Albenc
+38005|Allemond
+38006|Allevard
+38008|Ambel
+38009|Anjou
+38010|Annoisin-Chatelans
+38011|Anthon
+38012|Aoste
+38013|Apprieu
+38015|Artas
+38017|Assieu
+38018|Auberives-en-Royans
+38019|Auberives-sur-Varèze
+38020|Auris
+38022|Les Avenières Veyrins-Thuellin
+38023|Avignonet
+38026|La Balme-les-Grottes
+38027|Barraux
+38029|La Bâtie-Montgascon
+38030|Beaucroissant
+38031|Beaufin
+38032|Beaufort
+38033|Beaulieu
+38034|Beaurepaire
+38035|Beauvoir-de-Marc
+38036|Beauvoir-en-Royans
+38037|Bellegarde-Poussieu
+38038|Belmont
+38039|Bernin
+38040|Besse
+38041|Bessins
+38042|Bévenais
+38043|Bilieu
+38044|Biol
+38045|Biviers
+38046|Bizonnes
+38047|Blandin
+38048|Bonnefamille
+38049|Bossieu
+38050|Le Bouchage
+38051|Bougé-Chambalud
+38052|Le Bourg-d'Oisans
+38053|Bourgoin-Jallieu
+38054|Bouvesse-Quirieu
+38055|Brangues
+38056|Bressieux
+38057|Bresson
+38058|Brézins
+38059|Brié-et-Angonnes
+38060|Brion
+38061|La Buisse
+38062|La Buissière
+38063|Burcin
+38064|Cessieu
+38065|Châbons
+38066|Chalon
+38067|Chamagnieu
+38068|Champagnier
+38069|Champier
+38070|Le Champ-près-Froges
+38071|Champ-sur-Drac
+38072|Chanas
+38073|Chantepérier
+38074|Chantesse
+38075|Chapareillan
+38076|La Chapelle-de-la-Tour
+38077|La Chapelle-de-Surieu
+38078|La Chapelle-du-Bard
+38080|Charancieu
+38081|Charantonnay
+38082|Charavines
+38083|Charette
+38084|Charnècles
+38085|Charvieu-Chavagneux
+38086|Chasselay
+38087|Chasse-sur-Rhône
+38089|Chassignieu
+38090|Château-Bernard
+38091|Châteauvilain
+38092|Châtelus
+38093|Châtenay
+38094|Châtonnay
+38095|Chatte
+38097|Chavanoz
+38098|Chélieu
+38099|Chevrières
+38100|Le Cheylas
+38101|Cheyssieu
+38102|Chèzeneuve
+38103|Chichilianne
+38104|Chimilin
+38105|Chirens
+38106|Cholonge
+38107|Chonas-l'Amballan
+38108|Choranche
+38109|Chozeau
+38110|Chuzelles
+38111|Claix
+38112|Clavans-en-Haut-Oisans
+38113|Clelles
+38114|Clonas-sur-Varèze
+38115|Saint-Martin-de-la-Cluze
+38116|Cognet
+38117|Cognin-les-Gorges
+38118|Colombe
+38120|La Combe-de-Lancey
+38124|Corbelin
+38126|Corenc
+38127|Cornillon-en-Trièves
+38128|Corps
+38129|Corrençon-en-Vercors
+38130|La Côte-Saint-André
+38131|Les Côtes-d'Arey
+38132|Les Côtes-de-Corps
+38133|Coublevie
+38134|Cour-et-Buis
+38135|Courtenay
+38136|Crachier
+38137|Cras
+38138|Crémieu
+38139|Creys-Mépieu
+38140|Crolles
+38141|Culin
+38144|Diémoz
+38146|Dizimieu
+38147|Doissin
+38148|Dolomieu
+38149|Domarin
+38150|Domène
+38151|Échirolles
+38152|Eclose-Badinières
+38153|Engins
+38154|Entraigues
+38155|Entre-deux-Guiers
+38156|Les Éparres
+38157|Estrablin
+38158|Eybens
+38159|Eydoche
+38160|Eyzin-Pinet
+38161|Faramans
+38162|Faverges-de-la-Tour
+38163|Le Haut-Bréda
+38166|La Flachère
+38167|Flachères
+38169|Fontaine
+38170|Fontanil-Cornillon
+38171|La Forteresse
+38172|Four
+38173|Le Freney-d'Oisans
+38174|La Frette
+38175|Froges
+38176|Frontonas
+38177|La Garde
+38179|Gières
+38180|Gillonnay
+38181|Goncelin
+38182|Le Grand-Lemps
+38183|Granieu
+38184|Grenay
+38185|Grenoble
+38186|Gresse-en-Vercors
+38187|Le Gua
+38188|Herbeys
+38189|Heyrieux
+38190|Hières-sur-Amby
+38191|Huez
+38192|Hurtières
+38193|L'Isle-d'Abeau
+38194|Izeaux
+38195|Izeron
+38197|Janneyrias
+38198|Jarcieu
+38199|Jardin
+38200|Jarrie
+38203|Laffrey
+38204|Lalley
+38205|Lans-en-Vercors
+38206|Laval-en-Belledonne
+38207|Lavaldens
+38208|Lavars
+38209|Lentiol
+38210|Leyrieu
+38211|Lieudieu
+38212|Livet-et-Gavet
+38213|Longechenal
+38214|Lumbin
+38215|Luzinay
+38216|Malleval-en-Vercors
+38217|Marcieu
+38218|Marcilloles
+38219|Marcollin
+38221|Marnans
+38222|Massieu
+38223|Maubec
+38224|Mayres-Savel
+38225|Autrans-Méaudre en Vercors
+38226|Mens
+38228|Merlas
+38229|Meylan
+38230|Meyrié
+38231|Meyrieu-les-Étangs
+38232|Meyssiez
+38235|Miribel-Lanchâtre
+38236|Miribel-les-Échelles
+38237|Mizoën
+38238|Moidieu-Détourbe
+38239|Moirans
+38240|Moissieu-sur-Dolon
+38241|Monestier-d'Ambel
+38242|Monestier-de-Clermont
+38243|Monestier-du-Percy
+38244|Monsteroux-Milieu
+38245|Montagne
+38246|Montagnieu
+38247|Montalieu-Vercieu
+38248|Montaud
+38249|Montbonnot-Saint-Martin
+38250|Montcarra
+38252|Montchaboud
+38253|Les Deux Alpes
+38254|Monteynard
+38255|Montfalcon
+38256|Montferrat
+38257|Montrevel
+38258|Mont-Saint-Martin
+38259|Montseveroux
+38260|Moras
+38261|Morestel
+38263|Morette
+38264|La Morte
+38265|La Motte-d'Aveillans
+38266|La Motte-Saint-Martin
+38267|Mottier
+38268|Le Moutaret
+38269|La Mure
+38270|La Murette
+38271|Murianette
+38272|Murinais
+38273|Nantes-en-Ratier
+38275|Serre-Nerpol
+38276|Nivolas-Vermelle
+38277|Notre-Dame-de-Commiers
+38278|Notre-Dame-de-l'Osier
+38279|Notre-Dame-de-Mésage
+38280|Notre-Dame-de-Vaulx
+38281|Noyarey
+38282|Optevoz
+38283|Oris-en-Rattier
+38284|Ornacieux-Balbins
+38285|Ornon
+38286|Oulles
+38287|Oyeu
+38288|Oytier-Saint-Oblas
+38289|Oz
+38290|Pact
+38291|Pajay
+38292|Villages du Lac de Paladru
+38294|Panossas
+38295|Parmilieu
+38296|Le Passage
+38297|Arandon-Passins
+38298|Le Péage-de-Roussillon
+38299|Pellafol
+38300|Penol
+38301|Le Percy
+38303|La Pierre
+38304|Pierre-Châtel
+38307|Pisieu
+38308|Plan
+38309|Poisat
+38310|Poliénas
+38311|Pommier-de-Beaurepaire
+38313|Ponsonnas
+38314|Pontcharra
+38315|Le Pont-de-Beauvoisin
+38316|Pont-de-Chéruy
+38317|Le Pont-de-Claix
+38318|Pont-Évêque
+38319|Pont-en-Royans
+38320|Porcieu-Amblagnieu
+38321|Prébois
+38322|Presles
+38323|Pressins
+38324|Primarette
+38325|Proveysieux
+38326|Prunières
+38328|Quaix-en-Chartreuse
+38329|Quet-en-Beaumont
+38330|Quincieu
+38331|Réaumont
+38332|Renage
+38333|Rencurel
+38334|Revel
+38335|Revel-Tourdan
+38336|Reventin-Vaugris
+38337|Rives
+38338|La Rivière
+38339|Roche
+38340|Les Roches-de-Condrieu
+38341|Rochetoirin
+38342|Roissard
+38343|Romagnieu
+38344|Roussillon
+38345|Rovon
+38346|Royas
+38347|Roybon
+38348|Ruy-Montceau
+38349|Sablons
+38350|Sainte-Agnès
+38351|Saint-Agnin-sur-Bion
+38352|Saint-Alban-de-Roche
+38353|Saint-Alban-du-Rhône
+38354|Saint-Albin-de-Vaulserre
+38355|Saint-Andéol
+38356|Saint-André-en-Royans
+38357|Saint-André-le-Gaz
+38358|Sainte-Anne-sur-Gervonde
+38359|Saint Antoine l'Abbaye
+38360|Saint-Appolinard
+38361|Saint-Arey
+38362|Saint-Aupre
+38363|Saint-Barthélemy
+38364|Saint-Barthélemy-de-Séchilienne
+38365|Saint-Baudille-de-la-Tour
+38366|Saint-Baudille-et-Pipet
+38368|Saint-Blaise-du-Buis
+38369|Sainte-Blandine
+38370|Saint-Bonnet-de-Chavagne
+38372|Saint-Bueil
+38373|Saint-Cassien
+38374|Saint-Chef
+38375|Saint-Christophe-en-Oisans
+38376|Saint-Christophe-sur-Guiers
+38377|Saint-Clair-de-la-Tour
+38378|Saint-Clair-du-Rhône
+38379|Saint-Clair-sur-Galaure
+38380|Saint-Didier-de-Bizonnes
+38381|Saint-Didier-de-la-Tour
+38382|Saint-Égrève
+38383|Saint-Étienne-de-Crossey
+38384|Saint-Étienne-de-Saint-Geoirs
+38386|Saint-Geoire-en-Valdaine
+38387|Saint-Geoirs
+38388|Saint-Georges-de-Commiers
+38389|Saint-Georges-d'Espéranche
+38390|Saint-Gervais
+38391|Saint-Guillaume
+38392|Saint-Hilaire-de-Brens
+38393|Saint-Hilaire-de-la-Côte
+38394|Saint-Hilaire-du-Rosier
+38395|Plateau-des-Petites-Roches
+38396|Saint-Honoré
+38397|Saint-Ismier
+38398|Saint-Jean-d'Avelanne
+38399|Saint-Jean-de-Bournay
+38400|Saint-Jean-de-Moirans
+38401|Saint-Jean-de-Soudain
+38402|Saint-Jean-de-Vaulx
+38403|Saint-Jean-d'Hérans
+38404|Saint-Jean-le-Vieux
+38405|Saint-Joseph-de-Rivière
+38406|Saint-Julien-de-l'Herms
+38407|La Sure en Chartreuse
+38408|Saint-Just-Chaleyssin
+38409|Saint-Just-de-Claix
+38410|Saint-Lattier
+38412|Saint-Laurent-du-Pont
+38413|Saint-Laurent-en-Beaumont
+38414|Sainte-Luce
+38415|Saint-Marcel-Bel-Accueil
+38416|Saint-Marcellin
+38417|Sainte-Marie-d'Alloix
+38418|Sainte-Marie-du-Mont
+38419|Saint-Martin-de-Clelles
+38420|Saint-Martin-de-Vaulserre
+38421|Saint-Martin-d'Hères
+38422|Saint-Martin-d'Uriage
+38423|Saint-Martin-le-Vinoux
+38424|Saint-Maurice-en-Trièves
+38425|Saint-Maurice-l'Exil
+38426|Saint-Maximin
+38427|Saint-Michel-de-Saint-Geoirs
+38428|Saint-Michel-en-Beaumont
+38429|Saint-Michel-les-Portes
+38430|Saint-Mury-Monteymond
+38431|Saint-Nazaire-les-Eymes
+38432|Saint-Nicolas-de-Macherin
+38433|Saint-Nizier-du-Moucherotte
+38434|Saint-Ondras
+38436|Saint-Paul-de-Varces
+38437|Saint-Paul-d'Izeaux
+38438|Saint-Paul-lès-Monestier
+38439|Crêts en Belledonne
+38440|Saint-Pierre-de-Bressieux
+38442|Saint-Pierre-de-Chartreuse
+38443|Saint-Pierre-de-Chérennes
+38444|Saint-Pierre-de-Méaroz
+38445|Saint-Pierre-de-Mésage
+38446|Saint-Pierre-d'Entremont
+38448|Saint-Prim
+38449|Saint-Quentin-Fallavier
+38450|Saint-Quentin-sur-Isère
+38451|Saint-Romain-de-Jalionas
+38452|Saint-Romain-de-Surieu
+38453|Saint-Romans
+38454|Saint-Sauveur
+38455|Saint-Savin
+38456|Châtel-en-Trièves
+38457|Saint-Siméon-de-Bressieux
+38458|Saint-Sorlin-de-Morestel
+38459|Saint-Sorlin-de-Vienne
+38460|Saint-Sulpice-des-Rivoires
+38462|Saint-Théoffrey
+38463|Saint-Vérand
+38464|Saint-Victor-de-Cessieu
+38465|Saint-Victor-de-Morestel
+38466|Saint-Vincent-de-Mercuze
+38467|Salagnon
+38468|Salaise-sur-Sanne
+38469|La Salette-Fallavaux
+38470|La Salle-en-Beaumont
+38471|Le Sappey-en-Chartreuse
+38472|Sarcenas
+38473|Sardieu
+38474|Sassenage
+38475|Satolas-et-Bonce
+38476|Savas-Mépin
+38478|Séchilienne
+38479|Porte-des-Bonnevaux
+38480|Septème
+38481|Sérézin-de-la-Tour
+38483|Sermérieu
+38484|Serpaize
+38485|Seyssinet-Pariset
+38486|Seyssins
+38487|Seyssuel
+38488|Siccieu-Saint-Julien-et-Carisieu
+38489|Siévoz
+38490|Sillans
+38492|Sinard
+38494|Soleymieu
+38495|La Sône
+38496|Sonnay
+38497|Sousville
+38498|Succieu
+38499|Susville
+38500|Têche
+38501|Tencin
+38503|La Terrasse
+38504|Theys
+38505|Thodure
+38507|Tignieu-Jameyzieu
+38508|Torchefelon
+38509|La Tour-du-Pin
+38511|Le Touvet
+38512|Tramolé
+38513|Treffort
+38514|Tréminis
+38515|Trept
+38516|La Tronche
+38517|Tullins
+38518|Valbonnais
+38519|Valencin
+38520|Valencogne
+38521|La Valette
+38522|Valjouffrey
+38523|Varacieux
+38524|Varces-Allières-et-Risset
+38525|Vasselin
+38526|Vatilieu
+38527|Vaujany
+38528|Vaulnaveys-le-Bas
+38529|Vaulnaveys-le-Haut
+38530|Vaulx-Milieu
+38531|Velanne
+38532|Vénérieu
+38533|Venon
+38535|Vernas
+38536|Vernioz
+38537|La Verpillière
+38538|Le Versoud
+38539|Vertrieu
+38540|Veurey-Voroize
+38542|Veyssilieu
+38543|Vézeronce-Curtin
+38544|Vienne
+38545|Vif
+38546|Vignieu
+38547|Villard-Bonnot
+38548|Villard-de-Lans
+38549|Villard-Notre-Dame
+38550|Villard-Reculas
+38551|Villard-Reymond
+38552|Villard-Saint-Christophe
+38553|Villefontaine
+38554|Villemoirieu
+38555|Villeneuve-de-Marc
+38556|Ville-sous-Anjou
+38557|Villette-d'Anthon
+38558|Villette-de-Vienne
+38559|Vinay
+38560|Val-de-Virieu
+38561|Viriville
+38562|Vizille
+38563|Voiron
+38564|Voissant
+38565|Voreppe
+38566|Vourey
+38567|Chamrousse

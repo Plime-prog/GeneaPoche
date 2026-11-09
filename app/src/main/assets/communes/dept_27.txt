@@ -1,0 +1,585 @@
+27001|Aclou
+27002|Acon
+27003|Acquigny
+27004|Aigleville
+27005|Ailly
+27006|Aizier
+27008|Alizay
+27009|Ambenay
+27010|Amécourt
+27011|Amfreville-Saint-Amand
+27012|Amfreville-les-Champs
+27013|Amfreville-sous-les-Monts
+27014|Amfreville-sur-Iton
+27015|Andé
+27016|Les Andelys
+27017|Angerville-la-Campagne
+27018|Appeville-Annebault
+27019|Armentières-sur-Avre
+27020|Arnières-sur-Iton
+27021|Asnières
+27022|Le Val d'Hazey
+27023|Aulnay-sur-Iton
+27025|Autheuil-Authouillet
+27026|Authevernes
+27027|Les Authieux
+27028|Authou
+27031|Aviron
+27032|Chambois
+27033|Bacquepuis
+27034|Bacqueville
+27035|Bailleul-la-Vallée
+27036|Bâlines
+27037|Barc
+27038|Les Barils
+27039|Barneville-sur-Seine
+27040|Barquet
+27042|Barville
+27043|Les Baux-de-Breteuil
+27044|Les Baux-Sainte-Croix
+27045|Bazincourt-sur-Epte
+27046|Bazoques
+27047|Beaubray
+27048|Beauficel-en-Lyons
+27049|Mesnil-en-Ouche
+27050|Beaumontel
+27051|Beaumont-le-Roger
+27052|Le Bec-Hellouin
+27053|Le Bec-Thomas
+27054|Bémécourt
+27055|Bérengeville-la-Campagne
+27056|Bernay
+27057|Bernienville
+27059|Bernouville
+27061|Berthouville
+27062|Les Monts du Roumois
+27063|Berville-la-Campagne
+27064|Berville-sur-Mer
+27065|Beuzeville
+27066|Bézu-la-Forêt
+27067|Bézu-Saint-Éloi
+27068|Bois-Anzeray
+27069|Bois-Arnault
+27070|Frenelles-en-Vexin
+27071|Le Bois-Hellain
+27072|Bois-Jérôme-Saint-Ouen
+27073|Bois-le-Roi
+27074|Boisney
+27075|Bois-Normand-près-Lyre
+27076|Boisset-les-Prévanches
+27077|Boissey-le-Châtel
+27078|La Boissière
+27079|Boissy-Lamberville
+27081|Boncourt
+27082|La Bonneville-sur-Iton
+27083|Bonneville-Aptot
+27085|Flancourt-Crescy-en-Roumois
+27089|Thénouville
+27090|Bosroumois
+27091|Bosgouet
+27094|Bosquentin
+27095|Bosrobert
+27096|Les Bottereaux
+27097|Bouafles
+27098|Bouchevilliers
+27099|Le Boulay-Morin
+27100|Boulleville
+27101|Bouquelon
+27102|Bouquetot
+27103|Bourg-Achard
+27104|Bourg-Beaudouin
+27105|Grand Bourgtheroulde
+27106|Bournainville-Faverolles
+27107|Bourneville-Sainte-Croix
+27108|Bourth
+27109|Bray
+27110|Brestot
+27111|Bretagnolles
+27112|Breteuil
+27113|Brétigny
+27114|Breuilpont
+27115|Breux-sur-Avre
+27116|Brionne
+27117|Broglie
+27118|Brosville
+27119|Bueil
+27120|Burey
+27123|Caillouet-Orgeville
+27124|Cailly-sur-Eure
+27125|Calleville
+27126|Campigny
+27127|Canappeville
+27129|Caorches-Saint-Nicolas
+27130|Capelle-les-Grands
+27132|Caugé
+27133|Caumont
+27134|Cauverville-en-Roumois
+27135|Cesseville
+27136|Chaignes
+27137|Chaise-Dieu-du-Theil
+27138|Chamblac
+27139|Chambord
+27140|Chambray
+27141|Champ-Dolent
+27142|Champenard
+27144|Champigny-la-Futelaye
+27146|La Chapelle-Bayvel
+27147|La Chapelle-du-Bois-des-Faulx
+27148|La Chapelle-Gauthier
+27149|La Chapelle-Hareng
+27151|Charleval
+27152|Château-sur-Epte
+27153|Chauvincourt-Provemont
+27154|Chavigny-Bailleul
+27155|Chennebrun
+27156|Chéronvilliers
+27157|Marbois
+27158|Cierrey
+27161|Claville
+27162|Collandres-Quincarnon
+27163|Colletot
+27164|Combon
+27165|Conches-en-Ouche
+27167|Condé-sur-Risle
+27168|Connelles
+27169|Conteville
+27170|Cormeilles
+27171|Le Cormier
+27173|Corneville-la-Fouquetière
+27174|Corneville-sur-Risle
+27176|Coudray
+27177|Coudres
+27179|Courbépine
+27180|Courcelles-sur-Seine
+27181|Courdemanche
+27182|Courteilles
+27183|La Couture-Boussey
+27184|Crasville
+27185|Crestot
+27187|Criquebeuf-la-Campagne
+27188|Criquebeuf-sur-Seine
+27189|La Croisille
+27190|Croisy-sur-Eure
+27191|Clef Vallée d'Eure
+27192|Crosville-la-Vieille
+27193|Croth
+27194|Cuverville
+27196|Les Damps
+27198|Mesnils-sur-Iton
+27199|Dangu
+27200|Dardez
+27201|Daubeuf-la-Campagne
+27202|Daubeuf-près-Vatteville
+27203|Douains
+27204|Doudeauville-en-Vexin
+27205|Douville-sur-Andelle
+27206|Droisy
+27207|Drucourt
+27208|Duranville
+27209|Écaquelon
+27210|Écardenville-la-Campagne
+27212|Écauville
+27213|Vexin-sur-Epte
+27214|Écouis
+27215|Ecquetot
+27216|Émalleville
+27217|Émanville
+27218|Épaignes
+27219|Épégard
+27220|Épieds
+27222|Épreville-en-Lieuvin
+27224|Épreville-près-le-Neubourg
+27226|Étrépagny
+27227|Étréville
+27228|Éturqueraye
+27229|Évreux
+27230|Ézy-sur-Eure
+27231|Fains
+27232|Farceaux
+27233|Fatouville-Grestain
+27234|Fauville
+27235|Faverolles-la-Campagne
+27237|Le Favril
+27238|Ferrières-Haut-Clocher
+27239|Ferrières-Saint-Hilaire
+27240|La Ferrière-sur-Risle
+27241|Feuguerolles
+27242|Le Fidelaire
+27243|Fiquefleur-Équainville
+27245|Fleury-la-Forêt
+27246|Fleury-sur-Andelle
+27247|Flipou
+27248|Folleville
+27249|Fontaine-Bellenger
+27251|Fontaine-l'Abbé
+27252|Fontaine-la-Louvet
+27254|Fontaine-sous-Jouy
+27256|La Forêt-du-Parc
+27258|Fort-Moville
+27259|Foucrainville
+27260|Foulbec
+27261|Fouqueville
+27263|Le Perrey
+27266|Franqueville
+27267|Freneuse-sur-Risle
+27269|Fresne-Cauverville
+27271|Fresney
+27273|Gadencourt
+27275|Gaillon
+27276|Gamaches-en-Vexin
+27277|La Baronnie
+27278|Garennes-sur-Eure
+27279|Gasny
+27280|Gauciel
+27281|Gaudreville-la-Rivière
+27282|Gauville-la-Campagne
+27284|Gisors
+27285|Giverny
+27286|Giverville
+27287|Glisolles
+27288|Glos-sur-Risle
+27289|La Goulafrière
+27290|Goupil-Othon
+27291|Gournay-le-Guérin
+27294|Val d'Orger
+27295|Grand-Camp
+27298|Graveron-Sémerville
+27299|Gravigny
+27300|Grosley-sur-Risle
+27301|Grossœuvre
+27302|Le Bosc du Theil
+27304|Guerny
+27306|Guichainville
+27307|Guiseniers
+27309|L'Habit
+27310|Hacqueville
+27311|Harcourt
+27312|Hardencourt-Cocherel
+27313|La Harengère
+27315|Harquency
+27316|Hauville
+27317|La Haye-Aubrée
+27318|La Haye-de-Calleville
+27319|La Haye-de-Routot
+27320|La Haye-du-Theil
+27321|La Haye-le-Comte
+27322|La Haye-Malherbe
+27323|La Haye-Saint-Sylvestre
+27324|Hébécourt
+27325|Hecmanville
+27326|Hécourt
+27327|Hectomare
+27329|Hennezis
+27330|Herqueville
+27331|Heubécourt-Haricourt
+27332|Heudebouville
+27333|Heudicourt
+27334|Heudreville-en-Lieuvin
+27335|Heudreville-sur-Eure
+27336|La Heunière
+27337|Heuqueville
+27338|Les Hogues
+27339|Hondouville
+27340|Honguemare-Guenouville
+27341|L'Hosmes
+27342|Houetteville
+27343|Houlbec-Cocherel
+27345|La Houssaye
+27346|Houville-en-Vexin
+27347|Huest
+27348|Igoville
+27349|Illeville-sur-Montfort
+27350|Illiers-l'Évêque
+27351|Incarville
+27353|Irreville
+27354|Iville
+27355|Ivry-la-Bataille
+27358|Jouy-sur-Eure
+27359|Juignettes
+27360|Jumelles
+27361|La Lande-Saint-Léger
+27363|Le Landin
+27364|Launay
+27365|Léry
+27366|Letteguives
+27367|Lieurey
+27368|Lignerolles
+27369|Lilly
+27370|Lisors
+27371|Livet-sur-Authou
+27372|Longchamps
+27373|Lorleau
+27374|Louversey
+27375|Louviers
+27376|Louye
+27377|Lyons-la-Forêt
+27378|La Madeleine-de-Nonancourt
+27379|Mainneville
+27380|Malleville-sur-le-Bec
+27381|Malouy
+27382|Mandeville
+27383|Mandres
+27384|Manneville-la-Raoult
+27385|Manneville-sur-Risle
+27386|Le Manoir
+27388|Marais-Vernier
+27389|Marbeuf
+27390|Marcilly-la-Campagne
+27391|Marcilly-sur-Eure
+27392|Martagny
+27393|Martainville
+27394|Martot
+27395|Mélicourt
+27396|Ménesqueville
+27397|Ménilles
+27398|Menneval
+27399|Mercey
+27400|Merey
+27401|Le Mesnil-Fuguet
+27403|Le Mesnil-Jourdain
+27404|Mesnil-Rousset
+27405|Mesnil-sous-Vienne
+27406|Mesnil-sur-l'Estrée
+27407|Mesnil-Verclives
+27408|Mézières-en-Vexin
+27410|Miserey
+27411|Moisville
+27412|Terres de Bord
+27413|Montfort-sur-Risle
+27414|Montreuil-l'Argillé
+27415|Morainville-Jouveaux
+27417|Morgny
+27418|Morsan
+27419|Mouettes
+27420|Mouflaines
+27421|Mousseaux-Neuville
+27422|Muids
+27423|Muzy
+27424|Nagel-Séez-Mesnil
+27425|Nassandres sur Risle
+27426|Neaufles-Saint-Martin
+27427|Neaufles-Auvergny
+27428|Le Neubourg
+27429|Neuilly
+27430|La Neuve-Grange
+27431|La Neuve-Lyre
+27432|La Neuville-du-Bosc
+27433|Neuville-sur-Authou
+27434|Noards
+27435|La Noë-Poulain
+27436|Nogent-le-Sec
+27437|Nojeon-en-Vexin
+27438|Nonancourt
+27439|Normanville
+27440|Notre-Dame-de-l'Isle
+27441|Notre-Dame-d'Épine
+27442|Notre-Dame-du-Hamel
+27444|Le Noyer-en-Ouche
+27445|Noyers
+27446|Ormes
+27447|Le Val-Doré
+27448|Pacy-sur-Eure
+27451|Parville
+27453|Perriers-sur-Andelle
+27454|Perruel
+27455|Piencourt
+27456|Pinterville
+27457|Piseux
+27458|Pîtres
+27459|Les Places
+27460|Plainville
+27462|Le Planquay
+27463|Plasnes
+27464|Le Plessis-Grohan
+27465|Le Plessis-Hébert
+27466|Le Plessis-Sainte-Opportune
+27467|Pont-Audemer
+27468|Pont-Authou
+27469|Pont-de-l'Arche
+27470|Pont-Saint-Pierre
+27471|Porte-de-Seine
+27472|Portes
+27473|Port-Mort
+27474|Poses
+27475|La Poterie-Mathieu
+27476|Les Préaux
+27477|Pressagny-l'Orgueilleux
+27478|Prey
+27480|Puchay
+27481|Pullay
+27482|La Pyle
+27483|Quatremare
+27485|Quillebeuf-sur-Seine
+27486|Quittebeuf
+27487|Radepont
+27488|Renneville
+27489|Reuilly
+27490|Richeville
+27492|Romilly-la-Puthenaye
+27493|Romilly-sur-Andelle
+27495|La Roquette
+27496|Rosay-sur-Lieure
+27497|Rougemontier
+27498|Rouge-Perriers
+27500|Routot
+27501|Rouvray
+27502|Rugles
+27504|Sacquenville
+27505|Saint-Agnan-de-Cernières
+27507|Saint-André-de-l'Eure
+27508|Saint-Antonin-de-Sommaire
+27511|Saint-Aubin-d'Écrosville
+27512|Saint-Aubin-de-Scellon
+27514|Saint-Aubin-du-Thenney
+27516|Treis-Sants-en-Ouche
+27517|Saint-Aubin-sur-Gaillon
+27518|Saint-Aubin-sur-Quillebeuf
+27520|Saint-Benoît-des-Ombres
+27521|Saint-Christophe-sur-Avre
+27522|Saint-Christophe-sur-Condé
+27524|Sainte-Colombe-la-Commanderie
+27525|Sainte-Colombe-près-Vernon
+27527|Saint-Cyr-de-Salerne
+27528|Le Vaudreuil
+27529|Saint-Cyr-la-Campagne
+27530|Saint-Denis-d'Augerons
+27531|Saint-Denis-des-Monts
+27533|Saint-Denis-le-Ferment
+27534|Saint-Didier-des-Bois
+27535|Saint-Élier
+27536|Saint-Éloi-de-Fourques
+27537|Saint-Étienne-du-Vauvray
+27538|Saint-Étienne-l'Allier
+27539|Saint-Étienne-sous-Bailleul
+27540|Sainte-Geneviève-lès-Gasny
+27541|Le Mesnil-Saint-Jean
+27542|Saint-Georges-du-Vièvre
+27543|Saint-Georges-Motel
+27544|Saint-Germain-de-Fresney
+27545|Saint-Germain-de-Pasquier
+27546|Saint-Germain-des-Angles
+27547|Saint-Germain-la-Campagne
+27548|Saint-Germain-sur-Avre
+27550|Saint-Grégoire-du-Vièvre
+27552|Saint-Jean-du-Thenney
+27553|Saint-Julien-de-la-Liègue
+27554|La Chapelle-Longueville
+27555|Saint-Laurent-des-Bois
+27556|Saint-Laurent-du-Tencement
+27557|Saint-Léger-de-Rôtes
+27558|Saint-Léger-du-Gennetey
+27560|Saint-Luc
+27561|Saint-Maclou
+27562|Saint-Marcel
+27563|Saint-Mards-de-Blacarville
+27564|Saint-Mards-de-Fresne
+27565|Le Lesme
+27567|Sainte-Marie-de-Vatimesnil
+27568|Sainte-Marthe
+27569|Saint-Martin-du-Tilleul
+27570|Saint-Martin-la-Campagne
+27571|Saint-Martin-Saint-Firmin
+27572|Saint-Meslin-du-Bosc
+27576|Sainte-Opportune-du-Bosc
+27577|Sainte-Opportune-la-Mare
+27578|Sainte-Marie-d'Attez
+27579|Saint-Ouen-de-Pontcheuil
+27580|Saint-Ouen-de-Thouberville
+27582|Saint-Ouen-du-Tilleul
+27584|Saint-Paul-de-Fourques
+27586|Saint-Philbert-sur-Boissey
+27587|Saint-Philbert-sur-Risle
+27589|Saint-Pierre-de-Bailleul
+27590|Saint-Pierre-de-Cernières
+27591|Saint-Pierre-de-Cormeilles
+27592|Saint-Pierre-de-Salerne
+27593|Saint-Pierre-des-Fleurs
+27594|Saint-Pierre-des-Ifs
+27595|Saint-Pierre-du-Bosguérard
+27597|Saint-Pierre-du-Val
+27598|Saint-Pierre-du-Vauvray
+27599|Saint-Pierre-la-Garenne
+27601|Saint-Samson-de-la-Roque
+27602|Saint-Sébastien-de-Morsent
+27603|Saint-Siméon
+27604|Saint-Sulpice-de-Grimbouville
+27605|Saint-Sylvestre-de-Cormeilles
+27606|Saint-Symphorien
+27608|Saint-Victor-de-Chrétienville
+27609|Saint-Victor-d'Épine
+27610|Saint-Victor-sur-Avre
+27611|Saint-Vigor
+27612|Saint-Vincent-des-Bois
+27613|Saint-Vincent-du-Boulay
+27614|Sancourt
+27615|Sassey
+27616|La Saussaye
+27617|Saussay-la-Campagne
+27618|Sébécourt
+27620|Selles
+27621|Serez
+27622|Serquigny
+27623|Surtauville
+27624|Surville
+27625|Suzay
+27627|Le Theil-Nolent
+27629|Thiberville
+27630|Thibouville
+27631|Thierville
+27632|Le Thil
+27633|Les Thilliers-en-Vexin
+27635|Le Thuit
+27638|Le Thuit de l'Oison
+27640|Tilleul-Dame-Agnès
+27641|Le Tilleul-Lambert
+27643|Tillières-sur-Avre
+27644|Tilly
+27645|Tocqueville
+27646|Le Torpt
+27649|Touffreville
+27650|Tournedos-Bois-Hubert
+27652|Tourneville
+27654|Tourville-la-Campagne
+27655|Tourville-sur-Pont-Audemer
+27656|Toutainville
+27658|Le Tremblay-Omonville
+27659|La Trinité
+27660|La Trinité-de-Réville
+27661|La Trinité-de-Thouberville
+27662|Triqueville
+27663|Le Troncq
+27664|Le Tronquay
+27665|Trouville-la-Haule
+27666|La Vacherie
+27667|Valailles
+27668|Le Val-David
+27669|Valletot
+27670|Vandrimare
+27671|Vannecrocq
+27672|Vascœuil
+27673|Vatteville
+27674|Vaux-sur-Eure
+27676|Les Trois Lacs
+27677|Venon
+27678|Les Ventes
+27679|Verneuil d'Avre et d'Iton
+27680|Verneusses
+27681|Vernon
+27682|Vesly
+27683|Vézillon
+27684|Le Vieil-Évreux
+27685|La Vieille-Lyre
+27686|Vieux-Port
+27689|Villegats
+27690|Villers-en-Vexin
+27691|Villers-sur-le-Roule
+27692|Villettes
+27693|Sylvains-Lès-Moulins
+27694|Villez-sous-Bailleul
+27695|Villez-sur-le-Neubourg
+27696|Villiers-en-Désœuvre
+27697|Vironvay
+27698|Vitot
+27699|Voiscreville
+27700|Vraiville
+27701|Val-de-Reuil

@@ -1,0 +1,267 @@
+41001|Ambloy
+41002|Angé
+41003|Areines
+41004|Artins
+41006|Autainville
+41007|Authon
+41008|Avaray
+41009|Averdon
+41010|Azé
+41012|Baillou
+41013|Bauzy
+41014|Beauchêne
+41016|Billy
+41017|Binas
+41018|Blois
+41019|Boisseau
+41020|Bonneveau
+41022|Bouffry
+41024|Boursay
+41025|Bracieux
+41026|Brévainville
+41027|Briou
+41028|Busloup
+41029|Candé-sur-Beuvron
+41030|Cellé
+41031|Cellettes
+41032|Chailles
+41034|Chambord
+41035|Champigny-en-Beauce
+41036|Chaon
+41037|La Chapelle-Enchérie
+41038|La Chapelle-Montmartin
+41039|La Chapelle-Saint-Martin-en-Plaine
+41040|La Chapelle-Vendômoise
+41041|La Chapelle-Vicomtesse
+41042|Châteauvieux
+41043|Châtillon-sur-Cher
+41044|Châtres-sur-Cher
+41045|Chaumont-sur-Loire
+41046|Chaumont-sur-Tharonne
+41047|La Chaussée-Saint-Victor
+41048|Chauvigny-du-Perche
+41049|Chémery
+41050|Cheverny
+41051|Chissay-en-Touraine
+41052|Chitenay
+41053|Choue
+41054|Choussy
+41055|Valloire-sur-Cisse
+41057|Conan
+41058|Concriers
+41059|Le Controis-en-Sologne
+41060|Cormenon
+41061|Cormeray
+41062|Couddes
+41063|Couffy
+41065|Coulommiers-la-Tour
+41066|Courbouzon
+41067|Cour-Cheverny
+41068|Courmemin
+41069|Cour-sur-Loire
+41070|Vallée-de-Ronsard
+41071|Crouy-sur-Cosson
+41072|Crucheray
+41073|Danzé
+41074|Dhuizon
+41075|Droué
+41077|Épiais
+41078|Épuisay
+41079|Les Essarts
+41080|Faverolles-sur-Cher
+41081|Faye
+41083|La Ferté-Beauharnais
+41084|La Ferté-Imbault
+41085|La Ferté-Saint-Cyr
+41086|Fontaines-en-Sologne
+41087|Fontaine-les-Coteaux
+41088|Fontaine-Raoul
+41089|La Fontenelle
+41090|Fortan
+41091|Fossé
+41093|Françay
+41094|Fresnes
+41095|Fréteval
+41096|Le Gault-du-Perche
+41097|Gièvres
+41098|Gombergean
+41099|Gy-en-Sologne
+41100|Les Hayes
+41101|Herbault
+41102|Houssay
+41103|Huisseau-en-Beauce
+41104|Huisseau-sur-Cosson
+41105|Josnes
+41106|Lamotte-Beuvron
+41107|Lancé
+41108|Lancôme
+41109|Landes-le-Gaulois
+41110|Langon-sur-Cher
+41112|Lassay-sur-Croisne
+41113|Lavardin
+41114|Lestiou
+41115|Lignières
+41116|Lisle
+41118|Loreux
+41119|Lorges
+41120|Lunay
+41121|La Madeleine-Villefrouin
+41122|Maray
+41123|Marchenoir
+41124|Marcilly-en-Beauce
+41125|Marcilly-en-Gault
+41126|Mareuil-sur-Cher
+41127|La Marolle-en-Sologne
+41128|Marolles
+41129|Maslives
+41130|Maves
+41131|Mazangé
+41132|Méhers
+41134|Menars
+41135|Mennetou-sur-Cher
+41136|Mer
+41137|Mesland
+41138|Meslay
+41139|Meusnes
+41140|Millançay
+41141|Moisy
+41142|Valencisse
+41143|Mondoubleau
+41144|Monteaux
+41145|Monthou-sur-Bièvre
+41146|Monthou-sur-Cher
+41147|Les Montils
+41148|Montlivault
+41149|Montoire-sur-le-Loir
+41150|Mont-près-Chambord
+41151|Montrichard Val de Cher
+41152|Montrieux-en-Sologne
+41153|Montrouveau
+41154|Morée
+41155|Muides-sur-Loire
+41156|Mulsans
+41157|Mur-de-Sologne
+41158|Naveil
+41159|Neung-sur-Beuvron
+41160|Neuvy
+41161|Nouan-le-Fuzelier
+41163|Nourray
+41164|Noyers-sur-Cher
+41166|Oisly
+41167|Veuzain-sur-Loire
+41168|Orçay
+41171|Oucques La Nouvelle
+41172|Ouzouer-le-Doyen
+41173|Beauce la Romaine
+41174|Périgny
+41175|Pezou
+41176|Pierrefitte-sur-Sauldre
+41177|Le Plessis-Dorin
+41178|Le Plessis-l'Échelle
+41179|Le Poislay
+41180|Pontlevoy
+41181|Pouillé
+41182|Pray
+41184|Prunay-Cassereau
+41185|Pruniers-en-Sologne
+41186|Rahart
+41187|Renay
+41188|Rhodon
+41189|Rilly-sur-Loire
+41190|Rocé
+41191|Roches
+41192|Les Roches-l'Évêque
+41193|Romilly
+41194|Romorantin-Lanthenay
+41195|Rougeou
+41196|Ruan-sur-Egvonne
+41198|Saint-Aignan
+41199|Saint-Amand-Longpré
+41200|Sainte-Anne
+41201|Saint-Arnoult
+41203|Saint-Bohaire
+41204|Saint-Claude-de-Diray
+41205|Saint-Cyr-du-Gault
+41206|Saint-Denis-sur-Loire
+41207|Saint-Dyé-sur-Loire
+41208|Saint-Étienne-des-Guérets
+41209|Saint-Firmin-des-Prés
+41211|Saint-Georges-sur-Cher
+41212|Saint-Gervais-la-Forêt
+41213|Saint-Gourgon
+41214|Saint-Hilaire-la-Gravelle
+41215|Saint-Jacques-des-Guérets
+41216|Saint-Jean-Froidmentel
+41217|Saint-Julien-de-Chédon
+41218|Saint-Julien-sur-Cher
+41219|Saint-Laurent-des-Bois
+41220|Saint-Laurent-Nouan
+41221|Saint-Léonard-en-Beauce
+41222|Saint-Loup
+41223|Saint-Lubin-en-Vergonnois
+41224|Saint-Marc-du-Cor
+41225|Saint-Martin-des-Bois
+41226|Saint-Ouen
+41228|Saint-Rimay
+41229|Saint-Romain-sur-Cher
+41230|Saint-Sulpice-de-Pommeray
+41231|Saint-Viâtre
+41232|Salbris
+41233|Sambin
+41234|Santenay
+41235|Sargé-sur-Braye
+41236|Sasnières
+41237|Sassay
+41238|Savigny-sur-Braye
+41239|Seigy
+41241|Selles-Saint-Denis
+41242|Selles-sur-Cher
+41243|Selommes
+41245|Séris
+41246|Seur
+41247|Soings-en-Sologne
+41248|Couëtron-au-Perche
+41249|Souesmes
+41250|Sougé
+41251|Souvigny-en-Sologne
+41252|Suèvres
+41253|Talcy
+41254|Le Temple
+41255|Ternay
+41256|Theillay
+41258|Thésée
+41259|Thoré-la-Rochette
+41260|Thoury
+41261|Tourailles
+41262|Tour-en-Sologne
+41265|Troo
+41266|Valaire
+41267|Vallières-les-Grandes
+41268|Veilleins
+41269|Vendôme
+41271|Vernou-en-Sologne
+41273|Vievy-le-Rayé
+41274|Villavard
+41275|La Ville-aux-Clercs
+41276|Villebarou
+41277|Villebout
+41278|Villechauve
+41279|Villedieu-le-Château
+41280|Villefranche-sur-Cher
+41281|Villefrancœur
+41282|Villeherviers
+41283|Villemardy
+41284|Villeneuve-Frouville
+41285|Villeny
+41286|Villeporcher
+41287|Villerable
+41288|Villerbon
+41289|Villermain
+41290|Villeromain
+41291|Villetrun
+41292|Villexanton
+41293|Villiersfaux
+41294|Villiers-sur-Loir
+41295|Vineuil
+41296|Vouzon
+41297|Yvoy-le-Marron
