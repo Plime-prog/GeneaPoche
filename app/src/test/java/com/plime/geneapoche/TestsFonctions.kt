@@ -145,6 +145,16 @@ class TestsFonctions {
     }
 
     @Test
+    fun deptDeduitDuCodeInsee() {
+        // v0.91 : le departement est deduit du code INSEE, plus saisi.
+        assertEquals("17", deptDuLieu("Arvert, 17010, Charente-Maritime"))
+        assertEquals("2A", deptDuLieu("Ajaccio, 2A004, Corse-du-Sud"))
+        assertEquals("17", deptDuLieu("Le Moulin, Arvert, 17010, Charente-Maritime"))
+        assertEquals("", deptDuLieu("Roubaix, 59, Nord"))
+        assertEquals("", deptDuLieu("Roubaix"))
+    }
+
+    @Test
     fun decoderGedcomEncodages() {
         assertEquals("0 HEAD", decoderGedcom("0 HEAD".toByteArray()))
         assertEquals("0 HEAD", decoderGedcom(byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + "0 HEAD".toByteArray()))

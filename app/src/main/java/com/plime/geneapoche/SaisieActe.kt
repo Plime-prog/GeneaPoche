@@ -244,7 +244,6 @@ fun BlocParent(
                     modifier = Modifier.weight(1.1f)
                 )
                 Champ("Lieu", e.lieu, { e.lieu = it }, modifier = Modifier.weight(1f), communes = true, onDept = { e.dept = it })
-                Champ("D\u00E9p.", e.dept, { e.dept = it }, modifier = Modifier.width(40.dp))
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -416,7 +415,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.90",
+                "  v0.91",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -486,7 +485,6 @@ fun EcranSaisieActe(
         // v0.58 : champs compactes, deux par ligne.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Champ("Commune", commune, { commune = it }, modifier = Modifier.weight(1f), communes = true, onDept = { dept = it })
-            Champ("D\u00E9p.", dept, { dept = it }, modifier = Modifier.width(46.dp))
         }
         // Chantier 12.0 : coche "Enregistr\u00E9" (l'acte est conserve ailleurs,
         // plus aucun stockage d'image/transcription dans l'application).
@@ -926,7 +924,9 @@ fun EcranSaisieActe(
                     onFermer?.invoke()
                 }
             },
-            enabled = (personneId != 0L || nom.isNotBlank()) && dateValide(date) && heureValide(heure),
+            // v0.91 : une date ancienne hors format ne bloque plus la
+            // sauvegarde de l'acte (champ date en rouge + journal).
+            enabled = (personneId != 0L || nom.isNotBlank()) && heureValide(heure),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
         ) { Text("Enregistrer") }
         Spacer(Modifier.height(12.dp))
