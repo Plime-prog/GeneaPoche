@@ -230,14 +230,31 @@ data class Doublon(val idA: Long, val idB: Long, val nom: String)
 fun cleDoublon(idA: Long, idB: Long): String =
     minOf(idA, idB).toString() + "-" + maxOf(idA, idB).toString()
 
+// v0.88 : comparaison insensible aux accents, a la casse et a la ponctuation.
+private fun cleHomonyme(s: String): String =
+    sansAccents(s).lowercase().replace(Regex("[^a-z0-9]+"), " ").trim()
+
 fun doublonsPotentiels(personnes: List<Personne>, gardes: Set<String> = emptySet()): List<Doublon> {
     val l = mutableListOf<Doublon>()
     personnes.forEach { p ->
+        val nomP = cleHomonyme(p.nom)
+        if (nomP.isEmpty()) return@forEach
+        val prenomsP = cleHomonyme(p.prenoms)
+        val anneeP = anneeDe(p.dateNaissance)
         personnes.filter { it.id > p.id }.forEach { q ->
-            if (p.nom.trim().isNotEmpty() &&
-                p.nom.trim() == q.nom.trim() && p.prenoms.trim() == q.prenoms.trim()) {
-                if (gardes.contains(cleDoublon(p.id, q.id))) return@forEach
-                l.add(Doublon(p.id, q.id, p.titre()))
+            if (nomP == cleHomonyme(q.nom)) {
+                val prenomsQ = cleHomonyme(q.prenoms)
+                val memesPrenoms = prenomsP == prenomsQ
+                // Meme nom, meme premier prenom ET meme annee de naissance :
+                // doublon probable meme si les autres prenoms different.
+                val anneeQ = anneeDe(q.dateNaissance)
+                val memePremier = prenomsP.isNotEmpty() &&
+                    prenomsP.substringBefore(' ') == prenomsQ.substringBefore(' ') &&
+                    anneeP != null && anneeP == anneeQ
+                if (memesPrenoms || memePremier) {
+                    if (gardes.contains(cleDoublon(p.id, q.id))) return@forEach
+                    l.add(Doublon(p.id, q.id, p.titre()))
+                }
             }
         }
     }
@@ -412,7 +429,11 @@ fun EcranJournal(
     onFusionner: (Long, Long) -> Unit = { _, _ -> },
     // v0.78 : paires "gard\u00E9es les deux" (d\u00E9cision d\u00E9finitive de l'utilisateur).
     gardes: Set<String> = emptySet(),
-    onGarderDeux: (Long, Long) -> Unit = { _, _ -> }
+    onGarderDeux: (Long, Long) -> Unit = { _, _ -> },
+    // v0.88 : "Anomalies \u00E0 v\u00E9rifier" (Ignorer / Corriger / Examiner).
+    anomaliesIgnorees: Set<String> = emptySet(),
+    onIgnorerAnomalie: (String) -> Unit = {},
+    onReafficherAnomalies: () -> Unit = {}
 ) {
     // GeneaPoche 12 : bouton d'actualisation du diagnostic A LA DEMANDE.
     // key(rafraichir) force le recalcul complet des listes du diagnostic
@@ -433,7 +454,7 @@ fun EcranJournal(
         .filter { ps -> val a = anneeCiblePiste(ps); a == null || a <= limite }
         .sortedWith { a, b -> comparerNumeros(numeroDePiste(a, personnes), numeroDePiste(b, personnes)) }
         .take(10)
-    val anomalies = anomaliesPour(personnes)
+    val anomalies = anomaliesDeLArbre(personnes, anomaliesIgnorees)
     // G\u00E9n\u00E9aPoche 11 (11.2) : diagnostic complet de l'arbre.
     val doublons = doublonsPotentiels(personnes, gardes)
     val isolees = personnes.filter { brancheIsolee(it, personnes) }
@@ -447,6 +468,8 @@ fun EcranJournal(
         isolees.isNotEmpty() || nonCertifiees.isNotEmpty()
     // G\u00E9n\u00E9aPoche 11 : fusion guid\u00E9e en attente de confirmation.
     var fusionEnCours by remember { mutableStateOf<Pair<Long, Long>?>(null) }
+    var anomalieExaminee by remember { mutableStateOf<AnomalieAVerifier?>(null) }
+    var toutesLesAnomalies by remember { mutableStateOf(false) }
     fun nomDe(id: Long): String = personnes.firstOrNull { it.id == id }?.titre() ?: "?"
 
     LazyColumn(Modifier.fillMaxSize().padding(12.dp)) {
@@ -491,6 +514,13 @@ fun EcranJournal(
                 }
             }
         }
+        if (anomaliesIgnorees.isNotEmpty()) {
+            item {
+                TextButton(onClick = onReafficherAnomalies) {
+                    Text("R\u00E9afficher les anomalies ignor\u00E9es", fontSize = 12.sp)
+                }
+            }
+        }
         if (diagnostic) {
             item {
                 Card(
@@ -507,30 +537,45 @@ fun EcranJournal(
                         )
                         if (anomalies.isNotEmpty()) {
                             Text(
-                                "Coh\u00E9rence : " + anomalies.size + " anomalie(s)",
+                                "Anomalies \u00E0 v\u00E9rifier : " + anomalies.size,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF9C5A00),
                                 modifier = Modifier.padding(top = 6.dp)
                             )
-                        }
-                        anomalies.take(5).forEach { an ->
-                            // Touchez l'anomalie : la fiche a corriger s'ouvre directement.
                             Text(
-                                an.texte,
+                                "Ce ne sont pas des erreurs : c'est \u00E0 vous d'en juger.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = CouleurVertFonce,
-                                modifier = Modifier
-                                    .padding(top = 4.dp)
-                                    .clickable { onOuvrirPersonne(an.personneId) }
+                                color = Color(0xFF6B4A12)
                             )
-                        }
-                        if (anomalies.size > 5) {
-                            Text(
-                                "+ " + (anomalies.size - 5) + " autre(s) anomalie(s).",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
+                            val visibles = if (toutesLesAnomalies) anomalies else anomalies.take(5)
+                            visibles.forEach { an ->
+                                Text(
+                                    "\u26A0\uFE0F " + an.texte,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF4A3000),
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                                Row {
+                                    TextButton(onClick = { onIgnorerAnomalie(an.cle) }) {
+                                        Text("Ignorer", fontSize = 12.sp)
+                                    }
+                                    TextButton(onClick = { onOuvrirPersonne(an.personneId) }) {
+                                        Text("Corriger", fontSize = 12.sp)
+                                    }
+                                    TextButton(onClick = { anomalieExaminee = an }) {
+                                        Text("Examiner", fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                            if (anomalies.size > 5) {
+                                TextButton(onClick = { toutesLesAnomalies = !toutesLesAnomalies }) {
+                                    Text(
+                                        if (toutesLesAnomalies) "Afficher moins"
+                                        else "Afficher les " + (anomalies.size - 5).toString() + " autre(s)",
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
                         }
                         // Doublons : fusion guid\u00E9e (garder l'une des deux fiches).
                         if (doublons.isNotEmpty()) {
@@ -683,6 +728,34 @@ fun EcranJournal(
     }
 
     // G\u00E9n\u00E9aPoche 11 (11.2) : confirmation de la fusion guid\u00E9e.
+    anomalieExaminee?.let { an ->
+        AlertDialog(
+            onDismissRequest = { anomalieExaminee = null },
+            title = { Text("Anomalie \u00E0 v\u00E9rifier") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text("\u26A0\uFE0F " + an.texte)
+                    Spacer(Modifier.height(8.dp))
+                    Text(an.explication, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(8.dp))
+                    Text("Dates saisies", fontWeight = FontWeight.Bold)
+                    an.details.forEach { ligne ->
+                        Text(ligne, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 2.dp))
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    an.concernes.forEach { id ->
+                        TextButton(onClick = { anomalieExaminee = null; onOuvrirPersonne(id) }) {
+                            Text("Ouvrir la fiche : " + nomDe(id))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onIgnorerAnomalie(an.cle); anomalieExaminee = null }) { Text("Ignorer") }
+            },
+            dismissButton = { TextButton(onClick = { anomalieExaminee = null }) { Text("Fermer") } }
+        )
+    }
     if (fusionEnCours != null) {
         val gardeId = fusionEnCours!!.first
         val supprimeId = fusionEnCours!!.second

@@ -20,6 +20,8 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 
 **Boîte à outils (v0.87)** — accessible depuis les paramétrages, 100 % locale : convertisseur calendrier républicain ↔ grégorien (jour de la semaine, nom du jour, décade, fête du jour, années sextile et bissextile, calendrier julien), calculateur de dates (âge à une date, écart entre deux événements, date ± durée, intervalle d'années) et calculateur de parenté (« Marie est la cousine germaine de Pierre »). Chaque résultat peut être ajouté à la note de recherche d'une fiche.
 
+**Anomalies à vérifier (v0.88)** — le diagnostic de l'arbre (onglet Journal) signale les dates et liens improbables (enfant né après le décès de son père, mère trop jeune ou trop âgée, mariage après décès, fratrie trop rapprochée, sexe incompatible avec un lien, doublons potentiels…) sans jamais parler d'erreur : chaque anomalie propose **Ignorer**, **Corriger** ou **Examiner**.
+
 ## Modèle de sécurité — exact, avec ses limites
 
 - **Aucune permission Internet** dans le manifeste : l'application elle-même ne transmet rien.
@@ -50,6 +52,6 @@ Sinon, depuis les sources :
 
 - Android Kotlin + Jetpack Compose, Material 3 (thème clair/sombre, palette verte).
 - AGP 9.2.0, Kotlin 2.4.21, compileSdk 37, targetSdk 36, JDK 17, BOM Compose 2026.08.00.
-- CI GitHub Actions : lint, tests unitaires JVM (~50), APK debug et release signé à chaque push.
+- CI GitHub Actions : lint, tests unitaires JVM (~70), APK debug et release signé à chaque push.
 - Contribuer : voir [CONTRIBUTING.md](CONTRIBUTING.md). Historique détaillé des versions : [CHANGELOG.md](CHANGELOG.md).
 - Licence : MIT (voir [LICENSE](LICENSE)).

@@ -160,6 +160,8 @@ class EtatApplication(
     val annulationPossible: Boolean = false,
     // v0.78 : paires de doublons "gard\u00E9es les deux" (diagnostic).
     val doublonsGardes: Set<String> = emptySet(),
+    // v0.88 : anomalies a verifier ignorees (cles).
+    val anomaliesIgnorees: Set<String> = emptySet(),
     // 12.1 : sauvegarde automatique (.gpbak) dans un dossier choisi.
     val dossierSauvegarde: String = "",
     val seuilSauvegarde: Int = 25,
@@ -225,6 +227,9 @@ class ActionsApplication(
     val fusionner: (Long, Long) -> Unit,
     // v0.78 : garder les deux fiches d'une paire de doublons (d\u00E9finitif).
     val garderDoublon: (Long, Long) -> Unit,
+    // v0.88 : Ignorer une anomalie a verifier, ou les reafficher toutes.
+    val ignorerAnomalie: (String) -> Unit,
+    val reafficherAnomalies: () -> Unit,
     // 12.1 : sauvegarde automatique apr\u00E8s N modifications dans un dossier
     // choisi + cl\u00E9 de r\u00E9cup\u00E9ration \u00E0 imprimer.
     val sauvegardeAuto: (Uri) -> Unit,
@@ -305,7 +310,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.87",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.88",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -715,7 +720,10 @@ fun EcranApplication(
                     onSauver = enregistrer,
                     onFusionner = { gardeId, supprimeId -> fusionner(gardeId, supprimeId) },
                     gardes = doublonsGardes,
-                    onGarderDeux = { a, b -> garderDoublon(a, b) }
+                    onGarderDeux = { a, b -> garderDoublon(a, b) },
+                    anomaliesIgnorees = anomaliesIgnorees,
+                    onIgnorerAnomalie = { cle -> ignorerAnomalie(cle) },
+                    onReafficherAnomalies = { reafficherAnomalies() }
                 )
                 }
             }
@@ -867,7 +875,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.87", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.88", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; outilsOuverts = true },
