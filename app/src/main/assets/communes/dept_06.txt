@@ -1,0 +1,163 @@
+06001|Aiglun
+06002|Amirat
+06003|Andon
+06004|Antibes
+06005|Ascros
+06006|Aspremont
+06007|Auribeau-sur-Siagne
+06008|Auvare
+06009|Bairols
+06010|Le Bar-sur-Loup
+06011|Beaulieu-sur-Mer
+06012|Beausoleil
+06013|Belvédère
+06014|Bendejun
+06015|Berre-les-Alpes
+06016|Beuil
+06017|Bézaudun-les-Alpes
+06018|Biot
+06019|Blausasc
+06020|La Bollène-Vésubie
+06021|Bonson
+06022|Bouyon
+06023|Breil-sur-Roya
+06024|Briançonnet
+06025|Le Broc
+06026|Cabris
+06027|Cagnes-sur-Mer
+06028|Caille
+06029|Cannes
+06030|Le Cannet
+06031|Cantaron
+06032|Cap-d'Ail
+06033|Carros
+06034|Castagniers
+06035|Castellar
+06036|Castillon
+06037|Caussols
+06038|Châteauneuf-Grasse
+06039|Châteauneuf-Villevieille
+06040|Châteauneuf-d'Entraunes
+06041|Cipières
+06042|Clans
+06043|Coaraze
+06044|La Colle-sur-Loup
+06045|Collongues
+06046|Colomars
+06047|Conségudes
+06048|Contes
+06049|Courmes
+06050|Coursegoules
+06051|La Croix-sur-Roudoule
+06052|Cuébris
+06053|Daluis
+06054|Drap
+06055|Duranus
+06056|Entraunes
+06057|L'Escarène
+06058|Escragnolles
+06059|Èze
+06060|Falicon
+06061|Les Ferres
+06062|Fontan
+06063|Gars
+06064|Gattières
+06065|La Gaude
+06066|Gilette
+06067|Gorbio
+06068|Gourdon
+06069|Grasse
+06070|Gréolières
+06071|Guillaumes
+06072|Ilonse
+06073|Isola
+06074|Lantosque
+06075|Levens
+06076|Lieuche
+06077|Lucéram
+06078|Malaussène
+06079|Mandelieu-la-Napoule
+06080|Marie
+06081|Le Mas
+06082|Massoins
+06083|Menton
+06084|Mouans-Sartoux
+06085|Mougins
+06086|Moulinet
+06087|Les Mujouls
+06088|Nice
+06089|Opio
+06090|Pégomas
+06091|Peille
+06092|Peillon
+06093|La Penne
+06094|Péone
+06095|Peymeinade
+06096|Pierlas
+06097|Pierrefeu
+06098|Puget-Rostang
+06099|Puget-Théniers
+06100|Revest-les-Roches
+06101|Rigaud
+06102|Rimplas
+06103|Roquebillière
+06104|Roquebrune-Cap-Martin
+06105|Roquefort-les-Pins
+06106|Roquestéron
+06107|La Roque-en-Provence
+06108|La Roquette-sur-Siagne
+06109|La Roquette-sur-Var
+06110|Roubion
+06111|Roure
+06112|Le Rouret
+06113|Sainte-Agnès
+06114|Saint-André-de-la-Roche
+06115|Saint-Antonin
+06116|Saint-Auban
+06117|Saint-Blaise
+06118|Saint-Cézaire-sur-Siagne
+06119|Saint-Dalmas-le-Selvage
+06120|Saint-Étienne-de-Tinée
+06121|Saint-Jean-Cap-Ferrat
+06122|Saint-Jeannet
+06123|Saint-Laurent-du-Var
+06124|Saint-Léger
+06125|Saint-Martin-d'Entraunes
+06126|Saint-Martin-du-Var
+06127|Saint-Martin-Vésubie
+06128|Saint-Paul-de-Vence
+06129|Saint-Sauveur-sur-Tinée
+06130|Saint-Vallier-de-Thiey
+06131|Sallagriffon
+06132|Saorge
+06133|Sauze
+06134|Séranon
+06135|Sigale
+06136|Sospel
+06137|Spéracèdes
+06138|Théoule-sur-Mer
+06139|Thiéry
+06140|Le Tignet
+06141|Toudon
+06142|Touët-de-l'Escarène
+06143|Touët-sur-Var
+06144|La Tour
+06145|Tourette-du-Château
+06146|Tournefort
+06147|Tourrette-Levens
+06148|Tourrettes-sur-Loup
+06149|La Trinité
+06150|La Turbie
+06151|Utelle
+06152|Valbonne
+06153|Valdeblore
+06154|Valderoure
+06155|Vallauris
+06156|Venanson
+06157|Vence
+06158|Villars-sur-Var
+06159|Villefranche-sur-Mer
+06160|Villeneuve-d'Entraunes
+06161|Villeneuve-Loubet
+06162|La Brigue
+06163|Tende

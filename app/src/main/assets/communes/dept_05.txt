@@ -1,0 +1,162 @@
+05001|Abriès-Ristolas
+05003|Aiguilles
+05004|Ancelle
+05006|L'Argentière-la-Bessée
+05007|Arvieux
+05008|Aspremont
+05009|Aspres-lès-Corps
+05010|Aspres-sur-Buëch
+05011|Avançon
+05012|Baratier
+05013|Barcillonnette
+05014|Barret-sur-Méouge
+05016|La Bâtie-Montsaléon
+05017|La Bâtie-Neuve
+05018|La Bâtie-Vieille
+05019|La Beaume
+05021|Le Bersac
+05022|Bréziers
+05023|Briançon
+05024|Valdoule
+05025|Buissard
+05026|Ceillac
+05027|Cervières
+05028|Chabestan
+05029|Chabottes
+05031|Champcella
+05032|Champoléon
+05033|Chanousse
+05035|Châteauneuf-d'Oze
+05036|Châteauroux-les-Alpes
+05037|Châteauvieux
+05038|Château-Ville-Vieille
+05039|Aubessagne
+05040|Chorges
+05044|Crévoux
+05045|Crots
+05046|Embrun
+05047|Éourres
+05048|L'Épine
+05049|Esparron
+05050|Espinasses
+05051|Étoile-Saint-Cyrice
+05052|Eygliers
+05053|Garde-Colombe
+05054|La Fare-en-Champsaur
+05055|La Faurie
+05056|Forest-Saint-Julien
+05057|Fouillouse
+05058|Freissinières
+05059|La Freissinouse
+05060|Furmeyer
+05061|Gap
+05062|Le Glaizil
+05063|La Grave
+05064|La Chapelle-en-Valgaudémar
+05065|Guillestre
+05066|La Haute-Beaume
+05068|Jarjayes
+05070|Laragne-Montéglin
+05071|Lardier-et-Valença
+05072|Laye
+05073|Lazer
+05074|Lettret
+05075|Manteyer
+05076|Méreuil
+05077|Molines-en-Queyras
+05078|Monêtier-Allemont
+05079|Le Monêtier-les-Bains
+05080|Montbrand
+05081|Montclus
+05082|Mont-Dauphin
+05084|Montgardin
+05085|Montgenèvre
+05086|Montjay
+05087|Montmaur
+05089|Montrond
+05090|La Motte-en-Champsaur
+05091|Moydans
+05092|Neffes
+05093|Névache
+05094|Nossage-et-Bénévent
+05095|Le Noyer
+05096|Orcières
+05097|Orpierre
+05098|Les Orres
+05099|Oze
+05100|Pelleautier
+05101|Vallouise-Pelvoux
+05102|La Piarre
+05103|Le Poët
+05104|Poligny
+05106|Prunières
+05107|Puy-Saint-André
+05108|Puy-Saint-Eusèbe
+05109|Puy-Saint-Pierre
+05110|Puy-Saint-Vincent
+05111|Puy-Sanières
+05112|Rabou
+05113|Rambaud
+05114|Réallon
+05115|Remollon
+05116|Réotier
+05117|Ribeyret
+05118|Val Buëch-Méouge
+05119|Risoul
+05121|Rochebrune
+05122|La Roche-de-Rame
+05123|La Roche-des-Arnauds
+05124|La Rochette
+05126|Rosans
+05127|Rousset-Serre-Ponçon
+05128|Saint-André-d'Embrun
+05129|Saint-André-de-Rosans
+05130|Saint-Apollinaire
+05131|Saint-Auban-d'Oze
+05132|Saint-Bonnet-en-Champsaur
+05133|Saint-Chaffrey
+05134|Saint-Clément-sur-Durance
+05135|Sainte-Colombe
+05136|Saint-Crépin
+05139|Dévoluy
+05140|Saint-Étienne-le-Laus
+05142|Saint-Firmin
+05144|Saint-Jacques-en-Valgodemard
+05145|Saint-Jean-Saint-Nicolas
+05146|Saint-Julien-en-Beauchêne
+05147|Saint-Julien-en-Champsaur
+05148|Saint-Laurent-du-Cros
+05149|Saint-Léger-les-Mélèzes
+05151|Saint-Martin-de-Queyrières
+05152|Saint-Maurice-en-Valgodemard
+05153|Saint-Michel-de-Chaillol
+05154|Saint-Pierre-d'Argençon
+05155|Saint-Pierre-Avez
+05156|Saint-Sauveur
+05157|Saint-Véran
+05158|Le Saix
+05159|Saléon
+05160|Salérans
+05161|La Salle-les-Alpes
+05162|La Saulce
+05163|Le Sauze-du-Lac
+05164|Savines-le-Lac
+05165|Savournon
+05166|Serres
+05167|Sigottier
+05168|Sigoyer
+05169|Sorbiers
+05170|Tallard
+05171|Théus
+05172|Trescléoux
+05173|Upaix
+05174|Val-des-Prés
+05176|Valserres
+05177|Vars
+05178|Ventavon
+05179|Veynes
+05180|Les Vigneaux
+05181|Villar-d'Arêne
+05182|Villar-Loubière
+05183|Villar-Saint-Pancrace
+05184|Vitrolles
