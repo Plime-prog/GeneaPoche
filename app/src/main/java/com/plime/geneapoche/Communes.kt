@@ -40,9 +40,7 @@ object BaseCommunes {
     // Charge une seule fois, en tâche de fond, les 101 fichiers du COG.
     suspend fun charger(ctx: Context) {
         if (chargees) return
-        synchronized(this) {
-            if (chargees) return
-            val l = withContext(Dispatchers.IO) {
+        val l = withContext(Dispatchers.IO) {
                 val res = mutableListOf<Commune>()
                 val noms = ctx.assets.list("communes") ?: arrayOf()
                 for (f in noms.sorted()) {
@@ -60,8 +58,9 @@ object BaseCommunes {
                         }
                     }
                 }
-                res
-            }
+            res
+        }
+        if (!chargees) {
             liste = l
             chargees = true
         }
@@ -90,7 +89,7 @@ object BaseCommunes {
 // séparateur (tiret long ou crochet fermant), le lieu-dit/paroisse
 // saisi devant étant conservé.
 fun partieSaisie(v: String): String {
-    val f = v.indexOfLast { it == '\\u2013' }
+    val f = v.indexOfLast { it == '\u2013' }
     if (f >= 0) return v.substring(f + 1).trim()
     val b = v.indexOfLast { it == ']' }
     if (b >= 0) return v.substring(b + 1).trim()
@@ -99,7 +98,7 @@ fun partieSaisie(v: String): String {
 
 // Insère la commune choisie au format Heredis, derrière le lieu-dit.
 fun insererLieu(v: String, c: Commune): String {
-    val f = v.indexOfLast { it == '\\u2013' }
+    val f = v.indexOfLast { it == '\u2013' }
     val b = v.indexOfLast { it == ']' }
     val prefixe = when {
         f >= 0 -> v.substring(0, f + 1).trim() + " "
