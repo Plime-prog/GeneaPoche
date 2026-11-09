@@ -1,0 +1,526 @@
+14001|Ablon
+14003|Agy
+14005|Valambray
+14006|Amayé-sur-Orne
+14007|Amayé-sur-Seulles
+14009|Amfreville
+14012|Angerville
+14014|Colomby-Anguerny
+14015|Anisy
+14016|Annebault
+14019|Arganchy
+14020|Argences
+14021|Arromanches-les-Bains
+14022|Asnelles
+14023|Asnières-en-Bessin
+14024|Auberville
+14025|Aubigny
+14026|Audrieu
+14027|Les Monts d'Aunay
+14030|Authie
+14032|Les Authieux-sur-Calonne
+14033|Auvillars
+14034|Avenay
+14035|Balleroy-sur-Drôme
+14036|Banneville-la-Campagne
+14037|Malherbe-sur-Ajon
+14038|Banville
+14039|Barbery
+14040|Barbeville
+14041|Barneville-la-Bertran
+14042|Baron-sur-Odon
+14043|Barou-en-Auge
+14044|Basly
+14045|Basseneville
+14046|Bavent
+14047|Bayeux
+14049|Bazenville
+14050|La Bazoque
+14053|Beaumais
+14054|Beaumesnil
+14055|Beaumont-en-Auge
+14057|Bellengreville
+14059|Benerville-sur-Mer
+14060|Bénouville
+14061|Souleuvre en Bocage
+14062|Bény-sur-Mer
+14063|Bernesq
+14064|Bernières-d'Ailly
+14066|Bernières-sur-Mer
+14068|Biéville-Beuville
+14069|Beuvillers
+14070|Beuvron-en-Auge
+14076|Blainville-sur-Orne
+14077|Blangy-le-Château
+14078|Blay
+14079|Blonville-sur-Mer
+14080|Le Bô
+14082|La Boissière
+14083|Bonnebosq
+14084|Bonnemaison
+14085|Bonneville-la-Louvet
+14086|Bonneville-sur-Touques
+14087|Bonnœil
+14088|Bons-Tassilly
+14089|Bougy
+14090|Boulon
+14091|Bourgeauville
+14092|Bourguébus
+14093|Branville
+14096|Brémoy
+14097|Bretteville-le-Rabet
+14098|Thue et Mue
+14100|Bretteville-sur-Laize
+14101|Bretteville-sur-Odon
+14102|Le Breuil-en-Auge
+14103|Le Breuil-en-Bessin
+14104|Le Brévedent
+14106|Bréville-les-Monts
+14107|Bricqueville
+14110|Brucourt
+14111|Bucéels
+14116|Le Bû-sur-Rouvres
+14117|Cabourg
+14118|Caen
+14119|Cagny
+14120|Cahagnes
+14121|Cahagnolles
+14122|La Caine
+14123|Cairon
+14124|La Cambe
+14125|Cambes-en-Plaine
+14126|Cambremer
+14127|Campagnolles
+14130|Campigny
+14131|Canapville
+14132|Canchy
+14134|Canteloup
+14135|Carcagny
+14136|Cardonville
+14137|Carpiquet
+14138|Cartigny-l'Épinay
+14140|Castillon
+14141|Castillon-en-Auge
+14143|Caumont-sur-Aure
+14145|Cauvicourt
+14146|Cauville
+14147|Cernay
+14149|Cesny-aux-Vignes
+14150|Cesny-les-Sources
+14159|Chouain
+14160|Cintheaux
+14161|Clarbec
+14162|Clécy
+14163|Cléville
+14165|Colleville-sur-Mer
+14166|Colleville-Montgomery
+14167|Colombelles
+14168|Colombières
+14169|Colombiers-sur-Seulles
+14171|Combray
+14172|Commes
+14173|Condé-sur-Ifs
+14174|Condé-en-Normandie
+14175|Condé-sur-Seulles
+14177|Coquainvilliers
+14179|Cordebugle
+14180|Cordey
+14181|Cormelles-le-Royal
+14182|Cormolain
+14183|Cossesseville
+14184|Cottun
+14190|Courcy
+14191|Courseulles-sur-Mer
+14193|Courtonne-la-Meurdrac
+14194|Courtonne-les-Deux-Églises
+14195|Courvaudon
+14196|Crépon
+14197|Cresserons
+14198|Cresseveuille
+14200|Creully sur Seulles
+14202|Cricquebœuf
+14203|Cricqueville-en-Auge
+14204|Cricqueville-en-Bessin
+14205|Cristot
+14206|Crocy
+14207|Croisilles
+14209|Crouay
+14211|Culey-le-Patry
+14214|Cussy
+14215|Cuverville
+14216|Damblainville
+14218|Danestal
+14220|Deauville
+14221|Démouville
+14223|Le Détroit
+14224|Deux-Jumeaux
+14225|Dives-sur-Mer
+14226|Donnay
+14227|Douville-en-Auge
+14228|Douvres-la-Délivrande
+14229|Dozulé
+14230|Drubec
+14231|Beaufour-Druval
+14232|Ducy-Sainte-Marguerite
+14236|Ellon
+14237|Émiéville
+14238|Englesqueville-en-Auge
+14239|Englesqueville-la-Percée
+14240|Épaney
+14241|Épinay-sur-Odon
+14242|Épron
+14243|Équemauville
+14244|Eraines
+14245|Ernes
+14246|Escoville
+14248|Espins
+14249|Esquay-Notre-Dame
+14250|Esquay-sur-Seulles
+14251|Esson
+14252|Estrées-la-Campagne
+14254|Éterville
+14256|Étréham
+14257|Évrecy
+14258|Falaise
+14260|Fauguernon
+14261|Le Faulq
+14266|Feuguerolles-Bully
+14269|Fierville-les-Parcs
+14270|Firfol
+14271|Fleury-sur-Orne
+14272|La Folie
+14273|La Folletière-Abenon
+14274|Fontaine-Étoupefour
+14275|Fontaine-Henry
+14276|Fontaine-le-Pin
+14277|Fontenay-le-Marmion
+14278|Fontenay-le-Pesnel
+14280|Formentin
+14281|Formigny La Bataille
+14282|Foulognes
+14283|Fourches
+14284|Fourneaux-le-Val
+14285|Le Fournet
+14286|Fourneville
+14287|Frénouville
+14288|Le Fresne-Camilly
+14289|Fresné-la-Mère
+14290|Fresney-le-Puceux
+14291|Fresney-le-Vieux
+14293|Fumichon
+14297|Gavrus
+14298|Géfosse-Fontenay
+14299|Genneville
+14301|Giberville
+14302|Glanville
+14303|Glos
+14304|Gonneville-sur-Honfleur
+14305|Gonneville-sur-Mer
+14306|Gonneville-en-Auge
+14308|Goustranville
+14309|Gouvix
+14310|Grainville-Langannerie
+14311|Grainville-sur-Odon
+14312|Grandcamp-Maisy
+14316|Grangues
+14318|Graye-sur-Mer
+14319|Grentheville
+14320|Grimbosq
+14322|Guéron
+14325|Hermanville-sur-Mer
+14326|Hermival-les-Vaux
+14327|Hérouville-Saint-Clair
+14328|Hérouvillette
+14329|Heuland
+14332|La Hoguette
+14333|Honfleur
+14334|L'Hôtellerie
+14335|Hotot-en-Auge
+14336|Hottot-les-Bagues
+14337|La Houblonnière
+14338|Houlgate
+14341|Ifs
+14342|Isigny-sur-Mer
+14343|Les Isles-Bardel
+14344|Janville
+14345|Jort
+14346|Juaye-Mondaye
+14347|Dialan sur Chaîne
+14348|Juvigny-sur-Seulles
+14349|Laize-Clinchamps
+14352|Landelles-et-Coupigny
+14353|Landes-sur-Ajon
+14354|Langrune-sur-Mer
+14355|Ponts sur Seulles
+14357|Terres de Druance
+14358|Léaupartie
+14360|Leffard
+14362|Lessard-et-le-Chêne
+14364|Lingèvres
+14365|Lion-sur-Mer
+14366|Lisieux
+14367|Lison
+14368|Lisores
+14369|Litteau
+14370|Le Molay-Littry
+14371|Livarot-Pays-d'Auge
+14374|Les Loges
+14375|Les Loges-Saulces
+14377|Longues-sur-Mer
+14378|Longueville
+14379|Longvillers
+14380|Loucelles
+14381|Louvagny
+14383|Louvigny
+14384|Luc-sur-Mer
+14385|Magny-en-Bessin
+14389|Maisoncelles-Pelvey
+14390|Maisoncelles-sur-Ajon
+14391|Maisons
+14393|Maizet
+14394|Maizières
+14396|Maltot
+14397|Mandeville-en-Bessin
+14398|Manerbe
+14399|Manneville-la-Pipard
+14400|Le Manoir
+14401|Manvieux
+14402|Le Marais-la-Chapelle
+14403|Marolles
+14404|Martainville
+14405|Martigny-sur-l'Ante
+14406|Moulins-en-Bessin
+14407|Mathieu
+14408|Saint-Martin-de-May
+14409|Merville-Franceville-Plage
+14410|Méry-Bissières-en-Auge
+14411|Meslay
+14412|Le Mesnil-au-Grain
+14419|Le Mesnil-Eudes
+14421|Le Mesnil-Guillaume
+14424|Le Mesnil-Robert
+14425|Le Mesnil-Simon
+14426|Le Mesnil-sur-Blangy
+14427|Le Mesnil-Villement
+14430|Meuvaines
+14431|Mézidon Vallée d'Auge
+14435|Les Monceaux
+14436|Monceaux-en-Bessin
+14437|Mondeville
+14438|Mondrainville
+14439|Monfréville
+14445|Montfiquet
+14446|Montigny
+14448|Montreuil-en-Auge
+14449|Monts-en-Bessin
+14452|Morteaux-Coulibœuf
+14453|Mosles
+14454|Mouen
+14455|Moulines
+14456|Moult-Chicheboville
+14457|Les Moutiers-en-Auge
+14458|Les Moutiers-en-Cinglais
+14460|Moyaux
+14461|Mutrécy
+14465|Nonant
+14466|Norolles
+14467|Noron-l'Abbaye
+14468|Noron-la-Poterie
+14469|Norrey-en-Auge
+14473|Notre-Dame-de-Livaye
+14474|Notre-Dame-d'Estrées-Corbon
+14475|Val d'Arry
+14476|Olendon
+14478|Orbec
+14480|Osmanville
+14482|Ouézy
+14483|Ouffières
+14484|Ouilly-du-Houley
+14486|Ouilly-le-Tesson
+14487|Ouilly-le-Vicomte
+14488|Ouistreham
+14491|Parfouru-sur-Odon
+14492|Pennedepie
+14494|Périers-en-Auge
+14495|Périers-sur-le-Dan
+14496|Périgny
+14497|Perrières
+14498|Pertheville-Ners
+14499|Petiville
+14500|Pierrefitte-en-Auge
+14501|Pierrefitte-en-Cinglais
+14502|Pierrepont
+14504|Le Pin
+14506|Planquery
+14509|Plumetot
+14510|La Pommeraye
+14511|Pont-Bellanger
+14512|Pontécoulant
+14514|Pont-l'Évêque
+14515|Port-en-Bessin-Huppain
+14516|Potigny
+14519|Préaux-Bocage
+14520|Le Pré-d'Auge
+14522|Prêtreville
+14524|Putot-en-Auge
+14527|Belle Vie en Auge
+14528|Quetteville
+14529|Ranchy
+14530|Ranville
+14531|Rapilly
+14533|Repentigny
+14534|Reux
+14535|Reviers
+14536|La Rivière-Saint-Sauveur
+14538|Castine-en-Plaine
+14540|Rocques
+14541|La Roque-Baignard
+14542|Rosel
+14543|Rots
+14546|Rouvres
+14547|Rubercy
+14550|Rumesnil
+14552|Ryes
+14554|Le Castelet
+14555|Saint-André-d'Hébertot
+14556|Saint-André-sur-Orne
+14557|Saint-Arnoult
+14558|Saint-Aubin-d'Arquenay
+14559|Saint-Aubin-des-Bois
+14562|Saint-Aubin-sur-Mer
+14563|Saint-Benoît-d'Hébertot
+14565|Saint-Côme-de-Fresné
+14566|Saint-Contest
+14569|Sainte-Croix-sur-Mer
+14570|Valorbiquet
+14571|Saint-Denis-de-Mailloc
+14572|Saint-Denis-de-Méré
+14574|Saint-Désir
+14575|Saint-Étienne-la-Thillaye
+14576|Val-de-Vie
+14578|Saint-Gatien-des-Bois
+14579|Seulline
+14581|Aurseulles
+14582|Saint-Germain-de-Livet
+14586|Saint-Germain-du-Pert
+14587|Saint-Germain-la-Blanche-Herbe
+14588|Saint-Germain-Langot
+14589|Saint-Germain-le-Vasson
+14590|Sainte-Honorine-de-Ducy
+14591|Aure sur Mer
+14592|Sainte-Honorine-du-Fay
+14593|Saint-Hymer
+14595|Saint-Jean-de-Livet
+14598|Saint-Jouin
+14601|Saint-Julien-sur-Calonne
+14602|Saint-Lambert
+14603|Saint-Laurent-de-Condel
+14605|Saint-Laurent-sur-Mer
+14606|Saint-Léger-Dubosq
+14607|Saint-Louet-sur-Seulles
+14609|Saint-Loup-Hors
+14610|Saint-Manvieu-Norrey
+14613|Saint-Marcouf
+14614|Sainte-Marguerite-d'Elle
+14619|Sainte-Marie-Outre-l'Eau
+14620|Saint-Martin-aux-Chartrains
+14621|Saint-Martin-de-Bienfaite-la-Cressonnière
+14622|Saint-Martin-de-Blagny
+14625|Saint-Martin-de-la-Lieue
+14626|Saint-Martin-de-Mailloc
+14627|Saint-Martin-de-Mieux
+14630|Saint-Martin-des-Entrées
+14635|Saint-Omer
+14637|Saint-Ouen-du-Mesnil-Oger
+14639|Saint-Ouen-le-Pin
+14640|Saint-Pair
+14643|Saint-Paul-du-Vernay
+14644|Saint-Philbert-des-Champs
+14645|Saint-Pierre-Azif
+14646|Saint-Pierre-Canivet
+14648|Saint-Pierre-des-Ifs
+14649|Saint-Pierre-du-Bû
+14650|Saint-Pierre-du-Fresne
+14651|Saint-Pierre-du-Jonquet
+14652|Saint-Pierre-du-Mont
+14654|Saint-Pierre-en-Auge
+14656|Saint-Rémy
+14657|Saint-Samson
+14658|Noues de Sienne
+14659|Saint-Sylvain
+14660|Saint-Vaast-en-Auge
+14661|Saint-Vaast-sur-Seulles
+14663|Saint-Vigor-le-Grand
+14664|Sallen
+14665|Sallenelles
+14666|Sannerville
+14667|Saon
+14668|Saonnet
+14669|Sassy
+14672|Val de Drôme
+14674|Soignolles
+14675|Soliers
+14676|Sommervieu
+14677|Soulangy
+14678|Soumont-Saint-Quentin
+14679|Subles
+14680|Sully
+14681|Surrain
+14682|Surville
+14684|Tessel
+14685|Thaon
+14687|Le Theil-en-Auge
+14689|Thury-Harcourt-le-Hom
+14692|Tilly-sur-Seulles
+14694|Le Torquesne
+14698|Touffréville
+14699|Touques
+14700|Tour-en-Bessin
+14701|Tourgéville
+14705|Tournières
+14706|Tourville-en-Auge
+14707|Tourville-sur-Odon
+14708|Tracy-Bocage
+14709|Tracy-sur-Mer
+14710|Tréprel
+14711|Trévières
+14712|Troarn
+14713|Montillières-sur-Orne
+14714|Le Tronquay
+14715|Trouville-sur-Mer
+14716|Trungy
+14719|Urville
+14720|Ussy
+14721|Vacognes-Neuilly
+14723|Valsemé
+14724|Varaville
+14726|Valdallière
+14728|Vaucelles
+14731|Vauville
+14732|Vaux-sur-Aure
+14733|Vaux-sur-Seulles
+14734|Vendes
+14735|Vendeuvre
+14737|Versainville
+14738|Verson
+14739|Ver-sur-Mer
+14740|La Vespière-Friardel
+14741|Le Vey
+14742|Vicques
+14743|Victot-en-Auge
+14744|Vienne-en-Bessin
+14745|Vierville-sur-Mer
+14747|Vieux
+14748|Vieux-Bourg
+14751|Vignats
+14752|Villers-Bocage
+14753|Villers-Canivet
+14754|Villers-sur-Mer
+14755|Villerville
+14756|La Villette
+14758|Villons-les-Buissons
+14759|Villy-lez-Falaise
+14760|Villy-Bocage
+14761|Vimont
+14762|Vire Normandie
+14764|Pont-d'Ouilly

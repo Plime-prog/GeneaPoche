@@ -1,0 +1,152 @@
+48001|Albaret-le-Comtal
+48002|Albaret-Sainte-Marie
+48003|Allenc
+48004|Altier
+48005|Antrenas
+48007|Arzenc-d'Apcher
+48008|Arzenc-de-Randon
+48009|Peyre en Aubrac
+48010|Auroux
+48012|Les Monts-Verts
+48013|Badaroux
+48015|Pied-de-Borne
+48016|Balsièges
+48017|Banassac-Canilhac
+48018|Barjac
+48019|Barre-des-Cévennes
+48020|Bassurels
+48021|La Bastide-Puylaurent
+48025|Les Bessons
+48026|Blavignac
+48027|Mont Lozère et Goulet
+48028|Les Bondons
+48029|Le Born
+48030|Brenoux
+48031|Brion
+48032|Le Buisson
+48034|La Canourgue
+48036|Cassagnas
+48037|Chadenet
+48038|Bel-Air-Val-d'Ance
+48039|Chanac
+48041|Chastanier
+48042|Chastel-Nouvel
+48043|Châteauneuf-de-Randon
+48044|Chauchailles
+48045|Chaudeyrac
+48046|Chaulhac
+48048|Cheylard-l'Évêque
+48050|Bédouès-Cocurès
+48051|Le Collet-de-Dèze
+48053|Cubières
+48054|Cubiérettes
+48055|Cultures
+48056|Esclanèdes
+48058|La Fage-Montivernoux
+48059|La Fage-Saint-Julien
+48061|Florac Trois Rivières
+48063|Fontans
+48064|Fournels
+48065|Fraissinet-de-Fourques
+48067|Gabriac
+48068|Gabrias
+48069|Gatuzières
+48070|Grandrieu
+48071|Grandvals
+48072|Grèzes
+48073|Les Hermaux
+48074|Hures-la-Parade
+48075|Ispagnac
+48077|Julianges
+48079|Lajo
+48080|Langogne
+48081|Lanuéjols
+48082|Laubert
+48083|Les Laubies
+48085|Laval-du-Tarn
+48086|Luc
+48087|Prinsuéjols-Malbouzon
+48088|La Malène
+48089|Le Malzieu-Forain
+48090|Le Malzieu-Ville
+48091|Marchastel
+48092|Marvejols
+48094|Massegros Causses Gorges
+48095|Mende
+48096|Meyrueis
+48097|Moissac-Vallée-Française
+48098|Molezon
+48099|Bourgs sur Colagne
+48100|Montbel
+48103|Montrodat
+48104|Nasbinals
+48105|Naussac-Fontanes
+48106|Noalhac
+48107|Palhers
+48108|La Panouse
+48110|Paulhac-en-Margeride
+48111|Pelouse
+48112|Pierrefiche
+48115|Le Pompidou
+48116|Pont de Montvert - Sud Mont Lozère
+48117|Pourcharesses
+48119|Prévenchères
+48121|Prunières
+48123|Recoules-d'Aubrac
+48124|Recoules-de-Fumas
+48126|Lachamp-Ribennes
+48127|Monts-de-Randon
+48128|Rimeize
+48129|Rocles
+48130|Rousses
+48131|Le Rozier
+48132|Saint-Alban-sur-Limagnole
+48135|Saint-André-Capcèze
+48136|Saint-André-de-Lancize
+48137|Saint-Bauzile
+48138|Saint-Bonnet-de-Chirac
+48139|Saint Bonnet-Laval
+48140|Saint-Chély-d'Apcher
+48141|Mas-Saint-Chély
+48144|Sainte-Croix-Vallée-Française
+48145|Saint-Denis-en-Margeride
+48146|Gorges du Tarn Causses
+48147|Saint-Étienne-du-Valdonnez
+48148|Saint-Étienne-Vallée-Française
+48149|Sainte-Eulalie
+48150|Saint-Flour-de-Mercoire
+48151|Saint-Frézal-d'Albuges
+48152|Ventalon en Cévennes
+48153|Saint-Gal
+48155|Saint-Germain-de-Calberte
+48156|Saint-Germain-du-Teil
+48157|Sainte-Hélène
+48158|Saint-Hilaire-de-Lavit
+48160|Saint-Jean-la-Fouillouse
+48161|Saint-Juéry
+48163|Saint-Julien-des-Points
+48165|Saint-Laurent-de-Muret
+48166|Cans et Cévennes
+48167|Saint-Laurent-de-Veyrès
+48168|Saint-Léger-de-Peyre
+48169|Saint-Léger-du-Malzieu
+48170|Saint-Martin-de-Boubaux
+48171|Saint-Martin-de-Lansuscle
+48173|Saint-Michel-de-Dèze
+48174|Saint-Paul-le-Froid
+48175|Saint-Pierre-de-Nogaret
+48176|Saint-Pierre-des-Tripiers
+48177|Saint-Pierre-le-Vieux
+48178|Saint-Privat-de-Vallongue
+48179|Saint-Privat-du-Fau
+48181|Saint-Saturnin
+48182|Saint-Sauveur-de-Ginestoux
+48185|Les Salelles
+48187|Les Salces
+48188|Serverette
+48190|Termes
+48191|La Tieule
+48192|Trélans
+48193|Vebron
+48194|Vialas
+48198|Villefort

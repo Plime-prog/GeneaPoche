@@ -1,0 +1,36 @@
+92002|Antony
+92004|Asnières-sur-Seine
+92007|Bagneux
+92009|Bois-Colombes
+92012|Boulogne-Billancourt
+92014|Bourg-la-Reine
+92019|Châtenay-Malabry
+92020|Châtillon
+92022|Chaville
+92023|Clamart
+92024|Clichy
+92025|Colombes
+92026|Courbevoie
+92032|Fontenay-aux-Roses
+92033|Garches
+92035|La Garenne-Colombes
+92036|Gennevilliers
+92040|Issy-les-Moulineaux
+92044|Levallois-Perret
+92046|Malakoff
+92047|Marnes-la-Coquette
+92048|Meudon
+92049|Montrouge
+92050|Nanterre
+92051|Neuilly-sur-Seine
+92060|Le Plessis-Robinson
+92062|Puteaux
+92063|Rueil-Malmaison
+92064|Saint-Cloud
+92071|Sceaux
+92072|Sèvres
+92073|Suresnes
+92075|Vanves
+92076|Vaucresson
+92077|Ville-d'Avray
+92078|Villeneuve-la-Garenne

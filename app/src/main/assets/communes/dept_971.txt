@@ -1,0 +1,32 @@
+97101|Les Abymes
+97102|Anse-Bertrand
+97103|Baie-Mahault
+97104|Baillif
+97105|Basse-Terre
+97106|Bouillante
+97107|Capesterre-Belle-Eau
+97108|Capesterre-de-Marie-Galante
+97109|Gourbeyre
+97110|La Désirade
+97111|Deshaies
+97112|Grand-Bourg
+97113|Le Gosier
+97114|Goyave
+97115|Lamentin
+97116|Morne-à-l'Eau
+97117|Le Moule
+97118|Petit-Bourg
+97119|Petit-Canal
+97120|Pointe-à-Pitre
+97121|Pointe-Noire
+97122|Port-Louis
+97124|Saint-Claude
+97125|Saint-François
+97126|Saint-Louis
+97128|Sainte-Anne
+97129|Sainte-Rose
+97130|Terre-de-Bas
+97131|Terre-de-Haut
+97132|Trois-Rivières
+97133|Vieux-Fort
+97134|Vieux-Habitants

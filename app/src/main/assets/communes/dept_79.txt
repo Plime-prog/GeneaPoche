@@ -1,0 +1,252 @@
+79001|L'Absie
+79002|Adilly
+79003|Aiffres
+79005|Airvault
+79007|Allonne
+79008|Amailloux
+79009|Amuré
+79010|Arçais
+79012|Ardin
+79013|Argentonnay
+79014|Loretz-d'Argenton
+79015|Asnières-en-Poitou
+79016|Assais-les-Jumeaux
+79018|Aubigné
+79019|Aubigny
+79020|Augé
+79022|Availles-Thouarsais
+79023|Avon
+79024|Azay-le-Brûlé
+79025|Azay-sur-Thouet
+79029|Beaulieu-sous-Parthenay
+79030|Beaussais-Vitré
+79031|Beauvoir-sur-Niort
+79032|Béceleuf
+79034|Bessines
+79038|Boismé
+79040|La Boissière-en-Gâtine
+79042|Bougon
+79046|Le Bourdet
+79047|Boussais
+79048|La Crèche
+79049|Bressuire
+79050|Bretignolles
+79055|Brieuil-sur-Chizé
+79056|Brion-près-Thouet
+79057|Brioux-sur-Boutonne
+79058|Brûlain
+79059|Le Busseau
+79061|Celles-sur-Belle
+79062|Cerizay
+79063|Val en Vignes
+79064|Fontivillié
+79066|Champdeniers
+79069|Chanteloup
+79070|La Chapelle-Bâton
+79071|La Chapelle-Bertrand
+79074|La Chapelle-Pouilloux
+79076|La Chapelle-Saint-Laurent
+79077|Beugnon-Thireuil
+79078|Plaine-d'Argenson
+79079|Mauléon
+79080|Châtillon-sur-Thouet
+79081|Chauray
+79083|Chef-Boutonne
+79084|Chenay
+79085|Chérigné
+79086|Cherveux
+79087|Chey
+79088|Chiché
+79089|Le Chillou
+79090|Chizé
+79091|Cirières
+79092|Clavé
+79094|Clessé
+79095|Clussais-la-Pommeraie
+79096|Combrand
+79100|Coulon
+79101|Coulonges-sur-l'Autize
+79102|Coulonges-Thouarsais
+79103|Courlay
+79104|Cours
+79105|Les Châteliers
+79106|Couture-d'Argenson
+79108|Doux
+79109|Échiré
+79111|Ensigné
+79112|Épannes
+79114|Exireuil
+79115|Exoudun
+79116|Faye-l'Abbesse
+79117|Faye-sur-Ardin
+79118|Fénery
+79119|Fenioux
+79120|La Ferrière-en-Parthenay
+79121|Fomperron
+79122|Fontenille-Saint-Martin-d'Entraigues
+79123|La Forêt-sur-Sèvre
+79124|Les Forges
+79125|Fors
+79126|Les Fosses
+79127|La Foye-Monjault
+79128|François
+79129|Fressines
+79130|Frontenay-Rohan-Rohan
+79131|Geay
+79132|Genneton
+79133|Germond-Rouvre
+79134|Glénay
+79135|Gourgé
+79136|Alloinay
+79137|Granzay-Gript
+79139|Les Groseillers
+79140|Valdelaume
+79141|Irais
+79142|Juillé
+79144|Juscorps
+79145|Lageon
+79147|Largeasse
+79148|Lezay
+79149|Lhoumois
+79150|Limalonges
+79152|Lorigné
+79153|Loubigné
+79154|Loubillé
+79156|Louin
+79157|Louzy
+79158|Luché-sur-Brioux
+79159|Luché-Thouarsais
+79160|Lusseray
+79161|Luzay
+79162|Magné
+79163|Mairé-Levescault
+79164|Maisonnay
+79165|Maisontiers
+79166|Marigny
+79167|Marnes
+79170|Mauzé-sur-le-Mignon
+79172|Mazières-en-Gâtine
+79174|Melle
+79175|Melleran
+79176|Ménigoute
+79177|Messé
+79179|Moncoutant-sur-Sèvre
+79183|Montravers
+79184|La Mothe-Saint-Héray
+79185|Aigondigné
+79189|Nanteuil
+79190|Neuvy-Bouin
+79191|Niort
+79195|Nueil-les-Aubiers
+79196|Plaine-et-Vallées
+79197|Oroux
+79198|Paizay-le-Chapt
+79200|Pamplie
+79201|Pamproux
+79202|Parthenay
+79203|Pas-de-Jeu
+79204|Périgné
+79207|La Petite-Boissière
+79208|La Peyratte
+79209|Pierrefitte
+79210|Le Pin
+79213|Pompaire
+79215|Pougne-Hérisson
+79216|Prahecq
+79217|Prailles-La Couarde
+79218|Pressigny
+79220|Prin-Deyrançon
+79223|Puihardy
+79225|Reffannes
+79226|Le Retail
+79229|La Rochénard
+79230|Rom
+79231|Romans
+79235|Saint-Amand-sur-Sèvre
+79236|Saint-André-sur-Sèvre
+79238|Saint-Aubin-du-Plain
+79239|Saint-Aubin-le-Cloud
+79241|Saint-Christophe-sur-Roc
+79242|Voulmentin
+79243|Saint-Coutant
+79244|Saint-Cyr-la-Lande
+79246|Sainte-Eanne
+79249|Saint-Gelais
+79250|Sainte-Gemme
+79251|Marcillé
+79252|Saint-Généroux
+79253|Saint-Georges-de-Noisné
+79254|Saint-Georges-de-Rex
+79255|Saint-Germain-de-Longue-Chaume
+79256|Saint-Germier
+79257|Saint-Hilaire-la-Palud
+79258|Saint-Jacques-de-Thouars
+79259|Saint-Jean-de-Thouars
+79263|Saint-Laurs
+79265|Saint-Léger-de-Montbrun
+79267|Saint-Lin
+79268|Saint-Loup-Lamairé
+79269|Saint-Maixent-de-Beugné
+79270|Saint-Maixent-l'École
+79271|Saint-Marc-la-Lande
+79273|Saint-Martin-de-Bernegoue
+79274|Saint-Martin-de-Mâcon
+79276|Saint-Martin-de-Saint-Maixent
+79277|Saint-Martin-de-Sanzay
+79278|Saint-Martin-du-Fouilloux
+79280|Saint Maurice Étusson
+79281|Saint-Maxire
+79283|Sainte-Néomaye
+79284|Sainte-Ouenne
+79285|Saint-Pardoux-Soutiers
+79286|Saint-Paul-en-Gâtine
+79289|Saint-Pierre-des-Échaubrognes
+79290|Saint-Pompain
+79293|Saint-Rémy
+79294|Saint-Romans-des-Champs
+79295|Saint-Romans-lès-Melle
+79297|Sainte-Soline
+79298|Saint-Symphorien
+79299|Saint-Varent
+79300|Sainte-Verge
+79301|Saint-Vincent-la-Châtre
+79302|Saivres
+79303|Salles
+79304|Sansais
+79306|Saurais
+79307|Sauzé-entre-Bois
+79308|Sciecq
+79309|Scillé
+79310|Secondigné-sur-Belle
+79311|Secondigny
+79312|Séligné
+79313|Sepvret
+79316|Soudan
+79319|Souvigné
+79320|Surin
+79322|Le Tallud
+79326|Thénezay
+79329|Thouars
+79331|Tourtenay
+79332|Trayes
+79334|Val-du-Mignon
+79335|Vallans
+79336|Vançais
+79337|Le Vanneau-Irleau
+79338|Vanzay
+79339|Vasles
+79340|Vausseroux
+79341|Vautebis
+79342|Vernoux-en-Gâtine
+79343|Vernoux-sur-Boutonne
+79345|Verruyes
+79346|Le Vert
+79347|Viennay
+79348|Villefollet
+79349|Villemain
+79350|Villiers-en-Bois
+79351|Villiers-en-Plaine
+79352|Villiers-sur-Chizé
+79354|Vouhé
+79355|Vouillé
+79357|Xaintray

@@ -1,0 +1,39 @@
+93001|Aubervilliers
+93005|Aulnay-sous-Bois
+93006|Bagnolet
+93007|Le Blanc-Mesnil
+93008|Bobigny
+93010|Bondy
+93013|Le Bourget
+93014|Clichy-sous-Bois
+93015|Coubron
+93027|La Courneuve
+93029|Drancy
+93030|Dugny
+93031|Épinay-sur-Seine
+93032|Gagny
+93033|Gournay-sur-Marne
+93039|L'Île-Saint-Denis
+93045|Les Lilas
+93046|Livry-Gargan
+93047|Montfermeil
+93048|Montreuil
+93049|Neuilly-Plaisance
+93050|Neuilly-sur-Marne
+93051|Noisy-le-Grand
+93053|Noisy-le-Sec
+93055|Pantin
+93057|Les Pavillons-sous-Bois
+93061|Le Pré-Saint-Gervais
+93062|Le Raincy
+93063|Romainville
+93064|Rosny-sous-Bois
+93066|Saint-Denis
+93070|Saint-Ouen-sur-Seine
+93071|Sevran
+93072|Stains
+93073|Tremblay-en-France
+93074|Vaujours
+93077|Villemomble
+93078|Villepinte
+93079|Villetaneuse

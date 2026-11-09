@@ -21,11 +21,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -129,35 +131,35 @@ fun DialogueEdition(
                 Text("Naissance", fontWeight = FontWeight.Bold)
                 Champ("Date (JJ/MM/AAAA)", dateNaissance, { dateNaissance = it }, erreur = !dateValide(dateNaissance), aide = "jj/mm/aaaa, aaaa ou date republicaine")
                 Champ("Heure (HH:mm)", heureNaissance, { heureNaissance = it }, erreur = !heureValide(heureNaissance), aide = "hh:mm")
-                Champ("Lieu (commune)", lieuNaissance, { lieuNaissance = it })
+                Champ("Lieu (commune)", lieuNaissance, { lieuNaissance = it }, communes = true, onDept = { deptNaissance = it })
                 Champ("D\u00E9partement (ex 59)", deptNaissance, { deptNaissance = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("Bapt\u00EAme", fontWeight = FontWeight.Bold)
                 Champ("Date", dateBapteme, { dateBapteme = it }, erreur = !dateValide(dateBapteme), aide = "jj/mm/aaaa, aaaa ou date republicaine")
                 Champ("Heure", heureBapteme, { heureBapteme = it }, erreur = !heureValide(heureBapteme), aide = "hh:mm")
-                Champ("Lieu", lieuBapteme, { lieuBapteme = it })
+                Champ("Lieu", lieuBapteme, { lieuBapteme = it }, communes = true, onDept = { deptBapteme = it })
                 Champ("D\u00E9partement", deptBapteme, { deptBapteme = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("Mariage", fontWeight = FontWeight.Bold)
                 Champ("Date", dateMariage, { dateMariage = it }, erreur = !dateValide(dateMariage), aide = "jj/mm/aaaa, aaaa ou date republicaine")
                 Champ("Heure", heureMariage, { heureMariage = it }, erreur = !heureValide(heureMariage), aide = "hh:mm")
-                Champ("Lieu", lieuMariage, { lieuMariage = it })
+                Champ("Lieu", lieuMariage, { lieuMariage = it }, communes = true, onDept = { deptMariage = it })
                 Champ("D\u00E9partement", deptMariage, { deptMariage = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("D\u00E9c\u00E8s", fontWeight = FontWeight.Bold)
                 Champ("Date", dateDeces, { dateDeces = it }, erreur = !dateValide(dateDeces), aide = "jj/mm/aaaa, aaaa ou date republicaine")
                 Champ("Heure", heureDeces, { heureDeces = it }, erreur = !heureValide(heureDeces), aide = "hh:mm")
-                Champ("Lieu", lieuDeces, { lieuDeces = it })
+                Champ("Lieu", lieuDeces, { lieuDeces = it }, communes = true, onDept = { deptDeces = it })
                 Champ("D\u00E9partement", deptDeces, { deptDeces = it })
 
                 Spacer(Modifier.height(10.dp))
                 Text("S\u00E9pulture", fontWeight = FontWeight.Bold)
                 Champ("Date", dateSepulture, { dateSepulture = it }, erreur = !dateValide(dateSepulture), aide = "jj/mm/aaaa, aaaa ou date republicaine")
                 Champ("Heure", heureSepulture, { heureSepulture = it }, erreur = !heureValide(heureSepulture), aide = "hh:mm")
-                Champ("Lieu", lieuSepulture, { lieuSepulture = it })
+                Champ("Lieu", lieuSepulture, { lieuSepulture = it }, communes = true, onDept = { deptSepulture = it })
                 Champ("D\u00E9partement", deptSepulture, { deptSepulture = it })
             }
         },
@@ -209,7 +211,7 @@ fun DialogueNouveauMariage(
                 Champ("Nom du conjoint", nom, { nom = it })
                 Champ("Pr\u00E9noms du conjoint", prenoms, { prenoms = it })
                 Champ("Date du mariage (jj/mm/aaaa, aaaa ou 22 Germinal An II)", date, { date = it }, !dateValide(date), "jj/mm/aaaa, aaaa ou 22 Germinal An II")
-                Champ("Commune", commune, { commune = it })
+                Champ("Commune", commune, { commune = it }, communes = true, onDept = { dept = it })
                 Champ("D\u00E9partement (ex 59)", dept, { dept = it })
             }
         },
@@ -283,7 +285,11 @@ fun Champ(
     aide: String = "",
     // v0.70 : champ ULTRA-COMPACT - cadre mince de ~36 dp au lieu du grand
     // OutlinedTextField (~64 dp) : la saisie tient enfin sur une page.
-    modifier: Modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp)
+    modifier: Modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+    // Chantier 12.4 (v0.88) : communes = suggestions du COG pendant la
+    // frappe ; onDept reçoit le numéro du département de la commune choisie.
+    communes: Boolean = false,
+    onDept: ((String) -> Unit)? = null
 ) {
     Column(modifier) {
         Text(
@@ -311,6 +317,36 @@ fun Champ(
                 fontSize = 9.sp,
                 color = if (erreur) CouleurRouge else MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+        // Chantier 12.4 (v0.88) : suggestions de communes sous le champ.
+        if (communes) {
+            val ctx = LocalContext.current
+            var charge by remember { mutableStateOf(BaseCommunes.pret()) }
+            LaunchedEffect(Unit) { BaseCommunes.charger(ctx); charge = true }
+            if (charge) {
+                val sugg = remember(valeur) { BaseCommunes.suggestions(partieSaisie(valeur)) }
+                if (sugg.isNotEmpty()) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
+                    ) {
+                        sugg.forEach { s ->
+                            Text(
+                                s.nom + " (" + s.code + ")",
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onChange(insererLieu(valeur, s))
+                                        onDept?.invoke(BaseCommunes.numeroDept(s.dept))
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -363,7 +399,7 @@ fun DialogueEditionBloc(
                         modifier = Modifier.weight(1f)
                     )
                 }
-                Champ("Commune", commune, { commune = it })
+                Champ("Commune", commune, { commune = it }, communes = true, onDept = { dept = it })
                 Champ("D\u00E9partement (ex 59)", dept, { dept = it })
                 Champ("R\u00E9f\u00E9rence (cote AD)", ref, { ref = it })
             }

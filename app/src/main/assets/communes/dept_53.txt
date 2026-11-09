@@ -1,0 +1,240 @@
+53001|Ahuillé
+53002|Alexain
+53003|Ambrières-les-Vallées
+53005|Andouillé
+53007|Argentré
+53008|Aron
+53009|Arquenay
+53010|Assé-le-Bérenger
+53011|Astillé
+53012|Athée
+53013|Averton
+53015|La Baconnière
+53016|Bais
+53017|Val-du-Maine
+53018|Ballots
+53019|Bannes
+53021|La Bazoge-Montpinçon
+53022|La Bazouge-de-Chemeré
+53023|La Bazouge-des-Alleux
+53025|Bazougers
+53026|Beaulieu-sur-Oudon
+53027|Beaumont-Pied-de-Bœuf
+53028|Belgeard
+53029|Bierné-les-Villages
+53030|Le Bignon-du-Maine
+53031|La Bigottière
+53033|La Boissière
+53034|Bonchamp-lès-Laval
+53035|Bouchamps-lès-Craon
+53036|Bouère
+53037|Bouessay
+53038|Boulay-les-Ifs
+53039|Le Bourgneuf-la-Forêt
+53040|Bourgon
+53041|Brains-sur-les-Marches
+53042|Brecé
+53043|Brée
+53045|La Brûlatte
+53046|Le Buret
+53047|Carelles
+53048|Chailland
+53049|Châlons-du-Maine
+53051|Champéon
+53052|Champfrémont
+53053|Champgenéteux
+53054|Changé
+53055|Chantrigné
+53056|La Chapelle-Anthenaise
+53057|La Chapelle-au-Riboul
+53058|La Chapelle-Craonnaise
+53059|La Chapelle-Rainsouin
+53061|Charchigné
+53062|Château-Gontier-sur-Mayenne
+53063|Châtelain
+53064|Châtillon-sur-Colmont
+53066|Chemazé
+53067|Chémeré-le-Roi
+53068|Chérancé
+53069|Chevaigné-du-Maine
+53071|Colombiers-du-Plessis
+53072|Commer
+53073|Congrier
+53074|Contest
+53075|Cosmes
+53076|Cossé-en-Champagne
+53077|Cossé-le-Vivien
+53078|Coudray
+53079|Couesmes-Vaucé
+53080|Couptrain
+53082|Courbeveille
+53083|Courcité
+53084|Craon
+53085|Crennes-sur-Fraubée
+53086|La Croixille
+53087|La Cropte
+53088|Cuillé
+53089|Daon
+53090|Denazé
+53091|Désertines
+53093|La Dorée
+53094|Entrammes
+53096|Ernée
+53097|Évron
+53098|Fontaine-Couverte
+53099|Forcé
+53100|Fougerolles-du-Plessis
+53101|Fromentières
+53102|Gastines
+53103|Le Genest-Saint-Isle
+53104|Gennes-Longuefuye
+53105|Gesnes
+53106|Gesvres
+53107|Gorron
+53108|La Gravelle
+53109|Grazay
+53110|Grez-en-Bouère
+53111|La Haie-Traversaine
+53112|Le Ham
+53113|Hambers
+53114|Hardanges
+53115|Hercé
+53116|Le Horps
+53117|Houssay
+53118|Le Housseau-Brétignolles
+53119|L'Huisserie
+53120|Izé
+53121|Javron-les-Chapelles
+53122|Jublains
+53123|Juvigné
+53124|Prée-d'Anjou
+53125|Landivy
+53126|Larchamp
+53127|Lassay-les-Châteaux
+53128|Laubrières
+53129|Launay-Villiers
+53130|Laval
+53131|Lesbois
+53132|Levaré
+53133|Lignières-Orgères
+53134|Livet
+53135|Livré-la-Touche
+53136|La Roche-Neuville
+53137|Loiron-Ruillé
+53139|Loupfougères
+53140|Louverné
+53141|Louvigné
+53142|Madré
+53143|Maisoncelles-du-Maine
+53144|Marcillé-la-Ville
+53145|Marigné-Peuton
+53146|Martigné-sur-Mayenne
+53147|Mayenne
+53148|Mée
+53150|Ménil
+53151|Méral
+53152|Meslay-du-Maine
+53153|Mézangers
+53154|Montaudin
+53155|Montenay
+53156|Montflours
+53157|Montigné-le-Brillant
+53158|Montjean
+53160|Montreuil-Poulay
+53161|Montsûrs
+53162|Moulay
+53163|Neau
+53164|Neuilly-le-Vendin
+53165|Niafles
+53168|Nuillé-sur-Vicoin
+53169|Olivet
+53170|Oisseau
+53172|Origné
+53173|La Pallu
+53174|Parigné-sur-Braye
+53175|Parné-sur-Roc
+53176|Le Pas
+53177|La Pellerine
+53178|Peuton
+53179|Placé
+53180|Pommerieux
+53181|Pontmain
+53182|Port-Brillet
+53184|Préaux
+53185|Pré-en-Pail-Saint-Samson
+53186|Quelaines-Saint-Gault
+53187|Ravigny
+53188|Renazé
+53189|Rennes-en-Grenouilles
+53190|Le Ribay
+53191|La Roë
+53192|La Rouaudière
+53193|Ruillé-Froid-Fonds
+53195|Sacé
+53196|Saint-Aignan-de-Couptrain
+53197|Saint-Aignan-sur-Roë
+53198|Saint-Aubin-du-Désert
+53199|Saint-Aubin-Fosse-Louvain
+53200|Saint-Baudelle
+53201|Saint-Berthevin
+53202|Saint-Berthevin-la-Tannière
+53203|Saint-Brice
+53204|Saint-Calais-du-Désert
+53206|Saint-Charles-la-Forêt
+53208|Saint-Cyr-en-Pail
+53209|Saint-Cyr-le-Gravelais
+53210|Saint-Denis-d'Anjou
+53211|Saint-Denis-de-Gastines
+53212|Saint-Denis-du-Maine
+53213|Saint-Ellier-du-Maine
+53214|Saint-Erblon
+53216|Saint-Fraimbault-de-Prières
+53218|Sainte-Gemmes-le-Robert
+53219|Saint-Georges-Buttavent
+53220|Saint-Georges-le-Fléchard
+53221|Saint-Georges-sur-Erve
+53222|Saint-Germain-d'Anxure
+53223|Saint-Germain-de-Coulamer
+53224|Saint-Germain-le-Fouilloux
+53225|Saint-Germain-le-Guillaume
+53226|Saint-Hilaire-du-Maine
+53228|Blandouet-Saint Jean
+53229|Saint-Jean-sur-Mayenne
+53230|Saint-Julien-du-Terroux
+53232|Saint-Léger
+53233|Saint-Loup-du-Dorat
+53234|Saint-Loup-du-Gast
+53235|Sainte-Marie-du-Bois
+53236|Saint-Mars-du-Désert
+53237|Saint-Mars-sur-Colmont
+53238|Saint-Mars-sur-la-Futaie
+53240|Saint-Martin-du-Limet
+53242|Saint-Michel-de-la-Roë
+53243|Saint-Ouën-des-Toits
+53245|Saint-Pierre-des-Landes
+53246|Saint-Pierre-des-Nids
+53247|Saint-Pierre-la-Cour
+53248|Saint-Pierre-sur-Erve
+53249|Vimartin-sur-Orthe
+53250|Saint-Poix
+53251|Saint-Quentin-les-Anges
+53253|Saint-Saturnin-du-Limet
+53255|Sainte-Suzanne-et-Chammes
+53256|Saint-Thomas-de-Courceriers
+53257|Saulges
+53258|La Selle-Craonnaise
+53259|Senonnes
+53260|Simplé
+53261|Soucé
+53262|Soulgé-sur-Ouette
+53263|Thubœuf
+53264|Thorigné-en-Charnie
+53265|Torcé-Viviers-en-Charnie
+53266|Trans
+53267|Vaiges
+53269|Vautorte
+53270|Vieuvy
+53271|Villaines-la-Juhel
+53272|Villepail
+53273|Villiers-Charlemagne
+53276|Voutré

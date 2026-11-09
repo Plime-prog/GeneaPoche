@@ -1,0 +1,332 @@
+35001|Acigné
+35002|Amanlis
+35003|Andouillé-Neuville
+35004|Val-Couesnon
+35005|Arbrissel
+35006|Argentré-du-Plessis
+35007|Aubigné
+35008|Availles-sur-Seiche
+35009|Baguer-Morvan
+35010|Baguer-Pican
+35012|Bain-de-Bretagne
+35013|Bains-sur-Oust
+35014|Bais
+35015|Balazé
+35016|Baulon
+35017|La Baussaine
+35018|La Bazouge-du-Désert
+35019|Bazouges-la-Pérouse
+35021|Beaucé
+35022|Bécherel
+35023|Bédée
+35024|Betton
+35025|Billé
+35026|Bléruais
+35027|Boisgervilly
+35028|Boistrudan
+35029|Bonnemain
+35030|La Bosse-de-Bretagne
+35031|La Bouëxière
+35032|Bourgbarré
+35033|Bourg-des-Comptes
+35034|La Boussac
+35035|Bovel
+35037|Bréal-sous-Montfort
+35038|Bréal-sous-Vitré
+35039|Brécé
+35040|Breteil
+35041|Brie
+35042|Brielles
+35044|Broualan
+35045|Bruc-sur-Aff
+35046|Les Brulais
+35047|Bruz
+35049|Cancale
+35050|Cardroc
+35051|Cesson-Sévigné
+35052|Champeaux
+35054|Chanteloup
+35055|Chantepie
+35056|La Chapelle-aux-Filtzméens
+35057|La Chapelle-Bouëxic
+35058|La Chapelle-Chaussée
+35059|La Chapelle-des-Fougeretz
+35060|La Chapelle du Lou du Lac
+35061|La Chapelle-Erbrée
+35062|La Chapelle-Fleurigné
+35063|La Chapelle-Saint-Aubert
+35064|La Chapelle-de-Brain
+35065|La Chapelle-Thouarault
+35066|Chartres-de-Bretagne
+35067|Chasné-sur-Illet
+35068|Châteaubourg
+35069|Châteaugiron
+35070|Châteauneuf-d'Ille-et-Vilaine
+35071|Le Châtellier
+35072|Châtillon-en-Vendelais
+35075|Chauvigné
+35076|Chavagne
+35077|Chelun
+35078|Cherrueix
+35079|Chevaigné
+35080|Cintré
+35081|Clayes
+35082|Coësmes
+35084|Comblessac
+35085|Combourg
+35086|Combourtillé
+35087|Cornillé
+35088|Corps-Nuds
+35089|La Couyère
+35090|Crevin
+35091|Le Crouais
+35092|Cuguen
+35093|Dinard
+35094|Dingé
+35095|Dol-de-Bretagne
+35096|Domagné
+35097|Domalain
+35098|La Dominelais
+35099|Domloup
+35101|Dourdain
+35102|Drouges
+35103|Eancé
+35104|Epiniac
+35105|Erbrée
+35106|Ercé-en-Lamée
+35107|Ercé-près-Liffré
+35108|Essé
+35109|Étrelles
+35110|Feins
+35111|Le Ferré
+35114|Forges-la-Forêt
+35115|Fougères
+35116|La Fresnais
+35117|Gaël
+35118|Gahard
+35119|Gennes-sur-Seiche
+35120|Gévezé
+35121|Gosné
+35122|La Gouesnière
+35123|Goven
+35124|Grand-Fougeray
+35125|La Guerche-de-Bretagne
+35126|Guichen
+35127|Guignen
+35128|Guipel
+35130|Hédé-Bazouges
+35131|L'Hermitage
+35132|Hirel
+35133|Iffendic
+35134|Les Iffs
+35135|Irodouër
+35136|Janzé
+35137|Javené
+35138|Laignelet
+35139|Laillé
+35140|Lalleu
+35141|Landavran
+35142|Landéan
+35143|Landujan
+35144|Langan
+35145|Langon
+35146|Langouet
+35148|Lanrigan
+35149|Lassy
+35150|Lécousse
+35151|Lieuron
+35152|Liffré
+35153|Lillemer
+35154|Livré-sur-Changeon
+35155|Lohéac
+35156|Longaulnay
+35157|Le Loroux
+35159|Lourmais
+35160|Loutehel
+35161|Louvigné-de-Bais
+35162|Louvigné-du-Désert
+35163|Luitré-Dompierre
+35164|Marcillé-Raoul
+35165|Marcillé-Robert
+35166|Marpiré
+35167|Martigné-Ferchaud
+35168|Val d'Anast
+35169|Maxent
+35170|Mecé
+35171|Médréac
+35172|Meillac
+35173|Melesse
+35174|Mellé
+35175|Mernel
+35176|Guipry-Messac
+35177|La Mézière
+35178|Mézières-sur-Couesnon
+35179|Miniac-Morvan
+35180|Miniac-sous-Bécherel
+35181|Le Minihic-sur-Rance
+35183|Mondevert
+35184|Montauban-de-Bretagne
+35185|Montautour
+35186|Mont-Dol
+35187|Monterfil
+35188|Montfort-sur-Meu
+35189|Montgermont
+35190|Monthault
+35191|Les Portes du Coglais
+35192|Montreuil-des-Landes
+35193|Montreuil-le-Gast
+35194|Montreuil-sous-Pérouse
+35195|Montreuil-sur-Ille
+35196|Mordelles
+35197|Mouazé
+35198|Moulins
+35199|Moussé
+35200|Moutiers
+35201|Muel
+35202|La Noë-Blanche
+35203|La Nouaye
+35204|Nouvoitou
+35205|Noyal-sous-Bazouges
+35206|Noyal-Châtillon-sur-Seiche
+35207|Noyal-sur-Vilaine
+35208|Orgères
+35210|Pacé
+35211|Paimpont
+35212|Pancé
+35214|Parcé
+35215|Parigné
+35216|Parthenay-de-Bretagne
+35217|Le Pertre
+35218|Le Petit-Fougeray
+35219|Pipriac
+35220|Piré-Chancé
+35221|Pléchâtel
+35222|Pleine-Fougères
+35223|Plélan-le-Grand
+35224|Plerguer
+35225|Plesder
+35226|Pleugueneuc
+35227|Pleumeleuc
+35228|Pleurtuit
+35229|Pocé-les-Bois
+35230|Poilley
+35231|Poligné
+35232|Princé
+35233|Québriac
+35234|Quédillac
+35235|Rannée
+35236|Redon
+35237|Renac
+35238|Rennes
+35239|Retiers
+35240|Le Rheu
+35241|La Richardais
+35242|Rimou
+35243|Romagné
+35244|Romazy
+35245|Romillé
+35246|Roz-Landrieux
+35247|Roz-sur-Couesnon
+35248|Sains
+35249|Sainte-Anne-sur-Vilaine
+35250|Saint-Armel
+35251|Saint-Aubin-d'Aubigné
+35252|Saint-Aubin-des-Landes
+35253|Saint-Aubin-du-Cormier
+35255|Saint-Benoît-des-Ondes
+35256|Saint-Briac-sur-Mer
+35257|Maen Roch
+35258|Saint-Brieuc-des-Iffs
+35259|Saint-Broladre
+35260|Saint-Christophe-des-Bois
+35261|Saint-Christophe-de-Valains
+35262|Sainte-Colombe
+35263|Saint-Coulomb
+35264|Saint-Didier
+35265|Saint-Domineuc
+35266|Saint-Erblon
+35268|Saint-Ganton
+35270|Saint-Georges-de-Gréhaigne
+35271|Saint-Georges-de-Reintembault
+35272|Saint-Germain-du-Pinel
+35273|Saint-Germain-en-Coglès
+35274|Saint-Germain-sur-Ille
+35275|Saint-Gilles
+35276|Saint-Gondran
+35277|Saint-Gonlay
+35278|Saint-Grégoire
+35279|Saint-Guinoux
+35280|Saint-Hilaire-des-Landes
+35281|Saint-Jacques-de-la-Lande
+35282|Rives-du-Couesnon
+35283|Saint-Jean-sur-Vilaine
+35284|Saint-Jouan-des-Guérets
+35285|Saint-Just
+35286|Saint-Léger-des-Prés
+35287|Saint-Lunaire
+35288|Saint-Malo
+35289|Saint-Malo-de-Phily
+35290|Saint-Malon-sur-Mel
+35291|Saint-Marcan
+35292|Saint-Marc-le-Blanc
+35294|Sainte-Marie
+35295|Saint-Maugan
+35296|Saint-Médard-sur-Ille
+35297|Saint-Méen-le-Grand
+35299|Saint-Méloir-des-Ondes
+35300|Saint-M'Hervé
+35302|Saint-Onen-la-Chapelle
+35304|Saint-Ouen-des-Alleux
+35305|Saint-Péran
+35306|Saint-Père-Marc-en-Poulet
+35307|Saint-Pern
+35308|Mesnil-Roc'h
+35309|Saint-Rémy-du-Plain
+35310|Saint-Sauveur-des-Landes
+35311|Saint-Séglin
+35312|Saint-Senoux
+35314|Saint-Suliac
+35315|Saint-Sulpice-la-Forêt
+35316|Saint-Sulpice-des-Landes
+35317|Saint-Symphorien
+35318|Saint-Thual
+35319|Saint-Thurial
+35320|Saint-Uniac
+35321|Saulnières
+35322|Le Sel-de-Bretagne
+35324|La Selle-en-Luitré
+35325|La Selle-Guerchaise
+35326|Sens-de-Bretagne
+35327|Servon-sur-Vilaine
+35328|Sixt-sur-Aff
+35329|Sougeal
+35330|Taillis
+35331|Talensac
+35332|Teillay
+35333|Le Theil-de-Bretagne
+35334|Thorigné-Fouillard
+35335|Thourie
+35336|Le Tiercent
+35337|Tinténiac
+35338|Torcé
+35339|Trans-la-Forêt
+35340|Treffendel
+35342|Trémeheuc
+35343|Tresbœuf
+35345|Trévérien
+35346|Trimer
+35347|Val-d'Izé
+35350|Vergéal
+35351|Le Verger
+35352|Vern-sur-Seiche
+35353|Vezin-le-Coquet
+35354|Vieux-Viel
+35355|Vieux-Vy-sur-Couesnon
+35356|Vignoc
+35357|Villamée
+35358|La Ville-ès-Nonais
+35359|Visseiche
+35360|Vitré
+35361|Le Vivier-sur-Mer
+35362|Le Tronchet
+35363|Pont-Péan

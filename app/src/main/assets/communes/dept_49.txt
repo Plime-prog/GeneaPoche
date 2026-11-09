@@ -1,0 +1,176 @@
+49002|Allonnes
+49003|Tuffalun
+49007|Angers
+49008|Angrie
+49009|Antoigné
+49010|Armaillé
+49011|Artannes-sur-Thouet
+49012|Aubigné-sur-Layon
+49015|Avrillé
+49017|Baracé
+49018|Baugé-en-Anjou
+49020|Beaucouzé
+49021|Beaufort-en-Anjou
+49022|Beaulieu-sur-Layon
+49023|Beaupréau-en-Mauges
+49026|Bécon-les-Granits
+49027|Bégrolles-en-Mauges
+49028|Béhuard
+49029|Blaison-Saint-Sulpice
+49030|Blou
+49035|Bouchemaine
+49036|Bouillé-Ménard
+49038|Bourg-l'Évêque
+49041|Brain-sur-Allonnes
+49045|La Breille-les-Pins
+49048|Briollay
+49050|Brissac Loire Aubance
+49053|Brossay
+49054|Candé
+49055|Cantenay-Épinard
+49056|Carbay
+49057|Cernusson
+49058|Les Cerqueux
+49060|Bellevigne-les-Châteaux
+49061|Challain-la-Potherie
+49063|Chalonnes-sur-Loire
+49064|Chambellay
+49067|Chenillé-Champteussé
+49068|Champtocé-sur-Loire
+49070|Chanteloup-les-Bois
+49076|La Chapelle-Saint-Laud
+49080|Les Hauts-d'Anjou
+49082|Chaudefonds-sur-Layon
+49086|Terranjou
+49089|Chazé-sur-Argos
+49090|Cheffes
+49092|Chemillé-en-Anjou
+49099|Cholet
+49100|Cizay-la-Madeleine
+49102|Cléré-sur-Layon
+49107|Cornillé-les-Caves
+49109|Coron
+49110|Corzé
+49112|Le Coudray-Macouard
+49113|Courchamps
+49114|Courléon
+49120|Denée
+49121|Dénezé-sous-Doué
+49123|Distré
+49125|Doué-en-Anjou
+49126|Orée d'Anjou
+49127|Durtal
+49129|Écouflant
+49130|Écuillé
+49131|Épieds
+49132|Étriché
+49135|Feneu
+49138|Les Bois d'Anjou
+49140|Fontevraud-l'Abbaye
+49155|Grez-Neuville
+49160|Ingrandes-le-Fresne-sur-Loire
+49161|La Jaille-Yvon
+49163|Jarzé Villages
+49167|Les Garennes sur Loire
+49170|Juvardeil
+49171|La Lande-Chasles
+49174|Huillé-Lézigné
+49176|Le Lion-d'Angers
+49178|Loiré
+49180|Longué-Jumelles
+49182|Louresse-Rochemenier
+49183|Val d'Erdre-Auxence
+49188|Marcé
+49192|Maulévrier
+49193|Le May-sur-Èvre
+49194|Mazé-Milon
+49195|Mazières-en-Mauges
+49200|Longuenée-en-Anjou
+49201|La Ménitré
+49205|Miré
+49209|Montigné-lès-Rairies
+49211|Montilliers
+49214|Montreuil-Juigné
+49215|Montreuil-Bellay
+49216|Montreuil-sur-Loir
+49217|Montreuil-sur-Maine
+49218|Montrevault-sur-Èvre
+49219|Montsoreau
+49220|Morannes sur Sarthe-Daumeray
+49221|Mouliherne
+49222|Mozé-sur-Louet
+49223|Mûrs-Erigné
+49224|Neuillé
+49228|Noyant-Villages
+49231|Nuaillé
+49235|Parnay
+49236|Passavant-sur-Layon
+49237|La Pellerine
+49240|La Plaine
+49241|Le Plessis-Grammoire
+49244|Mauges-sur-Loire
+49246|Les Ponts-de-Cé
+49247|La Possonnière
+49248|Ombrée d'Anjou
+49253|Le Puy-Notre-Dame
+49257|Les Rairies
+49259|Rochefort-sur-Loire
+49260|La Romagne
+49261|Gennes-Val-de-Loire
+49262|Rou-Marson
+49266|Saint-Augustin-des-Bois
+49267|Saint-Barthélemy-d'Anjou
+49269|Saint-Christophe-du-Bois
+49271|Saint-Clément-de-la-Place
+49272|Saint-Clément-des-Levées
+49278|Sainte-Gemmes-sur-Loire
+49283|Saint-Georges-sur-Loire
+49284|Saint-Germain-des-Prés
+49288|Saint-Jean-de-la-Croix
+49291|Saint-Just-sur-Dive
+49292|Val-du-Layon
+49294|Saint-Lambert-la-Potherie
+49298|Saint-Léger-de-Linières
+49299|Saint-Léger-sous-Cholet
+49301|Sèvremoine
+49302|Saint-Macaire-du-Bois
+49306|Saint-Martin-du-Fouilloux
+49307|Loire-Authion
+49308|Saint-Melaine-sur-Aubance
+49310|Saint-Paul-du-Bois
+49311|Saint-Philbert-du-Peuple
+49323|Verrières-en-Anjou
+49326|Sarrigné
+49328|Saumur
+49329|Savennières
+49330|Sceaux-d'Anjou
+49331|Segré-en-Anjou Bleu
+49332|La Séguinière
+49333|Seiches-sur-le-Loir
+49334|Sermaise
+49336|Somloire
+49338|Soulaines-sur-Aubance
+49339|Soulaire-et-Bourg
+49341|Souzay-Champigny
+49343|La Tessoualle
+49344|Thorigné-d'Anjou
+49345|Bellevigne-en-Layon
+49347|Tiercé
+49352|Toutlemonde
+49353|Trélazé
+49355|Trémentines
+49358|Turquant
+49359|Les Ulmes
+49361|Varennes-sur-Loire
+49362|Varrains
+49364|Vaudelnay
+49367|Erdre-en-Anjou
+49368|Vernantes
+49369|Vernoil-le-Fourrier
+49370|Verrie
+49371|Vezins
+49373|Lys-Haut-Layon
+49374|Villebernier
+49377|Rives-du-Loir-en-Anjou
+49378|Vivy
+49381|Yzernay

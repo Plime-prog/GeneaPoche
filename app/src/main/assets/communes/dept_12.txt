@@ -1,0 +1,285 @@
+12001|Agen-d'Aveyron
+12002|Aguessac
+12003|Les Albres
+12004|Almont-les-Junies
+12006|Alrance
+12007|Ambeyrac
+12008|Anglars-Saint-Félix
+12009|Arnac-sur-Dourdou
+12010|Arques
+12011|Arvieu
+12012|Asprières
+12013|Aubin
+12015|Auriac-Lagast
+12016|Auzits
+12017|Ayssènes
+12018|Balaguier-d'Olt
+12019|Balaguier-sur-Rance
+12021|Le Bas Ségala
+12022|La Bastide-Pradines
+12023|La Bastide-Solages
+12024|Belcastel
+12025|Belmont-sur-Rance
+12026|Bertholène
+12027|Bessuéjouls
+12028|Boisse-Penchot
+12029|Bor-et-Bar
+12030|Bouillac
+12031|Bournazel
+12032|Boussac
+12033|Bozouls
+12034|Brandonnet
+12035|Brasc
+12036|Brommat
+12037|Broquiès
+12038|Brousse-le-Château
+12039|Brusque
+12041|Cabanès
+12042|Calmels-et-le-Viala
+12043|Calmont
+12044|Camarès
+12045|Camboulazet
+12046|Camjac
+12047|Campagnac
+12048|Campouriez
+12049|Campuac
+12050|Canet-de-Salars
+12051|Cantoin
+12052|Capdenac-Gare
+12053|La Capelle-Balaguier
+12054|La Capelle-Bleys
+12055|La Capelle-Bonance
+12056|Baraqueville
+12057|Cassagnes-Bégonhès
+12058|Cassuéjouls
+12059|Castanet
+12060|Castelmary
+12061|Castelnau-de-Mandailles
+12062|Castelnau-Pégayrols
+12063|La Cavalerie
+12064|Le Cayrol
+12065|Centrès
+12066|Clairvaux-d'Aveyron
+12067|Le Clapier
+12068|Colombiès
+12069|Combret
+12070|Compeyre
+12071|Compolibat
+12072|Comprégnac
+12073|Comps-la-Grand-Ville
+12074|Condom-d'Aubrac
+12075|Connac
+12077|Cornus
+12078|Les Costes-Gozon
+12079|Coubisou
+12080|Coupiac
+12082|La Couvertoirade
+12083|Cransac-les-Thermes
+12084|Creissels
+12085|Crespin
+12086|La Cresse
+12088|Curières
+12089|Decazeville
+12090|Druelle Balsac
+12091|Drulhe
+12092|Durenque
+12093|Le Fel
+12094|Entraygues-sur-Truyère
+12095|Escandolières
+12096|Espalion
+12097|Espeyrac
+12098|Estaing
+12099|Fayet
+12100|Firmi
+12101|Flagnac
+12102|Flavin
+12103|Florentin-la-Capelle
+12104|Foissac
+12105|La Fouillade
+12106|Gabriac
+12107|Gaillac-d'Aveyron
+12108|Galgan
+12109|Gissac
+12110|Golinhac
+12111|Goutrens
+12113|Gramond
+12115|L'Hospitalet-du-Larzac
+12116|Huparlac
+12118|Lacroix-Barrez
+12119|Laguiole
+12120|Laissac-Sévérac l'Église
+12121|Lanuéjouls
+12122|Lapanouse-de-Cernon
+12124|Lassouts
+12125|Laval-Roquecezière
+12127|Lédergues
+12128|Lescure-Jaoul
+12129|Lestrade-et-Thouels
+12130|Livinhac-le-Haut
+12131|La Loubière
+12133|Luc-la-Primaube
+12134|Lugan
+12135|Lunac
+12136|Maleville
+12137|Manhac
+12138|Marcillac-Vallon
+12139|Marnhagues-et-Latour
+12140|Martiel
+12141|Martrin
+12142|Mayran
+12143|Mélagues
+12144|Meljac
+12145|Millau
+12146|Le Monastère
+12147|Montagnol
+12148|Montbazens
+12149|Montclar
+12150|Monteils
+12151|Montézic
+12152|Montfranc
+12153|Montjaux
+12154|Montlaur
+12155|Fondamente
+12156|Montpeyroux
+12157|Montrozier
+12158|Montsalès
+12159|Morlhon-le-Haut
+12160|Mostuéjouls
+12161|Mouret
+12162|Moyrazès
+12163|Murasson
+12164|Mur-de-Barrez
+12165|Muret-le-Château
+12166|Murols
+12167|Najac
+12168|Nant
+12169|Naucelle
+12170|Naussac
+12171|Nauviale
+12172|Le Nayrac
+12174|Olemps
+12175|Ols-et-Rinhodes
+12176|Onet-le-Château
+12177|Palmas d'Aveyron
+12178|Paulhe
+12179|Peux-et-Couffouleux
+12180|Peyreleau
+12181|Peyrusse-le-Roc
+12182|Pierrefiche
+12183|Plaisance
+12184|Pomayrols
+12185|Pont-de-Salars
+12186|Pousthomy
+12187|Prades-d'Aubrac
+12188|Prades-Salars
+12189|Pradinas
+12190|Prévinquières
+12191|Privezac
+12192|Mounes-Prohencoux
+12193|Pruines
+12194|Quins
+12195|Rebourguil
+12197|Réquista
+12198|Rieupeyroux
+12199|Rignac
+12200|Rivière-sur-Tarn
+12201|Rodelle
+12202|Rodez
+12203|Roquefort-sur-Soulzon
+12204|La Roque-Sainte-Marguerite
+12205|La Rouquette
+12206|Roussennac
+12207|Rullac-Saint-Cirq
+12208|Saint-Affrique
+12209|Saint-Amans-des-Cots
+12210|Saint-André-de-Najac
+12211|Saint-André-de-Vézines
+12212|Saint-Beaulize
+12213|Saint-Beauzély
+12214|Saint-Chély-d'Aubrac
+12215|Saint-Christophe-Vallon
+12216|Saint-Côme-d'Olt
+12217|Sainte-Croix
+12218|Conques-en-Rouergue
+12219|Sainte-Eulalie-d'Olt
+12220|Sainte-Eulalie-de-Cernon
+12221|Saint-Félix-de-Lunel
+12222|Saint-Félix-de-Sorgues
+12223|Argences en Aubrac
+12224|Saint Geniez d'Olt et d'Aubrac
+12225|Saint-Georges-de-Luzençon
+12226|Saint-Hippolyte
+12227|Saint-Igest
+12228|Saint-Izaire
+12229|Saint-Jean-d'Alcapiès
+12230|Saint-Jean-Delnous
+12231|Saint-Jean-du-Bruel
+12232|Saint-Jean-et-Saint-Paul
+12233|Saint-Juéry
+12234|Sainte-Juliette-sur-Viaur
+12235|Saint-Just-sur-Viaur
+12236|Saint-Laurent-de-Lévézou
+12237|Saint-Laurent-d'Olt
+12238|Saint-Léons
+12239|Saint-Martin-de-Lenne
+12240|Saint-Parthem
+12241|Sainte-Radegonde
+12242|Saint-Rémy
+12243|Saint-Rome-de-Cernon
+12244|Saint-Rome-de-Tarn
+12246|Saint-Santin
+12247|Saint-Saturnin-de-Lenne
+12248|Saint-Sernin-sur-Rance
+12249|Saint-Sever-du-Moustier
+12250|Saint-Symphorien-de-Thénières
+12251|Saint-Victor-et-Melvieu
+12252|Salles-Courbatiès
+12253|Salles-Curan
+12254|Salles-la-Source
+12255|Salmiech
+12256|Salvagnac-Cajarc
+12257|Causse-et-Diège
+12258|La Salvetat-Peyralès
+12259|Sanvensa
+12260|Sauclières
+12261|Saujac
+12262|Sauveterre-de-Rouergue
+12263|Savignac
+12264|Sébazac-Concourès
+12265|Sébrazac
+12266|Ségur
+12267|La Selve
+12268|Sénergues
+12269|La Serre
+12270|Sévérac d'Aveyron
+12272|Sonnac
+12273|Soulages-Bonneval
+12274|Sylvanès
+12275|Tauriac-de-Camarès
+12276|Tauriac-de-Naucelle
+12277|Taussac
+12278|Tayrac
+12280|Thérondels
+12281|Toulonjac
+12282|Tournemire
+12283|Trémouilles
+12284|Le Truel
+12286|Vabres-l'Abbaye
+12287|Vailhourles
+12288|Valady
+12289|Valzergues
+12290|Vaureilles
+12291|Verrières
+12292|Versols-et-Lapeyre
+12293|Veyreau
+12294|Vézins-de-Lévézou
+12295|Viala-du-Pas-de-Jaux
+12296|Viala-du-Tarn
+12297|Le Vibal
+12298|Villecomtal
+12299|Villefranche-de-Panat
+12300|Villefranche-de-Rouergue
+12301|Villeneuve
+12303|Vimenet
+12305|Viviez
+12307|Curan

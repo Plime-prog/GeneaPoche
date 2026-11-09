@@ -1,0 +1,153 @@
+83001|Les Adrets-de-l'Estérel
+83002|Aiguines
+83003|Ampus
+83004|Les Arcs
+83005|Artignosc-sur-Verdon
+83006|Artigues
+83007|Aups
+83008|Bagnols-en-Forêt
+83009|Bandol
+83010|Bargème
+83011|Bargemon
+83012|Barjols
+83013|La Bastide
+83014|Baudinard-sur-Verdon
+83015|Bauduen
+83016|Le Beausset
+83017|Belgentier
+83018|Besse-sur-Issole
+83019|Bormes-les-Mimosas
+83020|Le Bourguet
+83021|Bras
+83022|Brenon
+83023|Brignoles
+83025|Brue-Auriac
+83026|Cabasse
+83027|La Cadière-d'Azur
+83028|Callas
+83029|Callian
+83030|Camps-la-Source
+83031|Le Cannet-des-Maures
+83032|Carcès
+83033|Carnoules
+83034|Carqueiranne
+83035|Le Castellet
+83036|Cavalaire-sur-Mer
+83037|La Celle
+83038|Châteaudouble
+83039|Châteauvert
+83040|Châteauvieux
+83041|Claviers
+83042|Cogolin
+83043|Collobrières
+83044|Comps-sur-Artuby
+83045|Correns
+83046|Cotignac
+83047|La Crau
+83048|La Croix-Valmer
+83049|Cuers
+83050|Draguignan
+83051|Entrecasteaux
+83052|Esparron-de-Pallières
+83053|Évenos
+83054|La Farlède
+83055|Fayence
+83056|Figanières
+83057|Flassans-sur-Issole
+83058|Flayosc
+83059|Forcalqueiret
+83060|Fox-Amphoux
+83061|Fréjus
+83062|La Garde
+83063|La Garde-Freinet
+83064|Garéoult
+83065|Gassin
+83066|Ginasservis
+83067|Gonfaron
+83068|Grimaud
+83069|Hyères
+83070|Le Lavandou
+83071|La Londe-les-Maures
+83072|Lorgues
+83073|Le Luc
+83074|La Martre
+83075|Les Mayons
+83076|Mazaugues
+83077|Méounes-lès-Montrieux
+83078|Moissac-Bellevue
+83079|La Môle
+83080|Mons
+83081|Montauroux
+83082|Montferrat
+83083|Montfort-sur-Argens
+83084|Montmeyan
+83085|La Motte
+83086|Le Muy
+83087|Nans-les-Pins
+83088|Néoules
+83089|Ollières
+83090|Ollioules
+83091|Pierrefeu-du-Var
+83092|Pignans
+83093|Plan-d'Aups-Sainte-Baume
+83094|Le Plan-de-la-Tour
+83095|Pontevès
+83096|Pourcieux
+83097|Pourrières
+83098|Le Pradet
+83099|Puget-sur-Argens
+83100|Puget-Ville
+83101|Ramatuelle
+83102|Régusse
+83103|Le Revest-les-Eaux
+83104|Rians
+83105|Riboux
+83106|Rocbaron
+83107|Roquebrune-sur-Argens
+83108|La Roquebrussanne
+83109|La Roque-Esclapon
+83110|Rougiers
+83111|Sainte-Anastasie-sur-Issole
+83112|Saint-Cyr-sur-Mer
+83113|Saint-Julien
+83114|Saint-Martin-de-Pallières
+83115|Sainte-Maxime
+83116|Saint-Maximin-la-Sainte-Baume
+83117|Saint-Paul-en-Forêt
+83118|Saint-Raphaël
+83119|Saint-Tropez
+83120|Saint-Zacharie
+83121|Salernes
+83122|Les Salles-sur-Verdon
+83123|Sanary-sur-Mer
+83124|Seillans
+83125|Seillons-Source-d'Argens
+83126|La Seyne-sur-Mer
+83127|Signes
+83128|Sillans-la-Cascade
+83129|Six-Fours-les-Plages
+83130|Solliès-Pont
+83131|Solliès-Toucas
+83132|Solliès-Ville
+83133|Tanneron
+83134|Taradeau
+83135|Tavernes
+83136|Le Thoronet
+83137|Toulon
+83138|Tourrettes
+83139|Tourtour
+83140|Tourves
+83141|Trans-en-Provence
+83142|Trigance
+83143|Le Val
+83144|La Valette-du-Var
+83145|Varages
+83146|La Verdière
+83147|Vérignon
+83148|Vidauban
+83149|Villecroze
+83150|Vinon-sur-Verdon
+83151|Vins-sur-Caramy
+83152|Rayol-Canadel-sur-Mer
+83153|Saint-Mandrier-sur-Mer
+83154|Saint-Antonin-du-Var

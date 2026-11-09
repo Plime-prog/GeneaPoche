@@ -1,0 +1,255 @@
+23001|Ahun
+23002|Ajain
+23003|Alleyrat
+23004|Anzême
+23005|Arfeuille-Châtain
+23006|Arrènes
+23007|Ars
+23008|Aubusson
+23009|Auge
+23010|Augères
+23011|Aulon
+23012|Auriat
+23013|Auzances
+23014|Azat-Châtenet
+23015|Azerables
+23016|Banize
+23017|Basville
+23018|Bazelat
+23019|Beissat
+23020|Bellegarde-en-Marche
+23021|Bénévent-l'Abbaye
+23022|Bétête
+23024|Blessac
+23025|Bonnat
+23026|Bord-Saint-Georges
+23027|Bosmoreau-les-Mines
+23028|Bosroger
+23029|Le Bourg-d'Hem
+23030|Bourganeuf
+23031|Boussac
+23032|Boussac-Bourg
+23033|La Brionne
+23034|Brousse
+23035|Budelière
+23036|Bussière-Dunoise
+23037|Bussière-Nouvelle
+23038|Bussière-Saint-Georges
+23039|La Celle-Dunoise
+23040|La Celle-sous-Gouzon
+23041|La Cellette
+23042|Ceyroux
+23043|Chamberaud
+23044|Chambon-Sainte-Croix
+23045|Chambon-sur-Voueize
+23046|Chambonchard
+23047|Chamborand
+23048|Champagnat
+23049|Champsanglard
+23050|La Chapelle-Baloue
+23051|La Chapelle-Saint-Martial
+23052|La Chapelle-Taillefert
+23053|Chard
+23054|Charron
+23055|Châtelard
+23056|Châtelus-le-Marcheix
+23057|Châtelus-Malvaleix
+23058|Le Chauchet
+23059|La Chaussade
+23060|Chavanat
+23061|Chénérailles
+23062|Chéniers
+23063|Clairavaux
+23064|Clugnat
+23065|Colondannes
+23066|Le Compas
+23067|La Courtine
+23068|Cressat
+23069|Crocq
+23070|Crozant
+23071|Croze
+23072|Domeyrot
+23073|Dontreix
+23074|Le Donzeil
+23075|Dun-le-Palestel
+23076|Évaux-les-Bains
+23077|Faux-la-Montagne
+23078|Faux-Mazuras
+23079|Felletin
+23080|Féniers
+23081|Flayat
+23082|Fleurat
+23083|Fontanières
+23084|La Forêt-du-Temple
+23086|Fransèches
+23087|Fresselines
+23088|Gartempe
+23089|Genouillac
+23090|Gentioux-Pigerolles
+23091|Gioux
+23092|Glénic
+23093|Gouzon
+23095|Le Grand-Bourg
+23096|Guéret
+23097|Issoudun-Létrieix
+23098|Jalesches
+23099|Janaillat
+23100|Jarnages
+23101|Jouillat
+23102|Ladapeyre
+23103|Lafat
+23104|Lavaufranche
+23105|Lavaveix-les-Mines
+23106|Lépaud
+23107|Lépinas
+23108|Leyrat
+23109|Linard-Malval
+23110|Lioux-les-Monges
+23111|Lizières
+23112|Lourdoueix-Saint-Pierre
+23113|Lupersat
+23114|Lussat
+23115|Magnat-l'Étrange
+23116|Mainsat
+23117|Maison-Feyne
+23118|Maisonnisses
+23119|Malleret
+23120|Malleret-Boussac
+23122|Mansat-la-Courrière
+23123|Les Mars
+23124|Marsac
+23125|Le Mas-d'Artige
+23127|Mautes
+23128|Mazeirat
+23129|La Mazière-aux-Bons-Hommes
+23130|Méasnes
+23131|Mérinchal
+23132|Montaigut-le-Blanc
+23133|Montboucher
+23134|Le Monteil-au-Vicomte
+23136|Mortroux
+23137|Mourioux-Vieilleville
+23138|Moutier-d'Ahun
+23139|Moutier-Malcard
+23140|Moutier-Rozeille
+23141|Naillat
+23142|Néoux
+23143|Noth
+23144|La Nouaille
+23145|Nouhant
+23146|Nouzerines
+23147|Nouzerolles
+23148|Nouziers
+23149|Parsac
+23150|Peyrabout
+23151|Peyrat-la-Nonière
+23152|Pierrefitte
+23154|Pionnat
+23155|Pontarion
+23156|Pontcharraud
+23157|La Pouge
+23158|Poussanges
+23159|Puy-Malsignat
+23160|Reterre
+23162|Roches
+23164|Rougnat
+23165|Royère-de-Vassivière
+23166|Sagnat
+23167|Sannat
+23168|Sardent
+23169|La Saunière
+23170|Savennes
+23171|Sermur
+23172|La Serre-Bussière-Vieille
+23173|Soubrebost
+23174|Soumans
+23175|Sous-Parsat
+23176|La Souterraine
+23177|Saint-Agnant-de-Versillat
+23178|Saint-Agnant-près-Crocq
+23179|Saint-Alpinien
+23180|Saint-Amand
+23181|Saint-Amand-Jartoudeix
+23182|Saint-Avit-de-Tardes
+23183|Saint-Avit-le-Pauvre
+23184|Saint-Bard
+23185|Saint-Chabrais
+23186|Saint-Christophe
+23187|Saint-Dizier-la-Tour
+23188|Saint-Dizier-les-Domaines
+23189|Saint-Dizier-Masbaraud
+23190|Saint-Domet
+23191|Saint-Éloi
+23192|Fursac
+23193|Sainte-Feyre
+23194|Sainte-Feyre-la-Montagne
+23195|Saint-Fiel
+23196|Saint-Frion
+23197|Saint-Georges-la-Pouge
+23198|Saint-Georges-Nigremont
+23199|Saint-Germain-Beaupré
+23200|Saint-Goussaud
+23201|Saint-Hilaire-la-Plaine
+23202|Saint-Hilaire-le-Château
+23203|Saint-Julien-la-Genête
+23204|Saint-Julien-le-Châtel
+23205|Saint-Junien-la-Bregère
+23206|Saint-Laurent
+23207|Saint-Léger-Bridereix
+23208|Saint-Léger-le-Guérétois
+23209|Saint-Loup
+23210|Saint-Maixant
+23211|Saint-Marc-à-Frongier
+23212|Saint-Marc-à-Loubaud
+23213|Saint-Marien
+23214|Saint-Martial-le-Mont
+23215|Saint-Martial-le-Vieux
+23216|Saint-Martin-Château
+23217|Saint-Martin-Sainte-Catherine
+23218|Saint-Maurice-près-Crocq
+23219|Saint-Maurice-la-Souterraine
+23220|Saint-Médard-la-Rochette
+23221|Saint-Merd-la-Breuille
+23222|Saint-Michel-de-Veisse
+23223|Saint-Moreil
+23224|Saint-Oradoux-de-Chirouze
+23225|Saint-Oradoux-près-Crocq
+23226|Saint-Pardoux-d'Arnet
+23227|Saint-Pardoux-Morterolles
+23228|Saint-Pardoux-le-Neuf
+23229|Saint-Pardoux-les-Cards
+23230|Saint-Pierre-Chérignat
+23232|Saint-Pierre-Bellevue
+23233|Saint-Pierre-le-Bost
+23234|Saint-Priest
+23235|Saint-Priest-la-Feuille
+23236|Saint-Priest-la-Plaine
+23237|Saint-Priest-Palus
+23238|Saint-Quentin-la-Chabanne
+23239|Saint-Sébastien
+23240|Saint-Silvain-Bas-le-Roc
+23241|Saint-Silvain-Bellegarde
+23242|Saint-Silvain-Montaigut
+23243|Saint-Silvain-sous-Toulx
+23244|Saint-Sulpice-le-Dunois
+23245|Saint-Sulpice-le-Guérétois
+23246|Saint-Sulpice-les-Champs
+23247|Saint-Vaury
+23248|Saint-Victor-en-Marche
+23249|Saint-Yrieix-la-Montagne
+23250|Saint-Yrieix-les-Bois
+23251|Tardes
+23252|Tercillat
+23253|Thauron
+23254|Toulx-Sainte-Croix
+23255|Trois-Fonds
+23257|Vallière
+23258|Vareilles
+23259|Verneiges
+23260|Vidaillat
+23261|Viersat
+23262|Vigeville
+23263|Villard
+23264|La Villedieu
+23265|La Villeneuve
+23266|La Villetelle

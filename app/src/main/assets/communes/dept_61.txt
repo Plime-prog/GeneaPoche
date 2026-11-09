@@ -1,0 +1,381 @@
+61001|Alençon
+61002|Almenêches
+61005|Appenai-sous-Bellême
+61006|Argentan
+61007|Athis-Val de Rouvre
+61008|Aube
+61010|Aubry-le-Panthou
+61011|Aubusson
+61012|Auguaise
+61013|Aunay-les-Bois
+61014|Aunou-le-Faucon
+61015|Aunou-sur-Orne
+61018|Avernes-Saint-Gourgon
+61020|Avoine
+61021|Avrilly
+61023|Bailleul
+61024|Banvou
+61026|Barville
+61028|Bazoches-au-Houlme
+61029|Bazoches-sur-Hoëne
+61030|La Bazoque
+61032|Beaufai
+61034|Beaulieu
+61035|Beauvain
+61036|Belfonds
+61037|Bellavilliers
+61038|Bellême
+61039|La Bellière
+61040|Bellou-en-Houlme
+61041|Bellou-le-Trichard
+61043|Berd'huis
+61044|Berjou
+61046|Bizou
+61048|Boëcé
+61049|Boissei-la-Lande
+61050|Cour-Maugis sur Huisne
+61051|Boitron
+61052|Bonnefoi
+61053|Bonsmoulins
+61054|Le Bosc-Renoult
+61055|Boucé
+61056|Le Bouillon
+61060|Brethel
+61061|Bretoncelles
+61062|Brieux
+61063|Briouze
+61064|Brullemail
+61066|Buré
+61067|Bures
+61068|Bursard
+61069|Cahan
+61070|Caligny
+61071|Camembert
+61072|Canapville
+61074|Carrouges
+61075|Ceaucé
+61076|Le Cercueil
+61077|Cerisé
+61078|Cerisy-Belle-Étoile
+61079|Ceton
+61080|Chahains
+61081|Chailloué
+61082|Le Chalange
+61084|Champcerie
+61085|Le Champ-de-la-Pierre
+61086|Les Champeaux
+61087|Champeaux-sur-Sarthe
+61088|Champ-Haut
+61089|Champosoult
+61091|Champsecret
+61092|Chandai
+61093|Chanu
+61094|La Chapelle-au-Moine
+61095|La Chapelle-Biche
+61096|Rives d'Andaine
+61097|La Chapelle-Montligeon
+61098|La Chapelle-près-Sées
+61099|La Chapelle-Souëf
+61100|La Chapelle-Viel
+61101|Le Château-d'Almenêches
+61102|Le Châtellier
+61103|Chaumont
+61104|La Chaux
+61105|Chemilli
+61107|Ciral
+61108|Cisai-Saint-Aubin
+61111|Colombiers
+61113|Comblot
+61114|Commeaux
+61116|Sablons sur Huisne
+61117|Condé-sur-Sarthe
+61118|Corbon
+61120|Coudehard
+61121|Coulimer
+61122|Coulmer
+61123|Coulonces
+61124|La Coulonche
+61126|Coulonges-sur-Sarthe
+61129|Courgeon
+61130|Courgeoût
+61133|Courtomer
+61137|Craménil
+61138|Croisilles
+61139|Crouttes
+61140|Crulai
+61141|Cuissai
+61142|Dame-Marie
+61143|Damigny
+61145|Domfront en Poiraie
+61146|Dompierre
+61148|Durcet
+61149|Échalou
+61150|Échauffour
+61151|Écorcei
+61152|Écorches
+61153|Écouché-les-Vallées
+61156|Essay
+61158|Faverolles
+61159|Fay
+61160|Feings
+61162|La Ferrière-au-Doyen
+61163|La Ferrière-aux-Étangs
+61164|La Ferrière-Béchet
+61165|La Ferrière-Bochard
+61166|Ferrières-la-Verrerie
+61167|La Ferté-en-Ouche
+61168|La Ferté Macé
+61169|Flers
+61170|Fleuré
+61171|Fontaine-les-Bassets
+61176|Francheville
+61178|La Fresnaie-Fayel
+61180|Fresnay-le-Samson
+61181|Gacé
+61182|Gandelain
+61183|Gâprée
+61187|Les Genettes
+61189|Giel-Courteilles
+61190|Ginai
+61193|La Gonfrière
+61194|Monts-sur-Orne
+61195|Le Grais
+61196|Belforêt-en-Perche
+61197|Guêprei
+61198|Guerquesalles
+61199|Habloville
+61202|Hauterive
+61203|Héloup
+61206|L'Hôme-Chamondot
+61207|Igé
+61208|Irai
+61209|Joué-du-Bois
+61210|Joué-du-Plain
+61211|Juvigny Val d'Andaine
+61212|Juvigny-sur-Orne
+61213|Lalacelle
+61214|L'Aigle
+61215|Laleu
+61216|La Lande-de-Goult
+61217|La Lande-de-Lougé
+61218|La Lande-Patry
+61219|La Lande-Saint-Siméon
+61221|Landigou
+61222|Landisacq
+61224|Larré
+61225|Lignères
+61227|Lignou
+61228|L'Orée-d'Écouves
+61229|Loisail
+61230|Longny les Villages
+61232|Lonlay-l'Abbaye
+61233|Lonlay-le-Tesson
+61234|Lonrai
+61237|Lougé-sur-Maire
+61238|Louvières-en-Auge
+61240|Macé
+61241|La Madeleine-Bouvet
+61242|Le Mage
+61243|Magny-le-Désert
+61244|Mahéru
+61248|Mantilly
+61251|Marchemaisons
+61252|Mardilly
+61255|Mauves-sur-Huisne
+61256|Médavy
+61257|Méhoudin
+61258|Le Mêle-sur-Sarthe
+61259|Le Ménil-Bérard
+61260|Le Ménil-de-Briouze
+61261|Le Ménil-Broût
+61262|Le Ménil-Ciboult
+61263|Ménil-Erreux
+61264|Ménil-Froger
+61265|Ménil-Gondouin
+61266|Le Ménil-Guyon
+61267|Ménil-Hermei
+61268|Ménil-Hubert-en-Exmes
+61269|Ménil-Hubert-sur-Orne
+61271|Le Ménil-Scelleur
+61272|Le Ménil-Vicomte
+61273|Ménil-Vin
+61274|Les Menus
+61275|Merlerault-le-Pin
+61276|Merri
+61277|La Mesnière
+61278|Messei
+61279|Mieuxcé
+61281|Moncy
+61283|Montabard
+61284|Montchevrel
+61286|Montgaudry
+61287|Montilly-sur-Noireau
+61288|Montmerrei
+61289|Mont-Ormel
+61290|Montreuil-au-Houlme
+61291|Montreuil-la-Cambe
+61292|Montsecret-Clairefougère
+61293|Mortagne-au-Perche
+61294|Mortrée
+61295|La Motte-Fouquet
+61297|Moulins-la-Marche
+61298|Moulins-sur-Orne
+61300|Moutiers-au-Perche
+61301|Neauphe-sous-Essai
+61302|Neauphe-sur-Dive
+61303|Nécy
+61304|Neuilly-le-Bisson
+61307|Neuville-sur-Touques
+61308|Neuvy-au-Houlme
+61309|Perche en Nocé
+61314|Occagnes
+61316|Ommoy
+61317|Orgères
+61319|Origny-le-Roux
+61321|Pacé
+61322|Parfondeval
+61323|Le Pas-Saint-l'Homer
+61324|Passais Villages
+61326|Perrou
+61327|Pervenchères
+61328|Le Pin-au-Haras
+61329|Le Pin-la-Garenne
+61330|Planches
+61331|Le Plantis
+61332|Pointel
+61333|Pontchardon
+61336|Pouvrai
+61339|Putanges-le-Lac
+61341|Écouves
+61342|Rai
+61344|Rânes
+61345|Rémalard en Perche
+61346|Le Renouard
+61347|Résenlieu
+61348|Réveillon
+61349|Ri
+61350|La Roche-Mabile
+61351|Roiville
+61352|Rônai
+61357|Rouperroux
+61358|Sai
+61360|Saint-Agnan-sur-Sarthe
+61361|Saint-André-de-Briouze
+61362|Saint-André-de-Messei
+61363|Saint-Aquilin-de-Corbion
+61365|Saint-Aubin-d'Appenai
+61366|Saint-Aubin-de-Bonneval
+61367|Saint-Aubin-de-Courteraie
+61369|Saint-Bômer-les-Forges
+61370|Saint-Brice
+61371|Saint-Brice-sous-Rânes
+61372|Saint-Céneri-le-Gérei
+61373|Sainte-Céronne-lès-Mortagne
+61374|Saint-Christophe-de-Chaulieu
+61375|Boischampré
+61376|Saint-Clair-de-Halouze
+61379|Saint-Cyr-la-Rosière
+61381|Saint-Denis-sur-Huisne
+61382|Saint-Denis-sur-Sarthon
+61384|Saint-Ellier-les-Bois
+61385|Saint-Evroult-de-Montfort
+61386|Saint-Evroult-Notre-Dame-du-Bois
+61387|Saint-Fraimbault
+61388|Saint-Fulgent-des-Ormes
+61389|Sainte-Gauburge-Sainte-Colombe
+61390|Saint-Georges-d'Annebecq
+61391|Saint-Georges-des-Groseillers
+61392|Saint-Germain-d'Aunay
+61393|Saint-Germain-de-Clairefeuille
+61394|Saint-Germain-de-la-Coudre
+61395|Saint-Germain-des-Grois
+61396|Saint-Germain-de-Martigny
+61397|Saint-Germain-du-Corbéis
+61398|Saint-Germain-le-Vieux
+61399|Saint-Gervais-des-Sablons
+61400|Saint-Gervais-du-Perron
+61401|Saint-Gilles-des-Marais
+61402|Saint-Hilaire-de-Briouze
+61404|Saint-Hilaire-le-Châtel
+61405|Saint-Hilaire-sur-Erre
+61406|Saint-Hilaire-sur-Risle
+61407|Sainte-Honorine-la-Chardonne
+61408|Sainte-Honorine-la-Guillaume
+61411|Saint-Jouin-de-Blavou
+61412|Saint-Julien-sur-Sarthe
+61413|Saint-Lambert-sur-Dive
+61414|Saint-Langis-lès-Mortagne
+61415|Saint-Léger-sur-Sarthe
+61416|Saint-Léonard-des-Parcs
+61418|Saint-Mard-de-Réno
+61419|Sainte-Marguerite-de-Carrouges
+61420|Sainte-Marie-la-Robert
+61421|Saint-Mars-d'Égrenne
+61422|Les Aspres
+61423|Saint-Martin-d'Écublei
+61424|Saint-Martin-des-Landes
+61425|Saint-Martin-des-Pézerits
+61426|Saint-Martin-du-Vieux-Bellême
+61427|Saint-Martin-l'Aiguillon
+61429|Charencey
+61432|Saint-Michel-Tubœuf
+61433|Saint-Nicolas-des-Bois
+61435|Saint-Nicolas-de-Sommaire
+61436|Sainte-Opportune
+61438|Saint-Ouen-de-Sécherouvre
+61439|Saint-Ouen-le-Brisoult
+61440|Saint-Ouen-sur-Iton
+61442|Saint-Patrice-du-Désert
+61443|Saint-Paul
+61444|Saint-Philbert-sur-Orne
+61445|Saint-Pierre-d'Entremont
+61446|Saint-Pierre-des-Loges
+61447|Saint-Pierre-du-Regard
+61448|Saint-Pierre-la-Bruyère
+61450|Saint-Quentin-de-Blavou
+61451|Saint-Quentin-les-Chardonnets
+61452|Saint-Roch-sur-Égrenne
+61453|Saint-Sauveur-de-Carrouges
+61454|Sainte-Scolasse-sur-Sarthe
+61456|Saint-Sulpice-sur-Risle
+61457|Saint-Symphorien-des-Bruyères
+61459|Saires-la-Verrerie
+61460|Sap-en-Auge
+61461|Le Sap-André
+61462|Sarceaux
+61463|Les Monts d'Andaine
+61464|Sées
+61466|La Selle-la-Forge
+61467|Semallé
+61472|Sévigny
+61473|Sevrai
+61474|Gouffern en Auge
+61475|Soligny-la-Trappe
+61476|Suré
+61479|Tanques
+61480|Tanville
+61481|Tellières-le-Plessis
+61482|Tessé-Froulay
+61483|Bagnoles de l'Orne Normandie
+61484|Val-au-Perche
+61485|Ticheville
+61486|Tinchebray-Bocage
+61487|Torchamp
+61488|Touquettes
+61490|Tournai-sur-Dive
+61491|Tourouvre au Perche
+61492|Trémont
+61493|La Trinité-des-Laitiers
+61494|Trun
+61497|Valframbert
+61498|Vaunoise
+61499|Les Ventes-de-Bourse
+61500|La Ventrouze
+61501|Verrières
+61502|Vidai
+61503|Vieux-Pont
+61505|Villedieu-lès-Bailleul
+61507|Villiers-sous-Mortagne
+61508|Vimoutiers
+61510|Vitrai-sous-Laigle
+61512|Les Yveteaux

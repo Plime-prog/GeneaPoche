@@ -1,0 +1,253 @@
+85001|L'Aiguillon-la-Presqu'île
+85002|L'Aiguillon-sur-Vie
+85003|Aizenay
+85004|Angles
+85005|Antigny
+85006|Apremont
+85008|Aubigny-Les Clouzeaux
+85009|Auchay-sur-Vendée
+85010|Avrillé
+85011|Barbâtre
+85012|La Barre-de-Monts
+85013|Bazoges-en-Paillers
+85014|Bazoges-en-Pareds
+85015|Beaufou
+85016|Beaulieu-sous-la-Roche
+85017|Beaurepaire
+85018|Beauvoir-sur-Mer
+85019|Bellevigny
+85020|Benet
+85022|Le Bernard
+85023|Bessay
+85024|Bois-de-Céné
+85025|La Boissière-de-Montaigu
+85026|La Boissière-des-Landes
+85028|Bouillé-Courdault
+85029|Bouin
+85031|Le Boupère
+85033|Bourneau
+85034|Bournezeau
+85035|Bretignolles-sur-Mer
+85036|La Bretonnière-la-Claye
+85038|Les Brouzils
+85039|La Bruffière
+85040|La Caillère-Saint-Hilaire
+85042|Chaillé-les-Marais
+85045|La Chaize-Giraud
+85046|La Chaize-le-Vicomte
+85047|Challans
+85049|Champagné-les-Marais
+85050|Le Champ-Saint-Père
+85051|Chantonnay
+85054|La Chapelle-Hermier
+85055|La Chapelle-Palluau
+85056|La Chapelle-Thémer
+85058|Chasnais
+85059|La Châtaigneraie
+85061|Château-Guibert
+85062|Châteauneuf
+85064|Chauché
+85065|Chavagnes-en-Paillers
+85066|Chavagnes-les-Redoux
+85067|Cheffois
+85070|Coëx
+85071|Commequiers
+85072|La Copechagnière
+85073|Corpe
+85074|La Couture
+85076|Cugand-la-Bernardière
+85077|Curzon
+85078|Damvix
+85080|Doix lès Fontaines
+85081|Dompierre-sur-Yon
+85082|Les Epesses
+85083|L'Épine
+85084|Essarts-en-Bocage
+85086|Falleron
+85087|Faymoreau
+85088|Le Fenouiller
+85089|La Ferrière
+85090|Sèvremont
+85092|Fontenay-le-Comte
+85093|Fougeré
+85094|Foussais-Payré
+85095|Froidfond
+85096|La Garnache
+85097|La Gaubretière
+85098|La Genétouze
+85099|Le Girouard
+85100|Givrand
+85101|Le Givre
+85102|Grand'Landes
+85103|Grosbreuil
+85104|Grues
+85105|Le Gué-de-Velluire
+85106|La Guérinière
+85108|L'Herbergement
+85109|Les Herbiers
+85110|L'Hermenault
+85111|L'Île-d'Elle
+85112|L'Île-d'Olonne
+85113|L'Île-d'Yeu
+85114|Jard-sur-Mer
+85115|La Jaudonnière
+85116|La Jonchère
+85117|Lairoux
+85118|Landeronde
+85119|Les Landes-Genusson
+85120|Landevieille
+85121|Le Langon
+85123|Liez
+85125|Loge-Fougereuse
+85126|Longèves
+85127|Longeville-sur-Mer
+85128|Luçon
+85129|Les Lucs-sur-Boulogne
+85130|Maché
+85131|Les Magnils-Reigniers
+85132|Maillé
+85133|Maillezais
+85134|Mallièvre
+85135|Mareuil-sur-Lay-Dissais
+85136|Marillet
+85137|Marsais-Sainte-Radégonde
+85138|Martinet
+85139|Le Mazeau
+85140|La Meilleraie-Tillay
+85141|Menomblet
+85142|La Merlatière
+85143|Mervent
+85144|Mesnard-la-Barotière
+85145|Monsireigne
+85146|Montaigu-Vendée
+85147|Montournais
+85148|Montreuil
+85149|Moreilles
+85151|Mortagne-sur-Sèvre
+85152|Les Achards
+85153|Mouchamps
+85154|Mouilleron-Saint-Germain
+85155|Mouilleron-le-Captif
+85156|Moutiers-les-Mauxfaits
+85157|Moutiers-sur-le-Lay
+85158|Mouzeuil-Saint-Martin
+85159|Nalliers
+85160|Nesmy
+85161|Nieul-le-Dolent
+85162|Rives-d'Autise
+85163|Noirmoutier-en-l'Île
+85164|Notre-Dame-de-Monts
+85165|L'Oie
+85167|L'Orbrie
+85169|Palluau
+85171|Péault
+85172|Le Perrier
+85174|Petosse
+85175|Les Pineaux
+85176|Pissotte
+85177|Les Velluire-sur-Vendée
+85178|Le Poiré-sur-Vie
+85179|Poiroux
+85181|Pouillé
+85182|Pouzauges
+85184|Puy-de-Serre
+85185|Puyravault
+85186|La Rabatelière
+85187|Réaumur
+85188|La Réorthe
+85189|Notre-Dame-de-Riez
+85190|Rocheservière
+85191|La Roche-sur-Yon
+85192|Rochetrejoux
+85193|Rosnay
+85194|Les Sables-d'Olonne
+85196|Saint-André-Goule-d'Oie
+85197|Montréverd
+85198|Saint-Aubin-des-Ormeaux
+85199|Saint-Aubin-la-Plaine
+85200|Saint-Avaugourd-des-Landes
+85201|Saint-Benoist-sur-Mer
+85202|Sainte-Cécile
+85204|Saint-Christophe-du-Ligneron
+85205|Saint-Cyr-des-Gâts
+85206|Saint-Cyr-en-Talmondais
+85207|Saint-Denis-du-Payré
+85208|Saint-Denis-la-Chevasse
+85209|Saint-Étienne-de-Brillouet
+85210|Saint-Étienne-du-Bois
+85211|Sainte-Flaive-des-Loups
+85212|Sainte-Florence
+85213|Rives de l'Yon
+85214|Sainte-Foy
+85215|Saint-Fulgent
+85216|Sainte-Gemme-la-Plaine
+85218|Saint-Georges-de-Pointindoux
+85220|Saint-Germain-de-Prinçay
+85221|Saint-Gervais
+85222|Saint-Gilles-Croix-de-Vie
+85223|Saint-Jean-d'Hermine
+85226|Saint-Hilaire-de-Riez
+85227|Saint-Hilaire-des-Loges
+85229|Saint-Hilaire-de-Voust
+85231|Saint-Hilaire-la-Forêt
+85232|Saint-Hilaire-le-Vouhis
+85234|Saint-Jean-de-Monts
+85235|Saint-Juire-Champgillon
+85236|Saint-Julien-des-Landes
+85237|Saint-Laurent-de-la-Salle
+85238|Saint-Laurent-sur-Sèvre
+85239|Saint-Maixent-sur-Vie
+85240|Saint-Malô-du-Bois
+85242|Saint-Mars-la-Réorthe
+85243|Brem-sur-Mer
+85244|Saint-Martin-de-Fraigneau
+85245|Saint-Martin-des-Fontaines
+85246|Saint-Martin-des-Noyers
+85247|Saint-Martin-des-Tilleuls
+85248|Saint-Martin-Lars-en-Sainte-Hermine
+85250|Saint-Mathurin
+85251|Saint-Maurice-des-Noues
+85252|Saint-Maurice-le-Girard
+85254|Saint-Mesmin
+85255|Saint-Michel-en-l'Herm
+85256|Saint-Michel-le-Cloucq
+85259|Saint-Paul-en-Pareds
+85260|Saint-Paul-Mont-Penit
+85261|Sainte-Pexine
+85262|Saint-Philbert-de-Bouaine
+85264|Saint-Pierre-du-Chemin
+85265|Saint-Pierre-le-Vieux
+85266|Saint-Prouant
+85267|Sainte-Radégonde-des-Noyers
+85268|Saint-Révérend
+85269|Saint-Sigismond
+85273|Saint-Urbain
+85274|Saint-Valérien
+85276|Saint-Vincent-Sterlanges
+85277|Saint-Vincent-sur-Graon
+85278|Saint-Vincent-sur-Jard
+85280|Sallertaine
+85281|Sérigné
+85282|Sigournais
+85284|Soullans
+85285|Le Tablier
+85286|La Taillée
+85287|Tallud-Sainte-Gemme
+85288|Talmont-Saint-Hilaire
+85289|Terval
+85290|Thiré
+85291|Thorigny
+85292|Rives-du-Fougerais
+85293|Tiffauges
+85294|La Tranche-sur-Mer
+85295|Treize-Septiers
+85296|Treize-Vents
+85297|Triaize
+85298|Vairé
+85300|Venansault
+85301|Vendrennes
+85302|Chanverrie
+85303|Vix
+85304|Vouillé-les-Marais
+85305|Vouvant
+85306|Xanton-Chassenon
