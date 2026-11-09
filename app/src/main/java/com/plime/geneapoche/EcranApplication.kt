@@ -251,6 +251,8 @@ fun EcranApplication(
 
     val ouverte = personneParId(personnes, idOuvert)
     var menuGedcom by remember { mutableStateOf(false) }
+    // v0.86 : boite a outils (calendrier republicain, dates, parente).
+    var outilsOuverts by remember { mutableStateOf(false) }
     var exclureVivants by remember { mutableStateOf(false) }
     // G\u00E9n\u00E9aPoche 3 : double export GEDCOM (5.5.1 pour Heredis, ou
     // 7.0.18, derni\u00E8re version du standard au 01/11/2026).
@@ -303,7 +305,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.85",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.86",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -836,6 +838,19 @@ fun EcranApplication(
                     }
                 )
             }
+            if (outilsOuverts) {
+                EcranOutils(
+                    personnes = personnes,
+                    onAjouterNote = { id, texte ->
+                        val cible = personneParId(personnes, id)
+                        if (cible != null) {
+                            cible.notesLibres = (if (cible.notesLibres.isBlank()) texte else cible.notesLibres.trim() + "\n" + texte).trim()
+                            enregistrer()
+                        }
+                    },
+                    onFermer = { outilsOuverts = false }
+                )
+            }
             if (menuGedcom) {
                 // G3-13 : ModalBottomSheet a la place du dialogue.
                 ModalBottomSheet(
@@ -852,8 +867,18 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.85", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.86", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
+                            TextButton(
+                                onClick = { menuGedcom = false; outilsOuverts = true },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Bo\u00EEte \u00E0 outils (calendrier, dates, parent\u00E9)")
+                                }
+                            }
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
                                 Modifier.fillMaxWidth()
