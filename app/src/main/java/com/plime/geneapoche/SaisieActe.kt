@@ -78,6 +78,13 @@ data class ActeSaisie(
     // Chantier 12.0 : l'acte n'est plus stocke dans l'app ; une coche
     // "Enregistr\u00E9" par type (l'utilisateur garde ses actes ailleurs).
     val enregistre: Boolean = false,
+    // v0.92 : source reutilisable de l'acte (0 = aucune), numero d'acte,
+    // numero de la vue sur le total de vues (citation creee a l'enregistrement).
+    val sourceId: Long = 0L,
+    val numeroActe: String = "",
+    val vue: Int = 0,
+    val vueTotal: Int = 0,
+    val fiabiliteSource: Int = -1,
     val date: String = "",
     val heure: String = "",
     // G\u00E9n\u00E9aPoche 3 : intitul\u00E9 libre d'un \u00E9v\u00E9nement (type "E").
@@ -267,8 +274,16 @@ fun EcranSaisieActe(
     // Fermeture du formulaire (plein ecran depuis la fiche) ; null = onglet Saisie.
     onFermer: (() -> Unit)? = null,
     // GeneaPoche 4 : type impose par l'appui long sur un bloc de la fiche.
-    typeImpose: String? = null
+    typeImpose: String? = null,
+    // v0.92 : carnet de sources (facultatif).
+    sources: List<Source> = emptyList(),
+    onCreerSource: (Source) -> Long = { 0L }
 ) {
+    var sourceActeId by remember(initial) { mutableStateOf(initial?.sourceId ?: 0L) }
+    var numeroActe by remember(initial) { mutableStateOf(initial?.numeroActe ?: "") }
+    var vueActe by remember(initial) { mutableStateOf(if ((initial?.vue ?: 0) > 0) initial!!.vue.toString() else "") }
+    var vueTotalActe by remember(initial) { mutableStateOf(if ((initial?.vueTotal ?: 0) > 0) initial!!.vueTotal.toString() else "") }
+    var fiabiliteActe by remember(initial) { mutableStateOf(initial?.fiabiliteSource ?: -1) }
     var type by remember(initial) { mutableStateOf(typeImpose ?: initial?.type ?: "N") }
     var commune by remember(initial) { mutableStateOf(initial?.commune ?: "") }
     var dept by remember(initial) { mutableStateOf(initial?.dept ?: "") }
@@ -415,7 +430,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.91",
+                "  v0.92",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -495,6 +510,14 @@ fun EcranSaisieActe(
             Checkbox(checked = enregistre, onCheckedChange = { enregistre = it })
             Text("Enregistr\u00E9", fontSize = 13.sp)
         }
+        ChampsSourceActe(
+            sources = sources, sourceId = sourceActeId, onSource = { sourceActeId = it },
+            numeroActe = numeroActe, onNumeroActe = { numeroActe = it },
+            vue = vueActe, onVue = { vueActe = it },
+            vueTotal = vueTotalActe, onVueTotal = { vueTotalActe = it },
+            fiabilite = fiabiliteActe, onFiabilite = { fiabiliteActe = it },
+            onCreerSource = onCreerSource
+        )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Champ(
                 "Date (jj/mm/aaaa)", date, { date = it; confirme = false },
@@ -872,6 +895,11 @@ fun EcranSaisieActe(
                     commune = commune.trim(),
                     dept = normaliserDept(dept),
                     enregistre = enregistre,
+                    sourceId = sourceActeId,
+                    numeroActe = numeroActe.trim(),
+                    vue = vueActe.toIntOrNull() ?: 0,
+                    vueTotal = vueTotalActe.toIntOrNull() ?: 0,
+                    fiabiliteSource = fiabiliteActe,
                     date = date.trim(),
                     heure = heure.trim(),
                     intitule = intitule.trim(),

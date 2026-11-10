@@ -432,7 +432,7 @@ private fun OutilParente(personnes: List<Personne>, demanderNote: (String, Long)
 
 // ---------------------------------------------------------------- Dialogues
 @Composable
-private fun DialogueChoixPersonne(
+fun DialogueChoixPersonne(
     titre: String,
     personnes: List<Personne>,
     onChoisi: (Personne) -> Unit,

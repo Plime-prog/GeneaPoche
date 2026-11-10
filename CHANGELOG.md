@@ -1,5 +1,16 @@
 # Historique des versions — GénéaPoche
 
+## v0.92 — Carnet de sources (Source réutilisable / Citation), compatible GEDCOM et Heredis
+
+- **Fiche Source** réutilisable : titre, type (naissance, baptême, mariage, décès, sépulture, recensement, notarié, militaire, autre), commune, période, dépôt, cote, lien Internet **facultatif**, transcription, notes, niveau de fiabilité (0-3, échelle QUAY). Une source se décrit une fois.
+- **Citation** : relie une source à une personne et à ce qu'elle documente (identité, naissance, baptême, mariage, décès, sépulture ou événement libre), avec n° d'acte, **vue n° sur le total de vues**, autre précision (f°, page), extrait, notes et fiabilité propre. Une source peut être citée par plusieurs personnes et plusieurs événements.
+- **Écran « Carnet de sources »** (paramétrages) : recherche, création, fiche détaillée, liste des « personnes concernées » avec accès aux fiches, suppression avec avertissement du nombre de citations. **Bloc « Sources »** sur chaque fiche. **Formulaire d'acte** : choix de la source, n° d'acte, vue n° sur total ; la citation est créée (et mise à jour) à l'enregistrement, aussi pour la mariée sur un mariage.
+- **GEDCOM 5.5.1 / Heredis** : enregistrements `SOUR` (TITL, REPO/CALN, DATA/EVEN/DATE/PLAC, TEXT, NOTE) et `REPO` ; citations `SOUR @Sn@` avec PAGE, QUAY, DATA/TEXT, NOTE sous INDI, NAME/BIRT/BAPM/DEAT/BURI/OCCU, événements libres et MARR. Champs propres à GénéaPoche en balises `_GP…` (ignorées par les autres logiciels, aller-retour sans perte pour GénéaPoche). Le lien Internet est écrit en ligne `URL : …` de la NOTE. L'import lit aussi les sources écrites par Heredis (NOTE par pointeur, REPO, SOUR en ligne, SOUR sous FAM).
+- **Correctif** : à l'import GEDCOM, les notes sur plusieurs lignes (CONT/CONC) étaient perdues faute de l'option « le point couvre les retours à la ligne » dans l'expression de lecture.
+- Sources et citations incluses dans le stockage chiffré, les sauvegardes `.gpbak`, la sauvegarde automatique, l'annulation d'une suppression de personne et la fusion de doublons (les citations suivent la fiche conservée).
+- **Limite connue** : l'import GEDCOM en mode « fusion » n'apporte pas encore les sources.
+- Bumps v0.92 (gradle 92/« 0.92 », export GEDCOM « 2 VERS 0.92 », badge de saisie, écran d'application). 14 nouveaux tests unitaires.
+
 ## v0.91 — Champ département supprimé
 
 - **Plus de champ Département** : supprimé de la fiche, du conjoint, du bloc-événement, de l'événement libre et de la saisie d'acte. Le département reste **stocké** et est désormais **déduit automatiquement du code INSEE** (17010 → 17, 2A004 → 2A) à chaque enregistrement — l'information reste disponible pour de futures statistiques par département.

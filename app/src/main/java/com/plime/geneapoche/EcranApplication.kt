@@ -165,7 +165,10 @@ class EtatApplication(
     // 12.1 : sauvegarde automatique (.gpbak) dans un dossier choisi.
     val dossierSauvegarde: String = "",
     val seuilSauvegarde: Int = 25,
-    val cleRecuperation: String = ""
+    val cleRecuperation: String = "",
+    // v0.92 : carnet de sources (sources reutilisables + citations).
+    val sources: List<Source> = emptyList(),
+    val citations: List<Citation> = emptyList()
 )
 
 // G2-09 : toutes les actions de l'ecran regroupees en une seule classe.
@@ -237,7 +240,13 @@ class ActionsApplication(
     val sauvegardeAuto: (Uri) -> Unit,
     val sauvegardeAutoOff: () -> Unit,
     val reglerSeuilSauvegarde: (Int) -> Unit,
-    val afficherCleSauvegarde: () -> Unit
+    val afficherCleSauvegarde: () -> Unit,
+    // v0.92 : carnet de sources. creerSource renvoie l'id attribue.
+    val creerSource: (Source) -> Long = { 0L },
+    val enregistrerSource: (Source) -> Unit = {},
+    val supprimerSource: (Long) -> Unit = {},
+    val enregistrerCitation: (Citation) -> Unit = {},
+    val supprimerCitation: (Long) -> Unit = {}
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -260,6 +269,8 @@ fun EcranApplication(
     var menuGedcom by remember { mutableStateOf(false) }
     // v0.87 : boite a outils (calendrier republicain, dates, parente).
     var outilsOuverts by remember { mutableStateOf(false) }
+    // v0.92 : carnet de sources.
+    var sourcesOuvert by remember { mutableStateOf(false) }
     var exclureVivants by remember { mutableStateOf(false) }
     // G\u00E9n\u00E9aPoche 3 : double export GEDCOM (5.5.1 pour Heredis, ou
     // 7.0.18, derni\u00E8re version du standard au 01/11/2026).
@@ -312,7 +323,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.91",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.92",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -688,6 +699,8 @@ fun EcranApplication(
                     EcranSaisieActe(
                         personnes = personnes,
                         onEnregistrer = enregistrerActe,
+                        sources = sources,
+                        onCreerSource = creerSource,
                         // v0.60 : l'onglet Saisie demarre sur la derniere
                         // fiche ouverte (pre-remplissage) au lieu d'un
                         // formulaire vierge.
@@ -862,6 +875,20 @@ fun EcranApplication(
                     onFermer = { outilsOuverts = false }
                 )
             }
+            if (sourcesOuvert) {
+                EcranSources(
+                    personnes = personnes,
+                    sources = sources,
+                    citations = citations,
+                    onCreerSource = creerSource,
+                    onEnregistrerSource = enregistrerSource,
+                    onSupprimerSource = supprimerSource,
+                    onEnregistrerCitation = enregistrerCitation,
+                    onSupprimerCitation = supprimerCitation,
+                    onOuvrirPersonne = { id -> onIdOuvert(id) },
+                    onFermer = { sourcesOuvert = false }
+                )
+            }
             if (menuGedcom) {
                 // G3-13 : ModalBottomSheet a la place du dialogue.
                 ModalBottomSheet(
@@ -878,7 +905,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.91", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.92", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; outilsOuverts = true },
@@ -888,6 +915,16 @@ fun EcranApplication(
                                     Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text("Bo\u00EEte \u00E0 outils (calendrier, dates, parent\u00E9)")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; sourcesOuvert = true },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Carnet de sources (" + sources.size.toString() + ")")
                                 }
                             }
                             TextButton(
@@ -1234,6 +1271,11 @@ fun EcranApplication(
             onRetirerTemoin = { type, id -> retirerTemoin(type, id) },
             onBasculerSignature = { type, id -> basculerSignature(type, id) },
             onEnregistrerActe = enregistrerActe,
+            sources = sources,
+            citations = citations,
+            onEnregistrerCitation = enregistrerCitation,
+            onSupprimerCitation = supprimerCitation,
+            onCreerSource = creerSource,
             onNouvelEnfant = { nom, prenoms, sexe, date ->
                 ajouterEnfant(nom, prenoms, sexe, date)
             },

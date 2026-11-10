@@ -33,6 +33,8 @@ import javax.crypto.spec.PBEKeySpec
 object Stockage {
     private const val FICHIER_PERSONNES = "personnes.bin"
     private const val FICHIER_JOURNAL = "journal.bin"
+    // v0.90 : carnet de sources (sources reutilisables + citations).
+    private const val FICHIER_SOURCES = "sources.bin"
     private const val FICHIER_ACTES = "actes.bin"
     private const val DOSSIER_IMAGES = "actes_img"
     private const val ANCIEN_FICHIER_CLAIR = "personnes.json"
@@ -454,6 +456,14 @@ object Stockage {
     fun sauverTexteJournal(ctx: Context, texte: String): Boolean =
         ecrireFichierChiffre(ctx, FICHIER_JOURNAL, texte)
 
+    // v0.90 : carnet de sources (Source et Citation melangees, voir
+    // elementsCatalogue) ; meme lecture tout-ou-rien et meme copie .bak.
+    fun chargerSources(ctx: Context): ResultatLecture<Any> =
+        lireChiffreToutOuRien(ctx, FICHIER_SOURCES) { texte -> elementsCatalogue(texte) }
+
+    fun sauverTexteSources(ctx: Context, texte: String): Boolean =
+        ecrireFichierChiffre(ctx, FICHIER_SOURCES, texte)
+
     private fun ecrireFichierChiffre(ctx: Context, nom: String, texte: String): Boolean {
         return try {
             val chiffre = chiffrer(texte.toByteArray()) ?: return false
@@ -639,7 +649,7 @@ object Stockage {
             if (dossier.exists()) dossier.deleteRecursively()
             if (!dossier.mkdirs()) return false
             var ok = true
-            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL).forEach { nom ->
+            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_SOURCES).forEach { nom ->
                 val src = File(ctx.filesDir, nom)
                 if (src.exists()) {
                     if (!copierFichier(src, File(dossier, nom))) ok = false
@@ -687,7 +697,7 @@ object Stockage {
                 }
                 if (dossier != null) {
                     var ok = true
-                    listOf(FICHIER_PERSONNES, FICHIER_JOURNAL).forEach { nom ->
+                    listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_SOURCES).forEach { nom ->
                         val bak = File(dossier, nom)
                         if (bak.exists()) {
                             if (!copierFichier(bak, File(ctx.filesDir, nom))) ok = false
@@ -743,7 +753,7 @@ object Stockage {
             val dossier = File(File(ctx.filesDir, DOSSIER_IMPORTBAK), slot.toString())
             if (!dossier.isDirectory) return false
             var ok = true
-            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL).forEach { nom ->
+            listOf(FICHIER_PERSONNES, FICHIER_JOURNAL, FICHIER_SOURCES).forEach { nom ->
                 val bak = File(dossier, nom)
                 if (bak.exists()) {
                     if (!copierFichier(bak, File(ctx.filesDir, nom))) ok = false
