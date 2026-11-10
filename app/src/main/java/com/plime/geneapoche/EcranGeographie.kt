@@ -194,7 +194,8 @@ fun EcranGeographie(
                         var precedent: String? = null
                         etapes.forEach { e ->
                             Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
-                                val changement = precedent != null && precedent != e.lieu && e.lieu.isNotEmpty() && precedent.isNotEmpty()
+                                val prec = precedent
+                                val changement = prec != null && prec.isNotEmpty() && e.lieu.isNotEmpty() && prec != e.lieu
                                 Text(
                                     (if (changement) "\u2192 " else "   ") + e.intitule,
                                     fontSize = 12.sp, fontWeight = FontWeight.Bold,

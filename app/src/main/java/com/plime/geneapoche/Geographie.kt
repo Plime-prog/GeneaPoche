@@ -111,7 +111,10 @@ fun etapesVoyage(p: Personne): List<EtapeVoyage> {
         if (ev.lieu.isNotBlank() || ev.date.isNotBlank())
             brutes.add(EtapeVoyage(ev.intitule, ev.date, lieuAffiche(ev.lieu), deptDuLieu(ev.lieu).ifEmpty { normaliserDept(ev.dept) }))
     }
-    fun anneeDe(s: String): Int? = Regex("(\\d{4})").find(s)?.groupValues?.[1]?.toIntOrNull()
+    fun anneeDe(s: String): Int? {
+        val m = Regex("(\\d{4})").find(s)
+        return m?.groupValues?.get(1)?.toIntOrNull()
+    }
     return brutes.sortedWith(compareBy({ anneeDe(it.date) ?: 9999 }, { it.intitule }))
 }
 
