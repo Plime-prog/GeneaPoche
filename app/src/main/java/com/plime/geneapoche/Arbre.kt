@@ -167,7 +167,7 @@ fun ArbreQuatre(
             Column(Modifier.width(UniteArbre * 8)) {
                 Row(Modifier.fillMaxWidth()) {
                     agps.forEach { a ->
-                        CarteMiniArbre(a, "", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
+                        CarteMiniArbre(a, "AGP", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
                     }
                 }
                 LiaisonsArbre(centres(8), barres(8), centres(4))
@@ -178,7 +178,7 @@ fun ArbreQuatre(
             Column(Modifier.width(UniteArbre * 4)) {
                 Row(Modifier.fillMaxWidth()) {
                     gps.forEach { g ->
-                        CarteMiniArbre(g, "", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
+                        CarteMiniArbre(g, "GP", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
                     }
                 }
                 LiaisonsArbre(centres(4), barres(4), centres(2))
@@ -188,8 +188,8 @@ fun ArbreQuatre(
         if (pere != null || mere != null) {
             Column(Modifier.width(UniteArbre * 2)) {
                 Row(Modifier.fillMaxWidth()) {
-                    CarteMiniArbre(pere, "", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
-                    CarteMiniArbre(mere, "", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
+                    CarteMiniArbre(pere, "P\u00E8re", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
+                    CarteMiniArbre(mere, "M\u00E8re", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
                 }
                 // Descente vers la carte centrale : à gauche du couple si
                 // un conjoint est affiché, au centre sinon.
@@ -200,13 +200,13 @@ fun ArbreQuatre(
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             CarteMiniArbre(
-                centre, "", onOuvrir, onCentrerSur,
+                centre, "Centre", onOuvrir, onCentrerSur,
                 centre = true,
                 modifier = Modifier.width(74.dp)
             )
             if (conjoint != null) {
                 Box(Modifier.width(14.dp).height(2.dp).background(CouleurLiaison))
-                CarteMiniArbre(conjoint, "", onOuvrir, onCentrerSur, modifier = Modifier.width(74.dp))
+                CarteMiniArbre(conjoint, "Conjoint(e)", onOuvrir, onCentrerSur, modifier = Modifier.width(74.dp))
             }
         }
         // ---- Les enfants de la personne centrale (GénéaPoche 6) :
@@ -224,7 +224,7 @@ fun ArbreQuatre(
                 )
                 Row(Modifier.fillMaxWidth()) {
                     enfants.forEach { e ->
-                        CarteMiniArbre(e, "", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
+                        CarteMiniArbre(e, "Enfant", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
                     }
                 }
             }
@@ -276,7 +276,7 @@ fun CarteMiniArbre(
             if (p == null) {
                 Text(
                     "Inconnu",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {

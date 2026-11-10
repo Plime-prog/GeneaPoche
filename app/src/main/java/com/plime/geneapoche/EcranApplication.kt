@@ -120,26 +120,27 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
             icon = { Icon(painterResource(R.drawable.ic_arbre), contentDescription = null) },
             label = { Text("Arbre") }
         )
+        // v0.94 (12) : l'onglet Saisie disparait (le bouton + ouvre la saisie) ;
+        // Ligne de vie passe en 4e position.
         NavigationBarItem(
             selected = onglet == 3,
             onClick = { onChoisir(3) },
-            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-            label = { Text("Saisie") }
-        )
-        // GÃ©nÃ©aPoche 8 (v0.47) : onglet Ligne de vie, une ligne de vie
-        // horizontale par membre de la famille proche.
-        NavigationBarItem(
-            selected = onglet == 4,
-            onClick = { onChoisir(4) },
             icon = { Icon(Icons.Filled.DateRange, contentDescription = null) },
             label = { Text("Ligne de vie") }
         )
-        // v0.93 (12.5) : onglet G\u00E9ographie, r\u00E9partition des anc\u00EAtres.
+        NavigationBarItem(
+            selected = onglet == 4,
+            onClick = { onChoisir(4) },
+            icon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            label = { Text("G\u00E9ographie") }
+        )
+        // v0.94 (12) : le Carnet de sources quitte les parametrages
+        // pour son propre onglet.
         NavigationBarItem(
             selected = onglet == 5,
             onClick = { onChoisir(5) },
-            icon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            label = { Text("G\u00E9ographie") }
+            icon = { Icon(painterResource(R.drawable.ic_sources), contentDescription = null) },
+            label = { Text("Sources") }
         )
     }
 }
@@ -264,10 +265,18 @@ fun EcranApplication(
 ) {
     with(etat) {
     with(actions) {
-    BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty()) {
+    // v0.94 (12) : le menu Saisie quitte la barre d'onglets et devient
+    // un plein ecran ouvert depuis le bouton +.
+    var saisieType by remember { mutableStateOf<String?>(null) }
+    var saisieParentEnfant by remember { mutableStateOf(0L) }
+    var saisieOuverte by remember { mutableStateOf(false) }
+    // v0.94 : le bouton + ouvre un menu (personne, acte, source, outils).
+    var menuAjout by remember { mutableStateOf(false) }
+    BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty() || saisieOuverte) {
         when {
             pickerRole.isNotEmpty() -> onPickerRole("")
             editionOuverte -> onEditionOuverte(false)
+            saisieOuverte -> { saisieOuverte = false; saisieType = null }
             else -> onIdOuvert(0L)
         }
     }
@@ -276,8 +285,6 @@ fun EcranApplication(
     var menuGedcom by remember { mutableStateOf(false) }
     // v0.87 : boite a outils (calendrier republicain, dates, parente).
     var outilsOuverts by remember { mutableStateOf(false) }
-    // v0.92 : carnet de sources.
-    var sourcesOuvert by remember { mutableStateOf(false) }
     var exclureVivants by remember { mutableStateOf(false) }
     // G\u00E9n\u00E9aPoche 3 : double export GEDCOM (5.5.1 pour Heredis, ou
     // 7.0.18, derni\u00E8re version du standard au 01/11/2026).
@@ -290,10 +297,6 @@ fun EcranApplication(
     var gedPhraseEnAttente by remember { mutableStateOf("") }
     var gedChiffreBranche by remember { mutableStateOf(false) }
     var confirmeVider by remember { mutableStateOf(false) }
-    // G\u00E9n\u00E9aPoche 3 : menu Saisie \u00E0 7 entr\u00E9es ; le formulaire
-    // s'ouvre en plein \u00E9cran (type N/B/M/S/D/E ou enfant).
-    var saisieType by remember { mutableStateOf<String?>(null) }
-    var saisieParentEnfant by remember { mutableStateOf(0L) }
     // G3-19 : retours utilisateur en Snackbar (plus de dialogue "Information"),
     // avec "Annuler" apres une suppression de personne.
     val etatSnackbar = remember { SnackbarHostState() }
@@ -330,7 +333,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.93",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.94",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -355,7 +358,7 @@ fun EcranApplication(
             bottomBar = { BarreOnglets(onglet, onOnglet) },
             floatingActionButton = {
                 // G\u00E9n\u00E9aPoche 2 : nouvelle fiche depuis N'IMPORTE QUELLE page.
-                FloatingActionButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
+                FloatingActionButton(onClick = { menuAjout = true }) {
                     Icon(Icons.Filled.Add, contentDescription = "Ajouter")
                 }
             }
@@ -435,7 +438,7 @@ fun EcranApplication(
                     }
                 } else {
                     // Onglet PERSONNES : compteur, tri A-Z / Aboville / Branches, index, cartes.
-                    // triPersonnes : 0 = A-Z, 1 = Aboville (n croissant), 2 = Branches.
+                    // triPersonnes : 0 = A-Z, 1 = Aboville (n croissant), 2 = Branches, 3 = Sosa.
                     // G\u00E9n\u00E9aPoche 12 : ABOVILLE par d\u00E9faut, Branches puis A-Z.
                     var triPersonnes by remember { mutableStateOf(1) }
                     val triees = personnes.sortedWith(
@@ -488,6 +491,10 @@ fun EcranApplication(
                         }
                     } else if (triPersonnes == 1) {
                         parAboville
+                    } else if (triPersonnes == 3) {
+                        // v0.94 : tri Sosa - seuls les ancetres de la ligne directe,
+                        // meme affichage que d'Aboville.
+                        personnes.filter { it.sosa != 0L }.sortedBy { it.sosa }
                     } else {
                         val membres = brancheChoisie?.let { b -> brancheDe(b, personnes) } ?: emptySet()
                         if (brancheChoisie == null) parAboville else parAboville.filter { it.id in membres }
@@ -547,6 +554,12 @@ fun EcranApplication(
                                     selected = triPersonnes == 1,
                                     onClick = { triPersonnes = 1 },
                                     label = { Text("Aboville") }
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                FilterChip(
+                                    selected = triPersonnes == 3,
+                                    onClick = { triPersonnes = 3 },
+                                    label = { Text("Sosa") }
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 FilterChip(
@@ -692,36 +705,6 @@ fun EcranApplication(
                 )
                 }
             } else if (onglet == 3) {
-                Box(Modifier.fillMaxSize().padding(marges).imePadding()) {
-                // G\u00E9n\u00E9aPoche 3 : menu de saisie \u00E0 7 entr\u00E9es (N, B, M,
-                // S, D, \u00C9v\u00E9nement, Enfant) puis formulaire plein \u00E9cran,
-                // pr\u00E9-rempli. "Enfant" choisit d'abord le parent existant.
-                if (saisieType == null) {
-                    EcranSaisie(
-                        personnes = personnes,
-                        onOuvrir = { t -> saisieType = t; saisieParentEnfant = 0L },
-                        onEnfant = { idParent -> saisieType = "N"; saisieParentEnfant = idParent }
-                    )
-                } else {
-                    EcranSaisieActe(
-                        personnes = personnes,
-                        onEnregistrer = enregistrerActe,
-                        sources = sources,
-                        onCreerSource = creerSource,
-                        // v0.60 : l'onglet Saisie demarre sur la derniere
-                        // fiche ouverte (pre-remplissage) au lieu d'un
-                        // formulaire vierge.
-                        initial = if (saisieParentEnfant == 0L && idOuvert != 0L && saisieType != "E") {
-                            personneParId(personnes, idOuvert)?.let { cand -> prefillActe(cand, personnes, saisieType) }
-                                ?: ActeSaisie(type = saisieType ?: "N")
-                        } else {
-                            ActeSaisie(type = saisieType ?: "N", parentPourEnfant = saisieParentEnfant)
-                        },
-                        onFermer = { saisieType = null }
-                    )
-                }
-                }
-            } else if (onglet == 4) {
                 // GÃ©nÃ©aPoche 8 (v0.47) : onglet Ligne de vie, lignes de vie
                 // horizontales de la famille proche de la personne choisie.
                 Box(Modifier.fillMaxSize().padding(marges)) {
@@ -732,7 +715,7 @@ fun EcranApplication(
                     onChoisir = { onArbreCentre(it) }
                 )
                 }
-            } else if (onglet == 5) {
+            } else if (onglet == 4) {
                 // v0.93 (12.5) : onglet G\u00E9ographie - damier des d\u00E9partements,
                 // tops de communes et voyage de la lign\u00E9e.
                 Box(Modifier.fillMaxSize().padding(marges)) {
@@ -745,6 +728,22 @@ fun EcranApplication(
                 }
             } else {
                 Box(Modifier.fillMaxSize().padding(marges)) {
+            } else if (onglet == 5) {
+                // v0.94 (12) : onglet Carnet de sources, deplace des parametrages.
+                Box(Modifier.fillMaxSize().padding(marges)) {
+                EcranSources(
+                    personnes = personnes,
+                    sources = sources,
+                    citations = citations,
+                    onCreerSource = creerSource,
+                    onEnregistrerSource = enregistrerSource,
+                    onSupprimerSource = supprimerSource,
+                    onEnregistrerCitation = enregistrerCitation,
+                    onSupprimerCitation = supprimerCitation,
+                    onOuvrirPersonne = { id -> onIdOuvert(id) },
+                    onFermer = { onOnglet(0) }
+                )
+                }
                 EcranJournal(
                     pistes = pistes,
                     personnes = personnes,
@@ -893,19 +892,80 @@ fun EcranApplication(
                     onFermer = { outilsOuverts = false }
                 )
             }
-            if (sourcesOuvert) {
-                EcranSources(
-                    personnes = personnes,
-                    sources = sources,
-                    citations = citations,
-                    onCreerSource = creerSource,
-                    onEnregistrerSource = enregistrerSource,
-                    onSupprimerSource = supprimerSource,
-                    onEnregistrerCitation = enregistrerCitation,
-                    onSupprimerCitation = supprimerCitation,
-                    onOuvrirPersonne = { id -> onIdOuvert(id) },
-                    onFermer = { sourcesOuvert = false }
-                )
+            // v0.94 : saisie par acte en plein ecran, ouverte depuis le bouton +.
+            if (saisieOuverte) {
+                Box(Modifier.fillMaxSize().padding(marges).imePadding()) {
+                    if (saisieType == null) {
+                        Column(Modifier.fillMaxSize()) {
+                            TextButton(onClick = { saisieOuverte = false }) { Text("\u2190 Fermer") }
+                            Box(Modifier.weight(1f)) {
+                                EcranSaisie(
+                                    personnes = personnes,
+                                    onOuvrir = { t -> saisieType = t; saisieParentEnfant = 0L },
+                                    onEnfant = { idParent -> saisieType = "N"; saisieParentEnfant = idParent }
+                                )
+                            }
+                        }
+                    } else {
+                        EcranSaisieActe(
+                            personnes = personnes,
+                            onEnregistrer = enregistrerActe,
+                            sources = sources,
+                            onCreerSource = creerSource,
+                            initial = if (saisieParentEnfant == 0L && idOuvert != 0L && saisieType != "E") {
+                                personneParId(personnes, idOuvert)?.let { cand -> prefillActe(cand, personnes, saisieType) }
+                                    ?: ActeSaisie(type = saisieType ?: "N")
+                            } else {
+                                ActeSaisie(type = saisieType ?: "N", parentPourEnfant = saisieParentEnfant)
+                            },
+                            onFermer = { saisieType = null; saisieOuverte = false }
+                        )
+                    }
+                }
+            }
+            // v0.94 : menu du bouton + (personne, acte, source, outils).
+            if (menuAjout) {
+                ModalBottomSheet(onDismissRequest = { menuAjout = false }) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 32.dp)
+                    ) {
+                        Text("Ajouter", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(8.dp))
+                        TextButton(onClick = { menuAjout = false; onEditionCible(null); onEditionOuverte(true) }, Modifier.fillMaxWidth()) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Nouvelle personne")
+                            }
+                        }
+                        TextButton(onClick = { menuAjout = false; saisieType = null; saisieParentEnfant = 0L; saisieOuverte = true }, Modifier.fillMaxWidth()) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Nouvel acte (naissance, mariage, d\u00E9c\u00E8s...)")
+                            }
+                        }
+                        TextButton(onClick = { menuAjout = false; onOnglet(5) }, Modifier.fillMaxWidth()) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(painterResource(R.drawable.ic_sources), contentDescription = null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Nouvelle source (carnet de sources)")
+                            }
+                        }
+                        TextButton(onClick = { menuAjout = false; outilsOuverts = true }, Modifier.fillMaxWidth()) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Bo\u00EEte \u00E0 outils (calendrier, dates, parent\u00E9)")
+                            }
+                        }
+                        TextButton(onClick = { menuAjout = false }, Modifier.fillMaxWidth()) { Text("Fermer") }
+                    }
+                }
             }
             if (menuGedcom) {
                 // G3-13 : ModalBottomSheet a la place du dialogue.
@@ -923,28 +983,8 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.93", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.94", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
-                            TextButton(
-                                onClick = { menuGedcom = false; outilsOuverts = true },
-                                Modifier.fillMaxWidth()
-                            ) {
-                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Bo\u00EEte \u00E0 outils (calendrier, dates, parent\u00E9)")
-                                }
-                            }
-                            TextButton(
-                                onClick = { menuGedcom = false; sourcesOuvert = true },
-                                Modifier.fillMaxWidth()
-                            ) {
-                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Carnet de sources (" + sources.size.toString() + ")")
-                                }
-                            }
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
                                 Modifier.fillMaxWidth()
