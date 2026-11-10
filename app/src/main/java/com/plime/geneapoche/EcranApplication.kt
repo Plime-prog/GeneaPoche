@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.imePadding
@@ -88,7 +89,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -120,31 +126,28 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
             icon = { Icon(painterResource(R.drawable.ic_arbre), contentDescription = null) },
             label = { Text("Arbre") }
         )
-        // v0.94 (12) : l'onglet Saisie disparait (le bouton + ouvre la saisie) ;
-        // Ligne de vie passe en 4e position.
+        // v0.95 (12) : la Boite a outils devient un onglet a part entiere.
         NavigationBarItem(
             selected = onglet == 3,
             onClick = { onChoisir(3) },
             icon = { Icon(Icons.Filled.DateRange, contentDescription = null) },
-            label = { Text("Ligne de vie") }
+            label = { Text("Outils") }
         )
         NavigationBarItem(
             selected = onglet == 4,
             onClick = { onChoisir(4) },
-            icon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            label = { Text("G\u00E9ographie") }
-        )
-        // v0.94 (12) : le Carnet de sources quitte les parametrages
-        // pour son propre onglet.
-        NavigationBarItem(
-            selected = onglet == 5,
-            onClick = { onChoisir(5) },
             icon = { Icon(painterResource(R.drawable.ic_sources), contentDescription = null) },
             label = { Text("Sources") }
         )
+        // v0.95 (12) : Geographie devient Statistiques, dernier onglet.
+        NavigationBarItem(
+            selected = onglet == 5,
+            onClick = { onChoisir(5) },
+            icon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            label = { Text("Statistiques") }
+        )
     }
 }
-
 // G2-09 : l'etat de l'ecran (donnees affichees) regroupe en une seule classe,
 // pour ramener la signature d'EcranApplication a 2 parametres.
 class EtatApplication(
@@ -270,8 +273,8 @@ fun EcranApplication(
     var saisieType by remember { mutableStateOf<String?>(null) }
     var saisieParentEnfant by remember { mutableStateOf(0L) }
     var saisieOuverte by remember { mutableStateOf(false) }
-    // v0.94 : le bouton + ouvre un menu (personne, acte, source, outils).
-    var menuAjout by remember { mutableStateOf(false) }
+    // v0.95 (12) : menu interne de l'onglet Arbre (0 = arbre, 1 = ligne de vie).
+    var vueArbre by remember { mutableStateOf(0) }
     BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty() || saisieOuverte) {
         when {
             pickerRole.isNotEmpty() -> onPickerRole("")
@@ -283,8 +286,6 @@ fun EcranApplication(
 
     val ouverte = personneParId(personnes, idOuvert)
     var menuGedcom by remember { mutableStateOf(false) }
-    // v0.87 : boite a outils (calendrier republicain, dates, parente).
-    var outilsOuverts by remember { mutableStateOf(false) }
     var exclureVivants by remember { mutableStateOf(false) }
     // G\u00E9n\u00E9aPoche 3 : double export GEDCOM (5.5.1 pour Heredis, ou
     // 7.0.18, derni\u00E8re version du standard au 01/11/2026).
@@ -333,7 +334,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.94",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.95",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -358,7 +359,7 @@ fun EcranApplication(
             bottomBar = { BarreOnglets(onglet, onOnglet) },
             floatingActionButton = {
                 // G\u00E9n\u00E9aPoche 2 : nouvelle fiche depuis N'IMPORTE QUELLE page.
-                FloatingActionButton(onClick = { menuAjout = true }) {
+                FloatingActionButton(onClick = { saisieType = null; saisieParentEnfant = 0L; saisieOuverte = true }) {
                     Icon(Icons.Filled.Add, contentDescription = "Ajouter")
                 }
             }
@@ -439,8 +440,8 @@ fun EcranApplication(
                 } else {
                     // Onglet PERSONNES : compteur, tri A-Z / Aboville / Branches, index, cartes.
                     // triPersonnes : 0 = A-Z, 1 = Aboville (n croissant), 2 = Branches, 3 = Sosa.
-                    // G\u00E9n\u00E9aPoche 12 : ABOVILLE par d\u00E9faut, Branches puis A-Z.
-                    var triPersonnes by remember { mutableStateOf(1) }
+                    // v0.95 (12) : SOSA par d\u00e9faut, puis Aboville, Branches, A-Z.
+                    var triPersonnes by remember { mutableStateOf(3) }
                     val triees = personnes.sortedWith(
                         compareBy(
                             { it.nom.trim().uppercase() },
@@ -553,15 +554,15 @@ fun EcranApplication(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 FilterChip(
-                                    selected = triPersonnes == 1,
-                                    onClick = { triPersonnes = 1 },
-                                    label = { Text("Aboville") }
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                FilterChip(
                                     selected = triPersonnes == 3,
                                     onClick = { triPersonnes = 3 },
                                     label = { Text("Sosa") }
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                FilterChip(
+                                    selected = triPersonnes == 1,
+                                    onClick = { triPersonnes = 1 },
+                                    label = { Text("Aboville") }
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 FilterChip(
@@ -696,40 +697,57 @@ fun EcranApplication(
             } else if (onglet == 2) {
                 // G3-03 : marges du Scaffold (barre du haut, barre du bas)
                 // appliquees aussi a ces onglets.
-                Box(Modifier.fillMaxSize().padding(marges)) {
-                EcranArbre(
-                    personnes = personnes,
-                    idCentre = arbreCentre,
-                    // G\u00E9n\u00E9aPoche 5 : toucher une carte = la personne
-                    // devient le CENTRE de l'arbre ; appui long = fiche.
-                    onOuvrir = { onIdOuvert(it) },
-                    onCentrerSur = { onArbreCentre(it) }
-                )
+                Column(Modifier.fillMaxSize().padding(marges)) {
+                    // v0.95 (12) : menu en haut, comme le menu Personnes.
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 2.dp)) {
+                        FilterChip(
+                            selected = vueArbre == 0,
+                            onClick = { vueArbre = 0 },
+                            label = { Text("Arbre") }
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        FilterChip(
+                            selected = vueArbre == 1,
+                            onClick = { vueArbre = 1 },
+                            label = { Text("Ligne de vie") }
+                        )
+                    }
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        if (vueArbre == 0) {
+                            EcranArbre(
+                                personnes = personnes,
+                                idCentre = arbreCentre,
+                                onOuvrir = { onIdOuvert(it) },
+                                onCentrerSur = { onArbreCentre(it) }
+                            )
+                        } else {
+                            EcranFrise(
+                                personnes = personnes,
+                                idChoisie = arbreCentre,
+                                onOuvrir = { onIdOuvert(it) },
+                                onChoisir = { onArbreCentre(it) }
+                            )
+                        }
+                    }
                 }
             } else if (onglet == 3) {
-                // GÃ©nÃ©aPoche 8 (v0.47) : onglet Ligne de vie, lignes de vie
-                // horizontales de la famille proche de la personne choisie.
+                // v0.95 (12) : la Boite a outils devient un onglet.
                 Box(Modifier.fillMaxSize().padding(marges)) {
-                EcranFrise(
+                EcranOutils(
                     personnes = personnes,
-                    idChoisie = arbreCentre,
-                    onOuvrir = { onIdOuvert(it); onArbreCentre(it) },
-                    onChoisir = { onArbreCentre(it) }
+                    onAjouterNote = { id, texte ->
+                        val cible = personneParId(personnes, id)
+                        if (cible != null) {
+                            cible.notesLibres = (if (cible.notesLibres.isBlank()) texte else cible.notesLibres.trim() + "\n" + texte).trim()
+                            enregistrer()
+                        }
+                    },
+                    enOnglet = true
                 )
                 }
             } else if (onglet == 4) {
-                // v0.93 (12.5) : onglet G\u00E9ographie - damier des d\u00E9partements,
-                // tops de communes et voyage de la lign\u00E9e.
-                Box(Modifier.fillMaxSize().padding(marges)) {
-                EcranGeographie(
-                    personnes = personnes,
-                    idChoisie = arbreCentre,
-                    onOuvrir = { onIdOuvert(it); onArbreCentre(it) },
-                    onChoisir = { onArbreCentre(it) }
-                )
-                }
-            } else if (onglet == 5) {
-                // v0.94 (12) : onglet Carnet de sources, deplace des parametrages.
+                // v0.95 (12) : le Carnet de sources s'affiche comme les autres
+                // onglets (barre de navigation toujours visible).
                 Box(Modifier.fillMaxSize().padding(marges)) {
                 EcranSources(
                     personnes = personnes,
@@ -740,8 +758,17 @@ fun EcranApplication(
                     onSupprimerSource = supprimerSource,
                     onEnregistrerCitation = enregistrerCitation,
                     onSupprimerCitation = supprimerCitation,
-                    onOuvrirPersonne = { id -> onIdOuvert(id) },
-                    onFermer = { onOnglet(0) }
+                    onOuvrirPersonne = { id -> onIdOuvert(id) }
+                )
+                }
+            } else if (onglet == 5) {
+                // v0.95 (12) : Geographie devient Statistiques, dernier onglet.
+                Box(Modifier.fillMaxSize().padding(marges)) {
+                EcranGeographie(
+                    personnes = personnes,
+                    idChoisie = arbreCentre,
+                    onOuvrir = { onIdOuvert(it); onArbreCentre(it) },
+                    onChoisir = { onArbreCentre(it) }
                 )
                 }
             } else {
@@ -881,91 +908,106 @@ fun EcranApplication(
                     }
                 )
             }
-            if (outilsOuverts) {
-                EcranOutils(
-                    personnes = personnes,
-                    onAjouterNote = { id, texte ->
-                        val cible = personneParId(personnes, id)
-                        if (cible != null) {
-                            cible.notesLibres = (if (cible.notesLibres.isBlank()) texte else cible.notesLibres.trim() + "\n" + texte).trim()
-                            enregistrer()
-                        }
-                    },
-                    onFermer = { outilsOuverts = false }
-                )
-            }
-            // v0.94 : saisie par acte en plein ecran, ouverte depuis le bouton +.
+            // v0.95 (12) : le bouton + ouvre un ecran SCINDE : en haut
+            // l'image a transcrire (zoom + deplacement), en bas la saisie
+            // (personne complete, actes, source).
             if (saisieOuverte) {
-                Box(Modifier.fillMaxSize().padding(marges).imePadding()) {
-                    if (saisieType == null) {
-                        Column(Modifier.fillMaxSize()) {
-                            TextButton(onClick = { saisieOuverte = false }) { Text("\u2190 Fermer") }
-                            Box(Modifier.weight(1f)) {
-                                EcranSaisie(
-                                    personnes = personnes,
-                                    onOuvrir = { t -> saisieType = t; saisieParentEnfant = 0L },
-                                    onEnfant = { idParent -> saisieType = "N"; saisieParentEnfant = idParent }
-                                )
-                            }
-                        }
-                    } else {
-                        EcranSaisieActe(
-                            personnes = personnes,
-                            onEnregistrer = enregistrerActe,
-                            sources = sources,
-                            onCreerSource = creerSource,
-                            initial = if (saisieParentEnfant == 0L && idOuvert != 0L && saisieType != "E") {
-                                personneParId(personnes, idOuvert)?.let { cand -> prefillActe(cand, personnes, saisieType) }
-                                    ?: ActeSaisie(type = saisieType ?: "N")
-                            } else {
-                                ActeSaisie(type = saisieType ?: "N", parentPourEnfant = saisieParentEnfant)
-                            },
-                            onFermer = { saisieType = null; saisieOuverte = false }
-                        )
-                    }
+                var imageTranscription by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+                var uriImage by remember { mutableStateOf<Uri?>(null) }
+                var zoomImage by remember { mutableStateOf(1f) }
+                var decaleImage by remember { mutableStateOf(Offset.Zero) }
+                val contexte = LocalContext.current
+                val lanceurImage = rememberLauncherForActivityResult(
+                    ActivityResultContracts.PickVisualMedia()
+                ) { uri ->
+                    picker(false)
+                    uriImage = uri
                 }
-            }
-            // v0.94 : menu du bouton + (personne, acte, source, outils).
-            if (menuAjout) {
-                ModalBottomSheet(onDismissRequest = { menuAjout = false }) {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 24.dp)
-                            .padding(bottom = 32.dp)
+                LaunchedEffect(uriImage) {
+                    val u = uriImage ?: return@LaunchedEffect
+                    imageTranscription = try {
+                        val opts = android.graphics.BitmapFactory.Options().apply { inSampleSize = 2 }
+                        contexte.contentResolver.openInputStream(u)?.use { flux ->
+                            android.graphics.BitmapFactory.decodeStream(flux, null, opts)
+                        }
+                    } catch (e2: Exception) { null }
+                }
+                Column(Modifier.fillMaxSize().padding(marges).imePadding()) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { saisieOuverte = false; saisieType = null }) { Text("\u2190 Fermer") }
+                        Spacer(Modifier.weight(1f))
+                        TextButton(onClick = {
+                            picker(true)
+                            lanceurImage.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        }) { Text("Image \u00e0 transcrire") }
+                    }
+                    // Zone HAUTE : l'image de reference.
+                    Box(
+                        Modifier.weight(1f).fillMaxWidth()
+                            .pointerInput(Unit) {
+                                detectTransformGestures { _, pan, zoom, _ ->
+                                    zoomImage = (zoomImage * zoom).coerceIn(1f, 5f)
+                                    decaleImage += pan
+                                }
+                            }
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
-                        Text("Ajouter", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { menuAjout = false; onEditionCible(null); onEditionOuverte(true) }, Modifier.fillMaxWidth()) {
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Nouvelle personne")
-                            }
+                        val bmp = imageTranscription
+                        if (bmp == null) {
+                            Text(
+                                "Choisissez une image (acte, capture d'\u00e9cran) : elle reste affich\u00e9e ici, zoomable, pendant que vous saisissez en bas.",
+                                Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            Image(
+                                bitmap = bmp.asImageBitmap(),
+                                contentDescription = "Image \u00e0 transcrire",
+                                modifier = Modifier.fillMaxSize().graphicsLayer {
+                                    scaleX = zoomImage; scaleY = zoomImage
+                                    translationX = decaleImage.x; translationY = decaleImage.y
+                                }
+                            )
                         }
-                        TextButton(onClick = { menuAjout = false; saisieType = null; saisieParentEnfant = 0L; saisieOuverte = true }, Modifier.fillMaxWidth()) {
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Nouvel acte (naissance, mariage, d\u00E9c\u00E8s...)")
+                    }
+                    // Zone BASSE : la saisie.
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        if (saisieType == null) {
+                            Column(Modifier.fillMaxSize()) {
+                                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp)) {
+                                    TextButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
+                                        Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(16.dp))
+                                        Text("  Personne compl\u00e8te")
+                                    }
+                                    TextButton(onClick = { onOnglet(4) }) {
+                                        Icon(painterResource(R.drawable.ic_sources), contentDescription = null, Modifier.size(16.dp))
+                                        Text("  Source")
+                                    }
+                                }
+                                Box(Modifier.weight(1f)) {
+                                    EcranSaisie(
+                                        personnes = personnes,
+                                        onOuvrir = { t -> saisieType = t; saisieParentEnfant = 0L },
+                                        onEnfant = { idParent -> saisieType = "N"; saisieParentEnfant = idParent }
+                                    )
+                                }
                             }
+                        } else {
+                            EcranSaisieActe(
+                                personnes = personnes,
+                                onEnregistrer = enregistrerActe,
+                                sources = sources,
+                                onCreerSource = creerSource,
+                                initial = if (saisieParentEnfant == 0L && idOuvert != 0L && saisieType != "E") {
+                                    personneParId(personnes, idOuvert)?.let { cand -> prefillActe(cand, personnes, saisieType) }
+                                        ?: ActeSaisie(type = saisieType ?: "N")
+                                } else {
+                                    ActeSaisie(type = saisieType ?: "N", parentPourEnfant = saisieParentEnfant)
+                                },
+                                onFermer = { saisieType = null }
+                            )
                         }
-                        TextButton(onClick = { menuAjout = false; onOnglet(5) }, Modifier.fillMaxWidth()) {
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(painterResource(R.drawable.ic_sources), contentDescription = null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Nouvelle source (carnet de sources)")
-                            }
-                        }
-                        TextButton(onClick = { menuAjout = false; outilsOuverts = true }, Modifier.fillMaxWidth()) {
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Bo\u00EEte \u00E0 outils (calendrier, dates, parent\u00E9)")
-                            }
-                        }
-                        TextButton(onClick = { menuAjout = false }, Modifier.fillMaxWidth()) { Text("Fermer") }
                     }
                 }
             }
@@ -985,7 +1027,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.94", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.95", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
