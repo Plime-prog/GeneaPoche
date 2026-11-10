@@ -494,7 +494,9 @@ fun EcranApplication(
                     } else if (triPersonnes == 3) {
                         // v0.94 : tri Sosa - seuls les ancetres de la ligne directe,
                         // meme affichage que d'Aboville.
-                        personnes.filter { it.sosa != 0L }.sortedBy { it.sosa }
+                        // sosa est une chaine : tri numerique (1, 2, 3... 10, pas 1, 10, 2).
+                        personnes.filter { it.sosa.trim().isNotEmpty() && it.sosa.trim() != "0" }
+                            .sortedBy { it.sosa.trim().toLongOrNull() ?: Long.MAX_VALUE }
                     } else {
                         val membres = brancheChoisie?.let { b -> brancheDe(b, personnes) } ?: emptySet()
                         if (brancheChoisie == null) parAboville else parAboville.filter { it.id in membres }
@@ -726,8 +728,6 @@ fun EcranApplication(
                     onChoisir = { onArbreCentre(it) }
                 )
                 }
-            } else {
-                Box(Modifier.fillMaxSize().padding(marges)) {
             } else if (onglet == 5) {
                 // v0.94 (12) : onglet Carnet de sources, deplace des parametrages.
                 Box(Modifier.fillMaxSize().padding(marges)) {
@@ -744,6 +744,8 @@ fun EcranApplication(
                     onFermer = { onOnglet(0) }
                 )
                 }
+            } else {
+                Box(Modifier.fillMaxSize().padding(marges)) {
                 EcranJournal(
                     pistes = pistes,
                     personnes = personnes,
