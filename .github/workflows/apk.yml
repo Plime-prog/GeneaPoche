@@ -157,4 +157,7 @@ jobs:
             "GeneaPoche-v${VERSION}-release.apk#APK release (a installer)" \
             "GeneaPoche-v${VERSION}-debug.apk#APK debug" \
             --title "GeneaPoche $TAG" \
-            --generate-notes
+            --generate-notes \
+            || gh release upload "$TAG" --clobber \
+              "GeneaPoche-v${VERSION}-release.apk" \
+              "GeneaPoche-v${VERSION}-debug.apk"
