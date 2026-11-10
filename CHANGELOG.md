@@ -1,5 +1,27 @@
 # Historique des versions — GénéaPoche
 
+## v0.95 — GénéaPoche 12 : réorganisation (2) — saisie scindée
+
+- **Tri « Sosa » par défaut** dans la liste Personnes : les puces Sosa et Aboville sont inversées (Sosa d'abord) et le tri à l'ouverture est Sosa.
+- **L'onglet « Ligne de vie » disparaît de la barre** : arbre et ligne de vie sont réunis dans l'onglet « Arbre », avec un menu en haut (puces Arbre / Ligne de vie) comme le menu de la liste Personnes.
+- **Ligne de vie : toucher une ligne recentre** la ligne de vie sur cette personne (plus de renvoi vers la fiche) ; la personne choisie est synchronisée partout (arbre, ligne de vie, statistiques).
+- **Arbre : cadres uniformes** (hauteur fixe, même si des informations manquent), police réduite, tout sur une ligne avec troncature « … » ; intitulés Centre / Conjoint(e) / Enfant / Père / Mère / AGP / GP supprimés.
+- **La Boîte à outils devient un onglet** (3e position) : elle quitte le bouton +.
+- **Géographie devient « Statistiques »**, dernier onglet (6e).
+- **Le bouton + ouvre un écran scindé** : en haut, l'image de l'acte à transcrire (choix dans la galerie, zoom 1-5×, déplacement au doigt — elle reste affichée pendant la saisie) ; en bas, la saisie (menu d'actes N/B/M/S/D/Événement/Enfant, « Personne complète », « Source »), champs compactés.
+- **Carnet de sources compacté** : plus de fenêtre plein écran, affichage comme les autres onglets (barre de navigation toujours visible), champs et espacements réduits.
+- Barre d'onglets : Personnes · Journal · Arbre · Outils · Sources · Statistiques.
+- Bumps v0.95 (gradle 95/« 0.95 », export GEDCOM « 2 VERS 0.95 », badge de saisie, écran d'application).
+## v0.94 — GénéaPoche 12 : réorganisation (post v0.93)
+
+- **Tri « Sosa » dans la liste Personnes** : nouvelle puce à côté d'A-Z, d'Aboville et Branches — seuls les ancêtres de la ligne directe (n° Sosa renseigné et non nul), numéros croissants, même présentation que le tri d'Aboville.
+- **L'onglet « Saisie » disparaît de la barre** : la saisie par acte (menu à 7 entrées N/B/M/S/D/Événement/Enfant, puis formulaire pré-rempli) s'ouvre désormais en plein écran depuis le bouton **+** ; le bouton retour du système ferme aussi la saisie.
+- **Le bouton + ouvre un menu** : Nouvelle personne / Nouvel acte / Nouvelle source (ouvre le carnet) / Boîte à outils.
+- **Boîte à outils déplacée** : elle quitte le menu des paramétrages et s'ouvre depuis le bouton +.
+- **Nouvel onglet « Sources »** (dernier, après Géographie) : le Carnet de sources quitte les paramétrages pour son propre onglet, avec sa propre icône (livre).
+- **Arbre : étiquettes de parenté homogènes** sur toutes les cartes du mini-arbre (AGP, GP, Père, Mère, Centre, Conjoint(e), Enfant) — elles étaient vides jusqu'ici ; « Inconnu » harmonisé en petit corps.
+- Barre d'onglets : Personnes · Journal · Arbre · Ligne de vie · Géographie · Sources.
+- Bumps v0.94 (gradle 94/« 0.94 », export GEDCOM « 2 VERS 0.94 », badge de saisie, écran d'application).
 ## v0.93 — Répartition géographique (12.5) : onglet Géographie, damier des départements, voyage de la lignée
 
 - **Nouvel onglet « Géographie »** (6e onglet) : un damier des 98 départements (métropole, Corse 2A/2B, DOM 971-976), chaque case colorée selon le nombre d'ancêtres qui y ont vécu — du beige clair (aucun) au rouge foncé (le plus peuplé). Le nom du département et son effectif s'affichent au toucher.

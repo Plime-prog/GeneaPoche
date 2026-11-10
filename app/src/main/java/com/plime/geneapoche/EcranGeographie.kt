@@ -75,7 +75,8 @@ fun EcranGeographie(
 
     Column(Modifier.fillMaxSize()) {
         Text(
-            "R\u00E9partition g\u00E9ographique",
+                        // v0.95 (12) : l'onglet Géographie devient Statistiques.
+            "Statistiques",
             Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold

@@ -412,7 +412,7 @@ fun EcranSaisieActe(
     // Enregistrer reste TOUJOURS visible en bas, hors du defilement.
     Column(Modifier.fillMaxSize()) {
         Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(8.dp)
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(4.dp)
         ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (onFermer != null) {
@@ -430,7 +430,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.94",
+                "  v0.95",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1101,7 +1101,7 @@ fun EcranSaisie(
 ) {
     var pickerParent by remember { mutableStateOf(false) }
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(8.dp)
     ) {
         Text(
             "Saisie",
