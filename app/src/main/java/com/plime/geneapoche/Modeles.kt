@@ -28,8 +28,9 @@ fun sansPays(s: String): String =
 // "2A004" -> "2A") et conserv\u00E9 en stockage (statistiques futures,
 // compatibilit\u00E9 des anciennes bases). Vide si le lieu n'a pas de code.
 fun deptDuLieu(l: String): String {
-    val m = Regex("(^|, )(\\d{5}|2[AB]\\d{3})(,|$)").find(l.trim()) ?: return ""
-    return m.groupValues[2].take(2)
+    // v0.93 : insensible a la casse (codes de Corse "2a004" d'anciennes bases).
+    val m = Regex("(^|, )(\\d{5}|2[AB]\\d{3})(,|$)", RegexOption.IGNORE_CASE).find(l.trim()) ?: return ""
+    return m.groupValues[2].take(2).uppercase()
 }
 
 // G\u00E9n\u00E9aPoche 5 : commune transcrite avec une initiale en MAJUSCULES
@@ -52,7 +53,10 @@ fun normaliserCommune(s: String): String {
             sb.append(c)
         }
     }
-    return sb.toString()
+    // v0.93 : le passage en minuscules a pu abimer un code INSEE de Corse
+    // ("2A004" -> "2a004") : la lettre du departement est restauree en
+    // MAJUSCULES, le code doit rester derivable en "2A".
+    return Regex("2([ab])(\\d{3})").replace(sb.toString()) { m -> m.value.uppercase() }
 }
 
 // G\u00E9n\u00E9aPoche 5 : d\u00E9partement au format NUM\u00C9RIQUE (norme GEDCOM),

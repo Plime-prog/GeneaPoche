@@ -134,6 +134,13 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
             icon = { Icon(Icons.Filled.DateRange, contentDescription = null) },
             label = { Text("Ligne de vie") }
         )
+        // v0.93 (12.5) : onglet G\u00E9ographie, r\u00E9partition des anc\u00EAtres.
+        NavigationBarItem(
+            selected = onglet == 5,
+            onClick = { onChoisir(5) },
+            icon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            label = { Text("G\u00E9ographie") }
+        )
     }
 }
 
@@ -719,6 +726,17 @@ fun EcranApplication(
                 // horizontales de la famille proche de la personne choisie.
                 Box(Modifier.fillMaxSize().padding(marges)) {
                 EcranFrise(
+                    personnes = personnes,
+                    idChoisie = arbreCentre,
+                    onOuvrir = { onIdOuvert(it); onArbreCentre(it) },
+                    onChoisir = { onArbreCentre(it) }
+                )
+                }
+            } else if (onglet == 5) {
+                // v0.93 (12.5) : onglet G\u00E9ographie - damier des d\u00E9partements,
+                // tops de communes et voyage de la lign\u00E9e.
+                Box(Modifier.fillMaxSize().padding(marges)) {
+                EcranGeographie(
                     personnes = personnes,
                     idChoisie = arbreCentre,
                     onOuvrir = { onIdOuvert(it); onArbreCentre(it) },
