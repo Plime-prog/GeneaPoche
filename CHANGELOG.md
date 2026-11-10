@@ -1,5 +1,16 @@
 # Historique des versions — GénéaPoche
 
+## v0.93 — Répartition géographique (12.5) : onglet Géographie, damier des départements, voyage de la lignée
+
+- **Nouvel onglet « Géographie »** (6e onglet) : un damier des 98 départements (métropole, Corse 2A/2B, DOM 971-976), chaque case colorée selon le nombre d'ancêtres qui y ont vécu — du beige clair (aucun) au rouge foncé (le plus peuplé). Le nom du département et son effectif s'affichent au toucher.
+- **Clic sur un département** : liste des personnes concernées (identifiant unique, cliquable vers la fiche), avec le lieu et l'événement qui les y rattache ; naissance comptée en premier.
+- **Top 3 communes** de la lignée, en pastilles vertes cliquables vers les fiches.
+- **« Voyage de la lignée »** : pour la personne ouverte, la succession chronologique de ses lieux (naissance, baptême, mariages, décès, sépulture, événements libres) — chaque changement de lieu est marqué d'une flèche rouge : les migrations se lisent d'un coup d'œil, génération après génération.
+- **Aucune carte, aucun réseau** : tout est calculé localement depuis les lieux normalisés (code INSEE prioritaire, repli sur l'ancien format « Roubaix, 59, Nord » et sur le département stocké).
+- **Correctif Corse (v0.88 → v0.92)** : les codes INSEE 2A/2B (ex « 2A004 ») étaient corrompus en minuscules (« 2a004 ») par la normalisation des communes — un ancêtre corse perdait son département. Les codes sont réparés et la lecture tolère les anciennes bases : la correction se fait toute seule à la prochaine ouverture.
+- 5 nouveaux tests unitaires (répartition, repli ancien format, communes, ordre chronologique du voyage, noms des départements).
+- Bumps v0.93 (gradle 93/« 0.93 », export GEDCOM « 2 VERS 0.93 », badge de saisie, écran d'application).
+
 ## v0.92 — Carnet de sources (Source réutilisable / Citation), compatible GEDCOM et Heredis
 
 - **Fiche Source** réutilisable : titre, type (naissance, baptême, mariage, décès, sépulture, recensement, notarié, militaire, autre), commune, période, dépôt, cote, lien Internet **facultatif**, transcription, notes, niveau de fiabilité (0-3, échelle QUAY). Une source se décrit une fois.
