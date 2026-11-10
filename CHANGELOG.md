@@ -1,5 +1,17 @@
 # Historique des versions — GénéaPoche
 
+## v0.95 — GénéaPoche 12 : réorganisation (2) — saisie scindée
+
+- **Tri « Sosa » par défaut** dans la liste Personnes : les puces Sosa et Aboville sont inversées (Sosa d'abord) et le tri à l'ouverture est Sosa.
+- **L'onglet « Ligne de vie » disparaît de la barre** : arbre et ligne de vie sont réunis dans l'onglet « Arbre », avec un menu en haut (puces Arbre / Ligne de vie) comme le menu de la liste Personnes.
+- **Ligne de vie : toucher une ligne recentre** la ligne de vie sur cette personne (plus de renvoi vers la fiche) ; la personne choisie est synchronisée partout (arbre, ligne de vie, statistiques).
+- **Arbre : cadres uniformes** (hauteur fixe, même si des informations manquent), police réduite, tout sur une ligne avec troncature « … » ; intitulés Centre / Conjoint(e) / Enfant / Père / Mère / AGP / GP supprimés.
+- **La Boîte à outils devient un onglet** (3e position) : elle quitte le bouton +.
+- **Géographie devient « Statistiques »**, dernier onglet (6e).
+- **Le bouton + ouvre un écran scindé** : en haut, l'image de l'acte à transcrire (choix dans la galerie, zoom 1-5×, déplacement au doigt — elle reste affichée pendant la saisie) ; en bas, la saisie (menu d'actes N/B/M/S/D/Événement/Enfant, « Personne complète », « Source »), champs compactés.
+- **Carnet de sources compacté** : plus de fenêtre plein écran, affichage comme les autres onglets (barre de navigation toujours visible), champs et espacements réduits.
+- Barre d'onglets : Personnes · Journal · Arbre · Outils · Sources · Statistiques.
+- Bumps v0.95 (gradle 95/« 0.95 », export GEDCOM « 2 VERS 0.95 », badge de saisie, écran d'application).
 ## v0.94 — GénéaPoche 12 : réorganisation (post v0.93)
 
 - **Tri « Sosa » dans la liste Personnes** : nouvelle puce à côté d'A-Z, d'Aboville et Branches — seuls les ancêtres de la ligne directe (n° Sosa renseigné et non nul), numéros croissants, même présentation que le tri d'Aboville.
