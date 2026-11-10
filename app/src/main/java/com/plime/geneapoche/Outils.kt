@@ -63,10 +63,13 @@ private fun evenementsDatesDe(p: Personne): List<Pair<String, String>> {
 }
 
 @Composable
+// v0.95 (12) : la Boite a outils devient un onglet (enOnglet = true :
+// pas de Dialog plein ecran, la barre de navigation reste visible).
 fun EcranOutils(
     personnes: List<Personne>,
     onAjouterNote: (Long, String) -> Unit,
-    onFermer: () -> Unit
+    onFermer: (() -> Unit)? = null,
+    enOnglet: Boolean = false
 ) {
     var outil by remember { mutableStateOf(0) }
     var noteTexte by remember { mutableStateOf("") }
@@ -79,19 +82,17 @@ fun EcranOutils(
         confirmation = ""
         noteOuverte = true
     }
-    Dialog(
-        onDismissRequest = onFermer,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(Modifier.fillMaxSize()) {
+    val contenu: @Composable () -> Unit = {
             Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Bo\u00eete \u00e0 outils", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
-                    TextButton(onClick = onFermer) { Text("Fermer") }
+                    Text("Boîte à outils", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                    if (onFermer != null) {
+                        TextButton(onClick = onFermer) { Text("Fermer") }
+                    }
                 }
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
                     FilterChip(selected = outil == 0, onClick = { outil = 0 }, label = { Text("Calendrier") })
@@ -115,7 +116,6 @@ fun EcranOutils(
                 }
             }
         }
-    }
     if (noteOuverte) {
         DialogueNoteOutil(
             texteInitial = noteTexte,
@@ -129,6 +129,16 @@ fun EcranOutils(
             },
             onFermer = { noteOuverte = false }
         )
+    }
+    if (enOnglet) {
+        Surface(Modifier.fillMaxSize()) { contenu() }
+    } else {
+        Dialog(
+            onDismissRequest = { onFermer?.invoke() },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(Modifier.fillMaxSize()) { contenu() }
+        }
     }
 }
 

@@ -30,6 +30,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 
 // ---------------------------------------------------------------- Arbre généalogique
@@ -167,7 +169,7 @@ fun ArbreQuatre(
             Column(Modifier.width(UniteArbre * 8)) {
                 Row(Modifier.fillMaxWidth()) {
                     agps.forEach { a ->
-                        CarteMiniArbre(a, "AGP", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
+                        CarteMiniArbre(a, onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
                     }
                 }
                 LiaisonsArbre(centres(8), barres(8), centres(4))
@@ -178,7 +180,7 @@ fun ArbreQuatre(
             Column(Modifier.width(UniteArbre * 4)) {
                 Row(Modifier.fillMaxWidth()) {
                     gps.forEach { g ->
-                        CarteMiniArbre(g, "GP", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
+                        CarteMiniArbre(g, onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
                     }
                 }
                 LiaisonsArbre(centres(4), barres(4), centres(2))
@@ -188,8 +190,8 @@ fun ArbreQuatre(
         if (pere != null || mere != null) {
             Column(Modifier.width(UniteArbre * 2)) {
                 Row(Modifier.fillMaxWidth()) {
-                    CarteMiniArbre(pere, "P\u00E8re", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
-                    CarteMiniArbre(mere, "M\u00E8re", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
+                    CarteMiniArbre(pere, onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
+                    CarteMiniArbre(mere, onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
                 }
                 // Descente vers la carte centrale : à gauche du couple si
                 // un conjoint est affiché, au centre sinon.
@@ -200,13 +202,13 @@ fun ArbreQuatre(
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             CarteMiniArbre(
-                centre, "Centre", onOuvrir, onCentrerSur,
+                centre, onOuvrir, onCentrerSur,
                 centre = true,
                 modifier = Modifier.width(74.dp)
             )
             if (conjoint != null) {
                 Box(Modifier.width(14.dp).height(2.dp).background(CouleurLiaison))
-                CarteMiniArbre(conjoint, "Conjoint(e)", onOuvrir, onCentrerSur, modifier = Modifier.width(74.dp))
+                CarteMiniArbre(conjoint, onOuvrir, onCentrerSur, modifier = Modifier.width(74.dp))
             }
         }
         // ---- Les enfants de la personne centrale (GénéaPoche 6) :
@@ -224,7 +226,7 @@ fun ArbreQuatre(
                 )
                 Row(Modifier.fillMaxWidth()) {
                     enfants.forEach { e ->
-                        CarteMiniArbre(e, "Enfant", onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
+                        CarteMiniArbre(e, onOuvrir, onCentrerSur, modifier = Modifier.weight(1f))
                     }
                 }
             }
@@ -238,7 +240,6 @@ fun ArbreQuatre(
 @Composable
 fun CarteMiniArbre(
     p: Personne?,
-    libelle: String,
     onOuvrir: (Long) -> Unit,
     onCentrerSur: (Long) -> Unit,
     centre: Boolean = false,
@@ -264,19 +265,14 @@ fun CarteMiniArbre(
             }
         )
     ) {
-        Column(Modifier.fillMaxWidth().padding(6.dp)) {
-            if (libelle.isNotEmpty()) {
-                Text(
-                    libelle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
-            }
+        // v0.95 (12) : cadres UNIFORMES (hauteur fixe), police réduite,
+        // troncature : tout tient sur une ligne, même si des informations
+        // sont manquantes.
+        Column(Modifier.fillMaxWidth().height(64.dp).padding(4.dp)) {
             if (p == null) {
                 Text(
                     "Inconnu",
-                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 9.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
@@ -291,15 +287,22 @@ fun CarteMiniArbre(
                         },
                         style = MaterialTheme.typography.labelSmall
                     )
-                    Text(p.titre(), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall, maxLines = 2)
+                    Text(
+                        p.titre(),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 9.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
                 val num = p.numeroAffiche()
                 if (num.isNotEmpty()) {
                     Text(
                         num,
-                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 9.sp,
                         color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 val n = dateAffichee(p.dateNaissance.trim())
@@ -309,7 +312,12 @@ fun CarteMiniArbre(
                 // Règle des 100 ans : décès affiché seulement si connu ou possible.
                 if (d.isNotEmpty() && decesAffichable(p)) morceaux.add("D. " + d)
                 if (morceaux.isNotEmpty()) {
-                    Text(morceaux.joinToString(" – "), style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        morceaux.joinToString(" – "),
+                        fontSize = 9.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         }

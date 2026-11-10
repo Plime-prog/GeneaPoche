@@ -76,25 +76,24 @@ fun EcranSources(
     onEnregistrerCitation: (Citation) -> Unit,
     onSupprimerCitation: (Long) -> Unit,
     onOuvrirPersonne: (Long) -> Unit,
-    onFermer: () -> Unit
+    onFermer: (() -> Unit)? = null
 ) {
     var recherche by remember { mutableStateOf("") }
     // 0 = liste ; -1 = nouvelle source ; sinon identifiant de la source ouverte.
     var ouverte by remember { mutableStateOf(0L) }
-    Dialog(
-        onDismissRequest = onFermer,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(Modifier.fillMaxSize()) {
-            Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {
+    // v0.95 (12) : plus de Dialog plein ecran : l'ecran s'affiche comme
+    // les autres onglets, la barre de navigation reste visible.
+    Column(Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 6.dp)) {
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Carnet de sources", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
-                    TextButton(onClick = { if (ouverte != 0L) ouverte = 0L else onFermer() }) {
-                        Text(if (ouverte != 0L) "Retour" else "Fermer")
+                    Text("Carnet de sources", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    if (ouverte != 0L) {
+                        TextButton(onClick = { ouverte = 0L }) {
+                            Text("Retour")
+                        }
                     }
                 }
                 if (ouverte == 0L) {
@@ -103,7 +102,7 @@ fun EcranSources(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(4.dp))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             value = recherche,
@@ -115,7 +114,7 @@ fun EcranSources(
                         Spacer(Modifier.width(8.dp))
                         Button(onClick = { ouverte = -1L }) { Text("Nouvelle") }
                     }
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(4.dp))
                     val f = rechercheSource(recherche.trim())
                     val liste = sources
                         .filter {
@@ -138,7 +137,7 @@ fun EcranSources(
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 border = BorderStroke(1.dp, Color(0xFFBDBDBD))
                             ) {
-                                Column(Modifier.fillMaxWidth().padding(10.dp)) {
+                                Column(Modifier.fillMaxWidth().padding(6.dp)) {
                                     Text(libelleSource(s), fontWeight = FontWeight.Bold, color = Color(0xFF1B5E20))
                                     val r = resumeSource(s)
                                     if (r.isNotEmpty()) Text(r, fontSize = 12.sp, color = Color(0xFF424242))
@@ -173,13 +172,11 @@ fun EcranSources(
                             onEnregistrerCitation = onEnregistrerCitation,
                             onSupprimerCitation = onSupprimerCitation,
                             onCreerSource = onCreerSource,
-                            onOuvrirPersonne = { id -> onOuvrirPersonne(id); onFermer() }
+                            onOuvrirPersonne = { id -> onOuvrirPersonne(id) }
                         )
                     }
                 }
             }
-        }
-    }
 }
 
 // ---------------------------------------------------------------- Fiche source
@@ -227,7 +224,7 @@ private fun FicheSource(
             if (source == null) "Nouvelle source" else "Source",
             fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = titre, onValueChange = { titre = it },
             label = { Text("Titre (r\u00e9f\u00e9rence compl\u00e8te)") },
@@ -247,7 +244,7 @@ private fun FicheSource(
                 Spacer(Modifier.width(6.dp))
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         Row(Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = commune, onValueChange = { commune = it },
@@ -259,38 +256,38 @@ private fun FicheSource(
                 label = { Text("P\u00e9riode (1872, 1860-1872)") }, singleLine = true, modifier = Modifier.weight(1f)
             )
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = depot, onValueChange = { depot = it },
             label = { Text("D\u00e9p\u00f4t (Archives d\u00e9partementales du Cher...)") },
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = cote, onValueChange = { cote = it },
             label = { Text("Cote (4 E 1234)") }, singleLine = true, modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = url, onValueChange = { url = it },
             label = { Text("Lien Internet (facultatif, jamais n\u00e9cessaire)") }, singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = transcription, onValueChange = { transcription = it },
             label = { Text("Transcription") },
-            modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp)
+            modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp)
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = notes, onValueChange = { notes = it },
-            label = { Text("Notes") }, modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp)
+            label = { Text("Notes") }, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         Text("Niveau de fiabilit\u00e9 (par d\u00e9faut pour les citations)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         SelecteurFiabilite(fiabilite, "Non renseign\u00e9e") { fiabilite = it }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         Button(
             onClick = { onEnregistrer(construire()) },
             enabled = titre.isNotBlank() || depot.isNotBlank() || cote.isNotBlank(),
@@ -298,7 +295,7 @@ private fun FicheSource(
         ) { Text("Enregistrer la source") }
 
         if (source != null) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
             Text("Personnes concern\u00e9es (" + citations.size.toString() + ")", fontWeight = FontWeight.Bold)
             if (citations.isEmpty()) {
                 Text("Aucune citation : cette source n'est encore rattach\u00e9e \u00e0 personne.", fontSize = 12.sp)
@@ -327,12 +324,12 @@ private fun FicheSource(
             OutlinedButton(onClick = { choixPersonne = true }, Modifier.fillMaxWidth()) {
                 Text("Ajouter une personne qui cite cette source")
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
             TextButton(onClick = { confirmeSuppression = true }) {
                 Text("Supprimer cette source", color = MaterialTheme.colorScheme.error)
             }
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(12.dp))
     }
 
     if (choixPersonne) {
@@ -432,7 +429,7 @@ fun DialogueCitation(
                 OutlinedButton(onClick = { choixSource = true }, Modifier.fillMaxWidth()) {
                     Text(if (source != null) libelleSource(source) else "Choisir une source...")
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 Text("Ce que la source documente", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
                     CiblesCitation.forEach { (code, lib) ->
@@ -448,7 +445,7 @@ fun DialogueCitation(
                         Spacer(Modifier.width(6.dp))
                     }
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 OutlinedTextField(
                     value = numeroActe, onValueChange = { numeroActe = it },
                     label = { Text("N\u00b0 d'acte") }, singleLine = true, modifier = Modifier.fillMaxWidth()
@@ -479,12 +476,12 @@ fun DialogueCitation(
                 OutlinedTextField(
                     value = extrait, onValueChange = { extrait = it },
                     label = { Text("Extrait / transcription de l'acte") },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 90.dp)
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
                 )
                 Spacer(Modifier.height(6.dp))
                 OutlinedTextField(
                     value = notes, onValueChange = { notes = it },
-                    label = { Text("Notes") }, modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp)
+                    label = { Text("Notes") }, modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)
                 )
                 Spacer(Modifier.height(6.dp))
                 Text("Fiabilit\u00e9 de cette citation", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -542,7 +539,7 @@ fun DialogueChoixSource(
                     value = filtre, onValueChange = { filtre = it },
                     label = { Text("Rechercher") }, singleLine = true, modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 Column(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) {
                     liste.forEach { s ->
                         Column(Modifier.fillMaxWidth().clickable { onChoisie(s.id) }.padding(vertical = 8.dp)) {

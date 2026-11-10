@@ -193,7 +193,8 @@ fun EcranFrise(
                     anneeNai = anneeNai(m),
                     anneeFin = anneeFin(m),
                     finBarre = finBarre(m),
-                    onOuvrir = onOuvrir
+                    onOuvrir = onOuvrir,
+                    onChoisir = onChoisir
                 )
             }
             if (membres.mapNotNull { anneeNai(it) }.isEmpty()) {
@@ -205,7 +206,7 @@ fun EcranFrise(
                 )
             }
             Text(
-                "Touchez une ligne pour ouvrir la fiche. Points : N naissance, B baptême, M mariage, S sépulture, D décès, verticaux verts : aujourd'hui.",
+                "Touchez une ligne : la ligne de vie se recentre sur cette personne. Points : N naissance, B baptême, M mariage, S sépulture, D décès, verticaux verts : aujourd'hui.",
                 Modifier.padding(top = 8.dp, bottom = 8.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -255,14 +256,17 @@ fun LigneVie(
     anneeNai: Int?,
     anneeFin: Int?,
     finBarre: Int?,
-    onOuvrir: (Long) -> Unit
+    onOuvrir: (Long) -> Unit,
+    onChoisir: (Long) -> Unit
 ) {
     fun x(an: Int): Dp = largeurAxe * (((an - anneeMin).coerceIn(0, anneeMax - anneeMin)).toFloat() / etendue)
     val hauteur = if (ligneChoisie) 46.dp else 32.dp
     val couleurTrait = if (m.p.sexe == "F") CouleurRose else CouleurBleu
     val decennies = (anneeMin..anneeMax).filter { it % 10 == 0 }
 
-    Row(Modifier.fillMaxWidth().height(hauteur).clickable { onOuvrir(m.p.id) }) {
+    // v0.95 (12) : toucher une ligne RECENTRE la ligne de vie sur cette
+    // personne (aucun renvoi vers la fiche) ; synchronisation partout.
+    Row(Modifier.fillMaxWidth().height(hauteur).clickable { onChoisir(m.p.id) }) {
         // Nom et lien, à gauche.
         Column(Modifier.width(84.dp).fillMaxHeight()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
