@@ -174,6 +174,8 @@ fun AppEcran(
     val modele: ModeleVueGeneaPoche = viewModel()
     val personnes = modele.personnes
     val pistes = modele.pistes
+    val sources = modele.sources
+    val citations = modele.citations
     val pileFiches = modele.pileFiches
     // v0.78 : paires de doublons "gardees les deux" (decision definitive,
     // persistee) : elles restent hors du diagnostic de l'arbre.
@@ -233,6 +235,21 @@ fun AppEcran(
         val cq = pistes.toList()
         pistes.clear()
         pistes.addAll(cq)
+        val cs = sources.toList()
+        sources.clear()
+        sources.addAll(cs)
+        val cc = citations.toList()
+        citations.clear()
+        citations.addAll(cc)
+    }
+
+    // v0.90 : remplace le carnet de sources par le contenu lu au stockage.
+    fun appliquerCatalogue(rs: Stockage.ResultatLecture<Any>) {
+        sources.clear()
+        citations.clear()
+        rs.liste.forEach { e ->
+            if (e is Source) sources.add(e) else if (e is Citation) citations.add(e)
+        }
     }
 
     // G1-13 : une recherche resolsee portant une note ne disparait jamais sans
@@ -324,6 +341,8 @@ fun AppEcran(
         if (phrase.isEmpty()) return
         val persC = personnes.toList()
         val pisC = pistes.toList()
+        val srcC = sources.toList()
+        val citC = citations.toList()
         occupation = "Sauvegarde automatique..."
         scopeTravail.launch(Dispatchers.IO) {
             try {
@@ -336,7 +355,7 @@ fun AppEcran(
                 )
                 var ok = false
                 if (uri != null) {
-                    ok = Sauvegarde.exporter(ctx, uri, phrase, persC, pisC)
+                    ok = Sauvegarde.exporter(ctx, uri, phrase, persC, pisC, srcC, citC)
                 }
                 withContext(Dispatchers.Main) {
                     Stockage.razCompteurSauvegarde(ctx)
@@ -448,17 +467,31 @@ fun AppEcran(
             "journal",
             texteJson { t -> pistes.forEach { t.put(it.versJson()) } }
         ) { Stockage.sauverTexteJournal(ctx, it) }
+        // v0.90 : carnet de sources ; les citations dont la personne ou la
+        // source n'existe plus sont purgees a l'ecriture.
+        val ok3 = ecrireSiChange(
+            "sources",
+            try {
+                catalogueVersTexte(
+                    sources.toList(),
+                    citationsValides(citations.toList(), sources.toList(), personnes.toList())
+                )
+            } catch (e: Exception) {
+                null
+            }
+        ) { Stockage.sauverTexteSources(ctx, it) }
         rafraichirTout()
         // G2-05 : message distinct selon le fichier en echec.
         message = when {
-            ok1 && ok2 -> ""
+            ok1 && ok2 && ok3 -> ""
             !ok1 -> "\u00C9chec de l'enregistrement des personnes."
             !ok2 -> "\u00C9chec de l'enregistrement du journal."
+            !ok3 -> "\u00C9chec de l'enregistrement des sources."
             else -> ""
         }
         // 12.1 : compteur de modifications -> sauvegarde automatique .gpbak
         // dans le dossier choisi, ou simple rappel si aucun dossier.
-        if (ok1 && ok2 && ecritFichier) {
+        if (ok1 && ok2 && ok3 && ecritFichier) {
             Stockage.incrementerCompteurSauvegarde(ctx)
             if (Stockage.lireCompteurSauvegarde(ctx) >= Stockage.lireSeuilSauvegarde(ctx)) {
                 if (dossierSauvegarde.isNotEmpty()) {
@@ -469,7 +502,7 @@ fun AppEcran(
                 }
             }
         }
-        return ok1 && ok2
+        return ok1 && ok2 && ok3
     }
 
     // G2-17 : controle d'integrite des liens familiaux (chargement, import,
@@ -481,7 +514,8 @@ fun AppEcran(
     fun verifierLiensEtRapporter() {
         val maxId = maxOf(
             personnes.maxOfOrNull { it.id } ?: 0L,
-            pistes.maxOfOrNull { it.id } ?: 0L
+            pistes.maxOfOrNull { it.id } ?: 0L,
+            maxIdCatalogue(sources.toList(), citations.toList())
         )
         Stockage.alignerCompteur(ctx, maxId)
         var rapports = verifierLiens(personnes)
@@ -509,9 +543,11 @@ fun AppEcran(
         pistes.clear()
         val rp = Stockage.charger(ctx)
         val rj = Stockage.chargerJournal(ctx)
+        val rs = Stockage.chargerSources(ctx)
         personnes.addAll(rp.liste)
         pistes.addAll(rj.liste)
-        fichiersIllisibles = listOf(rp, rj).filter { it.illisible }.map { it.nom }
+        appliquerCatalogue(rs)
+        fichiersIllisibles = listOf(rp, rj, rs).filter { it.illisible }.map { it.nom }
         if (fichiersIllisibles.isEmpty()) {
             verifierLiensEtRapporter()
             completerJournal()
@@ -530,11 +566,15 @@ fun AppEcran(
                 it.conjointsSupp.contains(p.id) || it.enfants.contains(p.id)
         }.map { LienAvant(it.id, it.pere, it.mere, it.conjoint, it.conjointsSupp.toList(), it.enfants.toList()) }
         val pistesRetirees = pistes.filter { it.personneId == p.id }.toList()
+        // v0.90 : les citations de la personne partent avec elle (Annuler les rend).
+        val citationsRetirees = citations.filter { it.personneId == p.id }.toList()
         modele.annulation = AnnulationSuppression(
             personne = p,
             pistes = pistesRetirees,
-            liens = liensAvant
+            liens = liensAvant,
+            citations = citationsRetirees
         )
+        citations.removeAll(citationsRetirees)
         personnes.remove(p)
         personnes.forEach { q ->
             if (q.pere == p.id) q.pere = 0L
@@ -571,6 +611,7 @@ fun AppEcran(
             }
         }
         pistes.addAll(a.pistes)
+        citations.addAll(a.citations)
         modele.annulation = null
         enregistrer()
         message = "Suppression annul\u00E9e."
@@ -1013,6 +1054,11 @@ fun AppEcran(
         }
         // 5. Recherches du doublon : rattachees a garde.
         pistes.filter { it.personneId == supprimeId }.forEach { it.personneId = gardeId }
+        // v0.90 : les citations (sources) du doublon passent a la fiche conservee.
+        val citationsApresFusion = citations.toMutableList()
+        transfererCitations(citationsApresFusion, supprimeId, gardeId)
+        citations.clear()
+        citations.addAll(citationsApresFusion)
         // 6. Suppression effective du doublon.
         personnes.remove(supprime)
         pileFiches.removeAll { it == supprimeId }
@@ -1082,7 +1128,7 @@ fun AppEcran(
                 val annee = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
                 val exportables = if (exclureVivants) personnes.filter { !estVivante(it, annee) } else personnes
                 val sous = if (exclureVivants && sousEnsemble != null) sousEnsemble.filter { id -> exportables.any { it.id == id } }.toSet() else sousEnsemble
-                val texte = construireGedcom(exportables, sous, format)
+                val texte = construireGedcom(exportables, sous, format, sources.toList(), citations.toList())
                 val n = if (sous == null) exportables.size else texte.split("\n").count { it.endsWith(" INDI") }
                 // v0.41 : JAMAIS de fichier GEDCOM vide (base vide, branche
                 // vide ou vivants exclus qui retirent tout) : export refuse.
@@ -1178,6 +1224,8 @@ fun AppEcran(
                 withContext(Dispatchers.Main) {
                     importConfirme = resultat.personnes
                     importRapport = resultat.ignores
+                    modele.importSources = resultat.sources
+                    modele.importCitations = resultat.citations
                 }
             } catch (e: Exception) {
                 // G2-05 : message distinct selon le type d'echec.
@@ -1223,6 +1271,8 @@ fun AppEcran(
                 withContext(Dispatchers.Main) {
                     importConfirme = resultat.personnes
                     importRapport = resultat.ignores
+                    modele.importSources = resultat.sources
+                    modele.importCitations = resultat.citations
                 }
             } catch (e: Exception) {
                 // G2-05 : message distinct selon le type d'echec.
@@ -1239,6 +1289,15 @@ fun AppEcran(
         personnes.clear()
         personnes.addAll(importees)
         pistes.clear()
+        // v0.90 : le carnet de sources devient celui du GEDCOM importe
+        // (les identifiants de fiches ont change : les anciennes citations
+        // ne designeraient plus les bonnes personnes).
+        sources.clear()
+        sources.addAll(modele.importSources)
+        citations.clear()
+        citations.addAll(modele.importCitations)
+        modele.importSources = emptyList()
+        modele.importCitations = emptyList()
         pileFiches.clear()
         // De cujus apres import : la personne au plus petit n Sosa du fichier, sinon la 1re.
         val avecSosa = personnes.filter { it.sosa.trim().toLongOrNull() != null }
@@ -1361,6 +1420,8 @@ fun AppEcran(
     fun viderBase() {
         personnes.clear()
         pistes.clear()
+        sources.clear()
+        citations.clear()
         idOuvert = 0L
         pileFiches.clear()
         arbreCentre = 0L
@@ -1377,7 +1438,7 @@ fun AppEcran(
         occupation = "Sauvegarde .gpbak en cours..."
         scopeTravail.launch(Dispatchers.IO) {
             try {
-                if (Sauvegarde.exporter(ctx, uri, phrase, personnes, pistes)) {
+                if (Sauvegarde.exporter(ctx, uri, phrase, personnes, pistes, sources.toList(), citations.toList())) {
                     // 12.2 : rappel de suppression du fichier partag\u00E9.
                     Stockage.noterFichierPartage(ctx, uri.lastPathSegment?.substringAfterLast('/') ?: "sauvegarde .gpbak")
                     withContext(Dispatchers.Main) { message = "Sauvegarde .gpbak cr\u00E9\u00E9e : conservez-la et notez la phrase secr\u00E8te." }
@@ -1410,6 +1471,10 @@ fun AppEcran(
                     personnes.addAll(contenu.personnes)
                     pistes.clear()
                     pistes.addAll(contenu.pistes)
+                    sources.clear()
+                    sources.addAll(contenu.sources)
+                    citations.clear()
+                    citations.addAll(contenu.citations)
                     // Chantier 12.0 : les anciennes sauvegardes contenaient des
                     // actes stockes ; leurs coches "Enregistre" sont posees sur
                     // les fiches correspondantes (une par type d'acte).
@@ -1463,9 +1528,11 @@ fun AppEcran(
             pistes.clear()
             val rp = essai
             val rj = Stockage.chargerJournal(ctx)
+            val rs = Stockage.chargerSources(ctx)
             personnes.addAll(rp.liste)
             pistes.addAll(rj.liste)
-            fichiersIllisibles = listOf(rp, rj).filter { it.illisible }.map { it.nom }
+            appliquerCatalogue(rs)
+            fichiersIllisibles = listOf(rp, rj, rs).filter { it.illisible }.map { it.nom }
             pileFiches.clear()
             idOuvert = 0L
             verifierLiensEtRapporter()
@@ -1480,9 +1547,11 @@ fun AppEcran(
             pistes.clear()
             val rp = Stockage.charger(ctx)
             val rj = Stockage.chargerJournal(ctx)
+            val rs = Stockage.chargerSources(ctx)
             personnes.addAll(rp.liste)
             pistes.addAll(rj.liste)
-            fichiersIllisibles = listOf(rp, rj).filter { it.illisible }.map { it.nom }
+            appliquerCatalogue(rs)
+            fichiersIllisibles = listOf(rp, rj, rs).filter { it.illisible }.map { it.nom }
             pileFiches.clear()
             idOuvert = 0L
             verifierLiensEtRapporter()
@@ -1498,7 +1567,7 @@ fun AppEcran(
     // videe, meme si les fichiers actuels sont lisibles. Sans effet si la
     // copie .bak est vide aussi : rien n'est perdu en l'essayant.
     fun restaurerSecoursBak() {
-        listOf("personnes.bin", "journal.bin").forEach { nom ->
+        listOf("personnes.bin", "journal.bin", "sources.bin").forEach { nom ->
             Stockage.restaurerBak(ctx, nom)
         }
         derniersJson.clear()
@@ -1506,9 +1575,11 @@ fun AppEcran(
         pistes.clear()
         val rp = Stockage.charger(ctx)
         val rj = Stockage.chargerJournal(ctx)
+        val rs = Stockage.chargerSources(ctx)
         personnes.addAll(rp.liste)
         pistes.addAll(rj.liste)
-        fichiersIllisibles = listOf(rp, rj).filter { it.illisible }.map { it.nom }
+        appliquerCatalogue(rs)
+        fichiersIllisibles = listOf(rp, rj, rs).filter { it.illisible }.map { it.nom }
         if (personnes.isEmpty()) {
             message = "La copie de secours ne contient aucune personne non plus."
         } else {
@@ -1861,6 +1932,29 @@ fun AppEcran(
         // (miroir sur la mariee pour un mariage).
         p.definirEnregistre(a.type, a.enregistre)
         if (mariee != null) mariee.definirEnregistre(a.type, a.enregistre)
+        // v0.92 : source choisie sur le formulaire = CITATION (numero d'acte,
+        // vue n sur le total) rattachee a la personne (et a la mariee).
+        if (a.sourceId != 0L && sourceParId(sources, a.sourceId) != null) {
+            val cibleCit = if (a.type == "N" || a.type == "B" || a.type == "M" || a.type == "D" || a.type == "S") a.type else "P"
+            val concernes = listOfNotNull(p, mariee)
+            for (pc in concernes) {
+                val ex = citations.firstOrNull { it.sourceId == a.sourceId && it.personneId == pc.id && it.cible == cibleCit }
+                if (ex != null) {
+                    ex.numeroActe = a.numeroActe
+                    ex.vue = a.vue
+                    ex.vueTotal = a.vueTotal
+                    ex.fiabilite = a.fiabiliteSource
+                } else {
+                    citations.add(
+                        Citation(
+                            id = Stockage.prochainId(ctx), sourceId = a.sourceId, personneId = pc.id,
+                            cible = cibleCit, numeroActe = a.numeroActe, vue = a.vue,
+                            vueTotal = a.vueTotal, fiabilite = a.fiabiliteSource
+                        )
+                    )
+                }
+            }
+        }
         // v0.80 : sur un DECES ou une SEPULTURE, le conjoint est EN VIE
         // (declarant possible) ou DECEDE AVANT (veuf/veuve) : le choix du
         // formulaire est PERSISTE sur la fiche (chantier 12.0 : plus de
@@ -1956,14 +2050,16 @@ fun AppEcran(
             // G2-06 : dechiffrement HORS du thread principal.
             occupation = "Chargement des donn\u00E9es..."
             val charges = withContext(Dispatchers.IO) {
-                Pair(Stockage.charger(ctx), Stockage.chargerJournal(ctx))
+                Triple(Stockage.charger(ctx), Stockage.chargerJournal(ctx), Stockage.chargerSources(ctx))
             }
             val rp = charges.first
             val rj = charges.second
+            val rs = charges.third
             personnes.addAll(rp.liste)
             pistes.addAll(rj.liste)
+            appliquerCatalogue(rs)
             sosaCujus = Stockage.lireSosaCujus(ctx)
-            fichiersIllisibles = listOf(rp, rj).filter { it.illisible }.map { it.nom }
+            fichiersIllisibles = listOf(rp, rj, rs).filter { it.illisible }.map { it.nom }
             // Chantier 12.0 : MIGRATION - les actes stockes (v0.82 et
             // avant) ne le sont plus ; on lit actes.bin UNE DERNIERE FOIS
             // pour poser la coche "Enregistr\u00E9" correspondante sur chaque
@@ -2018,6 +2114,8 @@ fun AppEcran(
         if (!verrou.deverrouille && charge) {
             personnes.clear()
             pistes.clear()
+            sources.clear()
+            citations.clear()
             pileFiches.clear()
             idOuvert = 0L
             charge = false
@@ -2106,7 +2204,9 @@ fun AppEcran(
                 // 12.1 : etat de la sauvegarde automatique.
                 dossierSauvegarde = dossierSauvegarde,
                 seuilSauvegarde = seuilSauvegarde,
-                cleRecuperation = cleRecuperation
+                cleRecuperation = cleRecuperation,
+                sources = sources.toList(),
+                citations = citations.toList()
             ),
             actions = ActionsApplication(
                 onMessage = { message = it },
@@ -2161,6 +2261,38 @@ fun AppEcran(
                 reglagesVerrouillage = { dialogueDelai = true },
                 reglagesTheme = { dialogueTheme = true },
                 prochainId = { Stockage.prochainId(ctx) },
+                creerSource = { src ->
+                    val nid = Stockage.prochainId(ctx)
+                    val neuve = src.copie()
+                    sources.add(Source(nid, neuve.titre, neuve.type, neuve.commune, neuve.dept, neuve.periode,
+                        neuve.depot, neuve.cote, neuve.url, neuve.transcription, neuve.notes, neuve.fiabilite))
+                    enregistrer()
+                    nid
+                },
+                enregistrerSource = { src ->
+                    val i = sources.indexOfFirst { it.id == src.id }
+                    if (i >= 0) sources[i] = src.copie() else sources.add(src.copie())
+                    enregistrer()
+                },
+                supprimerSource = { id ->
+                    sources.removeAll { it.id == id }
+                    citations.removeAll { it.sourceId == id }
+                    enregistrer()
+                },
+                enregistrerCitation = { c ->
+                    if (c.id == 0L) {
+                        citations.add(Citation(Stockage.prochainId(ctx), c.sourceId, c.personneId, c.cible, c.page,
+                            c.numeroActe, c.vue, c.vueTotal, c.extrait, c.notes, c.fiabilite))
+                    } else {
+                        val i = citations.indexOfFirst { it.id == c.id }
+                        if (i >= 0) citations[i] = c.copie() else citations.add(c.copie())
+                    }
+                    enregistrer()
+                },
+                supprimerCitation = { id ->
+                    citations.removeAll { it.id == id }
+                    enregistrer()
+                },
                 validerInfo = { pers, section, valide -> validerInfo(pers, section, valide) },
                 // G\u00E9n\u00E9aPoche 11 : coche de certification + fusion guid\u00E9e.
                 validerIdentite = { pers, etat -> validerIdentite(pers, etat) },

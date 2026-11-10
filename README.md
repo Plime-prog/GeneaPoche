@@ -22,6 +22,8 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 
 **Anomalies à vérifier (v0.88)** — le diagnostic de l'arbre (onglet Journal) signale les dates et liens improbables (enfant né après le décès de son père, mère trop jeune ou trop âgée, mariage après décès, fratrie trop rapprochée, sexe incompatible avec un lien, doublons potentiels…) sans jamais parler d'erreur : chaque anomalie propose **Ignorer**, **Corriger** ou **Examiner**.
 
+**Carnet de sources (v0.92)** — un carnet de recherche 100 % local : une **Source** se décrit une seule fois (type d'acte, commune, période, dépôt, cote, lien Internet facultatif — jamais nécessaire —, transcription, notes, niveau de fiabilité 0-3) et se **cite** autant de fois que nécessaire : une **Citation** relie une source à une personne et à un événement précis (« Naissance de Marie Dupont, acte n° 43, vue 17/312 »). Sur le formulaire d'acte, on choisit la source et on saisit le n° d'acte et la **vue n° sur le total de vues**. Accessible depuis les paramétrages (« Carnet de sources ») et depuis le bloc « Sources » de chaque fiche. **Compatible GEDCOM 5.5.1 / Heredis** : sources en enregistrements `SOUR` (TITL, REPO/CALN, DATA, TEXT, NOTE) et citations `SOUR @Sn@` avec PAGE, QUAY, DATA/TEXT ; les champs propres à GénéaPoche utilisent des balises `_GP…` ignorées par les autres logiciels. Les sources et citations sont aussi dans les sauvegardes `.gpbak`.
+
 ## Modèle de sécurité — exact, avec ses limites
 
 - **Aucune permission Internet** dans le manifeste : l'application elle-même ne transmet rien.
@@ -52,6 +54,6 @@ Sinon, depuis les sources :
 
 - Android Kotlin + Jetpack Compose, Material 3 (thème clair/sombre, palette verte).
 - AGP 9.2.0, Kotlin 2.4.21, compileSdk 37, targetSdk 36, JDK 17, BOM Compose 2026.08.00.
-- CI GitHub Actions : lint, tests unitaires JVM (~70), APK debug et release signé à chaque push.
+- CI GitHub Actions : lint, tests unitaires JVM (~85), APK debug et release signé à chaque push.
 - Contribuer : voir [CONTRIBUTING.md](CONTRIBUTING.md). Historique détaillé des versions : [CHANGELOG.md](CHANGELOG.md).
 - Licence : MIT (voir [LICENSE](LICENSE)).

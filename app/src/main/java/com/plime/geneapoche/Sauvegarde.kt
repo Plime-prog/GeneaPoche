@@ -89,7 +89,11 @@ object Sauvegarde {
     }
 
     // Exporte toute la base (personnes + journal) chiffree par la phrase.
-    fun exporter(ctx: Context, uri: Uri, phrase: String, personnes: List<Personne>, pistes: List<Piste>): Boolean {
+    fun exporter(
+        ctx: Context, uri: Uri, phrase: String, personnes: List<Personne>, pistes: List<Piste>,
+        // v0.90 : carnet de sources (absent des anciennes sauvegardes).
+        sources: List<Source> = emptyList(), citations: List<Citation> = emptyList()
+    ): Boolean {
         return try {
             if (phrase.length < 6) return false
             val racine = JSONObject()
@@ -99,6 +103,8 @@ object Sauvegarde {
             pistes.forEach { jj.put(it.versJson()) }
             racine.put("personnes", jp)
             racine.put("journal", jj)
+            racine.put("sources", sourcesVersJson(sources))
+            racine.put("citations", citationsVersJson(citations))
             val clair = racine.toString().toByteArray(Charsets.UTF_8)
             val chiffre = chiffrerOctets(phrase, clair) ?: return false
             val flux = ctx.contentResolver.openOutputStream(uri) ?: return false
@@ -114,7 +120,10 @@ object Sauvegarde {
         val pistes: MutableList<Piste>,
         // v0.83 : coches « Enregistré » déduites des ACTES stockés dans une
         // ANCIENNE sauvegarde (personneId -> types d'actes présents).
-        val cochesActes: Map<Long, MutableSet<String>>
+        val cochesActes: Map<Long, MutableSet<String>>,
+        // v0.90 : carnet de sources (vide pour une sauvegarde plus ancienne).
+        val sources: MutableList<Source> = mutableListOf(),
+        val citations: MutableList<Citation> = mutableListOf()
     )
 
     // Importe un fichier .gpbak : null si fichier invalide OU phrase erronee
@@ -148,7 +157,11 @@ object Sauvegarde {
                     }
                 }
             }
-            ContenuSauvegarde(personnes, pistes, coches)
+            ContenuSauvegarde(
+                personnes, pistes, coches,
+                sourcesDepuisJson(racine.optJSONArray("sources")),
+                citationsDepuisJson(racine.optJSONArray("citations"))
+            )
         } catch (e: Exception) {
             null
         }

@@ -160,7 +160,13 @@ fun EcranPersonne(
     // (intitul\u00E9 libre) de la chronologie.
     onEditerIdentite: () -> Unit = {},
     onModifierEvenementLibre: (EvenementLibre) -> Unit = {},
-    onSupprimerEvenementLibre: (Long) -> Unit = {}
+    onSupprimerEvenementLibre: (Long) -> Unit = {},
+    // v0.92 : carnet de sources.
+    sources: List<Source> = emptyList(),
+    citations: List<Citation> = emptyList(),
+    onEnregistrerCitation: (Citation) -> Unit = {},
+    onSupprimerCitation: (Long) -> Unit = {},
+    onCreerSource: (Source) -> Long = { 0L }
 ) {
     // GÃ©nÃ©aPoche 5 : tous les cadres REPLIÃS sur une ligne Ã  l'ouverture
     // de la fiche ; le toucher d'un cadre le dÃ©veloppe, l'appui long le modifie.
@@ -748,6 +754,13 @@ fun EcranPersonne(
                         }
                     }
                     }
+                    // v0.92 : bloc SOURCES (citations de cette personne).
+                    BlocSourcesFiche(
+                        p = p, personnes = personnes, sources = sources, citations = citations,
+                        onEnregistrerCitation = onEnregistrerCitation,
+                        onSupprimerCitation = onSupprimerCitation,
+                        onCreerSource = onCreerSource
+                    )
                     // G\u00E9n\u00E9aPoche 5 : bloc NOTES tout en bas de la fiche.
                     Card(
                         Modifier.fillMaxWidth().padding(vertical = 3.dp),
@@ -790,6 +803,8 @@ fun EcranPersonne(
                     initial = remember(saisieCompteur, tPre, p.id) { prefillActe(p, personnes, tPre.ifEmpty { null }, editionFiche = tPre.isNotEmpty()) },
                     // GeneaPoche 4 : appui long sur un bloc = SEUL ce type d'acte.
                     typeImpose = tPre.ifEmpty { null },
+                    sources = sources,
+                    onCreerSource = onCreerSource,
                     onEnregistrer = { a ->                        onEnregistrerActe(a)
                         saisieOuverte = null
                     },

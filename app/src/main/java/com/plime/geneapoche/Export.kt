@@ -150,8 +150,25 @@ fun ajouterNote(lignes: MutableList<String>, niveau: Int, tag: String, texte: St
     }
 }
 
-fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, version: String = "5.5.1"): String {
+fun construireGedcom(
+    toutes: List<Personne>,
+    sousEnsemble: Set<Long>? = null,
+    version: String = "5.5.1",
+    // v0.90 : carnet de sources. Un export partiel n'emporte que les sources
+    // citees par les personnes exportees.
+    sources: List<Source> = emptyList(),
+    citations: List<Citation> = emptyList()
+): String {
     val personnes = if (sousEnsemble == null) toutes else toutes.filter { sousEnsemble.contains(it.id) }
+    val idsExportes = personnes.map { it.id }.toSet()
+    val citationsExportees = citations.filter { idsExportes.contains(it.personneId) }
+    val sourcesExportees = if (sousEnsemble == null) sources else {
+        val utilisees = citationsExportees.map { it.sourceId }.toSet()
+        sources.filter { utilisees.contains(it.id) }
+    }
+    val sourcesParId = sourcesExportees.associateBy { it.id }
+    fun citsPour(pid: Long, cible: String): List<Citation> =
+        citationsExportees.filter { it.personneId == pid && it.cible == cible && sourcesParId.containsKey(it.sourceId) }
     fun cleCouple(a: Long, b: Long): Pair<Long, Long> = if (a < b) a to b else b to a
     fun xrefIndi(id: Long): String = "@I" + id.toString() + "@"
     fun xrefFam(c: Pair<Long, Long>): String = "@F" + c.first.toString() + "_" + c.second.toString() + "@"
@@ -177,7 +194,7 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ve
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.91") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
+    lignes.add("2 VERS 0.92") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
@@ -198,15 +215,17 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ve
 
     // Un evenement de la personne (v0.83 : les sources GEDCOM venaient des
     // actes stockes, supprimes avec le chantier 12.0).
-    fun evenement(p: Personne, tag: String, date: String, heure: String, lieu: String, dept: String) {
+    fun evenement(p: Personne, tag: String, date: String, heure: String, lieu: String, dept: String, cible: String = "") {
         val d = dateGedcom(date)
         val l = lieuGedcom(lieu, dept)
         val h = heureGedcom(heure)
-        if (d != null || l.isNotEmpty()) {
+        val cits = if (cible.isEmpty()) emptyList() else citsPour(p.id, cible)
+        if (d != null || l.isNotEmpty() || cits.isNotEmpty()) {
             lignes.add("1 " + tag)
             if (d != null) lignes.add("2 DATE " + d)
             if (h != null) lignes.add("2 TIME " + h)
             if (l.isNotEmpty()) lignes.add("2 PLAC " + texteGedcom(l))
+            lignes.addAll(lignesCitations(2, cits, sourcesParId))
         }
     }
 
@@ -214,26 +233,30 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ve
         lignes.add("0 " + xrefIndi(p.id) + " INDI")
         lignes.add("1 NAME " + texteGedcom(p.prenoms.trim()) + " /" + texteGedcom(p.nom.trim()) + "/")
         if (p.sexe.isNotEmpty()) lignes.add("1 SEX " + p.sexe)
-        evenement(p, "BIRT", p.dateNaissance, p.heureNaissance, p.lieuNaissance, p.deptNaissance)
-        evenement(p, "BAPM", p.dateBapteme, p.heureBapteme, p.lieuBapteme, p.deptBapteme)
-        evenement(p, "MARR", p.dateMariage, p.heureMariage, p.lieuMariage, p.deptMariage)
-        evenement(p, "DEAT", p.dateDeces, p.heureDeces, p.lieuDeces, p.deptDeces)
-        evenement(p, "BURI", p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture)
+        evenement(p, "BIRT", p.dateNaissance, p.heureNaissance, p.lieuNaissance, p.deptNaissance, "N")
+        evenement(p, "BAPM", p.dateBapteme, p.heureBapteme, p.lieuBapteme, p.deptBapteme, "B")
+        evenement(p, "MARR", p.dateMariage, p.heureMariage, p.lieuMariage, p.deptMariage, "M")
+        evenement(p, "DEAT", p.dateDeces, p.heureDeces, p.lieuDeces, p.deptDeces, "D")
+        evenement(p, "BURI", p.dateSepulture, p.heureSepulture, p.lieuSepulture, p.deptSepulture, "S")
         // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres (intitul\u00E9 libre) de la
         // chronologie, export\u00E9s comme EVEN + TYPE (les deux formats).
         p.evenementsLibres.forEach { ev ->
             val dEv = dateGedcom(ev.date)
             val hEv = heureGedcom(ev.heure)
             val lEv = lieuGedcom(ev.lieu, ev.dept)
-            if (ev.intitule.trim().isNotEmpty() || dEv != null || lEv.isNotEmpty()) {
+            val citsEv = citsPour(p.id, "E" + ev.id.toString())
+            if (ev.intitule.trim().isNotEmpty() || dEv != null || lEv.isNotEmpty() || citsEv.isNotEmpty()) {
                 lignes.add("1 EVEN")
                 lignes.add("2 TYPE " + texteGedcom(ev.intitule.trim()))
                 if (dEv != null) lignes.add("2 DATE " + dEv)
                 if (hEv != null) lignes.add("2 TIME " + hEv)
                 if (lEv.isNotEmpty()) lignes.add("2 PLAC " + texteGedcom(lEv))
+                lignes.addAll(lignesCitations(2, citsEv, sourcesParId))
             }
         }
         if (p.profession.trim().isNotEmpty()) lignes.add("1 OCCU " + texteGedcom(p.profession.trim()))
+        // v0.90 : sources de la personne elle-meme (identite).
+        lignes.addAll(lignesCitations(1, citsPour(p.id, "P"), sourcesParId))
         if (p.sosa.trim().isNotEmpty()) lignes.add("1 RFN Sosa " + p.sosa.trim())
         // v0.89 : la certification d'identit\u00E9 (coche ou croix manuelle)
         // part dans un tag d\u00E9di\u00E9 et est relue \u00E0 l'import : elle survit
@@ -273,15 +296,25 @@ fun construireGedcom(toutes: List<Personne>, sousEnsemble: Set<Long>? = null, ve
         val dm = epoux?.let { dateGedcom(it.dateMariage) }
         val hm = epoux?.let { heureGedcom(it.heureMariage) }
         val lm = epoux?.let { lieuGedcom(it.lieuMariage, it.deptMariage) } ?: ""
-        if (dm != null || lm.isNotEmpty()) {
+        // v0.90 : sources du mariage (celles des deux epoux, sans doublon).
+        val citsMariage = mutableListOf<Citation>()
+        listOf(cle.first, cle.second).forEach { pid ->
+            citsPour(pid, "M").forEach { c ->
+                if (citsMariage.none { it.sourceId == c.sourceId && detailCitation(it) == detailCitation(c) }) citsMariage.add(c)
+            }
+        }
+        if (dm != null || lm.isNotEmpty() || citsMariage.isNotEmpty()) {
             lignes.add("1 MARR")
             if (dm != null) lignes.add("2 DATE " + dm)
             if (hm != null) lignes.add("2 TIME " + hm)
             if (lm.isNotEmpty()) lignes.add("2 PLAC " + lm)
+            lignes.addAll(lignesCitations(2, citsMariage, sourcesParId))
         }
         enfants.forEach { e -> if (personnes.any { it.id == e }) lignes.add("1 CHIL " + xrefIndi(e)) }
     }
 
+    // v0.90 : enregistrements SOUR puis REPO.
+    lignes.addAll(lignesEnregistrementsSources(sourcesExportees))
     // G2-02 : enregistrement SUBM reference par le HEAD.
     lignes.add("0 @SUB1@ SUBM")
     lignes.add("1 NAME Utilisateur GeneaPoche")
@@ -359,7 +392,13 @@ fun couperLieu(plac: String): Pair<String, String> {
 // Aucun plafond de personnes depuis la G1-10 (decision de l auteur).
 // G2-04 : resultat d import avec rapport de ce qui a ete ignore
 // (aucune donnee personnelle n y figure, seulement des noms de balises).
-data class ResultatImport(val personnes: List<Personne>, val ignores: List<String>)
+data class ResultatImport(
+    val personnes: List<Personne>,
+    val ignores: List<String>,
+    // v0.90 : sources et citations lues dans le GEDCOM (pointeurs SOUR).
+    val sources: List<Source> = emptyList(),
+    val citations: List<Citation> = emptyList()
+)
 
 // G2-04 : detecter l encodage d un fichier GEDCOM : BOM UTF-16 LE/BE ou
 // UTF-8, sinon UTF-8 STRICT, avec repli ANSI (windows-1252).
@@ -449,7 +488,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
     var dateTampon = ""
 
     lignes.forEach { ligne ->
-        val m = Regex("^(\\d+)\\s+(.*)$").find(ligne) ?: return@forEach
+        val m = Regex("^(\\d+)\\s+(.*)$", RegexOption.DOT_MATCHES_ALL).find(ligne) ?: return@forEach
         val niveau = m.groupValues[1].toIntOrNull() ?: return@forEach
         val contenu = m.groupValues[2].trim()
         if (niveau == 0) {
@@ -472,7 +511,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                 // G2-04 : comptage des enregistrements non importes (SOUR,
                 // NOTE, REPO...) pour le rapport, sans perte silencieuse.
                 val balise = Regex("^(@.*@\\s+)?([A-Za-z_]+)").find(contenu)?.groupValues?.get(2) ?: "?"
-                if (balise != "HEAD" && balise != "TRLR") ignorer(enregistrementsIgnores, balise)
+                if (balise != "HEAD" && balise != "TRLR" && balise != "SOUR" && balise != "REPO") ignorer(enregistrementsIgnores, balise)
             }
             return@forEach
         }
@@ -505,7 +544,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                     "NOTE" -> ind.note = contenu.removePrefix("NOTE").trim().replace("@@", "@")
                     // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement libre (intitul\u00E9 en 2 TYPE).
                     "EVEN" -> ind.evLibres.add(EvenementLibre())
-                    else -> if (blocActuel !in listOf("BIRT", "BAPM", "CHR", "BAPT", "MARR", "DEAT", "BURI", "BUR")) {
+                    else -> if (blocActuel !in listOf("BIRT", "BAPM", "CHR", "BAPT", "MARR", "DEAT", "BURI", "BUR", "SOUR")) {
                         ignorer(balisesIgnorees, blocActuel)
                     }
                 }
@@ -514,6 +553,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                     "HUSB" -> fam.husb = contenu.removePrefix("HUSB").trim()
                     "WIFE" -> fam.wife = contenu.removePrefix("WIFE").trim()
                     "CHIL" -> fam.chil.add(contenu.removePrefix("CHIL").trim())
+                    "SOUR" -> {}
                     else -> ignorer(balisesIgnorees, blocActuel)
                 }
             }
@@ -637,7 +677,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
     balisesIgnorees.forEach { (balise, n) ->
         ignoresRapport.add(n.toString() + " balise(s) " + balise + " non import\u00E9e(s)")
     }
-    return ResultatImport(personnes, ignoresRapport)
+    val lus = lireSourcesGedcom(lignes, ids)
+    return ResultatImport(personnes, ignoresRapport, lus.sources, lus.citations)
 }
 
 fun importerGedcom(texte: String): List<Personne> = importerGedcomRapporte(texte).personnes

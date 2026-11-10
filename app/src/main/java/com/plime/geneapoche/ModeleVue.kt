@@ -29,12 +29,20 @@ class LienAvant(
 class AnnulationSuppression(
     val personne: Personne,
     val pistes: List<Piste>,
-    val liens: List<LienAvant>
+    val liens: List<LienAvant>,
+    // v0.90 : citations de la personne supprimee (restaurees par Annuler).
+    val citations: List<Citation> = emptyList()
 )
 
 class ModeleVueGeneaPoche : ViewModel() {
     val personnes = mutableStateListOf<Personne>()
     val pistes = mutableStateListOf<Piste>()
+    // v0.90 : carnet de sources (sources reutilisables et citations).
+    val sources = mutableStateListOf<Source>()
+    val citations = mutableStateListOf<Citation>()
+    // Sources lues dans un GEDCOM en attente de confirmation d'import.
+    var importSources by mutableStateOf<List<Source>>(emptyList())
+    var importCitations by mutableStateOf<List<Citation>>(emptyList())
     // Pile de navigation des fiches : retour = fiche precedemment ouverte
     // (la liste n'apparait qu'une fois la pile vide).
     val pileFiches = mutableStateListOf<Long>()
