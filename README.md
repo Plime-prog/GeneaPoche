@@ -24,6 +24,8 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 
 **Carnet de sources (v0.92)** — un carnet de recherche 100 % local : une **Source** se décrit une seule fois (type d'acte, commune, période, dépôt, cote, lien Internet facultatif — jamais nécessaire —, transcription, notes, niveau de fiabilité 0-3) et se **cite** autant de fois que nécessaire : une **Citation** relie une source à une personne et à un événement précis (« Naissance de Marie Dupont, acte n° 43, vue 17/312 »). Sur le formulaire d'acte, on choisit la source et on saisit le n° d'acte et la **vue n° sur le total de vues**. Accessible depuis les paramétrages (« Carnet de sources ») et depuis le bloc « Sources » de chaque fiche. **Compatible GEDCOM 5.5.1 / Heredis** : sources en enregistrements `SOUR` (TITL, REPO/CALN, DATA, TEXT, NOTE) et citations `SOUR @Sn@` avec PAGE, QUAY, DATA/TEXT ; les champs propres à GénéaPoche utilisent des balises `_GP…` ignorées par les autres logiciels. Les sources et citations sont aussi dans les sauvegardes `.gpbak`.
 
+**Géographie (v0.93)** — nouvel onglet : un **damier des 98 départements** (métropole, Corse 2A/2B, DOM) coloré selon le nombre d'ancêtres qui y ont vécu ; toucher un département liste les personnes concernées (cliquables vers les fiches), le **top 3 des communes** de la lignée s'affiche en pastilles vertes, et le **« Voyage de la lignée »** retrace chronologiquement les lieux de la personne ouverte — naissance, mariages, décès, événements libres — avec une flèche rouge à chaque déménagement : les migrations se lisent d'un coup d'œil. Tout est calculé localement depuis les lieux normalisés (code INSEE), sans carte ni réseau. Au passage : les codes INSEE de Corse (2A/2B) corrompus depuis la v0.88 sont réparés automatiquement.
+
 ## Modèle de sécurité — exact, avec ses limites
 
 - **Aucune permission Internet** dans le manifeste : l'application elle-même ne transmet rien.
@@ -42,7 +44,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.88)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.88-release.apk` (signé) ou `GeneaPoche-v0.88-debug.apk`.
+**Téléchargement direct de la dernière version (v0.93)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.93-release.apk` (signé) ou `GeneaPoche-v0.93-debug.apk`.
 
 Sinon, depuis les sources :
 
