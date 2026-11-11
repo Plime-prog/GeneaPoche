@@ -72,6 +72,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -87,6 +88,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.geometry.Offset
@@ -144,7 +146,7 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
             selected = onglet == 5,
             onClick = { onChoisir(5) },
             icon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            label = { Text("Statistiques") }
+            label = { Text("Stat.") }
         )
     }
 }
@@ -273,6 +275,20 @@ fun EcranApplication(
     var saisieType by remember { mutableStateOf<String?>(null) }
     var saisieParentEnfant by remember { mutableStateOf(0L) }
     var saisieOuverte by remember { mutableStateOf(false) }
+    // v0.96 : une image est chargee dans l'ecran scinde -> le bandeau du
+    // haut (barre de titre de l'application) est masque pour agrandir la
+    // zone de visualisation.
+    var imageSaisiePresente by remember { mutableStateOf(false) }
+    // v0.96 : changer d'onglet ferme l'ecran scinde (l'image ne doit
+    // jamais rester affichee sur un autre ecran).
+    val choisirOnglet: (Int) -> Unit = { o ->
+        if (saisieOuverte) {
+            saisieOuverte = false
+            saisieType = null
+            imageSaisiePresente = false
+        }
+        onOnglet(o)
+    }
     // v0.95 (12) : menu interne de l'onglet Arbre (0 = arbre, 1 = ligne de vie).
     var vueArbre by remember { mutableStateOf(0) }
     BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty() || saisieOuverte) {
@@ -322,6 +338,10 @@ fun EcranApplication(
         Scaffold(
             snackbarHost = { SnackbarHost(etatSnackbar) },
             topBar = {
+                // v0.96 : le bandeau du haut est masque tant qu'une image
+                // est affichee dans l'ecran scinde de saisie (zone de
+                // visualisation agrandie).
+                if (!(saisieOuverte && imageSaisiePresente)) {
                 TopAppBar(
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -334,7 +354,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.95",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.96",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -355,8 +375,9 @@ fun EcranApplication(
                         actionIconContentColor = Color.White
                     ),
                 )
+                }
             },
-            bottomBar = { BarreOnglets(onglet, onOnglet) },
+            bottomBar = { BarreOnglets(onglet, choisirOnglet) },
             floatingActionButton = {
                 // G\u00E9n\u00E9aPoche 2 : nouvelle fiche depuis N'IMPORTE QUELLE page.
                 FloatingActionButton(onClick = { saisieType = null; saisieParentEnfant = 0L; saisieOuverte = true }) {
@@ -717,7 +738,9 @@ fun EcranApplication(
                             EcranArbre(
                                 personnes = personnes,
                                 idCentre = arbreCentre,
-                                onOuvrir = { onIdOuvert(it) },
+                                // v0.96 : toucher une carte ouvre aussi sa
+                                // fiche dans l'onglet Personnes (sync).
+                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
                                 onCentrerSur = { onArbreCentre(it) }
                             )
                         } else {
@@ -916,12 +939,26 @@ fun EcranApplication(
                 var uriImage by remember { mutableStateOf<Uri?>(null) }
                 var zoomImage by remember { mutableStateOf(1f) }
                 var decaleImage by remember { mutableStateOf(Offset.Zero) }
+                // v0.96 : rotation par pas de 90 degres + reglages
+                // luminosite / contraste pour les registres peu lisibles.
+                var angleImage by remember { mutableStateOf(0f) }
+                var lumiereImage by remember { mutableStateOf(1f) }
+                var contrasteImage by remember { mutableStateOf(1f) }
+                var reglagesImage by remember { mutableStateOf(false) }
                 val contexte = LocalContext.current
                 val lanceurImage = rememberLauncherForActivityResult(
                     ActivityResultContracts.PickVisualMedia()
                 ) { uri ->
                     picker(false)
                     uriImage = uri
+                    // v0.96 : remise a zero des reglages a chaque nouvelle image.
+                    zoomImage = 1f
+                    decaleImage = Offset.Zero
+                    angleImage = 0f
+                    lumiereImage = 1f
+                    contrasteImage = 1f
+                    reglagesImage = false
+                    imageSaisiePresente = uri != null
                 }
                 LaunchedEffect(uriImage) {
                     val u = uriImage ?: return@LaunchedEffect
@@ -933,20 +970,30 @@ fun EcranApplication(
                     } catch (e2: Exception) { null }
                 }
                 Column(Modifier.fillMaxSize().padding(marges).imePadding()) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = { saisieOuverte = false; saisieType = null }) { Text("\u2190 Fermer") }
-                        Spacer(Modifier.weight(1f))
-                        TextButton(onClick = {
-                            picker(true)
-                            lanceurImage.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        }) { Text("Image \u00e0 transcrire") }
+                    // v0.96 : le bandeau (Fermer / Image a transcrire) est
+                    // masque des qu'une image est choisie ; des boutons
+                    // compacts restent superposes a l'image (fermer,
+                    // changer, pivoter, reglages).
+                    if (imageTranscription == null) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { saisieOuverte = false; saisieType = null; imageSaisiePresente = false }) { Text("\u2190 Fermer") }
+                            Spacer(Modifier.weight(1f))
+                            TextButton(onClick = {
+                                picker(true)
+                                lanceurImage.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            }) { Text("Image \u00e0 transcrire") }
+                        }
                     }
-                    // Zone HAUTE : l'image de reference.
+                    // Zone HAUTE : l'image de reference. v0.96 : le zoom ne
+                    // deborde JAMAIS de la demi-zone (clipToBounds) et la
+                    // rotation + les reglages lumiere/contraste sont
+                    // superposes a l'image.
                     Box(
                         Modifier.weight(1f).fillMaxWidth()
+                            .clipToBounds()
                             .pointerInput(Unit) {
                                 detectTransformGestures { _, pan, zoom, _ ->
-                                    zoomImage = (zoomImage * zoom).coerceIn(1f, 5f)
+                                    zoomImage = (zoomImage * zoom).coerceIn(1f, 8f)
                                     decaleImage += pan
                                 }
                             }
@@ -961,14 +1008,72 @@ fun EcranApplication(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         } else {
+                            // v0.96 : luminosite et contraste via une matrice
+                            // de couleurs (sortie = contraste * (lumiere * v)
+                            // + 255 * (0.5 - 0.5 * contraste)).
+                            val s = lumiereImage * contrasteImage
+                            val decalage = 255f * (0.5f - 0.5f * contrasteImage)
                             Image(
                                 bitmap = bmp.asImageBitmap(),
                                 contentDescription = "Image \u00e0 transcrire",
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(
+                                    androidx.compose.ui.graphics.ColorMatrix(
+                                        floatArrayOf(
+                                            s, 0f, 0f, 0f, decalage,
+                                            0f, s, 0f, 0f, decalage,
+                                            0f, 0f, s, 0f, decalage,
+                                            0f, 0f, 0f, 1f, 0f
+                                        )
+                                    )
+                                ),
                                 modifier = Modifier.fillMaxSize().graphicsLayer {
                                     scaleX = zoomImage; scaleY = zoomImage
                                     translationX = decaleImage.x; translationY = decaleImage.y
+                                    rotationZ = angleImage
                                 }
                             )
+                            // Boutons compacts superposes (haut droite).
+                            Row(
+                                Modifier.align(Alignment.TopEnd).padding(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)) {
+                                    TextButton(onClick = { angleImage += 90f }) {
+                                        Text("Pivoter", fontSize = 11.sp, maxLines = 1)
+                                    }
+                                }
+                                Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)) {
+                                    TextButton(onClick = { reglagesImage = !reglagesImage }) {
+                                        Text(if (reglagesImage) "Fin r\u00e9glages" else "R\u00e9glages", fontSize = 11.sp, maxLines = 1)
+                                    }
+                                }
+                                Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)) {
+                                    TextButton(onClick = {
+                                        picker(true)
+                                        lanceurImage.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                    }) {
+                                        Text("Changer", fontSize = 11.sp, maxLines = 1)
+                                    }
+                                }
+                                Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)) {
+                                    TextButton(onClick = { saisieOuverte = false; saisieType = null; imageSaisiePresente = false }) {
+                                        Text("\u2190 Fermer", fontSize = 11.sp, maxLines = 1)
+                                    }
+                                }
+                            }
+                            // Curseurs de reglage (bas de la zone image).
+                            if (reglagesImage) {
+                                Column(
+                                    Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f))
+                                        .padding(horizontal = 10.dp, vertical = 2.dp)
+                                ) {
+                                    Text("Lumi\u00e8re", fontSize = 10.sp)
+                                    Slider(value = lumiereImage, onValueChange = { lumiereImage = it }, valueRange = 0.5f..2f)
+                                    Text("Contraste", fontSize = 10.sp)
+                                    Slider(value = contrasteImage, onValueChange = { contrasteImage = it }, valueRange = 0.5f..2f)
+                                }
+                            }
                         }
                     }
                     // Zone BASSE : la saisie.
@@ -1027,7 +1132,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.95", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.96", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1394,7 +1499,7 @@ fun EcranApplication(
             // Menus de l'application TOUJOURS visibles en bas, meme fiche ouverte.
             // Choisir un onglet ferme la fiche et affiche l'onglet demande.
             SnackbarHost(etatSnackbar)
-            BarreOnglets(onglet) { o -> onOnglet(o); onIdOuvert(0L) }
+            BarreOnglets(onglet) { o -> if (saisieOuverte) { saisieOuverte = false; saisieType = null; imageSaisiePresente = false }; onOnglet(o); onIdOuvert(0L) }
         }
     }
 
