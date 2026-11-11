@@ -18,11 +18,13 @@ un enfant né avant son parent est refusé partout : saisie, choix de fiche, nou
 
 GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque fiche (indicateur automatique sur 6 renseignements, sur 4 pour une personne supposée en vie — naissance et mariage —, sur 2 pour un mineur, synchronisé entre la fiche et la liste des noms ; ✘ si rien, choix manuel possible au toucher), diagnostic de l'arbre dans le journal (anomalies, doublons avec fusion guidée « Garder A / Garder B » sans aucune perte, branches isolées, identités non certifiées), sources et preuves sur chaque acte (dépôt d'archives, date de consultation, fiabilité 0-3 échelle QUAY) exportées en GEDCOM (AGNC, NOTE, QUAY).
 
-**Boîte à outils (v0.87)** — accessible depuis les paramétrages, 100 % locale : convertisseur calendrier républicain ↔ grégorien (jour de la semaine, nom du jour, décade, fête du jour, années sextile et bissextile, calendrier julien), calculateur de dates (âge à une date, écart entre deux événements, date ± durée, intervalle d'années) et calculateur de parenté (« Marie est la cousine germaine de Pierre »). Chaque résultat peut être ajouté à la note de recherche d'une fiche.
+**Boîte à outils (v0.87)** — accessible depuis l'onglet Outils (déplacée des paramétrages en v0.94, du bouton + à l'onglet en v0.95), 100 % locale : convertisseur calendrier républicain ↔ grégorien (jour de la semaine, nom du jour, décade, fête du jour, années sextile et bissextile, calendrier julien), calculateur de dates (âge à une date, écart entre deux événements, date ± durée, intervalle d'années) et calculateur de parenté (« Marie est la cousine germaine de Pierre »). Chaque résultat peut être ajouté à la note de recherche d'une fiche.
 
 **Anomalies à vérifier (v0.88)** — le diagnostic de l'arbre (onglet Journal) signale les dates et liens improbables (enfant né après le décès de son père, mère trop jeune ou trop âgée, mariage après décès, fratrie trop rapprochée, sexe incompatible avec un lien, doublons potentiels…) sans jamais parler d'erreur : chaque anomalie propose **Ignorer**, **Corriger** ou **Examiner**.
 
 **Carnet de sources (v0.92)** — un carnet de recherche 100 % local : une **Source** se décrit une seule fois (type d'acte, commune, période, dépôt, cote, lien Internet facultatif — jamais nécessaire —, transcription, notes, niveau de fiabilité 0-3) et se **cite** autant de fois que nécessaire : une **Citation** relie une source à une personne et à un événement précis (« Naissance de Marie Dupont, acte n° 43, vue 17/312 »). Sur le formulaire d'acte, on choisit la source et on saisit le n° d'acte et la **vue n° sur le total de vues**. Accessible depuis les paramétrages (« Carnet de sources ») et depuis le bloc « Sources » de chaque fiche. **Compatible GEDCOM 5.5.1 / Heredis** : sources en enregistrements `SOUR` (TITL, REPO/CALN, DATA, TEXT, NOTE) et citations `SOUR @Sn@` avec PAGE, QUAY, DATA/TEXT ; les champs propres à GénéaPoche utilisent des balises `_GP…` ignorées par les autres logiciels. Les sources et citations sont aussi dans les sauvegardes `.gpbak`.
+
+**Réorganisation (v0.94-95) et arbre refondu (v0.96)** — la saisie par acte s'ouvre en **écran scindé** depuis le bouton + : en haut l'image de l'acte (zoom, déplacement, rotation par 90°, réglages lumière/contraste pour les registres peu lisibles — l'image reste bornée à sa demi-zone, le bandeau du haut se masque et l'image disparaît dès que l'on change d'écran), en bas le formulaire compacté. Barre d'onglets : Personnes · Journal · Arbre (réunit arbre et ligne de vie) · Outils · Sources · Stat. L'arbre affiche des étiquettes uniformes : n° de numérotation (Sosa ou d'Aboville), nom, prénoms, N. et D., avec troncature, police compacte et texte qui s'adapte au zoom ; toucher une carte la centre **et** ouvre sa fiche dans l'onglet Personnes.
 
 ## Modèle de sécurité — exact, avec ses limites
 
@@ -42,7 +44,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.88)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.88-release.apk` (signé) ou `GeneaPoche-v0.88-debug.apk`.
+**Téléchargement direct de la dernière version (v0.96)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.96-release.apk` (signé) ou `GeneaPoche-v0.96-debug.apk`.
 
 Sinon, depuis les sources :
 
