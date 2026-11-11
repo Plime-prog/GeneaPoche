@@ -116,7 +116,7 @@ fun EcranArbre(
                 ArbreQuatre(centre = centre, personnes = personnes, onOuvrir = onOuvrir, onCentrerSur = onCentrerSur)
                 Spacer(Modifier.height(24.dp))
                 Text(
-                    "Touchez une carte : elle devient le centre de l'arbre. Appui long : ouvrir la fiche. Pincez pour zoomer, glissez pour déplacer.",
+                    "Touchez une carte : elle devient le centre de l'arbre et sa fiche s'ouvre dans l'onglet Personnes. Pincez pour zoomer, glissez pour déplacer.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -234,8 +234,10 @@ fun ArbreQuatre(
     }
 }
 
-// Une carte de l'arbre. TOUCHER : la personne devient le centre de
-// l'arbre. APPUI LONG : ouverture de sa fiche.
+// Une carte de l'arbre. v0.96 : le symbole de sexe est remplacé par le
+// numéro (Sosa, sinon d'Aboville) ; 4 lignes : NOM / Prénoms / N / D,
+// tronquées, police 8 sp. TOUCHER : la personne devient le centre de
+// l'arbre ET sa fiche s'ouvre dans l'onglet Personnes (synchronisation).
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CarteMiniArbre(
@@ -249,8 +251,13 @@ fun CarteMiniArbre(
         modifier
             .padding(2.dp)
             .combinedClickable(
-                onClick = { if (p != null) onCentrerSur(p.id) },
-                onClickLabel = "Centrer l'arbre sur cette personne",
+                onClick = {
+                    if (p != null) {
+                        onCentrerSur(p.id)
+                        onOuvrir(p.id)
+                    }
+                },
+                onClickLabel = "Centrer l'arbre sur cette personne et ouvrir sa fiche",
                 onLongClick = { if (p != null) onOuvrir(p.id) },
                 onLongClickLabel = "Ouvrir la fiche"
             ),
@@ -265,56 +272,58 @@ fun CarteMiniArbre(
             }
         )
     ) {
-        // v0.95 (12) : cadres UNIFORMES (hauteur fixe), police réduite,
-        // troncature : tout tient sur une ligne, même si des informations
-        // sont manquantes.
+        // v0.96 : 4 lignes (NOM / Prénoms / N / D), numéro en tête de la
+        // première ligne (plus de symbole de sexe), police 8 sp, chaque
+        // ligne tronquée. Le zoom de l'arbre agrandit le texte avec la
+        // carte (graphicsLayer global de EcranArbre).
         Column(Modifier.fillMaxWidth().height(64.dp).padding(4.dp)) {
             if (p == null) {
                 Text(
                     "Inconnu",
-                    fontSize = 9.sp,
+                    fontSize = 8.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Le sexe n'est pas signalé par la couleur seule, un
-                    // petit symbole le double (lisibilité + TalkBack).
+                    val num = p.numeroAffiche()
+                    if (num.isNotEmpty()) {
+                        Text(
+                            num + " ",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1
+                        )
+                    }
                     Text(
-                        when (p.sexe) {
-                            "F" -> "♀ "
-                            "M" -> "♂ "
-                            else -> ""
-                        },
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                    Text(
-                        p.titre(),
+                        p.nom.trim(),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 9.sp,
+                        fontSize = 8.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                val num = p.numeroAffiche()
-                if (num.isNotEmpty()) {
-                    Text(
-                        num,
-                        fontSize = 9.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Text(
+                    p.prenoms.trim(),
+                    fontSize = 8.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 val n = dateAffichee(p.dateNaissance.trim())
-                val d = dateAffichee(p.dateDeces.trim())
-                val morceaux = mutableListOf<String>()
-                if (n.isNotEmpty()) morceaux.add("N. " + n)
-                // Règle des 100 ans : décès affiché seulement si connu ou possible.
-                if (d.isNotEmpty() && decesAffichable(p)) morceaux.add("D. " + d)
-                if (morceaux.isNotEmpty()) {
+                if (n.isNotEmpty()) {
                     Text(
-                        morceaux.joinToString(" – "),
-                        fontSize = 9.sp,
+                        "N. " + n,
+                        fontSize = 8.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                // Règle des 100 ans : décès affiché seulement si connu ou possible.
+                val d = dateAffichee(p.dateDeces.trim())
+                if (d.isNotEmpty() && decesAffichable(p)) {
+                    Text(
+                        "D. " + d,
+                        fontSize = 8.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
