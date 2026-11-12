@@ -231,7 +231,9 @@ fun AppEcran(
     fun rafraichirTout() {
         val cp = personnes.toList()
         personnes.clear()
+            IndexPersonnes.invalider()
         personnes.addAll(cp)
+            IndexPersonnes.invalider()
         val cq = pistes.toList()
         pistes.clear()
         pistes.addAll(cq)
@@ -540,11 +542,13 @@ fun AppEcran(
         fichiersIllisibles.forEach { nom -> Stockage.restaurerBak(ctx, nom) }
         derniersJson.clear()
         personnes.clear()
+            IndexPersonnes.invalider()
         pistes.clear()
         val rp = Stockage.charger(ctx)
         val rj = Stockage.chargerJournal(ctx)
         val rs = Stockage.chargerSources(ctx)
         personnes.addAll(rp.liste)
+            IndexPersonnes.invalider()
         pistes.addAll(rj.liste)
         appliquerCatalogue(rs)
         fichiersIllisibles = listOf(rp, rj, rs).filter { it.illisible }.map { it.nom }
@@ -576,6 +580,7 @@ fun AppEcran(
         )
         citations.removeAll(citationsRetirees)
         personnes.remove(p)
+            IndexPersonnes.invalider()
         personnes.forEach { q ->
             if (q.pere == p.id) q.pere = 0L
             if (q.mere == p.id) q.mere = 0L
@@ -599,6 +604,7 @@ fun AppEcran(
     fun annulerSuppression() {
         val a = modele.annulation ?: return
         personnes.add(a.personne)
+            IndexPersonnes.invalider()
         a.liens.forEach { l ->
             personneParId(personnes, l.id)?.let { q ->
                 q.pere = l.pere
@@ -667,14 +673,11 @@ fun AppEcran(
     // v0.61 : cle de comparaison d'un nom - insensible a la casse, aux
     // accents et aux separateurs (espace, tiret, apostrophe). FINI les
     // doublons crees par une simple correction d'orthographe.
-    fun cle(s: String): String =
-        java.text.Normalizer.normalize(s.trim().uppercase(), java.text.Normalizer.Form.NFD)
-            .replace(Regex("[\\p{Mn}\\p{Cf}']"), " ")
-            .replace("-", " ")
-            .split(Regex("\\s+")).filter { it.isNotEmpty() }.joinToString(" ")
+    // v0.99 : delegue aux fonctions pures de LogiqueActe.kt (testees sur JVM).
+    fun cle(s: String): String = cleNom(s)
 
     // Prenoms compares SANS ORDRE ("Marie Jeanne" = "Jeanne Marie").
-    fun clePrenoms(s: String): String = cle(s).split(" ").filter { it.isNotEmpty() }.sorted().joinToString(" ")
+    fun clePrenoms(s: String): String = clePrenomsNom(s)
 
     fun ajouterMariage(nom: String, prenoms: String, date: String, commune: String, dept: String) {
         val p = personneParId(personnes, idOuvert) ?: return
@@ -709,6 +712,7 @@ fun AppEcran(
                 sexe = if (p.sexe == "M") "F" else if (p.sexe == "F") "M" else ""
             )
             personnes.add(nouvelle)
+            IndexPersonnes.invalider()
             cible = nouvelle
         }
         if (p.conjoint == 0L) {
@@ -764,6 +768,7 @@ fun AppEcran(
                 sexe = sexe
             )
             personnes.add(enfant)
+            IndexPersonnes.invalider()
         }
         if (enfant.dateNaissance.isBlank() && dateNaissance.isNotBlank()) enfant.dateNaissance = dateGreg(dateNaissance)
         if (!p.enfants.contains(enfant.id)) p.enfants.add(enfant.id)
@@ -840,6 +845,7 @@ fun AppEcran(
                 sexe = if (role == "pere") "M" else "F"
             )
             personnes.add(nouvelle)
+            IndexPersonnes.invalider()
             cible = nouvelle
         }
         if (cible.id == p.id) {
@@ -876,6 +882,7 @@ fun AppEcran(
                 prenoms = pr
             )
             personnes.add(nouvelle)
+            IndexPersonnes.invalider()
             cible = nouvelle
         }
         if (cible.id == p.id) {
@@ -1061,6 +1068,7 @@ fun AppEcran(
         citations.addAll(citationsApresFusion)
         // 6. Suppression effective du doublon.
         personnes.remove(supprime)
+            IndexPersonnes.invalider()
         pileFiches.removeAll { it == supprimeId }
         if (idOuvert == supprimeId) idOuvert = gardeId
         if (arbreCentre == supprimeId) arbreCentre = gardeId
@@ -1287,7 +1295,9 @@ fun AppEcran(
         // G1-09 : sauvegarde automatique de la base avant remplacement.
         Stockage.sauvegardeAvantImport(ctx)
         personnes.clear()
+            IndexPersonnes.invalider()
         personnes.addAll(importees)
+            IndexPersonnes.invalider()
         pistes.clear()
         // v0.90 : le carnet de sources devient celui du GEDCOM importe
         // (les identifiants de fiches ont change : les anciennes citations
@@ -1394,6 +1404,7 @@ fun AppEcran(
             val nid = Stockage.prochainId(ctx)
             idsNouvelles[imp.id] = nid
             personnes.add(imp.copy(id = nid))
+            IndexPersonnes.invalider()
             ajoutees += 1
         }
         // Passe 3 : remap des liens vers la base fusionn\u00E9e (aucun doublon).
@@ -1419,6 +1430,7 @@ fun AppEcran(
     // Vide entierement la base (personnes et journal), apres confirmation.
     fun viderBase() {
         personnes.clear()
+            IndexPersonnes.invalider()
         pistes.clear()
         sources.clear()
         citations.clear()
@@ -1468,7 +1480,9 @@ fun AppEcran(
                 // font sur le thread principal.
                 withContext(Dispatchers.Main) {
                     personnes.clear()
+            IndexPersonnes.invalider()
                     personnes.addAll(contenu.personnes)
+            IndexPersonnes.invalider()
                     pistes.clear()
                     pistes.addAll(contenu.pistes)
                     sources.clear()
@@ -1525,11 +1539,13 @@ fun AppEcran(
             if (essai.liste.isEmpty()) continue
             derniersJson.clear()
             personnes.clear()
+            IndexPersonnes.invalider()
             pistes.clear()
             val rp = essai
             val rj = Stockage.chargerJournal(ctx)
             val rs = Stockage.chargerSources(ctx)
             personnes.addAll(rp.liste)
+            IndexPersonnes.invalider()
             pistes.addAll(rj.liste)
             appliquerCatalogue(rs)
             fichiersIllisibles = listOf(rp, rj, rs).filter { it.illisible }.map { it.nom }
@@ -1544,11 +1560,13 @@ fun AppEcran(
         if (Stockage.aSauvegardeImport(ctx) && Stockage.restaurerSauvegardeImport(ctx)) {
             derniersJson.clear()
             personnes.clear()
+            IndexPersonnes.invalider()
             pistes.clear()
             val rp = Stockage.charger(ctx)
             val rj = Stockage.chargerJournal(ctx)
             val rs = Stockage.chargerSources(ctx)
             personnes.addAll(rp.liste)
+            IndexPersonnes.invalider()
             pistes.addAll(rj.liste)
             appliquerCatalogue(rs)
             fichiersIllisibles = listOf(rp, rj, rs).filter { it.illisible }.map { it.nom }
@@ -1572,11 +1590,13 @@ fun AppEcran(
         }
         derniersJson.clear()
         personnes.clear()
+            IndexPersonnes.invalider()
         pistes.clear()
         val rp = Stockage.charger(ctx)
         val rj = Stockage.chargerJournal(ctx)
         val rs = Stockage.chargerSources(ctx)
         personnes.addAll(rp.liste)
+            IndexPersonnes.invalider()
         pistes.addAll(rj.liste)
         appliquerCatalogue(rs)
         fichiersIllisibles = listOf(rp, rj, rs).filter { it.illisible }.map { it.nom }
@@ -1689,16 +1709,14 @@ fun AppEcran(
             // v0.77 : un VRAI doublon = même nom, mêmes prénoms ET même
             // date de naissance. Une date différente (ou le drapeau "Créer
             // une nouvelle fiche") = homonyme : une nouvelle fiche est créée.
-            if (!forcer) personnes.firstOrNull {
-                cle(it.nom) == cle(n) &&
-                clePrenoms(it.prenoms) == clePrenoms(pr) &&
-                (it.dateNaissance.isBlank() || dateNaiss.isBlank() || dateGreg(dateNaiss) == it.dateNaissance)
-            }?.let { return it }
+            // v0.99 : matching delegue a la fonction pure matchPersonneActe.
+            if (!forcer) matchPersonneActe(personnes, n, pr, dateNaiss)?.let { return it }
             val np = Personne(
                 id = Stockage.prochainId(ctx),
                 nom = n, prenoms = pr, sexe = if (sexeDefaut.isNotEmpty()) sexeDefaut else ""
             )
             personnes.add(np)
+            IndexPersonnes.invalider()
             crees += 1
             return np
         }
@@ -1707,48 +1725,14 @@ fun AppEcran(
         // REMPLACE celle de la fiche (v0.60 : synchronisation totale).
         fun renseigner(c: Personne?, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String,
             age: String = "", situation: String = "", domicile: String = "", sourceCalcul: String = "") {
-            if (c == null) return
-            if (edition) {
-                // v0.65 : en EDITION, le formulaire est la r\u00E9f\u00E9rence
-                // compl\u00E8te : une valeur vide EFFACE le champ du parent.
-                c.dateNaissance = dateGreg(ne)
-                c.lieuNaissance = lieu.trim()
-                c.deptNaissance = dept.trim()
-                c.profession = prof.trim()
-                c.dateDeces = dateGreg(dec)
-                c.lieuDeces = lieuDec.trim()
-            } else {
-                if (ne.isNotBlank()) c.dateNaissance = dateGreg(ne)
-                if (lieu.isNotBlank()) c.lieuNaissance = lieu.trim()
-                if (dept.isNotBlank()) c.deptNaissance = dept.trim()
-                if (prof.isNotBlank()) c.profession = prof.trim()
-                if (dec.isNotBlank()) c.dateDeces = dateGreg(dec)
-                if (lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
-            }
-            // v0.97 : situation et domicile portes par l'acte.
-            if (situation.isNotBlank()) c.situation = situation.trim()
-            if (domicile.isNotBlank()) c.domicile = domicile.trim()
-            // v0.97 : date de naissance CALCULEE d'apres l'age a l'acte
-            // (ex "34" sur un acte de 1913 -> "vers 1879"), seulement si la
-            // fiche n'a PAS de date de naissance connue.
-            if (c.dateNaissance.isBlank()) {
-                val anActe = anneeDe(a.date)
-                val ansAge = Regex("[0-9]{1,3}").find(age)?.value?.toIntOrNull()
-                if (anActe != null && ansAge != null && ansAge in 1..120) {
-                    c.naissanceCalculee = "vers " + (anActe - ansAge).toString()
-                    c.naissanceCalculeeSource = "calcul\u00e9e d'apr\u00e8s " + sourceCalcul
-                }
-            }
+            // v0.99 : delegue a la fonction pure renseignerChampsActe.
+            renseignerChampsActe(c, ne, lieu, dept, prof, dec, lieuDec, a.date, edition,
+                age, situation, domicile, sourceCalcul)
         }
 
         fun lierParent(enfant: Personne, parent: Personne?, estMere: Boolean) {
-            if (parent == null) return
-            if (estMere) {
-                if (enfant.mere == 0L) enfant.mere = parent.id
-            } else {
-                if (enfant.pere == 0L) enfant.pere = parent.id
-            }
-            if (!parent.enfants.contains(enfant.id) && incoherenceParente(parent, enfant.dateNaissance) == null) parent.enfants.add(enfant.id)
+            // v0.99 : delegue a la fonction pure lierParentActe.
+            lierParentActe(enfant, parent, estMere)
         }
 
         val p = trouverOuCreer(a.personneId, a.nom, a.prenoms, a.sexe, if (a.type == "N") a.date else "", a.persNouvelle)
@@ -1815,10 +1799,9 @@ fun AppEcran(
         // v0.98 : nouveaux champs B/M/D/S. Nouvel acte : remplis s'ils sont
         // encore vides sur la fiche ; EDITION : le formulaire est la
         // reference (un champ laisse vide EFFACE la valeur de la fiche).
-        fun maj98(actuel: String, saisi: String, greg: Boolean = false): String {
-            if (!edition && actuel.isNotBlank()) return actuel
-            return if (greg) dateGreg(saisi) else saisi.trim()
-        }
+        // v0.99 : delegue a la fonction pure majChamp98 (LogiqueActe.kt).
+        fun maj98(actuel: String, saisi: String, greg: Boolean = false): String =
+            majChamp98(actuel, saisi, edition, greg)
         p.declNDate = maj98(p.declNDate, a.declNDate, greg = true)
         p.declNHeure = maj98(p.declNHeure, a.declNHeure)
         p.bLegitime = maj98(p.bLegitime, a.bLegitime)
@@ -2133,6 +2116,7 @@ fun AppEcran(
             val rj = charges.second
             val rs = charges.third
             personnes.addAll(rp.liste)
+            IndexPersonnes.invalider()
             pistes.addAll(rj.liste)
             appliquerCatalogue(rs)
             sosaCujus = Stockage.lireSosaCujus(ctx)
@@ -2190,6 +2174,7 @@ fun AppEcran(
         // (personnes, journal, fiche ouverte, pile de navigation).
         if (!verrou.deverrouille && charge) {
             personnes.clear()
+            IndexPersonnes.invalider()
             pistes.clear()
             sources.clear()
             citations.clear()

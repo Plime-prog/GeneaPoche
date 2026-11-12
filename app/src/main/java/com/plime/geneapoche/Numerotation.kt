@@ -2,8 +2,8 @@ package com.plime.geneapoche
 
 // ---------------------------------------------------------------- Aides numerotation
 
-fun personneParId(liste: List<Personne>, id: Long): Personne? =
-    liste.firstOrNull { it.id == id }
+// v0.99 : personneParId deplacee dans LogiqueActe.kt (index id -> personne,
+// plus de recherche lineaire a chaque appel).
 
 fun sosaParent(p: Personne, mere: Boolean): String {
     val s = p.sosa.trim().toLongOrNull() ?: return ""
@@ -64,6 +64,7 @@ val ComparateurAboville = Comparator<Personne> { a, b ->
 // pere = 2n, mere = 2n+1 (Sosa-Stradonitz), puis d'Aboville pour TOUS les
 // enfants non Sosa de toute personne numerotee (prefixe du parent + .rang).
 fun renumeroter(personnes: MutableList<Personne>, cujusId: Long, sosaDeBase: Long = 1L) {
+    IndexPersonnes.invalider()
     personnes.forEach { it.sosa = ""; it.lateral = "" }
     val cujus = personneParId(personnes, cujusId) ?: return
     cujus.sosa = sosaDeBase.toString()
@@ -205,3 +206,4 @@ fun incoherenceParente(parent: Personne, dateEnfant: String): String? {
         parent.titre().trim() + " (" + ap + ")."
     else null
 }
+
