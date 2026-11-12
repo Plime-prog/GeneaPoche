@@ -1,5 +1,17 @@
 # Historique des versions — GénéaPoche
 
+## v0.97 — GénéaPoche 12 : arbre paisible, acte de naissance enrichi
+
+- **Arbre : toucher une carte la centre seulement** — plus de bascule automatique vers la fiche ; la fiche s'ouvre en basculant vers l'onglet Personnes (la personne touchée y est ouverte) ou par **appui long** sur la carte, comme avant.
+- **Étiquettes d'arbre : les lignes N. et D. redeviennent visibles** — le lineHeight par défaut (16 sp) rognait les deux dernières lignes de la carte de 64 dp ; corrigé (interligne adapté).
+- **Acte de naissance enrichi** :
+  - **Père, mère et témoins** : âge, situation et domicile ajoutés à la saisie et reportés sur les fiches.
+  - **Mentions marginales Mariage et Décès** (actes récents) : date et lieu saisies, complétées automatiquement sur les fiches si les blocs correspondants sont vides.
+- **Dates de naissance calculées** : quand l'acte donne un âge (1 à 120 ans) sans date de naissance connue, la fiche du père, de la mère ou du témoin reçoit « vers aaaa » (ex. « vers 1879 »), avec la mention **« N. calculé »** et la source (« d'après l'acte de naissance de … »). Effacé si une vraie date est saisie ensuite.
+- **Fiches** : « né(e) vers 1879 (calculé) » dans le bloc Naissance ; mentions marginales affichées ; les baptêmes où la personne est **témoin** apparaissent dans la frise (« Témoin (naissance) », distinct de « Parrain ou marraine ») ; la saisie d'acte pré-remplit les nouveaux champs.
+- 9 nouveaux champs persistés (situation, domicile, naissance calculée + source, mentions marginales) inclus dans le stockage chiffré, les sauvegardes .gpbak et l'export/import GEDCOM.
+- Bumps v0.97 (gradle 97/« 0.97 », export GEDCOM « 2 VERS 0.97 », badge de saisie « v0.97 », écran d'application).
+
 ## v0.96 — GénéaPoche 12 : arbre refondu, saisie scindée maîtrisée
 
 - **Statistiques raccourci en « Stat. »** dans la barre d'onglets.
@@ -492,17 +504,3 @@ Les chantiers 11.1 (rappels et notifications), 11.3 (carte), 11.5 (vues étendue
 ## v0.39 (2 novembre 2026)
 
 - **Import/export GEDCOM fiabilisé** : sauvegardes d'avant import tournantes (les 5 dernières), avertissement avant tout export ou remplacement, dialogue d'import clarifié.
-- **Fiche** : le cadre NAISSANCE est TOUJOURS en tête ; tous les cadres sont REPLIÉS sur une ligne à l'ouverture (toucher = développer, appui long = modifier via la saisie pré-remplie).
-- **Arbre** : à chaque toucher d'une carte, la personne devient le centre et la vue (zoom/déplacement) se réinitialise : l'arbre se régénère nettement sur 4 générations. Appui long = fiche.
-
-## v0.38 (« GénéaPoche 5 » : normes d'écriture, arbre 4 générations)
-
-- **Communes normalisées** : initiale en majuscules (norme française), automatiquement à la saisie, à l'édition, à l'import et au chargement (« le havre » → « Le Havre »).
-- **Départements au format numérique** (norme GEDCOM), 2 ou 3 chiffres : « Nord » → « 59 », « 5 » → « 05 ».
-- **Icône de paramétrages** : l'intitulé « GEDCOM » de la barre du haut est remplacé par une roue crantée.
-- **Personnes** : pastille VIDE si la personne n'est ni Sosa ni d'Aboville ; étiquette à droite n/6 (N date complète, N commune, N département, D date complète, D commune, D département), rouge (0) → vert (6).
-- **Fiche** : cadre de la personne supprimé (l'identité est dans la barre de titre) ; profession des parents sans étiquette dans le cadre des parents ; bloc Naissance toujours en tête, croix père/mère supprimées ; bloc Mariage allégé (plus de croix, ni « Autre conjoint », ni « Saisir un mariage ») ; le bloc « Biographie » devient **« Notes »** ; modification par appui long = le menu de Saisie pré-rempli (parents et conjoint inclus).
-- **Arbre : retour à 4 générations** (8 arrière-grands-parents → 4 grands-parents → parents → personne centrale + conjoint) ; toucher une carte la rend immédiatement centrale ; appui long ouvre la fiche ; zoom et déplacement conservés.
-
-## v0.37 (arbre épuré et illimité)
-
