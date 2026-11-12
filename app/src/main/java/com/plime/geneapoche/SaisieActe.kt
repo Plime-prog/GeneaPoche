@@ -62,7 +62,11 @@ data class TemoinSaisie(
     val role: String = "",
     // v0.77 : vrai homonyme (autre date de naissance) : la fenêtre
     // "Créer une nouvelle fiche" force une fiche DISTINCTE.
-    val nouveau: Boolean = false
+    val nouveau: Boolean = false,
+    // v0.97 : renseignements portes par l'acte pour CE temoin.
+    val age: String = "",
+    val situation: String = "",
+    val domicile: String = ""
 )
 
 data class ActeSaisie(
@@ -110,10 +114,17 @@ data class ActeSaisie(
     val pereNom: String = "", val perePrenoms: String = "",
     val pereNe: String = "", val pereLieu: String = "", val pereDept: String = "",
     val pereProf: String = "", val pereDeces: String = "", val pereLieuDeces: String = "",
+    // v0.97 : \u00E2ge \u00E0 l'acte (saisi), situation, domicile du p\u00E8re.
+    val pereAge: String = "", val pereSituation: String = "", val pereDomicile: String = "",
     // M\u00E8re de la personne concern\u00E9e
     val mereNom: String = "", val merePrenoms: String = "",
     val mereNe: String = "", val mereLieu: String = "", val mereDept: String = "",
     val mereProf: String = "", val mereDeces: String = "", val mereLieuDeces: String = "",
+    // v0.97 : \u00E2ge, situation, domicile de la m\u00E8re.
+    val mereAge: String = "", val mereSituation: String = "", val mereDomicile: String = "",
+    // v0.97 : mentions marginales d'un acte de naissance (mariage, d\u00E9c\u00E8s).
+    val mentionMDate: String = "", val mentionMLieu: String = "",
+    val mentionDDate: String = "", val mentionDLieu: String = "",
     // Mari\u00E9e (mariage uniquement)
     val marieeId: Long = 0L,
     val marieeNom: String = "", val marieePrenoms: String = "", val marieeProf: String = "",
@@ -147,15 +158,21 @@ class ChampsParent {
     var profession by mutableStateOf("")
     var deces by mutableStateOf("")
     var lieuDeces by mutableStateOf("")
+    // v0.97 : \u00E2ge \u00E0 l'acte (saisi, ex "34"), situation, domicile.
+    var age by mutableStateOf("")
+    var situation by mutableStateOf("")
+    var domicile by mutableStateOf("")
 }
 
 // v0.65 (diagnostic externe) : UN SEUL endroit remplit les champs d'un
 // parent. Extension top-level testable : remplir un parent ne peut plus
 // toucher les champs d'un autre bloc.
 fun ChampsParent.remplir(nom: String, prenoms: String, ne: String, lieu: String,
-    dept: String, profession: String, deces: String, lieuDeces: String) {
+    dept: String, profession: String, deces: String, lieuDeces: String,
+    age: String = "", situation: String = "", domicile: String = "") {
     this.nom = nom; this.prenoms = prenoms; this.ne = ne; this.lieu = lieu
     this.dept = dept; this.profession = profession; this.deces = deces; this.lieuDeces = lieuDeces
+    this.age = age; this.situation = situation; this.domicile = domicile
 }
 
 // Age au moment de l'acte (calcule a partir des annees).
@@ -228,6 +245,12 @@ fun BlocParent(
                 }
             }
         }
+        // v0.97 : l'acte porte l'âge, la situation et le domicile du parent.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Champ("Âge", e.age, { e.age = it }, modifier = Modifier.weight(0.7f))
+            Champ("Situation", e.situation, { e.situation = it }, modifier = Modifier.weight(1f))
+            Champ("Domicile", e.domicile, { e.domicile = it }, modifier = Modifier.weight(1.3f))
+        }
     } else {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Champ("Nom", e.nom, { e.nom = it }, modifier = Modifier.weight(1f))
@@ -262,6 +285,12 @@ fun BlocParent(
                 Champ("Lieu d\u00E9c\u00E8s", e.lieuDeces, { e.lieuDeces = it }, modifier = Modifier.weight(1f), communes = true)
             }
         }
+        // v0.97 : \u00e2ge \u00e0 l'acte, situation et domicile (tous les types).
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Champ("\u00c2ge", e.age, { e.age = it }, modifier = Modifier.weight(0.7f))
+            Champ("Situation", e.situation, { e.situation = it }, modifier = Modifier.weight(1f))
+            Champ("Domicile", e.domicile, { e.domicile = it }, modifier = Modifier.weight(1.3f))
+        }
     }
 }
 
@@ -290,6 +319,11 @@ fun EcranSaisieActe(
     var enregistre by remember(initial) { mutableStateOf(initial?.enregistre ?: false) }
     var date by remember(initial) { mutableStateOf(initial?.date ?: "") }
     var heure by remember(initial) { mutableStateOf(initial?.heure ?: "") }
+    // v0.97 : mentions marginales d'un acte de naissance (mariage, deces).
+    var mentionMDate by remember(initial) { mutableStateOf(initial?.mentionMDate ?: "") }
+    var mentionMLieu by remember(initial) { mutableStateOf(initial?.mentionMLieu ?: "") }
+    var mentionDDate by remember(initial) { mutableStateOf(initial?.mentionDDate ?: "") }
+    var mentionDLieu by remember(initial) { mutableStateOf(initial?.mentionDLieu ?: "") }
     var intitule by remember(initial) { mutableStateOf(initial?.intitule ?: "") }
     var acteId by remember(initial) { mutableStateOf(initial?.acteId ?: 0L) }
     // Parent choisi pour la naissance d'un enfant (menu Saisie).
@@ -302,7 +336,7 @@ fun EcranSaisieActe(
     val pere = remember(initial) {
         ChampsParent().also { c ->
             initial?.let { a ->
-                c.remplir(a.pereNom, a.perePrenoms, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces)
+                c.remplir(a.pereNom, a.perePrenoms, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces, a.pereAge, a.pereSituation, a.pereDomicile)
                 c.id = a.pereId
             }
         }
@@ -310,7 +344,7 @@ fun EcranSaisieActe(
     val mere = remember(initial) {
         ChampsParent().also { c ->
             initial?.let { a ->
-                c.remplir(a.mereNom, a.merePrenoms, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces)
+                c.remplir(a.mereNom, a.merePrenoms, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces, a.mereAge, a.mereSituation, a.mereDomicile)
                 c.id = a.mereId
             }
         }
@@ -389,13 +423,15 @@ fun EcranSaisieActe(
         prenoms = a.prenoms
         sexe = a.sexe
         profession = a.profession
-        pere.remplir(a.pereNom, a.perePrenoms, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces); pere.id = a.pereId
-        mere.remplir(a.mereNom, a.merePrenoms, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces); mere.id = a.mereId
+        pere.remplir(a.pereNom, a.perePrenoms, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces, a.pereAge, a.pereSituation, a.pereDomicile); pere.id = a.pereId
+        mere.remplir(a.mereNom, a.merePrenoms, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces, a.mereAge, a.mereSituation, a.mereDomicile); mere.id = a.mereId
         marieeId = a.marieeId
         marieeNom = a.marieeNom; marieePrenoms = a.marieePrenoms; marieeProf = a.marieeProf
         // v0.80 : les deux suspends PERSISTENT entre deux ouvertures du formulaire.
         conjointEnVie = a.conjointEnVie
         declarantEnfantId = a.declarantEnfantId
+        mentionMDate = a.mentionMDate; mentionMLieu = a.mentionMLieu
+        mentionDDate = a.mentionDDate; mentionDLieu = a.mentionDLieu
         pereMariee.remplir(a.pMarieeNom, a.pMarieePrenoms, a.pMarieeNe, a.pMarieeLieu, a.pMarieeDept, a.pMarieeProf, a.pMarieeDeces, a.pMarieeLieuDeces)
         mereMariee.remplir(a.mMarieeNom, a.mMarieePrenoms, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
         temoins.clear(); a.temoins.forEach { temoins.add(it) }
@@ -430,7 +466,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.96",
+                "  v0.97",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -598,6 +634,20 @@ fun EcranSaisieActe(
             onCocheSigne = if (type == "M") {
                 { if (signataires.contains("M\u00E8re")) signataires.remove("M\u00E8re") else signataires.add("M\u00E8re") }
             } else null)
+        // v0.97 : mentions marginales d'un acte de naissance : le mariage
+        // et le deces portes en marge, avec date et lieu.
+        if (type == "N") {
+            TitrePastille("Mentions marginales", mentionMDate.isNotBlank() || mentionDDate.isNotBlank())
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Champ("Marg. M : date", mentionMDate, { mentionMDate = it }, erreur = mentionMDate.isNotBlank() && !dateValide(mentionMDate), modifier = Modifier.weight(1f))
+                Champ("lieu", mentionMLieu, { mentionMLieu = it }, modifier = Modifier.weight(1f), communes = true)
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Champ("Marg. D : date", mentionDDate, { mentionDDate = it }, erreur = mentionDDate.isNotBlank() && !dateValide(mentionDDate), modifier = Modifier.weight(1f))
+                Champ("lieu", mentionDLieu, { mentionDLieu = it }, modifier = Modifier.weight(1f), communes = true)
+            }
+        }
+
         // v0.64 : liens ACTUELS de la fiche en clair. Si la fiche porte un
         // lien errone (ex une mere qui pointe sur la belle-mere), c'est ICI
         // qu'on le voit : le formulaire recopie la fiche.
@@ -822,6 +872,15 @@ fun EcranSaisieActe(
                             )
                         }
                     }
+                    // v0.97 : sur un acte de naissance, l'acte porte l'age,
+                    // la situation et le domicile de chaque temoin.
+                    if (type == "N") {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Champ("Âge", t.age, { temoins[i] = t.copy(age = it) }, modifier = Modifier.weight(0.7f))
+                            Champ("Situation", t.situation, { temoins[i] = t.copy(situation = it) }, modifier = Modifier.weight(1f))
+                            Champ("Domicile", t.domicile, { temoins[i] = t.copy(domicile = it) }, modifier = Modifier.weight(1.3f))
+                        }
+                    }
                     if (homosT.isNotEmpty()) {
                         OutlinedButton(onClick = { homonymesOuvert = "t:" + i.toString() }) {
                             Text("Homonymes : " + homosT.size.toString() + " – choisir ou créer")
@@ -916,9 +975,13 @@ fun EcranSaisieActe(
                     pereNom = pere.nom.trim(), perePrenoms = pere.prenoms.trim(),
                     pereNe = pere.ne.trim(), pereLieu = pere.lieu.trim(), pereDept = normaliserDept(pere.dept),
                     pereProf = pere.profession.trim(), pereDeces = pere.deces.trim(), pereLieuDeces = pere.lieuDeces.trim(),
+                    pereAge = pere.age.trim(), pereSituation = pere.situation.trim(), pereDomicile = pere.domicile.trim(),
                     mereNom = mere.nom.trim(), merePrenoms = mere.prenoms.trim(),
                     mereNe = mere.ne.trim(), mereLieu = mere.lieu.trim(), mereDept = normaliserDept(mere.dept),
                     mereProf = mere.profession.trim(), mereDeces = mere.deces.trim(), mereLieuDeces = mere.lieuDeces.trim(),
+                    mereAge = mere.age.trim(), mereSituation = mere.situation.trim(), mereDomicile = mere.domicile.trim(),
+                    mentionMDate = mentionMDate.trim(), mentionMLieu = mentionMLieu.trim(),
+                    mentionDDate = mentionDDate.trim(), mentionDLieu = mentionDLieu.trim(),
                     marieeId = marieeId,
                     marieeNom = marieeNom.trim(), marieePrenoms = marieePrenoms.trim(),
                     marieeProf = marieeProf.trim(),

@@ -273,6 +273,20 @@ data class Personne(
     var heureSepulture: String = "",
     var lieuSepulture: String = "",
     var deptSepulture: String = "",
+    // v0.97 : situation (matrimoniale) et domicile PORTES PAR UN ACTE
+    // (naissance, mariage, deces) - renseignes a la saisie de l'acte.
+    var situation: String = "",
+    var domicile: String = "",
+    // v0.97 : date de naissance CALCULEE automatiquement d'apres l'age lu
+    // sur un acte (ex "vers 1879") + origine du calcul (affichee sur la fiche).
+    var naissanceCalculee: String = "",
+    var naissanceCalculeeSource: String = "",
+    // v0.97 : mentions marginales d'un acte de naissance (mariage, deces),
+    // avec date et lieu.
+    var mentionMDate: String = "",
+    var mentionMLieu: String = "",
+    var mentionDDate: String = "",
+    var mentionDLieu: String = "",
     var etatIdentite: String = "",
     var etatNaissance: String = "",
     var etatBapteme: String = "",
@@ -451,6 +465,14 @@ data class Personne(
         o.put("heureSepulture", heureSepulture)
         o.put("lieuSepulture", lieuSepulture)
         o.put("deptSepulture", deptSepulture)
+        o.put("situation", situation)
+        o.put("domicile", domicile)
+        o.put("naissanceCalculee", naissanceCalculee)
+        o.put("naissanceCalculeeSource", naissanceCalculeeSource)
+        o.put("mentionMDate", mentionMDate)
+        o.put("mentionMLieu", mentionMLieu)
+        o.put("mentionDDate", mentionDDate)
+        o.put("mentionDLieu", mentionDLieu)
         o.put("etatIdentite", etatIdentite)
         o.put("etatNaissance", etatNaissance)
         o.put("etatBapteme", etatBapteme)
@@ -541,6 +563,14 @@ data class Personne(
                 heureSepulture = o.optString("heureSepulture", ""),
                 lieuSepulture = o.optString("lieuSepulture", ""),
                 deptSepulture = o.optString("deptSepulture", ""),
+                situation = o.optString("situation", ""),
+                domicile = o.optString("domicile", ""),
+                naissanceCalculee = o.optString("naissanceCalculee", ""),
+                naissanceCalculeeSource = o.optString("naissanceCalculeeSource", ""),
+                mentionMDate = o.optString("mentionMDate", ""),
+                mentionMLieu = o.optString("mentionMLieu", ""),
+                mentionDDate = o.optString("mentionDDate", ""),
+                mentionDLieu = o.optString("mentionDLieu", ""),
                 etatIdentite = o.optString("etatIdentite", ""),
                 etatNaissance = o.optString("etatNaissance", ""),
                 etatBapteme = o.optString("etatBapteme", ""),
