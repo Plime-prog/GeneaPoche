@@ -1156,3 +1156,682 @@ fun EcranApplication(
                             }
                             TextButton(
                                 onClick = { menuGedcom = false; picker(true); lanceurImport.launch(arrayOf("*/*")) },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Importer un GEDCOM (remplace la base)")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; choisirCujus() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("D\u00E9finir le de cujus et son n\u00B0 Sosa")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; changerPin() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Lock, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Changer le code PIN")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; reglagesVerrouillage() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Settings, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("D\u00E9lai de verrouillage")
+                                }
+                            }
+                            // G3-02 : choix du theme clair / sombre / systeme.
+                            TextButton(
+                                onClick = { menuGedcom = false; reglagesTheme() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Face, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Th\u00E8me : clair, sombre ou syst\u00E8me")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; phraseSecrete = ""; demandePhraseExport = true },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Sauvegarde chiffr\u00E9e (.gpbak)")
+                                }
+                            }
+                            // 12.1 : sauvegarde automatique dans un dossier
+                            // choisi + cl\u00E9 de r\u00E9cup\u00E9ration \u00E0 imprimer.
+                            TextButton(
+                                onClick = { menuGedcom = false; dialogueSauvegardeAuto = true },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.DateRange, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Sauvegarde automatique...")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; phraseSecrete = ""; demandePhraseImport = true },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Restaurer une sauvegarde (.gpbak)")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; restaurerImport() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Refresh, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Restaurer la base d'avant import")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; restaurerSecours() },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Refresh, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Restaurer la copie de secours (.bak)")
+                                }
+                            }
+                            TextButton(
+                                onClick = { menuGedcom = false; confirmeVider = true },
+                                Modifier.fillMaxWidth()
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Delete, contentDescription = null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Vider la base", color = CouleurRouge)
+                                }
+                            }
+                        TextButton(onClick = { menuGedcom = false }, Modifier.fillMaxWidth()) { Text("Fermer") }
+                    }
+                }
+            }
+            // G1-08 : dialogue de phrase secrete (export/import .gpbak).
+            if (demandePhraseExport || demandePhraseImport) {
+                AlertDialog(
+                    onDismissRequest = { demandePhraseExport = false; demandePhraseImport = false; phraseSecrete = "" },
+                    title = { Text(if (demandePhraseExport) "Sauvegarde chiffr\u00E9e (.gpbak)" else "Restaurer une sauvegarde (.gpbak)") },
+                    text = {
+                        Column {
+                            Text(
+                                if (demandePhraseExport)
+                                    "La sauvegarde contiendra toute la base (personnes et journal), chiffr\u00E9e par votre phrase secr\u00E8te. Sans elle, le fichier est indechiffrable."
+                                else
+                                    "Choisissez le fichier .gpbak : la base actuelle sera remplace\u00E9e par son contenu.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            OutlinedTextField(
+                                value = phraseSecrete,
+                                onValueChange = { phraseSecrete = it },
+                                label = { Text("Phrase secr\u00E8te (6 caract\u00E8res min.)") },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                phraseEnAttente = phraseSecrete
+                                phraseSecrete = ""
+                                if (demandePhraseExport) {
+                                    demandePhraseExport = false
+                                    picker(true)
+                                    lanceurGpbakExport.launch("geneapoche.gpbak")
+                                } else {
+                                    demandePhraseImport = false
+                                    picker(true)
+                                    lanceurGpbakImport.launch(arrayOf("*/*"))
+                                }
+                            },
+                            enabled = phraseSecrete.length >= 6
+                        ) { Text("Continuer") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { demandePhraseExport = false; demandePhraseImport = false; phraseSecrete = "" }) { Text("Annuler") }
+                    }
+                )
+            }
+            // 12.2 : export GEDCOM chiffr\u00E9 (.gpged) - phrase secr\u00E8te
+            // demand\u00E9e AVANT le choix du fichier, comme pour un .gpbak.
+            if (demandePhraseGedcom) {
+                AlertDialog(
+                    onDismissRequest = { demandePhraseGedcom = false; phraseSecreteGed = "" },
+                    title = { Text("Export GEDCOM chiffr\u00E9 (.gpged)") },
+                    text = {
+                        Column {
+                            Text(
+                                "Le fichier .gpged sera chiffr\u00E9 avec cette phrase secr\u00E8te : il ne s'ouvre que dans GeneaPoche (Param\u00E9trages \u203a Importer un GEDCOM), jamais dans Heredis. Sans la phrase, il est ind\u00E9chiffrable.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            OutlinedTextField(
+                                value = phraseSecreteGed,
+                                onValueChange = { phraseSecreteGed = it },
+                                label = { Text("Phrase secr\u00E8te (6 caract\u00E8res min.)") },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                gedPhraseEnAttente = phraseSecreteGed
+                                phraseSecreteGed = ""
+                                demandePhraseGedcom = false
+                                picker(true)
+                                if (gedChiffreBranche) lanceurGedcomBranche.launch("geneapoche-branche.gpged") else lanceurGedcom.launch("geneapoche.gpged")
+                            },
+                            enabled = phraseSecreteGed.length >= 6
+                        ) { Text("Continuer") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { demandePhraseGedcom = false; phraseSecreteGed = "" }) { Text("Annuler") }
+                    }
+                )
+            }
+            // 12.1 : sauvegarde automatique — copie .gpbak dans un dossier
+            // choisi apr\u00E8s N modifications (sinon simple rappel), prot\u00E9g\u00E9e
+            // par une CL\u00C9 DE R\u00C9CUP\u00C9RATION g\u00E9n\u00E9r\u00E9e par l'application,
+            // affich\u00E9e ici et \u00E0 imprimer hors de l'appareil.
+            if (dialogueSauvegardeAuto) {
+                val pressePapiers = LocalClipboardManager.current
+                AlertDialog(
+                    onDismissRequest = { dialogueSauvegardeAuto = false },
+                    title = { Text("Sauvegarde automatique") },
+                    text = {
+                        Column(Modifier.verticalScroll(rememberScrollState())) {
+                            if (dossierSauvegarde.isEmpty()) {
+                                Text(
+                                    "Une sauvegarde chiffr\u00E9e (.gpbak) est copi\u00E9e automatiquement dans le dossier de votre choix apr\u00E8s N modifications enregistr\u00E9es. Sans dossier choisi, un simple rappel s'affiche.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                OutlinedTextField(
+                                    value = seuilSaisi,
+                                    onValueChange = { seuilSaisi = it.filter { c -> c.isDigit() }.take(3) },
+                                    label = { Text("N modifications (5 \u00E0 500)") },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                TextButton(
+                                    onClick = {
+                                        reglerSeuilSauvegarde(seuilSaisi.toIntOrNull() ?: 25)
+                                        picker(true)
+                                        lanceurDossierSauvegarde.launch(null)
+                                    },
+                                    Modifier.fillMaxWidth()
+                                ) { Text("Choisir le dossier et activer") }
+                            } else {
+                                Text(
+                                    "Sauvegardes automatiques ACTIV\u00C9ES : une copie .gpbak est cr\u00E9\u00E9e dans le dossier choisi apr\u00E8s " + seuilSauvegarde.toString() + " modifications.",
+                                    fontWeight = FontWeight.Bold,
+                                    color = CouleurVertFonce
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                OutlinedTextField(
+                                    value = seuilSaisi,
+                                    onValueChange = { seuilSaisi = it.filter { c -> c.isDigit() }.take(3) },
+                                    label = { Text("N modifications (5 \u00E0 500)") },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                TextButton(
+                                    onClick = { reglerSeuilSauvegarde(seuilSaisi.toIntOrNull() ?: 25) },
+                                    Modifier.fillMaxWidth()
+                                ) { Text("Appliquer ce seuil") }
+                                TextButton(
+                                    onClick = { sauvegardeAutoOff() },
+                                    Modifier.fillMaxWidth()
+                                ) { Text("D\u00E9sactiver", color = CouleurRouge) }
+                            }
+                            if (cleRecuperation.isNotEmpty()) {
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "Cl\u00E9 de r\u00E9cup\u00E9ration (\u00E0 imprimer, hors de l'appareil) :",
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(cleRecuperation, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                Text(
+                                    "Sans cette cl\u00E9, vos sauvegardes automatiques sont ind\u00E9chiffrables. Elle est aussi n\u00E9cessaire pour les restaurer sur un autre appareil.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                TextButton(onClick = { pressePapiers.setText(AnnotatedString(cleRecuperation)) }) {
+                                    Text("Copier la cl\u00E9")
+                                }
+                            } else if (dossierSauvegarde.isNotEmpty()) {
+                                Spacer(Modifier.height(8.dp))
+                                TextButton(onClick = { afficherCleSauvegarde() }, Modifier.fillMaxWidth()) {
+                                    Text("Afficher la cl\u00E9 de r\u00E9cup\u00E9ration")
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { dialogueSauvegardeAuto = false }) { Text("Fermer") }
+                    }
+                )
+            }
+            if (confirmeVider) {
+                AlertDialog(
+                    onDismissRequest = { confirmeVider = false },
+                    title = { Text("Vider toute la base ?") },
+                    text = {
+                        Text("Toutes les personnes et tout le journal seront d\u00E9finitivement supprim\u00E9s. Confirmez seulement si vous avez export\u00E9 une sauvegarde GEDCOM.")
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            confirmeVider = false
+                            viderBase()
+                        }) { Text("Oui, tout vider", color = CouleurRouge) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { confirmeVider = false }) { Text("Annuler") }
+                    }
+                )
+            }
+        }
+    } else {
+        val p = ouverte
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f)) {
+                // GÃ©nÃ©aPoche 9 (v0.50) : l'arbre et la ligne de vie se
+                // synchronisent AUTOMATIQUEMENT avec la personne de la fiche
+                // ouverte.
+                LaunchedEffect(p.id) { onArbreCentre(p.id) }
+                EcranPersonne(
+            personnes = personnes,
+            p = p,
+            enregistrer = enregistrer,
+            onOuvrir = { onIdOuvert(it) },
+            onRetour = onRetourFiche,
+            pistes = pistes,
+            onSupprimerPiste = { supprimerPiste(it) },
+            onModifier = { onEditionCible(p); onEditionOuverte(true) },
+            onSupprimer = { onConfirmSuppression(p) },
+            onChoisir = { onPickerRole(it) },
+            onRetirer = { role, enfantId -> delier(role, enfantId) },
+            onDefinirCujus = { definirCujus(p) },
+            onNouveauMariage = { nom, prenoms, date, commune, dept ->
+                ajouterMariage(nom, prenoms, date, commune, dept)
+            },
+            onNouveauParent = { role, nom, prenoms -> nouveauParent(role, nom, prenoms) },
+            onNouveauTemoin = { type, id, nom, prenoms -> nouveauTemoin(type, id, nom, prenoms) },
+            onRetirerTemoin = { type, id -> retirerTemoin(type, id) },
+            onBasculerSignature = { type, id -> basculerSignature(type, id) },
+            onEnregistrerActe = enregistrerActe,
+            sources = sources,
+            citations = citations,
+            onEnregistrerCitation = enregistrerCitation,
+            onSupprimerCitation = supprimerCitation,
+            onCreerSource = creerSource,
+            onNouvelEnfant = { nom, prenoms, sexe, date ->
+                ajouterEnfant(nom, prenoms, sexe, date)
+            },
+            onBasculerEnregistre = { onBasculerEnregistre(it) },
+            onValider = { section, valide -> validerInfo(p, section, valide) },
+            onValiderIdentite = { etat -> validerIdentite(p, etat) },
+            onEditerIdentite = { onEditionCible(p); onEditionOuverte(true) },
+            onModifierEvenementLibre = { ev -> majEvenementLibre(p, ev) },
+            onSupprimerEvenementLibre = { idEv -> supprimerEvenementLibre(p, idEv) },
+            // G\u00E9n\u00E9aPoche 9 : plus de bouton Arbre sur la fiche ;
+            // l'arbre et la ligne de vie suivent la fiche ouverte.
+        )
+            }
+            // Menus de l'application TOUJOURS visibles en bas, meme fiche ouverte.
+            // Choisir un onglet ferme la fiche et affiche l'onglet demande.
+            SnackbarHost(etatSnackbar)
+            BarreOnglets(onglet) { o -> if (saisieOuverte) { saisieOuverte = false; saisieType = null; imageSaisiePresente = false }; onOnglet(o); onIdOuvert(0L) }
+        }
+    }
+
+    // G3-19 : le message passe par le Snackbar (declare plus haut).
+
+    if (editionOuverte) {
+        // G2-18 residuel : identifiant alloue UNE seule fois par ouverture du
+        // dialogue, strictement croissant (compteur persistant).
+        val idNouvellePersonne = remember { prochainId() }
+        key(editionCible?.id ?: idNouvellePersonne) {
+        DialogueEdition(
+            cible = editionCible,
+            idNouvelle = idNouvellePersonne,
+            onValider = { p2 ->
+                if (editionCible == null) {
+                    // Contr\u00F4le anti-doublon : une fiche portant d\u00E9j\u00E0 le m\u00EAme
+                    // couple nom + pr\u00E9noms n'est JAMAIS recr\u00E9\u00E9e (insensible \u00E0 la casse).
+                    // v0.77 : un VRAI doublon = m\u00EAme nom, m\u00EAmes pr\u00E9noms ET
+                    // m\u00EAme date de naissance. Sinon c'est un homonyme : la
+                    // nouvelle fiche est cr\u00E9\u00E9e.
+                    val doublon = personnes.firstOrNull { q ->
+                        q.nom.trim().uppercase() == p2.nom.trim().uppercase() &&
+                        q.prenoms.trim().uppercase() == p2.prenoms.trim().uppercase() &&
+                        q.dateNaissance.isNotBlank() && p2.dateNaissance.isNotBlank() &&
+                        q.dateNaissance == p2.dateNaissance
+                    }
+                    if (doublon != null) {
+                        onMessage(
+                            "Cette personne existe d\u00E9j\u00E0 (m\u00Eame nom, m\u00Eames pr\u00E9noms, m\u00Eame date de naissance) : " + doublon.titre() +
+                            ". Ouvrez sa fiche pour la compl\u00E9ter (aucun doublon dans la base)."
+                        )
+                        return@DialogueEdition
+                    }
+                    (personnes as? MutableList<Personne>)?.add(p2)
+                    if (pickerRole.isNotEmpty()) {
+                        lier(pickerRole, p2.id)
+                        onEditionOuverte(false)
+                        return@DialogueEdition
+                    }
+                } else {
+                    (personnes as? MutableList<Personne>)?.let { l ->
+                        val i = l.indexOfFirst { q -> q.id == p2.id }
+                        if (i >= 0) l[i] = p2
+                    }
+                }
+                enregistrer()
+                onEditionOuverte(false)
+            },
+            onAnnuler = { onEditionOuverte(false) },
+            onSupprimer = {
+                editionCible?.let { onConfirmSuppression(it) }
+                onEditionOuverte(false)
+            }
+        )
+        }
+    }
+
+    if (pickerRole.isNotEmpty() && ouverte != null) {
+        val p = ouverte
+        val role = pickerRole
+        val candidats = personnes
+            .filter { q ->
+                q.id != p.id && when (role) {
+                    "pere" -> q.id != p.mere && q.id != p.conjoint && !p.conjointsSupp.contains(q.id)
+                    "mere" -> q.id != p.pere && q.id != p.conjoint && !p.conjointsSupp.contains(q.id)
+                    "conjoint" -> q.id != p.pere && q.id != p.mere && !p.conjointsSupp.contains(q.id)
+                    "conjointsupp" -> q.id != p.conjoint && !p.conjointsSupp.contains(q.id) &&
+                        q.id != p.pere && q.id != p.mere
+                    "enfant" -> q.id != p.pere && q.id != p.mere && q.id != p.conjoint &&
+                        !p.conjointsSupp.contains(q.id) && !p.enfants.contains(q.id)
+                    else -> false
+                }
+            }
+            .sortedBy { it.titre() }
+        val titrePicker = when (role) {
+            "pere" -> "Choisir le p\u00E8re"
+            "mere" -> "Choisir la m\u00E8re"
+            "conjoint" -> "Choisir le conjoint"
+            "conjointsupp" -> "Ajouter un autre conjoint"
+            else -> "Ajouter un enfant"
+        }
+        AlertDialog(
+            onDismissRequest = { onPickerRole("") },
+            title = { Text(titrePicker) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    if (role == "enfant") {
+                        OutlinedButton(onClick = {
+                            onEditionCible(null)
+                            onEditionOuverte(true)
+                        }) {
+                            Icon(Icons.Filled.Add, contentDescription = null)
+                            Text("  Cr\u00E9er une nouvelle personne")
+                        }
+                        Text(
+                            "Ou choisir une personne existante :",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 6.dp)
+                        )
+                    }
+                    if (candidats.isEmpty()) {
+                        Text("Aucune autre personne disponible. Cr\u00E9ez-la avec le bouton + de la liste.")
+                    } else {
+                        candidats.forEach { c ->
+                            // v0.79 : liste tres compacte, alignee a gauche,
+                            // identifiant unique (titre + N. + D.).
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .clickable { lier(role, c.id) }
+                                    .padding(vertical = 0.dp)
+                            ) {
+                                Text(
+                                    libelleUnique(c),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = 13.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onPickerRole("") }) { Text("Annuler") }
+            }
+        )
+    }
+
+    if (confirmSuppression != null) {
+        val cible = confirmSuppression
+        AlertDialog(
+            onDismissRequest = { onConfirmSuppression(null) },
+            title = { Text("Supprimer ?") },
+            text = { Text("Supprimer d\u00E9finitivement " + (cible?.titre() ?: "") + " ? Les liens de parent\u00E9 seront retir\u00E9s.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    cible?.let { supprimer(it) }
+                    onConfirmSuppression(null)
+                }) { Text("Supprimer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { onConfirmSuppression(null) }) { Text("Annuler") }
+            }
+        )
+    }
+    }
+    }
+}
+
+// ---------------------------------------------------------------- Liste : carte personne
+
+// Branche d'un grand-parent : lui, ses conjoints et TOUS ses descendants,
+// quel que soit leur nom (les liens font la branche, pas le nom de famille).
+fun brancheDe(rootId: Long, personnes: List<Personne>): Set<Long> {
+    val racine = personnes.firstOrNull { it.id == rootId }
+    val res = mutableSetOf(rootId)
+    if (racine != null) {
+        racine.tousConjoints().forEach { c -> if (c != 0L) res.add(c) }
+    }
+    var front = listOf(rootId)
+    while (front.isNotEmpty()) {
+        val nouveaux = personnes
+            .filter { pers -> front.any { f -> pers.pere == f || pers.mere == f } }
+            .map { it.id }
+            .filter { it !in res }
+        res.addAll(nouveaux)
+        front = nouveaux
+    }
+    return res
+}
+
+// Racine de branche d'une personne : l'ancetre le plus haut atteignable
+// (pere, sinon mere). La branche porte le nom de famille de cette racine.
+fun racineBranche(p: Personne, personnes: List<Personne>): Personne {
+    var courante = p
+    var gardeFou = 0
+    while (gardeFou < 60) {
+        gardeFou += 1
+        val parentId = if (courante.pere != 0L) courante.pere else courante.mere
+        if (parentId == 0L) return courante
+        val parent = personnes.firstOrNull { it.id == parentId } ?: return courante
+        courante = parent
+    }
+    return courante
+}
+
+@Composable
+fun CartePersonne(p: Personne, onOuvrir: () -> Unit, onSupprimer: () -> Unit) {
+    // Tout l'encadre rose pale (femme) ou bleu pale (homme), neutre sinon.
+    val couleurCarte = when (p.sexe) {
+        "F" -> CouleurRosePale
+        "M" -> CouleurBleuPale
+        else -> CouleurNeutrePale
+    }
+    Card(
+        Modifier.fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 12.dp, vertical = 3.dp)
+            .clickable { onOuvrir() },
+        colors = CardDefaults.cardColors(containerColor = couleurCarte)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Vignette : rond au NUMERO (Sosa ou d'Aboville) ; PASTILLE
+            // VIDE si la personne n'est ni Sosa ni d'Aboville (G\u00E9n\u00E9aPoche 5).
+            val vignette = p.numeroAffiche()
+            val couleurAvatar = when (p.sexe) {
+                "F" -> CouleurRose
+                "M" -> CouleurBleu
+                else -> CouleurNeutreDoux
+            }
+            Box(
+                Modifier.size(40.dp).clip(CircleShape).background(couleurAvatar),
+                contentAlignment = Alignment.Center
+            ) {
+                if (vignette.isNotEmpty()) {
+                    Text(
+                        vignette,
+                        color = CouleurVertFonce,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = when {
+                            vignette.length <= 3 -> 15.sp
+                            vignette.length <= 5 -> 12.sp
+                            else -> 12.sp
+                        },
+                        maxLines = 1
+                    )
+                }
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    p.titre(),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                val n = dateAffichee(p.dateNaissance.trim())
+                val m = dateAffichee(p.dateMariage.trim())
+                val d = dateAffichee(p.dateDeces.trim())
+                if (n.isNotEmpty() || m.isNotEmpty() || d.isNotEmpty()) {
+                    val morceaux = mutableListOf<String>()
+                    if (n.isNotEmpty()) morceaux.add("N. " + n)
+                    if (m.isNotEmpty()) morceaux.add("M. " + m)
+                    if (d.isNotEmpty() && decesAffichable(p)) morceaux.add("D. " + d)
+                    Text(morceaux.joinToString("  \u2013  "), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            // G\u00E9n\u00E9aPoche 12 : coche (identit\u00E9 certifi\u00E9e) ou croix
+            // (\u00E0 v\u00E9rifier) rappel\u00E9e directement sur le nom de la liste.
+            if (identiteCertifiee(p)) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = "Identit\u00E9 certifi\u00E9e",
+                    Modifier.size(20.dp),
+                    tint = CouleurVertFonce
+                )
+            } else {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = "Identit\u00E9 \u00E0 v\u00E9rifier",
+                    Modifier.size(16.dp),
+                    tint = CouleurRouge
+                )
+            }
+            Spacer(Modifier.width(6.dp))
+            // G\u00E9n\u00E9aPoche 5 : \u00E9tiquette des renseignements
+            // (date + commune de N, M, D au maximum selon l'\u00E2ge),
+            // rouge (0) \u00E0 vert (total).
+            // v0.84 : indicateur IDENTIQUE \u00E0 la fiche - sur 6 (N, M, D)
+            // pour tous, sur 4 (N, D) pour un d\u00E9c\u00E9d\u00E9 avant 25 ans,
+            // sur 2 (N) pour un vivant de moins de 30 ans.
+            val (nInd, totalInd) = indicateurPersonne(p)
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = couleurCompteur(nInd, totalInd)
+            ) {
+                Text(
+                    "  " + nInd.toString() + "/" + totalInd.toString() + "  ",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            // v0.69 : pastille rouge "Date !" si la fiche porte une date hors format
+            // (ancien GEDCOM, champ libre) : a corriger au plus vite.
+            if (datesInvalides(p).isNotEmpty()) {
+                Surface(shape = RoundedCornerShape(50), color = CouleurRouge) {
+                    Text(
+                        "  Date !  ",
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
+                }
+                Spacer(Modifier.width(6.dp))
+            }
+            Spacer(Modifier.width(6.dp))
+            IconButton(onClick = onSupprimer, Modifier.size(30.dp)) {
+                Icon(Icons.Filled.Close, contentDescription = "Supprimer", Modifier.size(16.dp))
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
