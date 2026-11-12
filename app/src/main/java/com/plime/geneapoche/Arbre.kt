@@ -116,7 +116,7 @@ fun EcranArbre(
                 ArbreQuatre(centre = centre, personnes = personnes, onOuvrir = onOuvrir, onCentrerSur = onCentrerSur)
                 Spacer(Modifier.height(24.dp))
                 Text(
-                    "Touchez une carte : elle devient le centre de l'arbre et sa fiche s'ouvre dans l'onglet Personnes. Pincez pour zoomer, glissez pour déplacer.",
+                    "Touchez une carte : elle devient le centre de l'arbre (vous restez dans l'arbre). Sa fiche s'ouvre en basculant vers l'onglet Personnes, ou par appui long. Pincez pour zoomer, glissez pour déplacer.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -236,8 +236,10 @@ fun ArbreQuatre(
 
 // Une carte de l'arbre. v0.96 : le symbole de sexe est remplacé par le
 // numéro (Sosa, sinon d'Aboville) ; 4 lignes : NOM / Prénoms / N / D,
-// tronquées, police 8 sp. TOUCHER : la personne devient le centre de
-// l'arbre ET sa fiche s'ouvre dans l'onglet Personnes (synchronisation).
+// tronquées, police 8 sp. v0.97 : lineHeight 10 sp explicite — le
+// lineHeight par défaut (16 sp) faisait déborder les lignes N et D hors
+// de la carte fixe 64.dp (elles n'apparaissaient pas). TOUCHER : centre
+// l'arbre seulement ; APPUI LONG : ouvre la fiche.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CarteMiniArbre(
@@ -252,12 +254,14 @@ fun CarteMiniArbre(
             .padding(2.dp)
             .combinedClickable(
                 onClick = {
+                    // v0.97 : toucher une carte CENTERE SEULEMENT l'arbre
+                    // (on reste dans l'arbre). La fiche s'ouvre quand on
+                    // bascule vers l'onglet Personnes, ou par APPUI LONG.
                     if (p != null) {
                         onCentrerSur(p.id)
-                        onOuvrir(p.id)
                     }
                 },
-                onClickLabel = "Centrer l'arbre sur cette personne et ouvrir sa fiche",
+                onClickLabel = "Centrer l'arbre sur cette personne",
                 onLongClick = { if (p != null) onOuvrir(p.id) },
                 onLongClickLabel = "Ouvrir la fiche"
             ),
@@ -281,6 +285,7 @@ fun CarteMiniArbre(
                 Text(
                     "Inconnu",
                     fontSize = 8.sp,
+                    lineHeight = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
@@ -290,6 +295,7 @@ fun CarteMiniArbre(
                         Text(
                             num + " ",
                             fontSize = 8.sp,
+                            lineHeight = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
                             maxLines = 1
@@ -299,6 +305,7 @@ fun CarteMiniArbre(
                         p.nom.trim(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 8.sp,
+                        lineHeight = 10.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -306,6 +313,7 @@ fun CarteMiniArbre(
                 Text(
                     p.prenoms.trim(),
                     fontSize = 8.sp,
+                    lineHeight = 10.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -314,6 +322,7 @@ fun CarteMiniArbre(
                     Text(
                         "N. " + n,
                         fontSize = 8.sp,
+                        lineHeight = 10.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -324,6 +333,7 @@ fun CarteMiniArbre(
                     Text(
                         "D. " + d,
                         fontSize = 8.sp,
+                        lineHeight = 10.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
