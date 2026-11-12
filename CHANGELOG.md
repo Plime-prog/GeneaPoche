@@ -1,5 +1,24 @@
 # Historique des versions — GénéaPoche
 
+## v0.98 — GEDCOM sans perte, champs B/M/D/S, six corrections
+
+- **GEDCOM sans perte (round-trip complet)** : tous les champs propres à GénéaPoche, actuels et à venir, sont écrits en balises privées `_GP*` (à la manière de `_GPVERIF`) et relus à l'import — un export puis un réimport ne perd plus rien : situation, domicile, naissance calculée + source, mentions marginales, coches « Enregistré », états de vérification (vert/rouge), témoins et signataires (avec remappage des identifiants), blocs ouverts, conjoint en vie/décédé. Toute future évolution de champ sera annoncée avec son traitement GEDCOM (conservé ou signalé comme à risque de perte).
+- **NOTE de synthèse Heredis** : l'export ajoute sur chaque fiche une note « GénéaPoche - … » regroupant les renseignements transversaux (situation, domicile, naissance calculée), visibles dans Heredis.
+- **Acte de naissance enrichi** : date et heure de la DÉCLARATION (distinctes de la naissance).
+- **Acte de baptême** : légitime / naturel (chips), la ligne âge/situation/domicile des témoins s'applique aussi au parrain et à la marraine.
+- **Acte de mariage** : contrat de mariage (nom de l'office) et dispenses.
+- **Acte de décès** : date et heure de la DÉCLARATION, déclarant (nom, profession, domicile).
+- **Acte de sépulture** : date de la cérémonie (distincte de l'inhumation), cimetière, concession, ministre du culte.
+- **Fiches** : les nouveaux champs s'affichent dans les cartes d'événement (N, B, M, D, S) et sont pré-remplis à la saisie ; situation et domicile visibles dans la carte d'identité.
+- **Source mémorisée à la ré-édition** : rouvrir un acte recharge la source, le n° d'acte, la vue et la fiabilité depuis la citation existante (plus de champs perdus).
+- **Âge des parents mémorisé** : l'âge à l'acte du père et de la mère est recalculé depuis leur fiche au pré-remplissage.
+- **« vers aaaa » généralisé** : l'âge donné par un acte (naissance, baptême, mariage, décès, sépulture, témoins) calcule « vers aaaa » sur toute fiche sans date de naissance (jamais écrasé si déjà renseigné).
+- **Coche « Enregistré » vs journal** : cocher « Enregistré » retire bien la recherche de l'acte du journal, même sans date.
+- **Zoom de l'arbre réparé** : retour au geste multi-touch dédié (transformable), compatible avec le défilement vertical.
+- **Saisie assistée des communes** : tous les champs Domicile (parents, témoins, déclarant) proposent désormais les suggestions de communes (le bug « Douai » introuvable est corrigé).
+- 14 nouveaux champs persistés, inclus dans le stockage chiffré, les sauvegardes .gpbak et le round-trip GEDCOM ; nouveau test unitaire de round-trip des balises _GP*.
+- Bumps v0.98 (gradle 98/« 0.98 », export GEDCOM « 2 VERS 0.98 », badge de saisie « v0.98 », écran d'application).
+
 ## v0.97 — GénéaPoche 12 : arbre paisible, acte de naissance enrichi
 
 - **Arbre : toucher une carte la centre seulement** — plus de bascule automatique vers la fiche ; la fiche s'ouvre en basculant vers l'onglet Personnes (la personne touchée y est ouverte) ou par **appui long** sur la carte, comme avant.
