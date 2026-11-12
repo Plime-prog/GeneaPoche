@@ -24,6 +24,8 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 
 **Carnet de sources (v0.92)** — un carnet de recherche 100 % local : une **Source** se décrit une seule fois (type d'acte, commune, période, dépôt, cote, lien Internet facultatif — jamais nécessaire —, transcription, notes, niveau de fiabilité 0-3) et se **cite** autant de fois que nécessaire : une **Citation** relie une source à une personne et à un événement précis (« Naissance de Marie Dupont, acte n° 43, vue 17/312 »). Sur le formulaire d'acte, on choisit la source et on saisit le n° d'acte et la **vue n° sur le total de vues**. Accessible depuis les paramétrages (« Carnet de sources ») et depuis le bloc « Sources » de chaque fiche. **Compatible GEDCOM 5.5.1 / Heredis** : sources en enregistrements `SOUR` (TITL, REPO/CALN, DATA, TEXT, NOTE) et citations `SOUR @Sn@` avec PAGE, QUAY, DATA/TEXT ; les champs propres à GénéaPoche utilisent des balises `_GP…` ignorées par les autres logiciels. Les sources et citations sont aussi dans les sauvegardes `.gpbak`.
 
+**GEDCOM sans perte et actes enrichis (v0.98)** — tous les champs propres à GénéaPoche survivent à l'export puis au réimport GEDCOM (balises privées `_GP*` : situation, domicile, naissance calculée, mentions marginales, coches « Enregistré », états de vérification, témoins et signataires…), plus une NOTE de synthèse lisible dans Heredis. Les actes gagnent leurs champs métier : déclaration (date, heure, déclarant) sur N et D, légitime/naturel sur B, contrat de mariage et dispenses sur M, cérémonie, cimetière, concession et ministre du culte sur S — tous affichés sur les fiches et pré-remplis à la saisie. Six corrections au passage : source mémorisée à la ré-édition, âge des parents mémorisé, calcul « vers aaaa » généralisé, coche « Enregistré » retirant la recherche du journal, zoom de l'arbre réparé, saisie assistée des communes sur tous les champs Domicile.
+
 ## Modèle de sécurité — exact, avec ses limites
 
 - **Aucune permission Internet** dans le manifeste : l'application elle-même ne transmet rien.
@@ -42,7 +44,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.88)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.88-release.apk` (signé) ou `GeneaPoche-v0.88-debug.apk`.
+**Téléchargement direct de la dernière version (v0.98)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.98-release.apk` (signé) ou `GeneaPoche-v0.98-debug.apk`.
 
 Sinon, depuis les sources :
 
