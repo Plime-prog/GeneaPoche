@@ -1812,6 +1812,28 @@ fun AppEcran(
         }
         if (a.profession.isNotBlank()) p.profession = a.profession.trim()
 
+        // v0.98 : nouveaux champs B/M/D/S. Nouvel acte : remplis s'ils sont
+        // encore vides sur la fiche ; EDITION : le formulaire est la
+        // reference (un champ laisse vide EFFACE la valeur de la fiche).
+        fun maj98(actuel: String, saisi: String, greg: Boolean = false): String {
+            if (!edition && actuel.isNotBlank()) return actuel
+            return if (greg) dateGreg(saisi) else saisi.trim()
+        }
+        p.declNDate = maj98(p.declNDate, a.declNDate, greg = true)
+        p.declNHeure = maj98(p.declNHeure, a.declNHeure)
+        p.bLegitime = maj98(p.bLegitime, a.bLegitime)
+        p.contratMariage = maj98(p.contratMariage, a.contratMariage)
+        p.dispenses = maj98(p.dispenses, a.dispenses)
+        p.declDDate = maj98(p.declDDate, a.declDDate, greg = true)
+        p.declDHeure = maj98(p.declDHeure, a.declDHeure)
+        p.declarantNom = maj98(p.declarantNom, a.declarantNom)
+        p.declarantProfession = maj98(p.declarantProfession, a.declarantProfession)
+        p.declarantDomicile = maj98(p.declarantDomicile, a.declarantDomicile)
+        p.ceremonieSDate = maj98(p.ceremonieSDate, a.ceremonieSDate, greg = true)
+        p.cimetiere = maj98(p.cimetiere, a.cimetiere)
+        p.concession = maj98(p.concession, a.concession)
+        p.ministreCulte = maj98(p.ministreCulte, a.ministreCulte)
+
         // v0.97 : mentions marginales d'un acte de naissance (remplies si
         // vides) ; elles completent aussi le MARIAGE / DECES de la fiche
         // quand ces dates sont encore inconnues.
@@ -2078,6 +2100,10 @@ fun AppEcran(
         }
 
         enregistrer()
+        // v0.98 : le journal est resynchronise IMMEDIATEMENT pour les
+        // personnes touchees : la coche "Enregistre" retire (ou remet)
+        // la recherche sans attendre le prochain scan complet.
+        completerJournal(setOf(p.id) + listOfNotNull(mariee?.id).toSet() + fichesTemoins.map { it.id }.toSet())
         // GeneaPoche 12 : message final EXACT - le lien refuse est rappele
         // (l'acte est conserve, SANS le lien de parente).
         // v0.64 : message COMPLET - refus parentPourEnfant, refus ou
@@ -2790,6 +2816,7 @@ fun AppEcran(
         }
     }
 }
+
 
 
 

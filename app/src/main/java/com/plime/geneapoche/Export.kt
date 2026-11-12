@@ -194,7 +194,7 @@ fun construireGedcom(
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.97") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
+    lignes.add("2 VERS 0.98") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
@@ -264,6 +264,72 @@ fun construireGedcom(
         if (p.identiteVerifiee == "coche" || p.identiteVerifiee == "croix") {
             lignes.add("1 _GPVERIF " + p.identiteVerifiee)
         }
+        // v0.98 : ROUND-TRIP COMPLET. Tous les champs GénéaPoche partent
+        // dans des tags privés _GP* (ignorés par Heredis et les autres
+        // logiciels) et sont RELUS à l'import : un export suivi d'un
+        // réimport ne perd plus AUCUNE donnée.
+        fun idsGp(l: List<Long>, garderZero: Boolean = false): String =
+            l.filter { (it != 0L && idsExportes.contains(it)) || (garderZero && it == 0L) }.joinToString(",")
+        if (p.lateral.trim().isNotEmpty()) lignes.add("1 _GPLAT " + texteGedcom(p.lateral.trim()))
+        if (p.situation.trim().isNotEmpty()) lignes.add("1 _GPSIT " + texteGedcom(p.situation.trim()))
+        if (p.domicile.trim().isNotEmpty()) lignes.add("1 _GPDOM " + texteGedcom(p.domicile.trim()))
+        if (p.naissanceCalculee.trim().isNotEmpty()) lignes.add("1 _GPNCA " + texteGedcom(p.naissanceCalculee.trim()))
+        if (p.naissanceCalculeeSource.trim().isNotEmpty()) lignes.add("1 _GPNCS " + texteGedcom(p.naissanceCalculeeSource.trim()))
+        if (p.mentionMDate.trim().isNotEmpty()) lignes.add("1 _GPMM " + texteGedcom(p.mentionMDate.trim()))
+        if (p.mentionMLieu.trim().isNotEmpty()) lignes.add("1 _GPML " + texteGedcom(p.mentionMLieu.trim()))
+        if (p.mentionDDate.trim().isNotEmpty()) lignes.add("1 _GPDD " + texteGedcom(p.mentionDDate.trim()))
+        if (p.mentionDLieu.trim().isNotEmpty()) lignes.add("1 _GPDL " + texteGedcom(p.mentionDLieu.trim()))
+        val cochesEnr = listOf("N", "B", "M", "D", "S").filter { p.enregistreDe(it) }
+        if (cochesEnr.isNotEmpty()) lignes.add("1 _GPENR " + cochesEnr.joinToString(""))
+        if (!p.conjointEnVieDeces) lignes.add("1 _GPCED non")
+        val etatsGp = listOf(
+            "I" to p.etatIdentite, "N" to p.etatNaissance, "B" to p.etatBapteme,
+            "M" to p.etatMariage, "D" to p.etatDeces, "S" to p.etatSepulture
+        ).filter { it.second.isNotBlank() }
+        if (etatsGp.isNotEmpty()) lignes.add("1 _GPETAT " + etatsGp.joinToString(",") { it.first + ":" + it.second })
+        listOf("N" to p.temoinsN, "B" to p.temoinsB, "M" to p.temoinsM, "D" to p.temoinsD, "S" to p.temoinsS).forEach { (t, l) ->
+            val s = idsGp(l)
+            if (s.isNotEmpty()) lignes.add("1 _GPT" + t + " " + s)
+        }
+        listOf("N" to p.signatairesN, "B" to p.signatairesB, "M" to p.signatairesM, "D" to p.signatairesD, "S" to p.signatairesS).forEach { (t, l) ->
+            val s = idsGp(l, garderZero = true)
+            if (s.isNotEmpty()) lignes.add("1 _GPS" + t + " " + s)
+        }
+        if (p.blocsOuverts.isNotEmpty()) lignes.add("1 _GPBLO " + p.blocsOuverts.joinToString(","))
+        // v0.98 : champs B/M/D/S validés.
+        if (p.declNDate.trim().isNotEmpty()) lignes.add("1 _GPNDD " + texteGedcom(p.declNDate.trim()))
+        if (p.declNHeure.trim().isNotEmpty()) lignes.add("1 _GPNTH " + texteGedcom(p.declNHeure.trim()))
+        if (p.bLegitime.trim().isNotEmpty()) lignes.add("1 _GPBLG " + texteGedcom(p.bLegitime.trim()))
+        if (p.contratMariage.trim().isNotEmpty()) lignes.add("1 _GPCON " + texteGedcom(p.contratMariage.trim()))
+        if (p.dispenses.trim().isNotEmpty()) lignes.add("1 _GPDSP " + texteGedcom(p.dispenses.trim()))
+        if (p.declDDate.trim().isNotEmpty()) lignes.add("1 _GPDDD " + texteGedcom(p.declDDate.trim()))
+        if (p.declDHeure.trim().isNotEmpty()) lignes.add("1 _GPDTH " + texteGedcom(p.declDHeure.trim()))
+        if (p.declarantNom.trim().isNotEmpty()) lignes.add("1 _GPDNR " + texteGedcom(p.declarantNom.trim()))
+        if (p.declarantProfession.trim().isNotEmpty()) lignes.add("1 _GPDNP " + texteGedcom(p.declarantProfession.trim()))
+        if (p.declarantDomicile.trim().isNotEmpty()) lignes.add("1 _GPDDM " + texteGedcom(p.declarantDomicile.trim()))
+        if (p.ceremonieSDate.trim().isNotEmpty()) lignes.add("1 _GPCER " + texteGedcom(p.ceremonieSDate.trim()))
+        if (p.cimetiere.trim().isNotEmpty()) lignes.add("1 _GPCIM " + texteGedcom(p.cimetiere.trim()))
+        if (p.concession.trim().isNotEmpty()) lignes.add("1 _GPCOC " + texteGedcom(p.concession.trim()))
+        if (p.ministreCulte.trim().isNotEmpty()) lignes.add("1 _GPMIN " + texteGedcom(p.ministreCulte.trim()))
+        // v0.98 : NOTE de synthèse pour Heredis (les données GénéaPoche que
+        // Heredis ne connaît pas, en clair lisible).
+        val noteGp = mutableListOf<String>()
+        if (p.situation.trim().isNotEmpty()) noteGp.add("Situation : " + p.situation.trim())
+        if (p.domicile.trim().isNotEmpty()) noteGp.add("Domicile : " + p.domicile.trim())
+        if (p.naissanceCalculee.trim().isNotEmpty()) noteGp.add("Naissance calculée : " + p.naissanceCalculee.trim() + (if (p.naissanceCalculeeSource.trim().isNotEmpty()) " (" + p.naissanceCalculeeSource.trim() + ")" else ""))
+        if (p.declNDate.trim().isNotEmpty() || p.declNHeure.trim().isNotEmpty()) noteGp.add("Déclaration de naissance : " + p.declNDate.trim() + (if (p.declNHeure.trim().isNotEmpty()) " à " + p.declNHeure.trim() else ""))
+        if (p.bLegitime.trim().isNotEmpty()) noteGp.add("Baptême : enfant " + p.bLegitime.trim())
+        if (p.contratMariage.trim().isNotEmpty()) noteGp.add("Contrat de mariage : " + p.contratMariage.trim())
+        if (p.dispenses.trim().isNotEmpty()) noteGp.add("Dispenses : " + p.dispenses.trim())
+        if (p.declDDate.trim().isNotEmpty() || p.declDHeure.trim().isNotEmpty()) noteGp.add("Déclaration de décès : " + p.declDDate.trim() + (if (p.declDHeure.trim().isNotEmpty()) " à " + p.declDHeure.trim() else ""))
+        if (p.declarantNom.trim().isNotEmpty()) noteGp.add("Déclarant : " + p.declarantNom.trim() + (if (p.declarantProfession.trim().isNotEmpty()) ", " + p.declarantProfession.trim() else "") + (if (p.declarantDomicile.trim().isNotEmpty()) ", " + p.declarantDomicile.trim() else ""))
+        if (p.ceremonieSDate.trim().isNotEmpty()) noteGp.add("Cérémonie : " + p.ceremonieSDate.trim())
+        if (p.cimetiere.trim().isNotEmpty()) noteGp.add("Cimetière : " + p.cimetiere.trim())
+        if (p.concession.trim().isNotEmpty()) noteGp.add("Concession : " + p.concession.trim())
+        if (p.ministreCulte.trim().isNotEmpty()) noteGp.add("Ministre du culte : " + p.ministreCulte.trim())
+        if (p.mentionMDate.trim().isNotEmpty()) noteGp.add("Mention marg. mariage : " + p.mentionMDate.trim() + (if (p.mentionMLieu.trim().isNotEmpty()) ", " + p.mentionMLieu.trim() else ""))
+        if (p.mentionDDate.trim().isNotEmpty()) noteGp.add("Mention marg. décès : " + p.mentionDDate.trim() + (if (p.mentionDLieu.trim().isNotEmpty()) ", " + p.mentionDLieu.trim() else ""))
+        if (noteGp.isNotEmpty()) ajouterNote(lignes, 1, "NOTE", "GénéaPoche - " + noteGp.joinToString(". "))
         // G2-02 : le bloc "sans titre" de la fiche part en NOTE (relue a l'import).
         if (p.notesLibres.trim().isNotEmpty()) ajouterNote(lignes, 1, "NOTE", p.notesLibres.trim())
         if (p.pere != 0L && p.mere != 0L &&
@@ -460,6 +526,18 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
         var rfn = ""
         // v0.89 : certification d'identit\u00E9 relue ("coche"/"croix").
         var verif = ""
+        // v0.98 : round-trip complet - tous les champs _GP* relus.
+        var gpLat = ""; var gpSit = ""; var gpDom = ""
+        var gpNca = ""; var gpNcs = ""
+        var gpMm = ""; var gpMl = ""; var gpDd = ""; var gpDl = ""
+        var gpEnr = ""; var gpCed = true; var gpEtat = ""
+        val gpTemoins = mutableMapOf<String, String>()
+        val gpSignataires = mutableMapOf<String, String>()
+        var gpBlo = ""
+        var gpNdd = ""; var gpNth = ""; var gpBlg = ""
+        var gpCon = ""; var gpDsp = ""
+        var gpDdd = ""; var gpDth = ""; var gpDnr = ""; var gpDnp = ""; var gpDdm = ""
+        var gpCer = ""; var gpCim = ""; var gpCoc = ""; var gpMin = ""
         var note = ""
         var nD = ""; var nH = ""; var nL = ""; var nDpt = ""
         var bD = ""; var bH = ""; var bL = ""; var bDpt = ""
@@ -541,6 +619,44 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                     }
                     // v0.89 : certification d'identit\u00E9 (export GeneaPoche).
                     "_GPVERIF" -> ind.verif = contenu.removePrefix("_GPVERIF").trim()
+                    // v0.98 : round-trip complet des champs GeneaPoche.
+                    "_GPLAT" -> ind.gpLat = contenu.removePrefix("_GPLAT").trim()
+                    "_GPSIT" -> ind.gpSit = contenu.removePrefix("_GPSIT").trim()
+                    "_GPDOM" -> ind.gpDom = contenu.removePrefix("_GPDOM").trim()
+                    "_GPNCA" -> ind.gpNca = contenu.removePrefix("_GPNCA").trim()
+                    "_GPNCS" -> ind.gpNcs = contenu.removePrefix("_GPNCS").trim()
+                    "_GPMM" -> ind.gpMm = contenu.removePrefix("_GPMM").trim()
+                    "_GPML" -> ind.gpMl = contenu.removePrefix("_GPML").trim()
+                    "_GPDD" -> ind.gpDd = contenu.removePrefix("_GPDD").trim()
+                    "_GPDL" -> ind.gpDl = contenu.removePrefix("_GPDL").trim()
+                    "_GPENR" -> ind.gpEnr = contenu.removePrefix("_GPENR").trim()
+                    "_GPCED" -> ind.gpCed = contenu.removePrefix("_GPCED").trim() != "non"
+                    "_GPETAT" -> ind.gpEtat = contenu.removePrefix("_GPETAT").trim()
+                    "_GPTN" -> ind.gpTemoins["N"] = contenu.removePrefix("_GPTN").trim()
+                    "_GPTB" -> ind.gpTemoins["B"] = contenu.removePrefix("_GPTB").trim()
+                    "_GPTM" -> ind.gpTemoins["M"] = contenu.removePrefix("_GPTM").trim()
+                    "_GPTD" -> ind.gpTemoins["D"] = contenu.removePrefix("_GPTD").trim()
+                    "_GPTS" -> ind.gpTemoins["S"] = contenu.removePrefix("_GPTS").trim()
+                    "_GPSN" -> ind.gpSignataires["N"] = contenu.removePrefix("_GPSN").trim()
+                    "_GPSB" -> ind.gpSignataires["B"] = contenu.removePrefix("_GPSB").trim()
+                    "_GPSM" -> ind.gpSignataires["M"] = contenu.removePrefix("_GPSM").trim()
+                    "_GPSD" -> ind.gpSignataires["D"] = contenu.removePrefix("_GPSD").trim()
+                    "_GPSS" -> ind.gpSignataires["S"] = contenu.removePrefix("_GPSS").trim()
+                    "_GPBLO" -> ind.gpBlo = contenu.removePrefix("_GPBLO").trim()
+                    "_GPNDD" -> ind.gpNdd = contenu.removePrefix("_GPNDD").trim()
+                    "_GPNTH" -> ind.gpNth = contenu.removePrefix("_GPNTH").trim()
+                    "_GPBLG" -> ind.gpBlg = contenu.removePrefix("_GPBLG").trim()
+                    "_GPCON" -> ind.gpCon = contenu.removePrefix("_GPCON").trim()
+                    "_GPDSP" -> ind.gpDsp = contenu.removePrefix("_GPDSP").trim()
+                    "_GPDDD" -> ind.gpDdd = contenu.removePrefix("_GPDDD").trim()
+                    "_GPDTH" -> ind.gpDth = contenu.removePrefix("_GPDTH").trim()
+                    "_GPDNR" -> ind.gpDnr = contenu.removePrefix("_GPDNR").trim()
+                    "_GPDNP" -> ind.gpDnp = contenu.removePrefix("_GPDNP").trim()
+                    "_GPDDM" -> ind.gpDdm = contenu.removePrefix("_GPDDM").trim()
+                    "_GPCER" -> ind.gpCer = contenu.removePrefix("_GPCER").trim()
+                    "_GPCIM" -> ind.gpCim = contenu.removePrefix("_GPCIM").trim()
+                    "_GPCOC" -> ind.gpCoc = contenu.removePrefix("_GPCOC").trim()
+                    "_GPMIN" -> ind.gpMin = contenu.removePrefix("_GPMIN").trim()
                     "NOTE" -> ind.note = contenu.removePrefix("NOTE").trim().replace("@@", "@")
                     // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement libre (intitul\u00E9 en 2 TYPE).
                     "EVEN" -> ind.evLibres.add(EvenementLibre())
@@ -619,8 +735,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
 
     val personnes = mutableListOf<Personne>()
     indivs.forEach { (x, ind) ->
-        personnes.add(
-            Personne(
+        val pc = Personne(
                 id = ids[x] ?: 0L,
                 nom = ind.nom,
                 prenoms = ind.prenoms,
@@ -634,15 +749,84 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                 dateMariage = ind.mD, heureMariage = ind.mH, lieuMariage = ind.mL, deptMariage = ind.mDpt,
                 dateDeces = ind.dD, heureDeces = ind.dH, lieuDeces = ind.dL, deptDeces = ind.dDpt,
                 dateSepulture = ind.sD, heureSepulture = ind.sH, lieuSepulture = ind.sL, deptSepulture = ind.sDpt,
+                // v0.98 : round-trip complet (tags _GP* relus).
+                lateral = ind.gpLat,
+                situation = ind.gpSit.replace("@@", "@"),
+                domicile = ind.gpDom.replace("@@", "@"),
+                naissanceCalculee = ind.gpNca.replace("@@", "@"),
+                naissanceCalculeeSource = ind.gpNcs.replace("@@", "@"),
+                mentionMDate = ind.gpMm.replace("@@", "@"),
+                mentionMLieu = ind.gpMl.replace("@@", "@"),
+                mentionDDate = ind.gpDd.replace("@@", "@"),
+                mentionDLieu = ind.gpDl.replace("@@", "@"),
+                declNDate = ind.gpNdd.replace("@@", "@"),
+                declNHeure = ind.gpNth.replace("@@", "@"),
+                bLegitime = ind.gpBlg.replace("@@", "@"),
+                contratMariage = ind.gpCon.replace("@@", "@"),
+                dispenses = ind.gpDsp.replace("@@", "@"),
+                declDDate = ind.gpDdd.replace("@@", "@"),
+                declDHeure = ind.gpDth.replace("@@", "@"),
+                declarantNom = ind.gpDnr.replace("@@", "@"),
+                declarantProfession = ind.gpDnp.replace("@@", "@"),
+                declarantDomicile = ind.gpDdm.replace("@@", "@"),
+                ceremonieSDate = ind.gpCer.replace("@@", "@"),
+                cimetiere = ind.gpCim.replace("@@", "@"),
+                concession = ind.gpCoc.replace("@@", "@"),
+                ministreCulte = ind.gpMin.replace("@@", "@"),
+                blocsOuverts = mutableListOf<String>().also { l ->
+                    ind.gpBlo.split(",").forEach { s -> if (s.isNotBlank()) l.add(s.trim()) }
+                },
                 // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nements libres relus (ids s\u00E9quentiels).
                 evenementsLibres = mutableListOf<EvenementLibre>().also { l ->
                     ind.evLibres.forEachIndexed { i, ev -> l.add(ev.copy(id = (i + 1).toLong())) }
                 }
             )
-        )
+        pc.conjointEnVieDeces = ind.gpCed
+        personnes.add(pc)
     }
 
     fun idDe(x: String): Long = ids[x] ?: 0L
+
+    // v0.98 : remappage des ids GeneaPoche exportes (@I<ancien>@ -> nouvel id)
+    // pour les temoins et signataires ; lecture des etats et des coches.
+    val anciensIds = mutableMapOf<Long, Long>()
+    indivs.forEach { (x, _) ->
+        val m = Regex("@I(\\d+)@").find(x)
+        val n = ids[x]
+        if (m != null && n != null) anciensIds[m.groupValues[1].toLong()] = n
+    }
+    fun idsRelus(txt: String, garderZero: Boolean): List<Long> =
+        txt.split(",").mapNotNull { it.trim().toLongOrNull() }.mapNotNull { v ->
+            if (v == 0L && garderZero) 0L else anciensIds[v]
+        }.distinct()
+    indivs.forEach { (x, ind) ->
+        val pid = ids[x] ?: return@forEach
+        val pc = personnes.firstOrNull { it.id == pid } ?: return@forEach
+        ind.gpTemoins.forEach { (t, v) ->
+            val liste = pc.temoinsDe(t)
+            liste.clear()
+            idsRelus(v, false).forEach { if (!liste.contains(it)) liste.add(it) }
+        }
+        ind.gpSignataires.forEach { (t, v) ->
+            val liste = pc.signatairesDe(t)
+            liste.clear()
+            idsRelus(v, true).forEach { if (!liste.contains(it)) liste.add(it) }
+        }
+        if (ind.gpEtat.isNotEmpty()) ind.gpEtat.split(",").forEach { e ->
+            val morceaux = e.split(":")
+            if (morceaux.size == 2) when (morceaux[0].trim()) {
+                "I" -> pc.etatIdentite = morceaux[1].trim()
+                "N" -> pc.etatNaissance = morceaux[1].trim()
+                "B" -> pc.etatBapteme = morceaux[1].trim()
+                "M" -> pc.etatMariage = morceaux[1].trim()
+                "D" -> pc.etatDeces = morceaux[1].trim()
+                "S" -> pc.etatSepulture = morceaux[1].trim()
+            }
+        }
+        if (ind.gpEnr.isNotEmpty()) {
+            "NBMSD".forEach { t -> pc.definirEnregistre(t.toString(), ind.gpEnr.contains(t)) }
+        }
+    }
 
     // Liens de famille
     famsMap.values.forEach { fam ->
@@ -682,6 +866,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
 }
 
 fun importerGedcom(texte: String): List<Personne> = importerGedcomRapporte(texte).personnes
+
 
 
 

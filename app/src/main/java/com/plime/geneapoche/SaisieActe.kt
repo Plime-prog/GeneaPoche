@@ -144,7 +144,20 @@ data class ActeSaisie(
     // ou DÉJÀ DÉCÉDÉ avant lui (veuf/veuve) ; sur un décès, un ENFANT peut
     // être déclarant. Les deux choix sont désormais PERSISTÉS.
     val conjointEnVie: Boolean = true,
-    val declarantEnfantId: Long = 0L
+    val declarantEnfantId: Long = 0L,
+    // v0.98 : champs valides B/M/D/S.
+    // N : jour et heure de la declaration.
+    val declNDate: String = "", val declNHeure: String = "",
+    // B : enfant legitime ou naturel.
+    val bLegitime: String = "",
+    // M : contrat de mariage (nom de l'office) et dispenses.
+    val contratMariage: String = "", val dispenses: String = "",
+    // D : declaration (date/heure) et declarant (nom, profession, domicile).
+    val declDDate: String = "", val declDHeure: String = "",
+    val declarantNom: String = "", val declarantProfession: String = "", val declarantDomicile: String = "",
+    // S : ceremonie, cimetiere, concession, ministre du culte.
+    val ceremonieSDate: String = "", val cimetiere: String = "",
+    val concession: String = "", val ministreCulte: String = ""
 )
 
 // Champs d'un parent (pere ou mere), observes par Compose.
@@ -249,7 +262,7 @@ fun BlocParent(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Champ("Âge", e.age, { e.age = it }, modifier = Modifier.weight(0.7f))
             Champ("Situation", e.situation, { e.situation = it }, modifier = Modifier.weight(1f))
-            Champ("Domicile", e.domicile, { e.domicile = it }, modifier = Modifier.weight(1.3f))
+            Champ("Domicile", e.domicile, { e.domicile = it }, modifier = Modifier.weight(1.3f), communes = true)
         }
     } else {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -289,7 +302,7 @@ fun BlocParent(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Champ("\u00c2ge", e.age, { e.age = it }, modifier = Modifier.weight(0.7f))
             Champ("Situation", e.situation, { e.situation = it }, modifier = Modifier.weight(1f))
-            Champ("Domicile", e.domicile, { e.domicile = it }, modifier = Modifier.weight(1.3f))
+            Champ("Domicile", e.domicile, { e.domicile = it }, modifier = Modifier.weight(1.3f), communes = true)
         }
     }
 }
@@ -306,6 +319,9 @@ fun EcranSaisieActe(
     typeImpose: String? = null,
     // v0.92 : carnet de sources (facultatif).
     sources: List<Source> = emptyList(),
+    // v0.98 : citations relues pour conserver la source au changement
+    // de personne (homonyme, d\u00E9clarant).
+    citations: List<Citation> = emptyList(),
     onCreerSource: (Source) -> Long = { 0L }
 ) {
     var sourceActeId by remember(initial) { mutableStateOf(initial?.sourceId ?: 0L) }
@@ -324,6 +340,21 @@ fun EcranSaisieActe(
     var mentionMLieu by remember(initial) { mutableStateOf(initial?.mentionMLieu ?: "") }
     var mentionDDate by remember(initial) { mutableStateOf(initial?.mentionDDate ?: "") }
     var mentionDLieu by remember(initial) { mutableStateOf(initial?.mentionDLieu ?: "") }
+    // v0.98 : champs valides B/M/D/S.
+    var declNDate by remember(initial) { mutableStateOf(initial?.declNDate ?: "") }
+    var declNHeure by remember(initial) { mutableStateOf(initial?.declNHeure ?: "") }
+    var bLegitime by remember(initial) { mutableStateOf(initial?.bLegitime ?: "") }
+    var contratMariage by remember(initial) { mutableStateOf(initial?.contratMariage ?: "") }
+    var dispenses by remember(initial) { mutableStateOf(initial?.dispenses ?: "") }
+    var declDDate by remember(initial) { mutableStateOf(initial?.declDDate ?: "") }
+    var declDHeure by remember(initial) { mutableStateOf(initial?.declDHeure ?: "") }
+    var declarantNom by remember(initial) { mutableStateOf(initial?.declarantNom ?: "") }
+    var declarantProfession by remember(initial) { mutableStateOf(initial?.declarantProfession ?: "") }
+    var declarantDomicile by remember(initial) { mutableStateOf(initial?.declarantDomicile ?: "") }
+    var ceremonieSDate by remember(initial) { mutableStateOf(initial?.ceremonieSDate ?: "") }
+    var cimetiere by remember(initial) { mutableStateOf(initial?.cimetiere ?: "") }
+    var concession by remember(initial) { mutableStateOf(initial?.concession ?: "") }
+    var ministreCulte by remember(initial) { mutableStateOf(initial?.ministreCulte ?: "") }
     var intitule by remember(initial) { mutableStateOf(initial?.intitule ?: "") }
     var acteId by remember(initial) { mutableStateOf(initial?.acteId ?: 0L) }
     // Parent choisi pour la naissance d'un enfant (menu Saisie).
@@ -431,6 +462,14 @@ fun EcranSaisieActe(
         conjointEnVie = a.conjointEnVie
         declarantEnfantId = a.declarantEnfantId
         mentionMDate = a.mentionMDate; mentionMLieu = a.mentionMLieu
+        // v0.98 : recharger les nouveaux champs B/M/D/S.
+        declNDate = a.declNDate; declNHeure = a.declNHeure
+        bLegitime = a.bLegitime
+        contratMariage = a.contratMariage; dispenses = a.dispenses
+        declDDate = a.declDDate; declDHeure = a.declDHeure
+        declarantNom = a.declarantNom; declarantProfession = a.declarantProfession; declarantDomicile = a.declarantDomicile
+        ceremonieSDate = a.ceremonieSDate
+        cimetiere = a.cimetiere; concession = a.concession; ministreCulte = a.ministreCulte
         mentionDDate = a.mentionDDate; mentionDLieu = a.mentionDLieu
         pereMariee.remplir(a.pMarieeNom, a.pMarieePrenoms, a.pMarieeNe, a.pMarieeLieu, a.pMarieeDept, a.pMarieeProf, a.pMarieeDeces, a.pMarieeLieuDeces)
         mereMariee.remplir(a.mMarieeNom, a.mMarieePrenoms, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
@@ -466,7 +505,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.97",
+                "  v0.98",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -562,6 +601,53 @@ fun EcranSaisieActe(
                 modifier = Modifier.weight(1f)
             )
             Champ("Heure", heure, { heure = it }, modifier = Modifier.weight(0.6f))
+        }
+
+        // v0.98 : champs valides B/M/D/S, adaptes au type d'acte.
+        when (type) {
+            "N" -> {
+                SectionTitre("Déclaration")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Champ("Déclarée le (jj/mm/aaaa)", declNDate, { declNDate = it }, erreur = declNDate.isNotBlank() && !dateValide(declNDate), modifier = Modifier.weight(1f))
+                    Champ("à", declNHeure, { declNHeure = it }, modifier = Modifier.weight(0.6f))
+                }
+            }
+            "B" -> {
+                SectionTitre("Enfant")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FilterChip(selected = bLegitime == "légitime", onClick = { bLegitime = "légitime" }, label = { Text("Légitime") })
+                    FilterChip(selected = bLegitime == "naturel", onClick = { bLegitime = "naturel" }, label = { Text("Naturel") })
+                    if (bLegitime.isNotBlank()) {
+                        TextButton(onClick = { bLegitime = "" }) { Text("Effacer") }
+                    }
+                }
+            }
+            "M" -> {
+                SectionTitre("Contrat et dispenses")
+                Champ("Contrat de mariage (nom de l'office)", contratMariage, { contratMariage = it })
+                Champ("Dispenses", dispenses, { dispenses = it })
+            }
+            "D" -> {
+                SectionTitre("Déclaration de décès")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Champ("Déclarée le (jj/mm/aaaa)", declDDate, { declDDate = it }, erreur = declDDate.isNotBlank() && !dateValide(declDDate), modifier = Modifier.weight(1f))
+                    Champ("à", declDHeure, { declDHeure = it }, modifier = Modifier.weight(0.6f))
+                }
+                Champ("Déclarant : nom", declarantNom, { declarantNom = it })
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Champ("Profession", declarantProfession, { declarantProfession = it }, modifier = Modifier.weight(1f))
+                    Champ("Domicile", declarantDomicile, { declarantDomicile = it }, modifier = Modifier.weight(1.3f), communes = true)
+                }
+            }
+            "S" -> {
+                SectionTitre("Inhumation")
+                Champ("Cérémonie le (jj/mm/aaaa)", ceremonieSDate, { ceremonieSDate = it }, erreur = ceremonieSDate.isNotBlank() && !dateValide(ceremonieSDate))
+                Champ("Cimetière (commune)", cimetiere, { cimetiere = it }, communes = true)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Champ("Concession", concession, { concession = it }, modifier = Modifier.weight(1f))
+                    Champ("Ministre du culte", ministreCulte, { ministreCulte = it }, modifier = Modifier.weight(1.3f))
+                }
+            }
         }
 
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -874,11 +960,12 @@ fun EcranSaisieActe(
                     }
                     // v0.97 : sur un acte de naissance, l'acte porte l'age,
                     // la situation et le domicile de chaque temoin.
-                    if (type == "N") {
+                    // v0.98 : idem pour le parrain/marraine d'un baptême.
+                    if (type == "N" || type == "B") {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Champ("Âge", t.age, { temoins[i] = t.copy(age = it) }, modifier = Modifier.weight(0.7f))
                             Champ("Situation", t.situation, { temoins[i] = t.copy(situation = it) }, modifier = Modifier.weight(1f))
-                            Champ("Domicile", t.domicile, { temoins[i] = t.copy(domicile = it) }, modifier = Modifier.weight(1.3f))
+                            Champ("Domicile", t.domicile, { temoins[i] = t.copy(domicile = it) }, modifier = Modifier.weight(1.3f), communes = true)
                         }
                     }
                     if (homosT.isNotEmpty()) {
@@ -1002,7 +1089,15 @@ fun EcranSaisieActe(
                     // v0.80 : les deux suspends persistent dans l'acte.
                     persNouvelle = persNouvelle,
                     conjointEnVie = conjointEnVie,
-                    declarantEnfantId = declarantEnfantId
+                    declarantEnfantId = declarantEnfantId,
+                    // v0.98 : nouveaux champs B/M/D/S.
+                    declNDate = declNDate.trim(), declNHeure = declNHeure.trim(),
+                    bLegitime = bLegitime.trim(),
+                    contratMariage = contratMariage.trim(), dispenses = dispenses.trim(),
+                    declDDate = declDDate.trim(), declDHeure = declDHeure.trim(),
+                    declarantNom = declarantNom.trim(), declarantProfession = declarantProfession.trim(), declarantDomicile = declarantDomicile.trim(),
+                    ceremonieSDate = ceremonieSDate.trim(),
+                    cimetiere = cimetiere.trim(), concession = concession.trim(), ministreCulte = ministreCulte.trim()
                 )
                 // Contr\u00F4le de coh\u00E9rence : AVERTISSEMENT non bloquant,
                 // l'utilisateur peut confirmer ("Enregistrer quand m\u00EAme").
@@ -1049,7 +1144,7 @@ fun EcranSaisieActe(
             titre = "Personne concern\u00E9e : fiches homonymes",
             candidats = homonymesPers,
             onChoisir = { q ->
-                remplirDepuis(prefillActe(q, personnes, type))
+                remplirDepuis(prefillActe(q, personnes, type, citations = citations))
                 persNouvelle = false
                 homonymesOuvert = null
             },
@@ -1079,7 +1174,7 @@ fun EcranSaisieActe(
                                         // PROPOSEE avec tout ce qui est connu d'elle ;
                                         // si son acte de ce type existe deja, il est
                                         // EDITE (aucun doublon).
-                                        remplirDepuis(prefillActe(cand, personnes, type))
+                                        remplirDepuis(prefillActe(cand, personnes, type, citations = citations))
                                     } else {
                                         marieeId = cand.id
                                         marieeNom = cand.nom
@@ -1248,6 +1343,7 @@ fun EcranSaisie(
         )
     }
 }
+
 
 
 

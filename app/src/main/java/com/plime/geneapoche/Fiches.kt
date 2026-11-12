@@ -800,10 +800,11 @@ fun EcranPersonne(
                 key(p.id, tPre, saisieCompteur) {
                 EcranSaisieActe(
                     personnes = personnes,
-                    initial = remember(saisieCompteur, tPre, p.id) { prefillActe(p, personnes, tPre.ifEmpty { null }, editionFiche = tPre.isNotEmpty()) },
+                    initial = remember(saisieCompteur, tPre, p.id) { prefillActe(p, personnes, tPre.ifEmpty { null }, editionFiche = tPre.isNotEmpty(), citations = citations) },
                     // GeneaPoche 4 : appui long sur un bloc = SEUL ce type d'acte.
                     typeImpose = tPre.ifEmpty { null },
                     sources = sources,
+                    citations = citations,
                     onCreerSource = onCreerSource,
                     onEnregistrer = { a ->                        onEnregistrerActe(a)
                         saisieOuverte = null
@@ -917,6 +918,14 @@ fun CarteIdentite(
             }
             if (p.profession.trim().isNotEmpty()) {
                 Text(p.profession.trim(), style = MaterialTheme.typography.bodySmall)
+            }
+            // v0.98 : situation et domicile affiches dans la fiche
+            // (transversal, exportes aussi en NOTE Heredis).
+            if (p.situation.trim().isNotEmpty()) {
+                Text("Situation : " + p.situation.trim(), style = MaterialTheme.typography.bodySmall)
+            }
+            if (p.domicile.trim().isNotEmpty()) {
+                Text("Domicile : " + p.domicile.trim(), style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -1060,7 +1069,8 @@ data class EvChamps(val date: String, val heure: String, val lieu: String, val d
 // parents, conjoint, t\u00E9moins, signataires) et de l'\u00E9v\u00E9nement demand\u00E9.
 // t = null (nouvel \u00E9v\u00E9nement depuis le bloc vert) : identit\u00E9 seule.
 
-fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche: Boolean = false): ActeSaisie {
+fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche: Boolean = false,
+                citations: List<Citation> = emptyList()): ActeSaisie {
     val type = t ?: "N"
     val c = if (t == null || type == "E") null else champsEvenement(p, type)
     val pere = personneParId(personnes, p.pere)
@@ -1103,6 +1113,26 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
     } ?: 0L else 0L
     val signatairesListe = signataires.toMutableList()
     if (declarantEnfantId != 0L) signatairesListe.add("Enfant d\u00E9clarant")
+    // v0.98 : la citation de l'acte (source, num\u00E9ro, vue, fiabilit\u00E9)
+    // est RELUE pour pr\u00E9-remplir le formulaire : la source \u00E9tait
+    // perdue \u00E0 chaque r\u00E9ouverture (bug v0.98).
+    val cit = if (t == null || type == "E") null
+        else citations.firstOrNull { it.personneId == p.id && it.cible == type }
+    // v0.98 : \u00E2ge \u00E0 l'acte RECALCUL\u00C9 depuis la fiche du parent
+    // (ann\u00E9e de l'acte - ann\u00E9e de naissance, ou naissance calcul\u00E9e
+    // "vers aaaa") au lieu d'\u00EAtre remis \u00E0 vide (bug v0.98).
+    val anneeActe = anneeDe(c?.date ?: "")
+    fun ageALActe(q: Personne?): String {
+        if (q == null || anneeActe == null) return ""
+        val an = anneeDe(q.dateNaissance)
+            ?: Regex("[0-9]{4}").find(q.naissanceCalculee)?.value?.toIntOrNull()
+            ?: return ""
+        val age = anneeActe - an
+        return if (age in 0..120) age.toString() else ""
+    }
+    // v0.98 : le d\u00E9clarant d'un d\u00E9c\u00E8s est pr\u00E9-rempli depuis la
+    // fiche de l'enfant d\u00E9clarant connu.
+    val declarant = if (type == "D" && declarantEnfantId != 0L) personneParId(personnes, declarantEnfantId) else null
     return ActeSaisie(
         acteId = 0L,
         editionFiche = editionFiche,
@@ -1122,12 +1152,12 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         pereNe = pere?.dateNaissance ?: "", pereLieu = pere?.lieuNaissance ?: "",
         pereDept = pere?.deptNaissance ?: "", pereProf = pere?.profession ?: "",
         pereDeces = pere?.dateDeces ?: "", pereLieuDeces = pere?.lieuDeces ?: "",
-        pereAge = "", pereSituation = pere?.situation ?: "", pereDomicile = pere?.domicile ?: "",
+        pereAge = ageALActe(pere), pereSituation = pere?.situation ?: "", pereDomicile = pere?.domicile ?: "",
         mereNom = mere?.nom ?: "", merePrenoms = mere?.prenoms ?: "",
         mereNe = mere?.dateNaissance ?: "", mereLieu = mere?.lieuNaissance ?: "",
         mereDept = mere?.deptNaissance ?: "", mereProf = mere?.profession ?: "",
         mereDeces = mere?.dateDeces ?: "", mereLieuDeces = mere?.lieuDeces ?: "",
-        mereAge = "", mereSituation = mere?.situation ?: "", mereDomicile = mere?.domicile ?: "",
+        mereAge = ageALActe(mere), mereSituation = mere?.situation ?: "", mereDomicile = mere?.domicile ?: "",
         mentionMDate = p.mentionMDate, mentionMLieu = p.mentionMLieu,
         mentionDDate = p.mentionDDate, mentionDLieu = p.mentionDLieu,
         marieeId = conj?.id ?: 0L,
@@ -1146,7 +1176,23 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         },
         signataires = signatairesListe,
         conjointEnVie = conjointEnVie,
-        declarantEnfantId = declarantEnfantId
+        declarantEnfantId = declarantEnfantId,
+        // v0.98 : source relue depuis la citation + nouveaux champs B/M/D/S
+        // PRE-REMPLIS depuis la fiche (une edition ne doit jamais effacer).
+        sourceId = cit?.sourceId ?: 0L,
+        numeroActe = cit?.numeroActe ?: "",
+        vue = cit?.vue ?: 0,
+        vueTotal = cit?.vueTotal ?: 0,
+        fiabiliteSource = cit?.fiabilite ?: -1,
+        declNDate = p.declNDate, declNHeure = p.declNHeure,
+        bLegitime = p.bLegitime,
+        contratMariage = p.contratMariage, dispenses = p.dispenses,
+        declDDate = p.declDDate, declDHeure = p.declDHeure,
+        declarantNom = p.declarantNom.ifBlank { declarant?.nom ?: "" },
+        declarantProfession = p.declarantProfession.ifBlank { declarant?.profession ?: "" },
+        declarantDomicile = p.declarantDomicile.ifBlank { declarant?.domicile ?: "" },
+        ceremonieSDate = p.ceremonieSDate,
+        cimetiere = p.cimetiere, concession = p.concession, ministreCulte = p.ministreCulte
     )
 }
 
@@ -1399,6 +1445,39 @@ fun CarteEvenement(
 
         // (Chantier 12.0 : plus aucune cote AD stockee - l'acte est conserve ailleurs.)
 
+        // v0.98 : nouveaux champs B/M/D/S affiches dans le bloc.
+        when (typeActe) {
+            "N" -> {
+                if (p.declNDate.isNotBlank() || p.declNHeure.isNotBlank()) {
+                    LigneG("D\u00E9claration", (if (p.declNDate.isNotBlank()) dateAffichee(p.declNDate) else "") +
+                        (if (p.declNHeure.isNotBlank()) (if (p.declNDate.isNotBlank()) " \u00e0 " else "") + heureAffichee(p.declNHeure) else ""))
+                }
+            }
+            "B" -> {
+                if (p.bLegitime.isNotBlank()) LigneG("L\u00E9gitimit\u00E9", p.bLegitime)
+            }
+            "M" -> {
+                if (p.contratMariage.isNotBlank()) LigneG("Contrat de mariage", p.contratMariage)
+                if (p.dispenses.isNotBlank()) LigneG("Dispenses", p.dispenses)
+            }
+            "D" -> {
+                if (p.declDDate.isNotBlank() || p.declDHeure.isNotBlank()) {
+                    LigneG("D\u00E9claration", (if (p.declDDate.isNotBlank()) dateAffichee(p.declDDate) else "") +
+                        (if (p.declDHeure.isNotBlank()) (if (p.declDDate.isNotBlank()) " \u00e0 " else "") + heureAffichee(p.declDHeure) else ""))
+                }
+                if (p.declarantNom.isNotBlank()) {
+                    val det = listOf(p.declarantProfession.trim(), p.declarantDomicile.trim()).filter { it.isNotEmpty() }
+                    LigneG("D\u00E9clarant", p.declarantNom.trim() + (if (det.isNotEmpty()) ", " + det.joinToString(", ") else ""))
+                }
+            }
+            "S" -> {
+                if (p.ceremonieSDate.isNotBlank()) LigneG("C\u00E9r\u00E9monie", dateAffichee(p.ceremonieSDate))
+                if (p.cimetiere.isNotBlank()) LigneG("Cimeti\u00E8re", p.cimetiere)
+                if (p.concession.isNotBlank()) LigneG("Concession", p.concession)
+                if (p.ministreCulte.isNotBlank()) LigneG("Ministre du culte", p.ministreCulte)
+            }
+        }
+
         // Naissance : pere (avec coche de signature) et mere, choisies parmi
         // les fiches existantes ou creees ; la synchronisation a lieu a la
         // validation dans MainActivity.
@@ -1514,6 +1593,7 @@ fun Ligne(libelle: String, valeur: String) {
         Text(valeur, style = MaterialTheme.typography.bodyMedium)
     }
 }
+
 
 
 

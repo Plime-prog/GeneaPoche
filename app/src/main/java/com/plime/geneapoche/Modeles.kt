@@ -287,6 +287,27 @@ data class Personne(
     var mentionMLieu: String = "",
     var mentionDDate: String = "",
     var mentionDLieu: String = "",
+    // v0.98 : champs valides B/M/D/S (actes recents et details).
+    // N : jour et heure de la DECLARATION (distincts de la naissance).
+    var declNDate: String = "",
+    var declNHeure: String = "",
+    // B : enfant legitime ou naturel.
+    var bLegitime: String = "",
+    // M : contrat de mariage (nom de l'office) et dispenses.
+    var contratMariage: String = "",
+    var dispenses: String = "",
+    // D : declaration (date/heure), declarant (nom, profession, domicile).
+    var declDDate: String = "",
+    var declDHeure: String = "",
+    var declarantNom: String = "",
+    var declarantProfession: String = "",
+    var declarantDomicile: String = "",
+    // S : ceremonie religieuse (distincte de l'inhumation), cimetiere,
+    // concession, ministre du culte.
+    var ceremonieSDate: String = "",
+    var cimetiere: String = "",
+    var concession: String = "",
+    var ministreCulte: String = "",
     var etatIdentite: String = "",
     var etatNaissance: String = "",
     var etatBapteme: String = "",
@@ -473,6 +494,21 @@ data class Personne(
         o.put("mentionMLieu", mentionMLieu)
         o.put("mentionDDate", mentionDDate)
         o.put("mentionDLieu", mentionDLieu)
+        // v0.98 : champs valides B/M/D/S.
+        o.put("declNDate", declNDate)
+        o.put("declNHeure", declNHeure)
+        o.put("bLegitime", bLegitime)
+        o.put("contratMariage", contratMariage)
+        o.put("dispenses", dispenses)
+        o.put("declDDate", declDDate)
+        o.put("declDHeure", declDHeure)
+        o.put("declarantNom", declarantNom)
+        o.put("declarantProfession", declarantProfession)
+        o.put("declarantDomicile", declarantDomicile)
+        o.put("ceremonieSDate", ceremonieSDate)
+        o.put("cimetiere", cimetiere)
+        o.put("concession", concession)
+        o.put("ministreCulte", ministreCulte)
         o.put("etatIdentite", etatIdentite)
         o.put("etatNaissance", etatNaissance)
         o.put("etatBapteme", etatBapteme)
@@ -571,6 +607,20 @@ data class Personne(
                 mentionMLieu = o.optString("mentionMLieu", ""),
                 mentionDDate = o.optString("mentionDDate", ""),
                 mentionDLieu = o.optString("mentionDLieu", ""),
+                declNDate = o.optString("declNDate", ""),
+                declNHeure = o.optString("declNHeure", ""),
+                bLegitime = o.optString("bLegitime", ""),
+                contratMariage = o.optString("contratMariage", ""),
+                dispenses = o.optString("dispenses", ""),
+                declDDate = o.optString("declDDate", ""),
+                declDHeure = o.optString("declDHeure", ""),
+                declarantNom = o.optString("declarantNom", ""),
+                declarantProfession = o.optString("declarantProfession", ""),
+                declarantDomicile = o.optString("declarantDomicile", ""),
+                ceremonieSDate = o.optString("ceremonieSDate", ""),
+                cimetiere = o.optString("cimetiere", ""),
+                concession = o.optString("concession", ""),
+                ministreCulte = o.optString("ministreCulte", ""),
                 etatIdentite = o.optString("etatIdentite", ""),
                 etatNaissance = o.optString("etatNaissance", ""),
                 etatBapteme = o.optString("etatBapteme", ""),
@@ -735,6 +785,7 @@ data class Piste(
         )
     }
 }
+
 
 
 
