@@ -279,6 +279,10 @@ fun EcranApplication(
     // haut (barre de titre de l'application) est masque pour agrandir la
     // zone de visualisation.
     var imageSaisiePresente by remember { mutableStateOf(false) }
+    // v0.97 : toucher une carte de l'arbre NE CHANGE PLUS d'onglet : la
+    // personne touchee est memorisee et sa fiche s'ouvre seulement quand
+    // on bascule vers l'onglet Personnes (l'appui long ouvre toujours).
+    var idToucheArbre by remember { mutableStateOf(0L) }
     // v0.96 : changer d'onglet ferme l'ecran scinde (l'image ne doit
     // jamais rester affichee sur un autre ecran).
     val choisirOnglet: (Int) -> Unit = { o ->
@@ -286,6 +290,10 @@ fun EcranApplication(
             saisieOuverte = false
             saisieType = null
             imageSaisiePresente = false
+        }
+        if (o == 0 && idToucheArbre != 0L) {
+            onIdOuvert(idToucheArbre)
+            idToucheArbre = 0L
         }
         onOnglet(o)
     }
@@ -354,7 +362,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.96",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.97",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -738,10 +746,11 @@ fun EcranApplication(
                             EcranArbre(
                                 personnes = personnes,
                                 idCentre = arbreCentre,
-                                // v0.96 : toucher une carte ouvre aussi sa
-                                // fiche dans l'onglet Personnes (sync).
+                                // v0.97 : toucher une carte centre seulement
+                                // (mémorise la personne) ; l'appui long
+                                // ouvre la fiche.
                                 onOuvrir = { onIdOuvert(it); onOnglet(0) },
-                                onCentrerSur = { onArbreCentre(it) }
+                                onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
                             )
                         } else {
                             EcranFrise(
@@ -1132,7 +1141,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.96", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.97", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },

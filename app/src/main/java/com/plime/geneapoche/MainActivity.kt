@@ -1705,7 +1705,8 @@ fun AppEcran(
 
         // Renseigne les champs du parent : toute valeur saisie non vide
         // REMPLACE celle de la fiche (v0.60 : synchronisation totale).
-        fun renseigner(c: Personne?, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String) {
+        fun renseigner(c: Personne?, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String,
+            age: String = "", situation: String = "", domicile: String = "", sourceCalcul: String = "") {
             if (c == null) return
             if (edition) {
                 // v0.65 : en EDITION, le formulaire est la r\u00E9f\u00E9rence
@@ -1723,6 +1724,20 @@ fun AppEcran(
                 if (prof.isNotBlank()) c.profession = prof.trim()
                 if (dec.isNotBlank()) c.dateDeces = dateGreg(dec)
                 if (lieuDec.isNotBlank()) c.lieuDeces = lieuDec.trim()
+            }
+            // v0.97 : situation et domicile portes par l'acte.
+            if (situation.isNotBlank()) c.situation = situation.trim()
+            if (domicile.isNotBlank()) c.domicile = domicile.trim()
+            // v0.97 : date de naissance CALCULEE d'apres l'age a l'acte
+            // (ex "34" sur un acte de 1913 -> "vers 1879"), seulement si la
+            // fiche n'a PAS de date de naissance connue.
+            if (c.dateNaissance.isBlank()) {
+                val anActe = anneeDe(a.date)
+                val ansAge = Regex("[0-9]{1,3}").find(age)?.value?.toIntOrNull()
+                if (anActe != null && ansAge != null && ansAge in 1..120) {
+                    c.naissanceCalculee = "vers " + (anActe - ansAge).toString()
+                    c.naissanceCalculeeSource = "calcul\u00e9e d'apr\u00e8s " + sourceCalcul
+                }
             }
         }
 
@@ -1797,6 +1812,28 @@ fun AppEcran(
         }
         if (a.profession.isNotBlank()) p.profession = a.profession.trim()
 
+        // v0.97 : mentions marginales d'un acte de naissance (remplies si
+        // vides) ; elles completent aussi le MARIAGE / DECES de la fiche
+        // quand ces dates sont encore inconnues.
+        if (a.type == "N") {
+            if (a.mentionMDate.isNotBlank()) {
+                if (p.mentionMDate.isBlank()) p.mentionMDate = dateGreg(a.mentionMDate)
+                if (p.mentionMLieu.isBlank()) p.mentionMLieu = a.mentionMLieu.trim()
+                if (p.dateMariage.isBlank() && dateValide(p.mentionMDate)) {
+                    p.dateMariage = p.mentionMDate
+                    if (p.lieuMariage.isBlank()) p.lieuMariage = p.mentionMLieu.trim()
+                }
+            }
+            if (a.mentionDDate.isNotBlank()) {
+                if (p.mentionDDate.isBlank()) p.mentionDDate = dateGreg(a.mentionDDate)
+                if (p.mentionDLieu.isBlank()) p.mentionDLieu = a.mentionDLieu.trim()
+                if (p.dateDeces.isBlank() && dateValide(p.mentionDDate)) {
+                    p.dateDeces = p.mentionDDate
+                    if (p.lieuDeces.isBlank()) p.lieuDeces = p.mentionDLieu.trim()
+                }
+            }
+        }
+
         // G\u00E9n\u00E9aPoche 3 : "Enfant" du menu Saisie : la naissance est
         // rattach\u00E9e au parent choisi (et \u00E0 son conjoint). Aucun doublon.
         // GeneaPoche 12 : BUG CORRIGE - le refus de lien ne peut plus etre
@@ -1837,14 +1874,16 @@ fun AppEcran(
             cle(pereLie.nom) == cle(a.pereNom) &&
             clePrenoms(pereLie.prenoms) == clePrenoms(a.perePrenoms)) pereLie.id else 0L
         val pere = trouverOuCreer(idPere, a.pereNom, a.perePrenoms, "M", a.pereNe)
-        renseigner(pere, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces)
+        renseigner(pere, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces,
+            a.pereAge, a.pereSituation, a.pereDomicile, "l'acte de naissance de " + p.titre())
         lierParent(p, pere, false)
         val mereLie = personneParId(personnes, p.mere)
         val idMere = if (mereLie != null && a.mereNom.isNotBlank() &&
             cle(mereLie.nom) == cle(a.mereNom) &&
             clePrenoms(mereLie.prenoms) == clePrenoms(a.merePrenoms)) mereLie.id else 0L
         val mere = trouverOuCreer(idMere, a.mereNom, a.merePrenoms, "F", a.mereNe)
-        renseigner(mere, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces)
+        renseigner(mere, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces,
+            a.mereAge, a.mereSituation, a.mereDomicile, "l'acte de naissance de " + p.titre())
         lierParent(p, mere, true)
 
         // v0.60 : le nom saisi pour un parent est TOUJOURS la reference :
@@ -1981,6 +2020,18 @@ fun AppEcran(
             val ficheT = trouverOuCreer(0L, t.nom, t.prenoms, "", "", t.nouveau) ?: return@forEach
             fichesTemoins.add(ficheT)
             if (t.profession.isNotBlank() && ficheT.profession.isBlank()) ficheT.profession = t.profession.trim()
+            // v0.97 : situation, domicile et date de naissance CALCULEE du
+            // temoin d'apres son age a l'acte.
+            if (t.situation.isNotBlank()) ficheT.situation = t.situation.trim()
+            if (t.domicile.isNotBlank()) ficheT.domicile = t.domicile.trim()
+            if (ficheT.dateNaissance.isBlank()) {
+                val anActeT = anneeDe(a.date)
+                val ansAgeT = Regex("[0-9]{1,3}").find(t.age)?.value?.toIntOrNull()
+                if (anActeT != null && ansAgeT != null && ansAgeT in 1..120) {
+                    ficheT.naissanceCalculee = "vers " + (anActeT - ansAgeT).toString()
+                    ficheT.naissanceCalculeeSource = "calcul\u00e9e d'apr\u00e8s l'acte de naissance de " + p.titre()
+                }
+            }
             if (!p.temoinsDe(a.type).contains(ficheT.id)) p.temoinsDe(a.type).add(ficheT.id)
             if (a.type == "M" && mariee != null && !mariee.temoinsDe(a.type).contains(ficheT.id)) {
                 mariee.temoinsDe(a.type).add(ficheT.id)

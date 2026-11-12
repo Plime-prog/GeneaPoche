@@ -1122,10 +1122,14 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         pereNe = pere?.dateNaissance ?: "", pereLieu = pere?.lieuNaissance ?: "",
         pereDept = pere?.deptNaissance ?: "", pereProf = pere?.profession ?: "",
         pereDeces = pere?.dateDeces ?: "", pereLieuDeces = pere?.lieuDeces ?: "",
+        pereAge = "", pereSituation = pere?.situation ?: "", pereDomicile = pere?.domicile ?: "",
         mereNom = mere?.nom ?: "", merePrenoms = mere?.prenoms ?: "",
         mereNe = mere?.dateNaissance ?: "", mereLieu = mere?.lieuNaissance ?: "",
         mereDept = mere?.deptNaissance ?: "", mereProf = mere?.profession ?: "",
         mereDeces = mere?.dateDeces ?: "", mereLieuDeces = mere?.lieuDeces ?: "",
+        mereAge = "", mereSituation = mere?.situation ?: "", mereDomicile = mere?.domicile ?: "",
+        mentionMDate = p.mentionMDate, mentionMLieu = p.mentionMLieu,
+        mentionDDate = p.mentionDDate, mentionDLieu = p.mentionDLieu,
         marieeId = conj?.id ?: 0L,
         marieeNom = conj?.nom ?: "", marieePrenoms = conj?.prenoms ?: "",
         marieeProf = conj?.profession ?: "",
@@ -1138,7 +1142,7 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         mMarieeDept = mConj?.deptNaissance ?: "", mMarieeProf = mConj?.profession ?: "",
         mMarieeDeces = mConj?.dateDeces ?: "", mMarieeLieuDeces = mConj?.lieuDeces ?: "",
         temoins = temoinsIds.mapNotNull { id ->
-            personneParId(personnes, id)?.let { q -> TemoinSaisie(q.nom, q.prenoms, q.profession) }
+            personneParId(personnes, id)?.let { q -> TemoinSaisie(q.nom, q.prenoms, q.profession, situation = q.situation, domicile = q.domicile) }
         },
         signataires = signatairesListe,
         conjointEnVie = conjointEnVie,
@@ -1284,6 +1288,11 @@ fun LignePersonneG(
                 if (anneeActe != null) s = s + " (" + (anneeActe - an).coerceAtLeast(0).toString() + " ans \u00E0 l'acte)"
                 m.add(s)
             }
+            // v0.97 : pas de date de naissance connue mais une date CALCULEE
+            // d'apres un age a l'acte (ex "vers 1879").
+            if (an == null && q.naissanceCalculee.isNotBlank()) {
+                m.add("n\u00E9(e) " + q.naissanceCalculee + " (calcul\u00e9)")
+            }
             if (q.lieuNaissance.isNotBlank()) m.add("\u00E0 " + q.lieuNaissance.trim())
             if (q.dateDeces.isNotBlank()) m.add("d\u00E9c\u00E9d\u00E9(e) le " + dateAffichee(q.dateDeces))
             // Appui direct sur le nom : ouverture de la fiche.
@@ -1394,6 +1403,11 @@ fun CarteEvenement(
         // les fiches existantes ou creees ; la synchronisation a lieu a la
         // validation dans MainActivity.
         if (typeActe == "N") {
+            // v0.97 : date de naissance CALCULEE d'apres un age lu sur un
+            // acte (affichee seulement si pas de date de naissance connue).
+            if (p.naissanceCalculee.isNotBlank()) {
+                LigneG("N. calcul\u00e9", p.naissanceCalculee + " (" + p.naissanceCalculeeSource + ")")
+            }
             LignePersonneG(
                 libelle = "P\u00E8re",
                 q = personneParId(personnes, p.pere),
@@ -1438,6 +1452,24 @@ fun CarteEvenement(
                         Text("Retirer ce lien", fontSize = 12.sp)
                     }
                 }
+            }
+            // v0.97 : mentions marginales portees par l'acte de naissance.
+            if (p.mentionMDate.isNotBlank() || p.mentionMLieu.isNotBlank()) {
+                LigneG("Mention marg. mariage", (if (p.mentionMDate.isNotBlank()) dateAffichee(p.mentionMDate) else "") + (if (p.mentionMLieu.isNotBlank()) (if (p.mentionMDate.isNotBlank()) " \u00e0 " else "") + lieuAffiche(p.mentionMLieu) else ""))
+            }
+            if (p.mentionDDate.isNotBlank() || p.mentionDLieu.isNotBlank()) {
+                LigneG("Mention marg. d\u00e9c\u00e8s", (if (p.mentionDDate.isNotBlank()) dateAffichee(p.mentionDDate) else "") + (if (p.mentionDLieu.isNotBlank()) (if (p.mentionDDate.isNotBlank()) " \u00e0 " else "") + lieuAffiche(p.mentionDLieu) else ""))
+            }
+        }
+
+        // v0.97 : l'acte apparait AUSSI dans la fiche des temoins (comme
+        // le parrain et la marraine pour le bapteme).
+        if (typeActe == "N" || typeActe == "B") {
+            personnes.filter { it.temoinsDe(typeActe).contains(p.id) }.forEach { q ->
+                LigneG(
+                    if (typeActe == "B") "Parrain ou marraine" else "T\u00e9moin (naissance)",
+                    q.titre() + (if (q.dateNaissance.isNotBlank()) ", le " + dateAffichee(q.dateNaissance) else "")
+                )
             }
         }
 
