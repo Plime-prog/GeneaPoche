@@ -1093,3 +1093,257 @@ fun EcranSaisieActe(
                     // v0.98 : nouveaux champs B/M/D/S.
                     declNDate = declNDate.trim(), declNHeure = declNHeure.trim(),
                     bLegitime = bLegitime.trim(),
+                    contratMariage = contratMariage.trim(), dispenses = dispenses.trim(),
+                    declDDate = declDDate.trim(), declDHeure = declDHeure.trim(),
+                    declarantNom = declarantNom.trim(), declarantProfession = declarantProfession.trim(), declarantDomicile = declarantDomicile.trim(),
+                    ceremonieSDate = ceremonieSDate.trim(),
+                    cimetiere = cimetiere.trim(), concession = concession.trim(), ministreCulte = ministreCulte.trim()
+                )
+                // Contr\u00F4le de coh\u00E9rence : AVERTISSEMENT non bloquant,
+                // l'utilisateur peut confirmer ("Enregistrer quand m\u00EAme").
+                val avrt = avertissementCoherence(type, date, exPersonne, exMariee, parentEnfant)
+                if (avrt.isNotEmpty() && !confirme) {
+                    avertissement = avrt
+                    acteEnAttente = acte
+                } else {
+                    onEnregistrer(acte)
+                    onFermer?.invoke()
+                }
+            },
+            // v0.91 : une date ancienne hors format ne bloque plus la
+            // sauvegarde de l'acte (champ date en rouge + journal).
+            enabled = (personneId != 0L || nom.isNotBlank()) && heureValide(heure),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
+        ) { Text("Enregistrer") }
+        Spacer(Modifier.height(12.dp))
+    }
+
+    if (avertissement != null && acteEnAttente != null) {
+        AlertDialog(
+            onDismissRequest = { avertissement = null; acteEnAttente = null },
+            title = { Text("Coh\u00E9rence des dates") },
+            text = { Text(avertissement ?: "") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirme = true
+                    avertissement = null
+                    val a = acteEnAttente
+                    acteEnAttente = null
+                    if (a != null) onEnregistrer(a)
+                    onFermer?.invoke()
+                }) { Text("Enregistrer quand m\u00EAme") }
+            },
+            dismissButton = {
+                TextButton(onClick = { avertissement = null; acteEnAttente = null }) { Text("Modifier") }
+            }
+        )
+    }
+
+    if (homonymesOuvert == "pers") {
+        DialogueHomonymes(
+            titre = "Personne concern\u00E9e : fiches homonymes",
+            candidats = homonymesPers,
+            onChoisir = { q ->
+                remplirDepuis(prefillActe(q, personnes, type, citations = citations))
+                persNouvelle = false
+                homonymesOuvert = null
+            },
+            onCreer = { persNouvelle = true; homonymesOuvert = null },
+            onFermer = { homonymesOuvert = null }
+        )
+    }
+    if (pickerOuvert) {
+        AlertDialog(
+            onDismissRequest = { pickerOuvert = false },
+            title = { Text(if (pickerCible == 0) "Personne concern\u00E9e" else "Mari\u00E9e") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    if (personnes.isEmpty()) {
+                        Text("Aucune personne. Saisissez le nom ci-dessous pour la cr\u00E9er.")
+                    }
+                    personnes.sortedWith(
+                        compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
+                    ).forEach { cand ->
+                        // v0.72 : liste RESSENREE et ALIGNEE A GAUCHE
+                        // (une ligne compacte par personne).
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .clickable {
+                                    if (pickerCible == 0) {
+                                        // G\u00E9n\u00E9aPoche 3 : la personne existante est
+                                        // PROPOSEE avec tout ce qui est connu d'elle ;
+                                        // si son acte de ce type existe deja, il est
+                                        // EDITE (aucun doublon).
+                                        remplirDepuis(prefillActe(cand, personnes, type, citations = citations))
+                                    } else {
+                                        marieeId = cand.id
+                                        marieeNom = cand.nom
+                                        marieePrenoms = cand.prenoms
+                                    }
+                                    pickerOuvert = false
+                                }
+                                .padding(horizontal = 4.dp, vertical = 0.dp)
+                        ) {
+                            Text(
+                                libelleUnique(cand),
+                                fontSize = 13.sp, lineHeight = 16.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { pickerOuvert = false }) { Text("Fermer") }
+            }
+        )
+    }
+}
+
+// v0.79 : identifiant UNIQUE de toutes les listes de choix de l'application :
+// titre, puis N. et D. (r\u00E8gle des 100 ans respect\u00E9e) \u2014 deux homonymes
+// ne se ressemblent plus dans un picker.
+fun libelleUnique(p: Personne): String =
+    p.titre() +
+        (if (p.dateNaissance.trim().isNotEmpty()) " \u2013 N. " + dateAffichee(p.dateNaissance.trim()) else "") +
+        (if (decesAffichable(p)) " \u2013 D. " + dateAffichee(p.dateDeces.trim()) else "")
+
+// ---------------------------------------------------------------- Fenêtre d'homonymes
+// v0.76 : un homonyme = même nom ET mêmes prénoms. Une seule FENÊTRE
+// propose les fiches existantes (une ligne compacte alignée à gauche,
+// avec dates de naissance et de décès) ; "Créer une nouvelle fiche"
+// laisse la saisie telle quelle.
+@Composable
+fun DialogueHomonymes(
+    titre: String,
+    candidats: List<Personne>,
+    onChoisir: (Personne) -> Unit,
+    // v0.77 : "Créer une nouvelle fiche" force une fiche distincte
+    // (vrai homonyme : date de naissance différente).
+    onCreer: (() -> Unit)? = null,
+    onFermer: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onFermer,
+        title = { Text(titre) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    "M\u00EAme nom et m\u00EAmes pr\u00E9noms : touchez la fiche \u00E0 reprendre.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                candidats.forEach { q ->
+                    Text(
+                        libelleUnique(q),
+                        Modifier.fillMaxWidth().clickable { onChoisir(q) }.padding(vertical = 0.dp),
+                        fontSize = 13.sp, lineHeight = 16.sp
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { if (onCreer != null) onCreer() else onFermer() }) { Text("Cr\u00E9er une nouvelle fiche") } },
+        dismissButton = { TextButton(onClick = onFermer) { Text("Annuler") } }
+    )
+}
+
+// ---------------------------------------------------------------- Menu Saisie
+// G\u00E9n\u00E9aPoche 3 : menu unique \u00E0 7 entr\u00E9es avec pastilles color\u00E9es.
+// Chaque entr\u00E9e ouvre le m\u00EAme formulaire, pr\u00E9-rempli depuis la fiche.
+// "Enfant" choisit d'abord le parent, puis saisit la naissance.
+
+@Composable
+fun EcranSaisie(
+    personnes: List<Personne>,
+    onOuvrir: (String) -> Unit,
+    onEnfant: (Long) -> Unit
+) {
+    var pickerParent by remember { mutableStateOf(false) }
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(8.dp)
+    ) {
+        Text(
+            "Saisie",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = CouleurVertFonce
+        )
+        Text(
+            "Toute saisie alimente directement la fiche, l'arbre et le journal.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(6.dp))
+        // v0.61 : menu en PUCES compactes (meme gabarit que le niveau de
+        // preuve) - une seule ligne deroulante au lieu des grandes cartes.
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
+            listOf(
+                "N" to "Naissance",
+                "B" to "Bapt\u00EAme",
+                "M" to "Mariage",
+                "D" to "D\u00E9c\u00E8s",
+                "S" to "S\u00E9pulture",
+                "E" to "\u00C9v\u00E9nement"
+            ).forEach { (t, l) ->
+                FilterChip(
+                    selected = false,
+                    onClick = { onOuvrir(t) },
+                    label = { Text(t + " \u00B7 " + l, fontSize = 11.sp) },
+                    modifier = Modifier.padding(end = 6.dp)
+                )
+            }
+            // ENFANT : choisir le parent existant puis saisir sa naissance.
+            FilterChip(
+                selected = false,
+                onClick = { pickerParent = true },
+                label = { Text("Enfant", fontSize = 11.sp) }
+            )
+        }
+        Text(
+            "Une personne existante est syst\u00E9matiquement propos\u00E9e : si son acte existe d\u00E9j\u00E0, il est \u00E9dit\u00E9, jamais dupliqu\u00E9.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 6.dp)
+        )
+        Spacer(Modifier.height(16.dp))
+    }
+
+    if (pickerParent) {
+        AlertDialog(
+            onDismissRequest = { pickerParent = false },
+            title = { Text("Enfant de quelle personne ?") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    personnes.sortedWith(
+                        compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
+                    ).forEach { cand ->
+                        // v0.76 : liste condensée et alignée à gauche.
+                        Text(
+                            libelleUnique(cand),
+                            Modifier.fillMaxWidth().clickable {
+                                pickerParent = false
+                                onEnfant(cand.id)
+                            }.padding(vertical = 0.dp),
+                            fontSize = 13.sp, lineHeight = 16.sp
+                        )
+                    }
+                    if (personnes.isEmpty()) {
+                        Text("Aucune personne : saisissez le nom dans le formulaire.")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerParent = false
+                    onEnfant(0L)
+                }) { Text("Sans parent connu") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pickerParent = false }) { Text("Annuler") }
+            }
+        )
+    }
+}
+
+
+
+
