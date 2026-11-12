@@ -483,6 +483,11 @@ fun EcranSaisieActe(
     }
 
 
+    // v0.99 : mode SAISIE RAPIDE — les champs essentiels d'abord (type,
+    // acte, personne concern\u00e9e, conjoint, sources) ; le reste (details
+    // par type, mentions marginales, temoins, officier) derriere "Completer".
+    var rapide by remember { mutableStateOf(true) }
+
     // v0.58 : formulaire COMPACT. Le contenu defile, mais le bouton
     // Enregistrer reste TOUJOURS visible en bas, hors du defilement.
     Column(Modifier.fillMaxSize()) {
@@ -541,6 +546,11 @@ fun EcranSaisieActe(
                     Text("Choisir", fontSize = 12.sp)
                 }
             }
+        }
+
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            FilterChip(selected = rapide, onClick = { rapide = true }, label = { Text("Rapide") })
+            FilterChip(selected = !rapide, onClick = { rapide = false }, label = { Text("Compl\u00E9ter") })
         }
 
         SectionTitre("Type d'acte")
@@ -604,7 +614,8 @@ fun EcranSaisieActe(
         }
 
         // v0.98 : champs valides B/M/D/S, adaptes au type d'acte.
-        when (type) {
+        // v0.99 : masques en mode saisie rapide.
+        if (!rapide) when (type) {
             "N" -> {
                 SectionTitre("Déclaration")
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -722,7 +733,8 @@ fun EcranSaisieActe(
             } else null)
         // v0.97 : mentions marginales d'un acte de naissance : le mariage
         // et le deces portes en marge, avec date et lieu.
-        if (type == "N") {
+        // v0.99 : masquees en mode saisie rapide.
+        if (type == "N" && !rapide) {
             TitrePastille("Mentions marginales", mentionMDate.isNotBlank() || mentionDDate.isNotBlank())
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Champ("Marg. M : date", mentionMDate, { mentionMDate = it }, erreur = mentionMDate.isNotBlank() && !dateValide(mentionMDate), modifier = Modifier.weight(1f))
@@ -872,6 +884,8 @@ fun EcranSaisieActe(
         }
 
         // v0.68 : sur un bapt\u00EAme, les t\u00E9moins sont le parrain et la marraine.
+        // v0.99 : temoins et officier masques en mode saisie rapide.
+        if (!rapide) {
         TitrePastille(if (type == "B") "Parrain et marraine" else "T\u00E9moins", temoins.any { it.nom.isNotBlank() })
         // v0.73 : sur un bapt\u00EAme, PARRAIN et MARRAINE - deux lignes
         // fixes (nom + pr\u00E9noms, SANS profession) avec leur coche "Signe" ;
@@ -1029,6 +1043,7 @@ fun EcranSaisieActe(
                 }
             }
         }
+        } // fin if (!rapide) temoins + officier
 
 
         }
