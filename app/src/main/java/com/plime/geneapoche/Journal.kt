@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -238,14 +239,23 @@ private fun cleHomonyme(s: String): String =
 
 fun doublonsPotentiels(personnes: List<Personne>, gardes: Set<String> = emptySet()): List<Doublon> {
     val l = mutableListOf<Doublon>()
+    // v0.99 : plus de comparaison de toutes les paires O(n^2). Les personnes
+    // sont groupees par cle de nom UNE FOIS (O(n)), puis seules les personnes
+    // de MEME cle de nom sont comparees entre elles (groupes en pratique
+    // minuscules) : le pire cas reste borne par la taille des groupes.
+    val parNom = LinkedHashMap<String, MutableList<Pair<Personne, String>>>()
     personnes.forEach { p ->
         val nomP = cleHomonyme(p.nom)
         if (nomP.isEmpty()) return@forEach
-        val prenomsP = cleHomonyme(p.prenoms)
-        val anneeP = anneeDe(p.dateNaissance)
-        personnes.filter { it.id > p.id }.forEach { q ->
-            if (nomP == cleHomonyme(q.nom)) {
-                val prenomsQ = cleHomonyme(q.prenoms)
+        parNom.getOrPut(nomP) { mutableListOf() }.add(p to cleHomonyme(p.prenoms))
+    }
+    parNom.values.forEach { groupe ->
+        if (groupe.size < 2) return@forEach
+        for (i in groupe.indices) {
+            val (p, prenomsP) = groupe[i]
+            val anneeP = anneeDe(p.dateNaissance)
+            for (j in i + 1 until groupe.size) {
+                val (q, prenomsQ) = groupe[j]
                 val memesPrenoms = prenomsP == prenomsQ
                 // Meme nom, meme premier prenom ET meme annee de naissance :
                 // doublon probable meme si les autres prenoms different.
@@ -254,8 +264,9 @@ fun doublonsPotentiels(personnes: List<Personne>, gardes: Set<String> = emptySet
                     prenomsP.substringBefore(' ') == prenomsQ.substringBefore(' ') &&
                     anneeP != null && anneeP == anneeQ
                 if (memesPrenoms || memePremier) {
-                    if (gardes.contains(cleDoublon(p.id, q.id))) return@forEach
-                    l.add(Doublon(p.id, q.id, p.titre()))
+                    if (!gardes.contains(cleDoublon(p.id, q.id))) {
+                        l.add(Doublon(p.id, q.id, p.titre()))
+                    }
                 }
             }
         }
@@ -522,6 +533,9 @@ fun EcranJournal(
     // (les corrections de fiche modifient des champs SANS invalidation
     // automatique de la composition).
     var rafraichir by remember { mutableStateOf(0) }
+    // v0.99 : vues separees — 0 = A faire (recherches), 1 = A verifier
+    // (a corriger, anomalies, doublons, branches isolees, identites).
+    var vueJournal by remember { mutableStateOf(0) }
     // v0.90 : la base des communes doit \u00EAtre charg\u00E9e pour proposer les
     // corrections automatiques de lieux.
     val ctxJournal = LocalContext.current
@@ -574,6 +588,14 @@ fun EcranJournal(
                 )
             }
         }
+        // v0.99 : deux vues claires au lieu d'un seul ecran qui melange tout.
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                FilterChip(selected = vueJournal == 0, onClick = { vueJournal = 0 }, label = { Text("\u00C0 faire") })
+                FilterChip(selected = vueJournal == 1, onClick = { vueJournal = 1 }, label = { Text("\u00C0 v\u00E9rifier") })
+            }
+        }
+        if (vueJournal == 1) {
         // v0.90 : "\u00C0 corriger" - anciennes saisies non conformes (lieux
         // sans code INSEE, dates invalides), normalisables en un clic
         // quand la commune matche une seule entr\u00E9e de la base.
@@ -829,6 +851,8 @@ fun EcranJournal(
             }
         }
 
+        } // fin vue "A verifier"
+        if (vueJournal == 0) {
         if (prioritaires.isEmpty()) {
             item {
                 Card(
@@ -859,6 +883,8 @@ fun EcranJournal(
                 )
             }
         }
+
+        } // fin vue "A faire"
 
         // Une recherche effectuee est supprimee sans archive ni historique.
 
