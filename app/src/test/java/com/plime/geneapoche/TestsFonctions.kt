@@ -317,4 +317,39 @@ class TestsFonctions {
         assertEquals("Donn\u00E9es illisibles : fichier corrompu ?", messageErreur(org.json.JSONException("x"), "defaut"))
         assertEquals("defaut", messageErreur(IllegalStateException(), "defaut"))
     }
+
+    // v0.98 : round-trip GEDCOM des champs prives _GP* (B/M/D/S).
+    @Test
+    fun roundTripChampsGP98() {
+        val p = Personne(id = 1L, nom = "Dupont", prenoms = "Jean", sexe = "M")
+        p.declNDate = "30/01/1850"; p.declNHeure = "10:00"
+        p.bLegitime = "naturel"
+        p.contratMariage = "Maitre Lemaire, Douai"; p.dispenses = "2e degre"
+        p.declDDate = "02/03/1920"; p.declDHeure = "15:30"
+        p.declarantNom = "Dupont Leon"; p.declarantProfession = "fileur"; p.declarantDomicile = "Douai, 59178, Nord"
+        p.ceremonieSDate = "05/03/1920"; p.cimetiere = "Douai, 59178, Nord"
+        p.concession = "perpetuelle n. 12"; p.ministreCulte = "abbe Martin"
+        p.situation = "celibataire"; p.domicile = "Douai, 59178, Nord"
+        val g = construireGedcom(listOf(p))
+        val r = importerGedcomRapporte(g)
+        assertEquals(1, r.personnes.size)
+        val q = r.personnes[0]
+        assertEquals("30/01/1850", q.declNDate)
+        assertEquals("10:00", q.declNHeure)
+        assertEquals("naturel", q.bLegitime)
+        assertEquals("Maitre Lemaire, Douai", q.contratMariage)
+        assertEquals("2e degre", q.dispenses)
+        assertEquals("02/03/1920", q.declDDate)
+        assertEquals("15:30", q.declDHeure)
+        assertEquals("Dupont Leon", q.declarantNom)
+        assertEquals("fileur", q.declarantProfession)
+        assertEquals("Douai, 59178, Nord", q.declarantDomicile)
+        assertEquals("05/03/1920", q.ceremonieSDate)
+        assertEquals("Douai, 59178, Nord", q.cimetiere)
+        assertEquals("perpetuelle n. 12", q.concession)
+        assertEquals("abbe Martin", q.ministreCulte)
+        assertEquals("celibataire", q.situation)
+        assertEquals("Douai, 59178, Nord", q.domicile)
+    }
+}
 }
