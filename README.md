@@ -24,6 +24,8 @@ GénéaPoche 11 : coche de vérification d'identité dans l'en-tête de chaque f
 
 **Carnet de sources (v0.92)** — un carnet de recherche 100 % local : une **Source** se décrit une seule fois (type d'acte, commune, période, dépôt, cote, lien Internet facultatif — jamais nécessaire —, transcription, notes, niveau de fiabilité 0-3) et se **cite** autant de fois que nécessaire : une **Citation** relie une source à une personne et à un événement précis (« Naissance de Marie Dupont, acte n° 43, vue 17/312 »). Sur le formulaire d'acte, on choisit la source et on saisit le n° d'acte et la **vue n° sur le total de vues**. Accessible depuis les paramétrages (« Carnet de sources ») et depuis le bloc « Sources » de chaque fiche. **Compatible GEDCOM 5.5.1 / Heredis** : sources en enregistrements `SOUR` (TITL, REPO/CALN, DATA, TEXT, NOTE) et citations `SOUR @Sn@` avec PAGE, QUAY, DATA/TEXT ; les champs propres à GénéaPoche utilisent des balises `_GP…` ignorées par les autres logiciels. Les sources et citations sont aussi dans les sauvegardes `.gpbak`.
 
+**Arbre paisible et acte de naissance enrichi (v0.97)** — toucher une carte de l'arbre la centre seulement ; la fiche s'ouvre en basculant vers l'onglet Personnes ou par appui long. L'acte de naissance saisit désormais l'**âge, la situation et le domicile** du père, de la mère et des témoins (reportés sur leurs fiches), ainsi que les **mentions marginales Mariage et Décès** (date et lieu). Quand l'acte donne un âge sans date de naissance, la fiche reçoit une date calculée « **vers aaaa** » avec la mention « N. calculé » et sa source.
+
 ## Modèle de sécurité — exact, avec ses limites
 
 - **Aucune permission Internet** dans le manifeste : l'application elle-même ne transmet rien.
@@ -42,7 +44,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.88)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.88-release.apk` (signé) ou `GeneaPoche-v0.88-debug.apk`.
+**Téléchargement direct de la dernière version (v0.97)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.97-release.apk` (signé) ou `GeneaPoche-v0.97-debug.apk`.
 
 Sinon, depuis les sources :
 
