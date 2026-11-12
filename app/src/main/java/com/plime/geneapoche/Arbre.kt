@@ -4,7 +4,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -28,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
@@ -87,15 +87,17 @@ fun EcranArbre(
     // personne centrale : l'arbre se régénère nettement sur 4 générations.
     var echelleZoom by remember(idCentre) { mutableStateOf(1f) }
     var deplacementZoom by remember(idCentre) { mutableStateOf(Offset.Zero) }
+    // v0.98 : zoom REPARÉ. detectTransformGestures captait TOUS les
+    // pointeurs (conflit avec le défilement vertical, zoom inopérant).
+    // transformable ne réagit qu'au multi-touch et coexiste avec le scroll.
+    val etatZoom = rememberTransformableState { zoom, pan, _ ->
+        echelleZoom = (echelleZoom * zoom).coerceIn(0.25f, 3f)
+        deplacementZoom += pan
+    }
     Box(
         Modifier
             .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    echelleZoom = (echelleZoom * zoom).coerceIn(0.25f, 3f)
-                    deplacementZoom += pan
-                }
-            }
+            .transformable(etatZoom)
     ) {
         Column(
             Modifier
@@ -342,4 +344,5 @@ fun CarteMiniArbre(
         }
     }
 }
+
 

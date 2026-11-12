@@ -307,7 +307,15 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
     // debut/fin : plage d'annees visee (regle des 75 ans et tri du journal).
     fun evenement(cleBase: String, type: String, lib: LibellesEv, ch: EvChamps, ouvert: Boolean, debut: String = "", fin: String = "") {
         if (!ouvert) return
-        if (ch.date.isBlank()) return
+        if (ch.date.isBlank()) {
+            // v0.98 : meme SANS date connue, l'acte non coche reste une
+            // recherche ; des que la coche "Enregistre" est posee, PLUS
+            // AUCUNE suggestion pour cet acte (la coche retire la recherche).
+            if (!p.enregistreDe(type)) {
+                ajouter(cleBase + "_enregistrer", "Enregistrer " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
+            }
+            return
+        }
         // Acte localise : chaque champ manquant est une recherche a part entiere.
         // (L'HEURE manquante ne cree PAS de recherche : information annexe.)
         if (ch.lieu.isBlank()) {
@@ -1005,6 +1013,7 @@ fun CarteRecherche(
         }
     }
 }
+
 
 
 
