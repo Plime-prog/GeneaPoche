@@ -1,5 +1,18 @@
 # Historique des versions — GénéaPoche
 
+## v0.99 — Premier bilan : logique d'acte extraite et testée, index des personnes, saisie rapide, journal en 2 vues
+
+- **Logique d'acte extraite (refactoring)** : nouveau fichier `LogiqueActe.kt` regroupant les fonctions pures de l'enregistrement d'un acte (`cleNom`, `clePrenomsNom`, `matchPersonneActe` — l'anti-doublon v0.77 —, `majChamp98`, `renseignerChampsActe`, `lierParentActe`). `enregistrerActe` dans MainActivity délègue désormais à ces fonctions ; le découpage complet par onglets continuera plus tard.
+- **20 nouveaux tests JVM** (`TestsLogiqueActe.kt`) sur cette logique : clés de comparaison, anti-doublons, fill-if-blank / edition-efface, naissance calculée « vers aaaa », liaison parent avec cohérence. Le total passe de 90 à **110 tests unitaires**.
+- **Correctif de cohérence** : `lierParentActe` refuse désormais l'incohérence parentale dans les DEUX sens (le lien enfant → parent n'est plus posé quand l'âge l'interdit, pas seulement l'entrée dans la liste enfants).
+- **Index des personnes (performances)** : `personneParId` n'est plus une recherche linéaire (~120 appels dans le code) — nouvel `IndexPersonnes` (Map id → personne), invalidé à chaque mutation de la base (ajouts, suppressions, renumérotation).
+- **Détection de doublons dé-O(n²)** : `doublonsPotentiels` groupe par clé de nom au lieu de comparer toutes les paires.
+- **Test de charge** : base synthétique de 10 000 personnes — chaque personne est retrouvée par l'index, la détection de doublons reste mesurée en moins de 5 s (les vrais doublons restent détectés).
+- **Saisie rapide (SaisieActe)** : bascule « Rapide » / « Compléter » — en Rapide, seuls les champs essentiels (type, commune/département, date/heure, personne concernée, conjoint, sources) ; les champs v0.98, mentions marginales, témoins/parrain-marraine et officier passent en « Compléter ».
+- **Journal en 2 vues** : bascule « À faire » / « À vérifier » — les recherches prioritaires d'un côté, le diagnostic (« À corriger », anomalies, anomalies ignorées) de l'autre. La vue « Historique » suivra.
+- **README réécrit, court et visuel** : liste à puces des fonctions principales, paragraphes de version condensés (les détails restent dans ce CHANGELOG), nombre de tests exact (110 au lieu de « ~85 »).
+- Bumps v0.99 (gradle 99/« 0.99 »). Pas de release GitHub : la v0.98 est encore en test.
+
 ## v0.98 — GEDCOM sans perte, champs B/M/D/S, six corrections
 
 - **GEDCOM sans perte (round-trip complet)** : tous les champs propres à GénéaPoche, actuels et à venir, sont écrits en balises privées `_GP*` (à la manière de `_GPVERIF`) et relus à l'import — un export puis un réimport ne perd plus rien : situation, domicile, naissance calculée + source, mentions marginales, coches « Enregistré », états de vérification (vert/rouge), témoins et signataires (avec remappage des identifiants), blocs ouverts, conjoint en vie/décédé. Toute future évolution de champ sera annoncée avec son traitement GEDCOM (conservé ou signalé comme à risque de perte).
