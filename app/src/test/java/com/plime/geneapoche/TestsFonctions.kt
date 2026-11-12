@@ -352,4 +352,3 @@ class TestsFonctions {
         assertEquals("Douai, 59178, Nord", q.domicile)
     }
 }
-}
