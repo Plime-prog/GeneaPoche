@@ -735,8 +735,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
 
     val personnes = mutableListOf<Personne>()
     indivs.forEach { (x, ind) ->
-        personnes.add(
-            Personne(
+        val pc = Personne(
                 id = ids[x] ?: 0L,
                 nom = ind.nom,
                 prenoms = ind.prenoms,
@@ -774,7 +773,6 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                 cimetiere = ind.gpCim.replace("@@", "@"),
                 concession = ind.gpCoc.replace("@@", "@"),
                 ministreCulte = ind.gpMin.replace("@@", "@"),
-                conjointEnVieDeces = ind.gpCed,
                 blocsOuverts = mutableListOf<String>().also { l ->
                     ind.gpBlo.split(",").forEach { s -> if (s.isNotBlank()) l.add(s.trim()) }
                 },
@@ -783,7 +781,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                     ind.evLibres.forEachIndexed { i, ev -> l.add(ev.copy(id = (i + 1).toLong())) }
                 }
             )
-        )
+        pc.conjointEnVieDeces = ind.gpCed
+        personnes.add(pc)
     }
 
     fun idDe(x: String): Long = ids[x] ?: 0L
