@@ -75,9 +75,12 @@ class TestsLogiqueActe {
     }
 
     @Test
-    fun conversionGregorienne() {
-        // 22 Germinal An II = 11/04/1794.
-        assertEquals("11/04/1794", majChamp98("", "22 Germinal An II", edition = false, greg = true))
+    fun dateRepublicaineConservee() {
+        // L'application conserve la date telle que saisie (le calendrier
+        // republicain reste stocke) ; dateGreg ne fait que normaliser
+        // les formats numeriques.
+        assertEquals("22 Germinal An II", majChamp98("", "22 Germinal An II", edition = false, greg = true))
+        assertEquals("01/02/1890", majChamp98("", "1.2.1890", edition = false, greg = true))
     }
 
     // ---------------------------------------------------------- renseignerChampsActe
@@ -93,10 +96,15 @@ class TestsLogiqueActe {
     }
 
     @Test
-    fun renseignerNouvelActeNeEcrasePas() {
+    fun renseignerSaisieNonVideRemplaceEtVideComplete() {
+        // v0.60 : toute valeur saisie non vide REMPLACE celle de la fiche ;
+        // une saisie vide laisse le champ existant intact (fill-if-blank).
         val c = p(1L, "Durand", "Paul", ne = "1840")
         renseignerChampsActe(c, "1850", "", "", "", "", "", "1875", edition = false)
-        assertEquals("1840", c.dateNaissance)
+        assertEquals("1850", c.dateNaissance)
+        val d = p(2L, "Durand", "Jean", ne = "1840")
+        renseignerChampsActe(d, "", "", "", "", "", "", "1875", edition = false)
+        assertEquals("1840", d.dateNaissance)
     }
 
     @Test

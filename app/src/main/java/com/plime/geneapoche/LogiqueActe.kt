@@ -110,13 +110,15 @@ fun renseignerChampsActe(
 // coherence centralise, applique partout).
 fun lierParentActe(enfant: Personne, parent: Personne?, estMere: Boolean) {
     if (parent == null) return
+    // v0.99 : le refus de coherence porte sur les DEUX sens du lien
+    // (enfant.pere/mere ET parent.enfants), pas seulement sur la liste.
+    if (incoherenceParente(parent, enfant.dateNaissance) != null) return
     if (estMere) {
         if (enfant.mere == 0L) enfant.mere = parent.id
     } else {
         if (enfant.pere == 0L) enfant.pere = parent.id
     }
-    if (!parent.enfants.contains(enfant.id) && incoherenceParente(parent, enfant.dateNaissance) == null)
-        parent.enfants.add(enfant.id)
+    if (!parent.enfants.contains(enfant.id)) parent.enfants.add(enfant.id)
 }
 
 // ---------------------------------------------------------- Index des personnes (performances)
