@@ -3,7 +3,7 @@
 ## v0.99 — Premier bilan : logique d'acte extraite et testée, index des personnes, saisie rapide, journal en 2 vues
 
 - **Logique d'acte extraite (refactoring)** : nouveau fichier `LogiqueActe.kt` regroupant les fonctions pures de l'enregistrement d'un acte (`cleNom`, `clePrenomsNom`, `matchPersonneActe` — l'anti-doublon v0.77 —, `majChamp98`, `renseignerChampsActe`, `lierParentActe`). `enregistrerActe` dans MainActivity délègue désormais à ces fonctions ; le découpage complet par onglets continuera plus tard.
-- **20 nouveaux tests JVM** (`TestsLogiqueActe.kt`) sur cette logique : clés de comparaison, anti-doublons, fill-if-blank / edition-efface, naissance calculée « vers aaaa », liaison parent avec cohérence. Le total passe de 90 à **110 tests unitaires**.
+- **20 nouveaux tests JVM** (`TestsLogiqueActe.kt`) sur cette logique : clés de comparaison, anti-doublons, fill-if-blank / edition-efface, naissance calculée « vers aaaa », liaison parent avec cohérence. Le total passe de 90 à **114 tests unitaires**.
 - **Correctif de cohérence** : `lierParentActe` refuse désormais l'incohérence parentale dans les DEUX sens (le lien enfant → parent n'est plus posé quand l'âge l'interdit, pas seulement l'entrée dans la liste enfants).
 - **Index des personnes (performances)** : `personneParId` n'est plus une recherche linéaire (~120 appels dans le code) — nouvel `IndexPersonnes` (Map id → personne), invalidé à chaque mutation de la base (ajouts, suppressions, renumérotation).
 - **Détection de doublons dé-O(n²)** : `doublonsPotentiels` groupe par clé de nom au lieu de comparer toutes les paires.
@@ -11,7 +11,11 @@
 - **Saisie rapide (SaisieActe)** : bascule « Rapide » / « Compléter » — en Rapide, seuls les champs essentiels (type, commune/département, date/heure, personne concernée, conjoint, sources) ; les champs v0.98, mentions marginales, témoins/parrain-marraine et officier passent en « Compléter ».
 - **Journal en 2 vues** : bascule « À faire » / « À vérifier » — les recherches prioritaires d'un côté, le diagnostic (« À corriger », anomalies, anomalies ignorées) de l'autre. La vue « Historique » suivra.
 - **README réécrit, court et visuel** : liste à puces des fonctions principales, paragraphes de version condensés (les détails restent dans ce CHANGELOG), nombre de tests exact (110 au lieu de « ~85 »).
-- Bumps v0.99 (gradle 99/« 0.99 »). Pas de release GitHub : la v0.98 est encore en test.
+- **Mention marginale de mariage nominative (acte N)** : sur un acte de naissance, la mention marginale « marié(e) avec … » se saisit par NOM et PRÉNOMS — bouton « Choisir une fiche existante (sinon fiche créée à l'enregistrement) » ; à l'enregistrement, la fiche du conjoint est trouvée ou créée (sexe opposé), le lien conjoint est posé dans les deux sens (ou ajouté aux conjoints supplémentaires) et la date/lieu du mariage de la mention complètent les blocs vides. La fiche affiche « Mention marg. mariage — avec … ».
+- **Naissance approximative automatique, partout** : nouvelle fonction pure `naissanceDepuisAge` — dès qu'un âge est saisi (personne concernée, conjoint, père, mère, témoins, parrain/marraine, tous types d'actes), « vers aaaa » est posé sur toute fiche sans date de naissance ET sans naissance calculée, avec la ligne « N. calculé » précisant la source (« calculée d'après l'acte de mariage de … »). Jamais si une date exacte est présente ; si une date exacte existe et contredit l'âge (écart > 2 ans), l'incohérence est signalée.
+- **Contrôle de cohérence immédiat à la saisie** : nouvelle fonction `erreurAge` — sous chaque champ Âge (père, mère, témoins), un message rouge apparaît dès la frappe si l'âge contredit la date de naissance de la fiche ; l'incohérence est rappelée au message final d'enregistrement.
+- **4 nouveaux tests JVM** (`naissanceDepuisAge` : pose « vers aaaa », ne touche pas une date exacte, signale l'incohérence avec tolérance ≤ 2 ans ; `erreurAge`). Le total passe à **114 tests unitaires**.
+- Bumps v0.99 (gradle 99/« 0.99 »). Release GitHub v0.99 publiée (APK release et debug).
 
 ## v0.98 — GEDCOM sans perte, champs B/M/D/S, six corrections
 
