@@ -10,8 +10,13 @@
 - **Test de charge** : base synthétique de 10 000 personnes — chaque personne est retrouvée par l'index, la détection de doublons reste mesurée en moins de 5 s (les vrais doublons restent détectés).
 - **Saisie rapide (SaisieActe)** : bascule « Rapide » / « Compléter » — en Rapide, seuls les champs essentiels (type, commune/département, date/heure, personne concernée, conjoint, sources) ; les champs v0.98, mentions marginales, témoins/parrain-marraine et officier passent en « Compléter ».
 - **Journal en 2 vues** : bascule « À faire » / « À vérifier » — les recherches prioritaires d'un côté, le diagnostic (« À corriger », anomalies, anomalies ignorées) de l'autre. La vue « Historique » suivra.
-- **README réécrit, court et visuel** : liste à puces des fonctions principales, paragraphes de version condensés (les détails restent dans ce CHANGELOG), nombre de tests exact (110 au lieu de « ~85 »).
-- Bumps v0.99 (gradle 99/« 0.99 »). Pas de release GitHub : la v0.98 est encore en test.
+- **README réécrit, court et visuel** : liste à puces des fonctions principales, paragraphes de version condensés (les détails restent dans ce CHANGELOG), nombre de tests exact (118).
+- **Mention marginale de mariage nominative** (acte de naissance, mode « Compléter ») : on précise le **nom et les prénoms** du conjoint ; la fiche existante est réutilisée (anti-doublon) ou créée, liée comme conjoint, et sa date/lieu de mariage sont complétés d'après la mention. La fiche rappelle « — avec Prénom Nom ».
+- **Naissance approximative automatique, partout où un âge est saisi** : père, mère, témoins (N/B), et désormais la **personne concernée** (mariage, décès, sépulture) et la **mariée** (champ « Âge à l'acte »). La fiche reçoit « vers aaaa » avec, dans la zone N, la ligne « N. calculé : vers 1879 (calculée d'après l'acte de décès de Paul Durand) ». Jamais d'écriture si la date exacte existe (une ancienne date calculée devient alors obsolète et disparaît).
+- **Contrôle de cohérence immédiat** : sous le champ Âge dès la saisie (écart de plus de 2 ans avec la date exacte de la fiche) et à l'enregistrement : deuxième âge contredisant une date déjà calculée, naissance calculée après le décès, mariage à moins de 12 ans. Le message d'incohérence est distinct (il n'est plus mêlé au message « SANS le lien de parenté »).
+- **Correctif** : la ligne « N. calculé » n'est plus affichée quand la date de naissance exacte est connue.
+- Tests : 118 tests unitaires JVM.
+- Bumps v0.99 (gradle 99/« 0.99 »).
 
 ## v0.98 — GEDCOM sans perte, champs B/M/D/S, six corrections
 
