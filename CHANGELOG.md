@@ -1,5 +1,16 @@
 # Historique des versions — GénéaPoche
 
+## v0.100 — Recherches : Journal en trois vues, recherche avancée, statistiques, naissance approximative visible
+
+- **Naissance approximative (correctif)** : la date « vers aaaa » calculée d'après un âge était bien enregistrée mais invisible. Elle s'affiche maintenant **à la ligne Date de l'encadré N** (« vers 1879 (calculée) », en italique orange), la ligne d'origine « calculée d'après tel acte de telle personne » reste dans la zone N, et elle est utilisée pour l'âge « (~34 ans) » affiché dans la chronologie, pour le tri par ancienneté et pour les chronologies. Elle ne remplace jamais une date exacte.
+- **Journal à trois chips** : **Synthèse / Recherches / Statistiques**, toujours visibles en haut. L'onglet « Stat. » disparaît de la barre inférieure (cinq onglets).
+- **Synthèse** : tout le journal sauf les recherches (alertes, anniversaires, diagnostic, cohérence, anomalies), mêmes cadres et couleurs, plus un cadre **« Recherches en cours : N »** = nombre de **trous généalogiques** (somme des renseignements manquants des indicateurs n/6, n/4, n/2 de toute la base : date et lieu de N, M, D). Toucher le cadre ouvre les recherches.
+- **Recherches** : toutes les recherches dans leur format actuel + **Recherche avancée (12.7)** : texte (nom, prénom, métier, lieu), lieu, **période** (année de/à), **statut de vérification** (certifiée / non), **acte manquant** (N, B, M, D, S, au moins un). Résultats **condensés** : une ligne par personne avec compteur n/6 et petit triangle à droite ; le toucher déplie un bloc (N, M, D, actes à compléter, statut, bouton « Ouvrir la fiche »).
+- **Statistiques** : deux chips, **Base** et **Géographie** (l'écran existant). Base : « À compléter » (renseignements manquants, complétude), l'arbre en chiffres (individus, familles, ancêtres, descendants, générations, communes, patronymes, métiers), démographie (durée de vie moyenne, âge moyen au mariage, enfants par parent, période couverte, ancêtre le plus ancien, lieu le plus fréquent, patronymes et métiers les plus portés) et **qualité de la documentation** avec barres (dates de naissance documentées, lieux de naissance complets, décès documentés hors vivants présumés, mariages datés, **mariages avec une source**, personnes sourcées).
+- Nouveau code : `Statistiques.kt` (fonctions pures), `EcranStatistiques.kt`, `RechercheAvancee.kt`. 127 tests unitaires JVM (nouveaux : `StatistiquesTest.kt`).
+- **À suivre** : refonte du mode de saisie ; retrait du bouton ➕ sur tous les onglets, qui deviendra le 6e onglet « Saisie » (Personnes / Journal / Arbre / Outils / Sources / Saisie).
+- Bumps v0.100 (gradle 100/« 0.100 »).
+
 ## v0.99 — Premier bilan : logique d'acte extraite et testée, index des personnes, saisie rapide, journal en 2 vues
 
 - **Logique d'acte extraite (refactoring)** : nouveau fichier `LogiqueActe.kt` regroupant les fonctions pures de l'enregistrement d'un acte (`cleNom`, `clePrenomsNom`, `matchPersonneActe` — l'anti-doublon v0.77 —, `majChamp98`, `renseignerChampsActe`, `lierParentActe`). `enregistrerActe` dans MainActivity délègue désormais à ces fonctions ; le découpage complet par onglets continuera plus tard.

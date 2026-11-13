@@ -57,6 +57,6 @@ Sinon, depuis les sources :
 
 - Android Kotlin + Jetpack Compose, Material 3 (thème clair/sombre, palette verte).
 - AGP 9.2.0, Kotlin 2.4.21, compileSdk 37, targetSdk 36, JDK 17, BOM Compose 2026.08.00.
-- CI GitHub Actions : lint, tests unitaires JVM (118), APK debug et release signé à chaque push.
+- CI GitHub Actions : lint, tests unitaires JVM (127), APK debug et release signé à chaque push.
 - Contribuer : voir [CONTRIBUTING.md](CONTRIBUTING.md). Historique détaillé des versions : [CHANGELOG.md](CHANGELOG.md).
 - Licence : MIT (voir [LICENSE](LICENSE)).

@@ -527,15 +527,20 @@ fun EcranJournal(
     onReafficherAnomalies: () -> Unit = {},
     // v0.90 : corriger en un clic un lieu des anciennes saisies
     // (personneId, champ, nouvelle valeur).
-    onCorrigerLieu: (Long, String, String) -> Unit = { _, _, _ -> }
+    onCorrigerLieu: (Long, String, String) -> Unit = { _, _, _ -> },
+    // v0.100 : l'onglet Statistiques (ex-Geographie) devient un menu du Journal.
+    citations: List<Citation> = emptyList(),
+    idChoisie: Long = 0L,
+    onChoisirGeo: (Long) -> Unit = {},
+    onOuvrirGeo: (Long) -> Unit = {}
 ) {
     // GeneaPoche 12 : bouton d'actualisation du diagnostic A LA DEMANDE.
     // key(rafraichir) force le recalcul complet des listes du diagnostic
     // (les corrections de fiche modifient des champs SANS invalidation
     // automatique de la composition).
     var rafraichir by remember { mutableStateOf(0) }
-    // v0.99 : vues separees — 0 = A faire (recherches), 1 = A verifier
-    // (a corriger, anomalies, doublons, branches isolees, identites).
+    // v0.100 : trois vues \u2014 0 = Synthese (alertes, anniversaires, diagnostic,
+    // coherence, anomalies), 1 = Recherches, 2 = Statistiques (Base / Geographie).
     var vueJournal by remember { mutableStateOf(0) }
     // v0.90 : la base des communes doit \u00EAtre charg\u00E9e pour proposer les
     // corrections automatiques de lieux.
@@ -575,7 +580,26 @@ fun EcranJournal(
     var toutesLesAnomalies by remember { mutableStateOf(false) }
     fun nomDe(id: Long): String = personnes.firstOrNull { it.id == id }?.titre() ?: "?"
 
-    LazyColumn(Modifier.fillMaxSize().padding(12.dp)) {
+    // v0.100 : les trois chips restent TOUJOURS en haut, hors de la liste.
+    Column(Modifier.fillMaxSize()) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        FilterChip(selected = vueJournal == 0, onClick = { vueJournal = 0 }, label = { Text("Synth\u00E8se") })
+        FilterChip(selected = vueJournal == 1, onClick = { vueJournal = 1 }, label = { Text("Recherches") })
+        FilterChip(selected = vueJournal == 2, onClick = { vueJournal = 2 }, label = { Text("Statistiques") })
+    }
+    if (vueJournal == 2) {
+        EcranStatistiques(
+            personnes = personnes,
+            citations = citations,
+            idChoisie = idChoisie,
+            onOuvrir = onOuvrirGeo,
+            onChoisir = onChoisirGeo
+        )
+    } else {
+    LazyColumn(Modifier.weight(1f).padding(horizontal = 12.dp)) {
         // GeneaPoche 12 : actualisation du diagnostic a la demande.
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -589,14 +613,32 @@ fun EcranJournal(
                 )
             }
         }
-        // v0.99 : deux vues claires au lieu d'un seul ecran qui melange tout.
+        if (vueJournal == 0) {
+        // v0.100 : recherches en cours = TROUS GENEALOGIQUES, c'est-a-dire la
+        // somme des renseignements manquants des indicateurs n/6 (date et
+        // lieu de N, M, D) de toute la base.
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                FilterChip(selected = vueJournal == 0, onClick = { vueJournal = 0 }, label = { Text("\u00C0 faire") })
-                FilterChip(selected = vueJournal == 1, onClick = { vueJournal = 1 }, label = { Text("\u00C0 v\u00E9rifier") })
+            val (trous, attendus) = trousGenealogiques(personnes)
+            Card(
+                Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { vueJournal = 1 },
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, if (trous == 0) Color(0xFF9CBF9A) else Color(0xFFE6A23C))
+            ) {
+                Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                    Text(
+                        "Recherches en cours : " + trous.toString(),
+                        fontWeight = FontWeight.Bold,
+                        color = if (trous == 0) CouleurVertFonce else Color(0xFF9C5A00)
+                    )
+                    Text(
+                        if (attendus == 0) "Aucune personne pour le moment."
+                        else if (trous == 0) "Tous les renseignements attendus sont l\u00E0 (" + attendus.toString() + ")."
+                        else "renseignement(s) manquant(s) sur " + attendus.toString() + " attendus (date et lieu de N, M, D). Touchez pour voir les recherches.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         }
-        if (vueJournal == 1) {
         // v0.90 : "\u00C0 corriger" - anciennes saisies non conformes (lieux
         // sans code INSEE, dates invalides), normalisables en un clic
         // quand la commune matche une seule entr\u00E9e de la base.
@@ -852,8 +894,10 @@ fun EcranJournal(
             }
         }
 
-        } // fin vue "A verifier"
-        if (vueJournal == 0) {
+        } // fin vue "Synthese"
+        if (vueJournal == 1) {
+        // v0.100 (12.7) : recherche avancee (periode, lieu, statut, acte manquant).
+        item { RechercheAvancee(personnes = personnes, onOuvrirPersonne = onOuvrirPersonne) }
         if (prioritaires.isEmpty()) {
             item {
                 Card(
@@ -885,11 +929,13 @@ fun EcranJournal(
             }
         }
 
-        } // fin vue "A faire"
+        } // fin vue "Recherches"
 
         // Une recherche effectuee est supprimee sans archive ni historique.
 
         item { Spacer(Modifier.height(24.dp)) }
+    }
+    }
     }
 
     // G\u00E9n\u00E9aPoche 11 (11.2) : confirmation de la fusion guid\u00E9e.

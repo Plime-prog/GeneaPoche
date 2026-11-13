@@ -32,7 +32,7 @@ fun lateralValide(s: String): Boolean {
 // Annee de naissance pour le tri (9999 si inconnue).
 // G2-03 : anneeDe gere AUSSI les dates republicaines ("22 Germinal An II").
 fun anneeNaissance(p: Personne): Int =
-    anneeDe(p.dateNaissance) ?: 9999
+    anneeDe(p.dateNaissance.ifBlank { p.naissanceCalculee }) ?: 9999
 
 // Cle de tri par numero croissant (Sosa ou d'Aboville) : le numero est
 // decoupe en segments compares un a un ("1.3" < "1.10" < "2"), les

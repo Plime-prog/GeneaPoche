@@ -376,7 +376,7 @@ fun EcranPersonne(
                     // v0.84 : clefs de tri en Long (aaaammjj) ; les
                     // evenements de famille/temoins, hors de la vie de la
                     // personne, restent masques comme avant.
-                    val anneeN = (anneeDe(p.dateNaissance) ?: -1).toLong() * 10000L
+                    val anneeN = (anneeDe(p.dateNaissance.ifBlank { p.naissanceCalculee }) ?: -1).toLong() * 10000L
                     val anneeD = (anneeDe(p.dateDeces) ?: -1).toLong() * 10000L
                     val filtreParasites = { e: Pair<Long, String> ->
                         if (!e.second.startsWith("fam:") && !e.second.startsWith("enf:")) true
@@ -418,7 +418,7 @@ fun EcranPersonne(
                                             Box(Modifier.size(10.dp).clip(CircleShape).background(CouleurOrange))
                                             Spacer(Modifier.width(8.dp))
                                             val dTxtEvl = dateLigne(ev.date.trim()).ifEmpty { "  /  /    " }
-                                            val aTxtEvl = ageAffiche(p.dateNaissance, ev.date)
+                                            val aTxtEvl = ageDePersonne(p, ev.date)
                                             val lTxtEvl = if (ev.lieu.trim().isNotEmpty()) " \u00E0 " + lieuAffiche(ev.lieu.trim()) else ""
                                             Text(
                                                 dTxtEvl +
@@ -498,7 +498,7 @@ fun EcranPersonne(
                                                 val lTxtEnf = if (lEnf.isNotEmpty()) lieuAffiche(lEnf) else ""
                                                 // G\u00E9n\u00E9aPoche 7 : l'\u00E2ge du PARENT \u00E0 la
                                                 // naissance ou au d\u00E9c\u00E8s de l'enfant.
-                                                val aTxtEnf = ageAffiche(p.dateNaissance, dEnf)
+                                                val aTxtEnf = ageDePersonne(p, dEnf)
                                                 Text(
                                                     dTxtEnf + " " + tEnf +
                                                         (if (lTxtEnf.isNotEmpty()) " \u00E0 " + lTxtEnf else "") +
@@ -523,7 +523,7 @@ fun EcranPersonne(
                                         // v0.77 : m\u00EAme gabarit que les autres \u00E9v\u00E9nements :
                                         // date en t\u00EAte, \u00E2ge entre parenth\u00E8ses.
                                         val dTxtPar = dateLigne(b.dateBapteme.trim()).ifEmpty { "  /  /    " }
-                                        val aTxtPar = ageAffiche(p.dateNaissance, b.dateBapteme)
+                                        val aTxtPar = ageDePersonne(p, b.dateBapteme)
                                         Text(
                                             dTxtPar +
                                                 (if (aTxtPar.isNotEmpty()) " " + aTxtPar else "") +
@@ -573,8 +573,10 @@ fun EcranPersonne(
                                                 .background(couleurBlocEv)
                                         )
                                         Spacer(Modifier.width(8.dp))
-                                        val dTxt = dateLigne(dEv).ifEmpty { "  /  /    " }
-                                        val aTxt = if (t == "N") "" else ageAffiche(p.dateNaissance, dEv)
+                                        val dTxt = dateLigne(dEv).ifEmpty {
+                                            if (t == "N" && p.naissanceCalculee.isNotBlank()) p.naissanceCalculee else "  /  /    "
+                                        }
+                                        val aTxt = if (t == "N") "" else ageDePersonne(p, dEv)
                                         val lTxt = if (lEv.isNotEmpty()) lieuAffiche(lEv) else ""
                                         Text(
                                             dTxt + (if (aTxt.isNotEmpty()) " " + aTxt else "") + " " + t +
@@ -1251,7 +1253,7 @@ fun evenementsFamille(p: Personne, personnes: List<Personne>): List<Pair<Int, St
         val lt = lieuAvecDept(lieu, dept)
         // G\u00E9n\u00E9aPoche 7 : date en t\u00EAte + \u00E2ge de la personne
         // centrale entre parenth\u00E8ses (7.3 et 7.5).
-        val a = ageAffiche(p.dateNaissance, d)
+        val a = ageDePersonne(p, d)
         return an to (dateLigne(d) + (if (a.isNotEmpty()) " " + a else "") + " " + texte + (if (lt.isNotEmpty()) " \u00E0 " + lt else ""))
     }
     val res = mutableListOf<Pair<Int, String>>()
@@ -1427,7 +1429,14 @@ fun CarteEvenement(
         // Date et heure sur la meme ligne.
         Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Date : ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
-            if (d.isEmpty() && h.isEmpty()) {
+            if (d.isEmpty() && h.isEmpty() && typeActe == "N" && p.naissanceCalculee.isNotBlank()) {
+                // v0.100 : date approximative calculee d'apres un age.
+                Text(
+                    p.naissanceCalculee + " (calcul\u00E9e)",
+                    style = MaterialTheme.typography.bodySmall, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                    color = CouleurOrange
+                )
+            } else if (d.isEmpty() && h.isEmpty()) {
                 Text("\u2014", style = MaterialTheme.typography.bodySmall, color = GrisManquant)
             } else {
                 val s = mutableListOf<String>()
