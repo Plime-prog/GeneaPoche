@@ -1837,6 +1837,26 @@ fun AppEcran(
                     if (p.lieuDeces.isBlank()) p.lieuDeces = p.mentionDLieu.trim()
                 }
             }
+            // v0.99 : la mention marginale de MARIAGE est NOMINATIVE : nom
+            // et prenoms saisis dans le formulaire (ou fiche choisie) ->
+            // fiche existante reutilisee (anti-doublon) ou creee, liee
+            // comme conjoint, et son mariage est complete d'apres la mention.
+            if (a.mentionMNom.isNotBlank() || a.mentionMPrenoms.isNotBlank()) {
+                val conjM = trouverOuCreer(0L, a.mentionMNom, a.mentionMPrenoms,
+                    if (p.sexe == "F") "M" else "F", "", false)
+                if (conjM != null && conjM.id != p.id) {
+                    if (p.conjoint == 0L && conjM.conjoint == 0L) {
+                        p.conjoint = conjM.id
+                        conjM.conjoint = p.id
+                    } else if (!p.conjointsSupp.contains(conjM.id) && !conjM.conjointsSupp.contains(p.id)) {
+                        p.conjointsSupp.add(conjM.id)
+                    }
+                    if (p.mentionMDate.isNotBlank() && conjM.dateMariage.isBlank() && dateValide(p.mentionMDate)) {
+                        conjM.dateMariage = p.mentionMDate
+                        if (conjM.lieuMariage.isBlank()) conjM.lieuMariage = p.mentionMLieu.trim()
+                    }
+                }
+            }
         }
 
         // G\u00E9n\u00E9aPoche 3 : "Enfant" du menu Saisie : la naissance est
@@ -2029,14 +2049,18 @@ fun AppEcran(
             // temoin d'apres son age a l'acte.
             if (t.situation.isNotBlank()) ficheT.situation = t.situation.trim()
             if (t.domicile.isNotBlank()) ficheT.domicile = t.domicile.trim()
-            if (ficheT.dateNaissance.isBlank()) {
-                val anActeT = anneeDe(a.date)
-                val ansAgeT = Regex("[0-9]{1,3}").find(t.age)?.value?.toIntOrNull()
-                if (anActeT != null && ansAgeT != null && ansAgeT in 1..120) {
-                    ficheT.naissanceCalculee = "vers " + (anActeT - ansAgeT).toString()
-                    ficheT.naissanceCalculeeSource = "calcul\u00e9e d'apr\u00e8s l'acte de naissance de " + p.titre()
-                }
+            // v0.99 : date de naissance approximative du temoin PARTOUT ou
+            // un age est saisi (tous les types d'acte, plus seulement N),
+            // avec controle de coherence rappele au message final.
+            val libActe = when (a.type) {
+                "N" -> "l'acte de naissance"
+                "B" -> "l'acte de bapt\u00eame"
+                "M" -> "l'acte de mariage"
+                "D" -> "l'acte de d\u00e9c\u00e8s"
+                else -> "l'acte de s\u00e9pulture"
             }
+            val incohT = naissanceDepuisAge(ficheT, a.date, t.age, libActe + " de " + p.titre())
+            if (incohT != null) refusLienTxt = (if (refusLienTxt.isBlank()) "" else refusLienTxt + " ") + incohT
             if (!p.temoinsDe(a.type).contains(ficheT.id)) p.temoinsDe(a.type).add(ficheT.id)
             if (a.type == "M" && mariee != null && !mariee.temoinsDe(a.type).contains(ficheT.id)) {
                 mariee.temoinsDe(a.type).add(ficheT.id)

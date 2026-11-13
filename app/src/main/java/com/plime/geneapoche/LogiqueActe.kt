@@ -93,14 +93,54 @@ fun renseignerChampsActe(
     }
     if (situation.isNotBlank()) c.situation = situation.trim()
     if (domicile.isNotBlank()) c.domicile = domicile.trim()
-    if (c.dateNaissance.isBlank()) {
-        val anActe = anneeDe(dateActe)
-        val ansAge = Regex("[0-9]{1,3}").find(age)?.value?.toIntOrNull()
-        if (anActe != null && ansAge != null && ansAge in 1..120) {
-            c.naissanceCalculee = "vers " + (anActe - ansAge).toString()
-            c.naissanceCalculeeSource = "calcul\u00e9e d'apr\u00e8s " + sourceCalcul
-        }
+    // v0.99 : date de naissance approximative automatique (jamais si la
+    // date exacte existe), avec controle de coherence centralise.
+    naissanceDepuisAge(c, dateActe, age, sourceCalcul)
+}
+
+// ---------------------------------------------------------- Naissance approximative (v0.99)
+
+// PARTOUT ou un age est saisi (personne concernee, parents, temoins,
+// mariee...), la fiche recoit une date de naissance approximative
+// "vers aaaa" SI elle n'a ni date exacte ni date calculee. Si la fiche a
+// deja une date EXACTE, le calcul n'ecrit rien mais VERIFIE la coherence :
+// un ecart de plus de 2 ans retourne un message d'incoherence (affiche au
+// moment de la saisie et rappele a l'enregistrement).
+fun naissanceDepuisAge(c: Personne?, dateActe: String, age: String, source: String): String? {
+    if (c == null) return null
+    val t = age.trim()
+    if (t.isBlank()) return null
+    val anActe = anneeDe(dateActe) ?: return null
+    val ansAge = Regex("[0-9]{1,3}").find(t)?.value?.toIntOrNull() ?: return null
+    if (ansAge !in 1..120) return null
+    val anCalc = anActe - ansAge
+    val exacte = anneeDe(c.dateNaissance)
+    if (exacte != null) {
+        return if (kotlin.math.abs(exacte - anCalc) > 2)
+            "Incoh\u00e9rence : " + ansAge + " ans en " + anActe +
+                " donne une naissance vers " + anCalc + ", la fiche de " + c.titre() +
+                " dit " + c.dateNaissance + "."
+        else null
     }
+    if (c.naissanceCalculee.isBlank()) {
+        c.naissanceCalculee = "vers " + anCalc.toString()
+        c.naissanceCalculeeSource = "calcul\u00e9e d'apr\u00e8s " + source
+    }
+    return null
+}
+
+// Controle de coherence IMMEDIAT, SANS modifier la fiche (affichage sous
+// le champ Age du formulaire) : message ou null.
+fun erreurAge(dateNaissance: String, dateActe: String, age: String): String? {
+    if (age.isBlank() || dateNaissance.isBlank()) return null
+    val anActe = anneeDe(dateActe) ?: return null
+    val ansAge = Regex("[0-9]{1,3}").find(age.trim())?.value?.toIntOrNull() ?: return null
+    val exacte = anneeDe(dateNaissance) ?: return null
+    val calc = anActe - ansAge
+    return if (kotlin.math.abs(exacte - calc) > 2)
+        "Incoh\u00e9rence : " + ansAge + " ans en " + anActe + " \u2192 naissance vers " +
+            calc + ", la fiche dit " + dateNaissance
+    else null
 }
 
 // ---------------------------------------------------------- Liaison parent / enfant
