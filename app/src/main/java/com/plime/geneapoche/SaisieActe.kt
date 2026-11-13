@@ -266,7 +266,7 @@ fun BlocParent(
         }
         // v0.97 : l'acte porte l'âge, la situation et le domicile du parent.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Champ("Âge", e.age, { e.age = it }, erreur = erreurAge(fiche?.dateNaissance ?: "", dateActe, e.age), modifier = Modifier.weight(0.7f))
+            Champ("Âge", e.age, { e.age = it }, erreur = erreurAge(fiche?.dateNaissance ?: "", dateActe, e.age) != null, aide = erreurAge(fiche?.dateNaissance ?: "", dateActe, e.age) ?: "", modifier = Modifier.weight(0.7f))
             Champ("Situation", e.situation, { e.situation = it }, modifier = Modifier.weight(1f))
             Champ("Domicile", e.domicile, { e.domicile = it }, modifier = Modifier.weight(1.3f), communes = true)
         }
@@ -306,7 +306,7 @@ fun BlocParent(
         }
         // v0.97 : \u00e2ge \u00e0 l'acte, situation et domicile (tous les types).
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Champ("\u00c2ge", e.age, { e.age = it }, erreur = erreurAge(fiche?.dateNaissance ?: "", dateActe, e.age), modifier = Modifier.weight(0.7f))
+            Champ("\u00c2ge", e.age, { e.age = it }, erreur = erreurAge(fiche?.dateNaissance ?: "", dateActe, e.age) != null, aide = erreurAge(fiche?.dateNaissance ?: "", dateActe, e.age) ?: "", modifier = Modifier.weight(0.7f))
             Champ("Situation", e.situation, { e.situation = it }, modifier = Modifier.weight(1f))
             Champ("Domicile", e.domicile, { e.domicile = it }, modifier = Modifier.weight(1.3f), communes = true)
         }
@@ -1041,7 +1041,10 @@ fun EcranSaisieActe(
                             Champ("Âge", t.age, { temoins[i] = t.copy(age = it) },
                                 erreur = erreurAge(
                                     personnes.firstOrNull { cleNom(it.nom) == cleNom(t.nom) && clePrenomsNom(it.prenoms) == clePrenomsNom(t.prenoms) }?.dateNaissance ?: "",
-                                    date, t.age),
+                                    date, t.age) != null,
+                                aide = erreurAge(
+                                    personnes.firstOrNull { cleNom(it.nom) == cleNom(t.nom) && clePrenomsNom(it.prenoms) == clePrenomsNom(t.prenoms) }?.dateNaissance ?: "",
+                                    date, t.age) ?: "",
                                 modifier = Modifier.weight(0.7f))
                             Champ("Situation", t.situation, { temoins[i] = t.copy(situation = it) }, modifier = Modifier.weight(1f))
                             Champ("Domicile", t.domicile, { temoins[i] = t.copy(domicile = it) }, modifier = Modifier.weight(1.3f), communes = true)
