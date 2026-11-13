@@ -20,7 +20,7 @@ Périmètre : France uniquement, actes N/B/M/D/S.
 - **Numérotation automatique** : Sosa-Stradonitz et d'Aboville, rien ne se saisit.
 - **Journal de recherches** : recherches à mener, anomalies à vérifier (enfant né après le décès de son père, mère trop jeune, fratrie trop rapprochée…), doublons avec fusion guidée « Garder A / Garder B » sans aucune perte.
 - **Cohérence partout** : un enfant né avant son parent est refusé sur toutes les voies d'ajout (saisie, choix de fiche, nouveau parent, acte, import fusionné) ; homonymes proposés avec leurs dates.
-- **Boîte à outils** (100 % locale) : calendrier républicain ↔ grégorien (julien, fêtes, décades), calculateur de dates (âges, écarts, durées), calculateur de parenté (« Marie est la cousine germaine de Pierre »).
+- **Boîte à outils** (100 % locale) : calendrier républicain ↔ grégorien (julien, fêtes, décades), calculateur de dates (âges, écarts, durées), calculateur de parenté (« Marie est la cousine germaine de Pierre »). Depuis la v0.101 : **repères historiques** (rapprochement avec les dates des ancêtres), **arbre du chemin de parenté**, **« Que s'est-il passé cette année ? »** et **chronologie d'une famille** (plusieurs personnes juxtaposées, incohérences en rouge). La **Saisie** est le 6e onglet (Personnes / Journal / Arbre / Outils / Sources / Saisie) ; le menu **Autres** liste les personnes sans numéro.
 - **Carnet de sources** : une source décrite une seule fois, citée autant de fois que nécessaire (n° d'acte, vue n°/total, fiabilité 0-3), exportée en GEDCOM (SOUR, QUAY, PAGE).
 - **GEDCOM sans perte** : les champs propres à GénéaPoche (balises `_GP*`) survivent à l'export puis au réimport, plus une NOTE de synthèse lisible dans Heredis.
 - **Arbre 4 générations** avec les enfants du couple central, zoom tactile ; **recherche** par nom et lieu ; **statistiques et géographie** (répartition par département, voyage chronologique) ; mode sombre ; mise en page adaptative tablette/paysage.
@@ -57,6 +57,6 @@ Sinon, depuis les sources :
 
 - Android Kotlin + Jetpack Compose, Material 3 (thème clair/sombre, palette verte).
 - AGP 9.2.0, Kotlin 2.4.21, compileSdk 37, targetSdk 36, JDK 17, BOM Compose 2026.08.00.
-- CI GitHub Actions : lint, tests unitaires JVM (127), APK debug et release signé à chaque push.
+- CI GitHub Actions : lint, tests unitaires JVM (135), APK debug et release signé à chaque push.
 - Contribuer : voir [CONTRIBUTING.md](CONTRIBUTING.md). Historique détaillé des versions : [CHANGELOG.md](CHANGELOG.md).
 - Licence : MIT (voir [LICENSE](LICENSE)).

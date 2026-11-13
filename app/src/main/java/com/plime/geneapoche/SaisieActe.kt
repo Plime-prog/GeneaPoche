@@ -527,7 +527,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.100",
+                "  v0.101",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1368,8 +1368,8 @@ fun EcranSaisie(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(8.dp)
     ) {
         Text(
-            "Saisie",
-            style = MaterialTheme.typography.titleLarge,
+            "Actes",
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = CouleurVertFonce
         )

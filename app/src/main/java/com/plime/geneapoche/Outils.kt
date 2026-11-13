@@ -69,7 +69,9 @@ fun EcranOutils(
     personnes: List<Personne>,
     onAjouterNote: (Long, String) -> Unit,
     onFermer: (() -> Unit)? = null,
-    enOnglet: Boolean = false
+    enOnglet: Boolean = false,
+    // v0.101 : ouvrir la fiche d'une personne depuis un outil.
+    onOuvrirPersonne: (Long) -> Unit = {}
 ) {
     var outil by remember { mutableStateOf(0) }
     var noteTexte by remember { mutableStateOf("") }
@@ -100,6 +102,13 @@ fun EcranOutils(
                     FilterChip(selected = outil == 1, onClick = { outil = 1 }, label = { Text("Dates") })
                     Spacer(Modifier.width(8.dp))
                     FilterChip(selected = outil == 2, onClick = { outil = 2 }, label = { Text("Parent\u00e9") })
+                    // v0.101 : outils historiques.
+                    Spacer(Modifier.width(8.dp))
+                    FilterChip(selected = outil == 3, onClick = { outil = 3 }, label = { Text("Histoire") })
+                    Spacer(Modifier.width(8.dp))
+                    FilterChip(selected = outil == 4, onClick = { outil = 4 }, label = { Text("Ann\u00e9e") })
+                    Spacer(Modifier.width(8.dp))
+                    FilterChip(selected = outil == 5, onClick = { outil = 5 }, label = { Text("Famille") })
                 }
                 Spacer(Modifier.height(8.dp))
                 if (confirmation.isNotEmpty()) {
@@ -110,6 +119,9 @@ fun EcranOutils(
                     when (outil) {
                         0 -> OutilCalendrier(demanderNote)
                         1 -> OutilDates(personnes, demanderNote)
+                        3 -> OutilHistoire(personnes, demanderNote)
+                        4 -> OutilAnnee(personnes, onOuvrirPersonne, demanderNote)
+                        5 -> OutilFamille(personnes, demanderNote)
                         else -> OutilParente(personnes, demanderNote)
                     }
                     Spacer(Modifier.height(24.dp))
@@ -432,6 +444,8 @@ private fun OutilParente(personnes: List<Personne>, demanderNote: (String, Long)
     if (r.remarque.isNotEmpty()) {
         Text(r.remarque, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+    // v0.101 : arbre succinct du chemin qui relie les deux personnes.
+    if (r.trouve) CheminParenteArbre(personnes, px.id, py.id, r.ancetresCommuns)
     if (r.trouve) {
         var texte = "Parent\u00e9 : " + r.phrase
         if (r.phraseInverse.isNotEmpty()) texte += " ; " + r.phraseInverse
