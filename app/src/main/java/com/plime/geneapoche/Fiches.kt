@@ -1133,6 +1133,12 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
     // v0.98 : le d\u00E9clarant d'un d\u00E9c\u00E8s est pr\u00E9-rempli depuis la
     // fiche de l'enfant d\u00E9clarant connu.
     val declarant = if (type == "D" && declarantEnfantId != 0L) personneParId(personnes, declarantEnfantId) else null
+    // v0.99 : conjoint de la mention marginale de mariage (pre-remplissage
+    // nominatif) : la fiche mariee ce jour-la, sinon le conjoint lie.
+    val conjMarg = if (p.mentionMDate.isNotBlank())
+        personnes.firstOrNull { it.dateMariage == p.mentionMDate && (it.conjoint == p.id || it.conjointsSupp.contains(p.id)) }
+            ?: personneParId(personnes, p.conjoint)
+    else null
     return ActeSaisie(
         acteId = 0L,
         editionFiche = editionFiche,
@@ -1159,6 +1165,7 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         mereDeces = mere?.dateDeces ?: "", mereLieuDeces = mere?.lieuDeces ?: "",
         mereAge = ageALActe(mere), mereSituation = mere?.situation ?: "", mereDomicile = mere?.domicile ?: "",
         mentionMDate = p.mentionMDate, mentionMLieu = p.mentionMLieu,
+        mentionMNom = conjMarg?.nom ?: "", mentionMPrenoms = conjMarg?.prenoms ?: "",
         mentionDDate = p.mentionDDate, mentionDLieu = p.mentionDLieu,
         marieeId = conj?.id ?: 0L,
         marieeNom = conj?.nom ?: "", marieePrenoms = conj?.prenoms ?: "",
@@ -1533,8 +1540,12 @@ fun CarteEvenement(
                 }
             }
             // v0.97 : mentions marginales portees par l'acte de naissance.
+            // v0.99 : la mention de mariage est NOMINATIVE : le nom de la
+            // fiche du conjoint (existante ou creee) est rappele.
             if (p.mentionMDate.isNotBlank() || p.mentionMLieu.isNotBlank()) {
-                LigneG("Mention marg. mariage", (if (p.mentionMDate.isNotBlank()) dateAffichee(p.mentionMDate) else "") + (if (p.mentionMLieu.isNotBlank()) (if (p.mentionMDate.isNotBlank()) " \u00e0 " else "") + lieuAffiche(p.mentionMLieu) else ""))
+                val conjMargFiche = personnes.firstOrNull { it.dateMariage == p.mentionMDate && (it.conjoint == p.id || it.conjointsSupp.contains(p.id)) }
+                    ?: personneParId(personnes, p.conjoint)
+                LigneG("Mention marg. mariage", (if (p.mentionMDate.isNotBlank()) dateAffichee(p.mentionMDate) else "") + (if (p.mentionMLieu.isNotBlank()) (if (p.mentionMDate.isNotBlank()) " \u00e0 " else "") + lieuAffiche(p.mentionMLieu) else "") + (if (conjMargFiche != null) " \u2014 avec " + conjMargFiche.titre() else ""))
             }
             if (p.mentionDDate.isNotBlank() || p.mentionDLieu.isNotBlank()) {
                 LigneG("Mention marg. d\u00e9c\u00e8s", (if (p.mentionDDate.isNotBlank()) dateAffichee(p.mentionDDate) else "") + (if (p.mentionDLieu.isNotBlank()) (if (p.mentionDDate.isNotBlank()) " \u00e0 " else "") + lieuAffiche(p.mentionDLieu) else ""))

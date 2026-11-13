@@ -165,6 +165,42 @@ class TestsLogiqueActe {
         assertEquals(1, mere.enfants.size)
     }
 
+    // ---------------------------------------------------------- Naissance approximative (v0.99)
+
+    @Test
+    fun naissanceDepuisAgePoseVersAaaa() {
+        val c = p(1L, "Durand", "Paul")
+        assertNull(naissanceDepuisAge(c, "12/05/1913", "34", "l'acte de mariage de Paul Durand"))
+        assertEquals("vers 1879", c.naissanceCalculee)
+        assertTrue(c.naissanceCalculeeSource.contains("acte de mariage"))
+    }
+
+    @Test
+    fun naissanceDepuisAgeNeTouchePasUneDateExacte() {
+        val c = p(1L, "Durand", "Paul", ne = "1879")
+        assertNull(naissanceDepuisAge(c, "12/05/1913", "34", "test"))
+        assertEquals("", c.naissanceCalculee)
+        assertEquals("1879", c.dateNaissance)
+    }
+
+    @Test
+    fun naissanceDepuisAgeSignaleIncoherence() {
+        val c = p(1L, "Durand", "Paul", ne = "1879")
+        val msg = naissanceDepuisAge(c, "12/05/1913", "80", "test")
+        assertNotNull(msg)
+        assertTrue(msg!!.contains("Incoh"))
+        // Ecart faible (<= 2 ans) : pas d'incoherence signalee.
+        assertNull(naissanceDepuisAge(p(2L, "Durand", "Jean", ne = "1878"), "12/05/1913", "34", "test"))
+    }
+
+    @Test
+    fun erreurAgeAideALaSaisie() {
+        assertNull(erreurAge("", "12/05/1913", "34"))
+        assertNull(erreurAge("1879", "12/05/1913", "34"))
+        assertNotNull(erreurAge("1879", "12/05/1913", "80"))
+        assertNull(erreurAge("1879", "", "80"))
+    }
+
     // ---------------------------------------------------------- Test de charge (10 000 personnes)
 
     private fun baseSynthetique(n: Int): List<Personne> =

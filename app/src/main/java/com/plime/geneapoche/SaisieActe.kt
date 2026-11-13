@@ -124,6 +124,9 @@ data class ActeSaisie(
     val mereAge: String = "", val mereSituation: String = "", val mereDomicile: String = "",
     // v0.97 : mentions marginales d'un acte de naissance (mariage, d\u00E9c\u00E8s).
     val mentionMDate: String = "", val mentionMLieu: String = "",
+    // v0.99 : mention marginale de mariage NOMINATIVE : nom et pr\u00E9noms
+    // du conjoint (fiche existante choisie, ou fiche cr\u00E9\u00E9e \u00E0 l'enregistrement).
+    val mentionMNom: String = "", val mentionMPrenoms: String = "",
     val mentionDDate: String = "", val mentionDLieu: String = "",
     // Mari\u00E9e (mariage uniquement)
     val marieeId: Long = 0L,
@@ -236,7 +239,10 @@ fun BlocParent(
     avecNaissance: Boolean = true, avecDeces: Boolean = true,
     // v0.72 : coche "signe l'acte" derrière ce parent (null = pas de coche).
     cocheSigne: Boolean = false,
-    onCocheSigne: (() -> Unit)? = null
+    onCocheSigne: (() -> Unit)? = null,
+    // v0.99 : fiche existante du parent (si identifiable) pour le controle
+    // de coherence IMMEDIAT de l'age saisi.
+    fiche: Personne? = null
 ) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         TitrePastille(libelle, e.nom.isNotBlank())
@@ -260,7 +266,7 @@ fun BlocParent(
         }
         // v0.97 : l'acte porte l'âge, la situation et le domicile du parent.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Champ("Âge", e.age, { e.age = it }, modifier = Modifier.weight(0.7f))
+            Champ("Âge", e.age, { e.age = it }, erreur = erreurAge(fiche?.dateNaissance ?: "", dateActe, e.age), modifier = Modifier.weight(0.7f))
             Champ("Situation", e.situation, { e.situation = it }, modifier = Modifier.weight(1f))
             Champ("Domicile", e.domicile, { e.domicile = it }, modifier = Modifier.weight(1.3f), communes = true)
         }
@@ -300,7 +306,7 @@ fun BlocParent(
         }
         // v0.97 : \u00e2ge \u00e0 l'acte, situation et domicile (tous les types).
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Champ("\u00c2ge", e.age, { e.age = it }, modifier = Modifier.weight(0.7f))
+            Champ("\u00c2ge", e.age, { e.age = it }, erreur = erreurAge(fiche?.dateNaissance ?: "", dateActe, e.age), modifier = Modifier.weight(0.7f))
             Champ("Situation", e.situation, { e.situation = it }, modifier = Modifier.weight(1f))
             Champ("Domicile", e.domicile, { e.domicile = it }, modifier = Modifier.weight(1.3f), communes = true)
         }
@@ -338,6 +344,10 @@ fun EcranSaisieActe(
     // v0.97 : mentions marginales d'un acte de naissance (mariage, deces).
     var mentionMDate by remember(initial) { mutableStateOf(initial?.mentionMDate ?: "") }
     var mentionMLieu by remember(initial) { mutableStateOf(initial?.mentionMLieu ?: "") }
+    // v0.99 : mention marginale de mariage nominative.
+    var mentionMNom by remember(initial) { mutableStateOf(initial?.mentionMNom ?: "") }
+    var mentionMPrenoms by remember(initial) { mutableStateOf(initial?.mentionMPrenoms ?: "") }
+    var pickerMentionM by remember(initial) { mutableStateOf(false) }
     var mentionDDate by remember(initial) { mutableStateOf(initial?.mentionDDate ?: "") }
     var mentionDLieu by remember(initial) { mutableStateOf(initial?.mentionDLieu ?: "") }
     // v0.98 : champs valides B/M/D/S.
@@ -721,16 +731,24 @@ fun EcranSaisieActe(
         val parentsNaissance = type == "M" || type == "E"
         val parentsDeces = type != "N" && type != "B"
         // v0.72 : coches de signature - le père sur N/B/M, la mère sur M.
+        // v0.99 : fiche existante du parent (par id, sinon par nom) pour le
+        // controle de coherence immediat de l'age saisi.
+        val fichePere = personnes.firstOrNull { it.id == pere.id }
+            ?: personnes.firstOrNull { cleNom(it.nom) == cleNom(pere.nom) && clePrenomsNom(it.prenoms) == clePrenomsNom(pere.prenoms) }
+        val ficheMere = personnes.firstOrNull { it.id == mere.id }
+            ?: personnes.firstOrNull { cleNom(it.nom) == cleNom(mere.nom) && clePrenomsNom(it.prenoms) == clePrenomsNom(mere.prenoms) }
         BlocParent("P\u00E8re", pere, date, parentsNaissance, parentsDeces,
             cocheSigne = signataires.contains("P\u00E8re"),
             onCocheSigne = if (type == "N" || type == "B" || type == "M") {
                 { if (signataires.contains("P\u00E8re")) signataires.remove("P\u00E8re") else signataires.add("P\u00E8re") }
-            } else null)
+            } else null,
+            fiche = fichePere)
         BlocParent("M\u00E8re", mere, date, parentsNaissance, parentsDeces,
             cocheSigne = signataires.contains("M\u00E8re"),
             onCocheSigne = if (type == "M") {
                 { if (signataires.contains("M\u00E8re")) signataires.remove("M\u00E8re") else signataires.add("M\u00E8re") }
-            } else null)
+            } else null,
+            fiche = ficheMere)
         // v0.97 : mentions marginales d'un acte de naissance : le mariage
         // et le deces portes en marge, avec date et lieu.
         // v0.99 : masquees en mode saisie rapide.
@@ -739,6 +757,47 @@ fun EcranSaisieActe(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Champ("Marg. M : date", mentionMDate, { mentionMDate = it }, erreur = mentionMDate.isNotBlank() && !dateValide(mentionMDate), modifier = Modifier.weight(1f))
                 Champ("lieu", mentionMLieu, { mentionMLieu = it }, modifier = Modifier.weight(1f), communes = true)
+            }
+            // v0.99 : mention marginale de mariage NOMINATIVE : nom et
+            // pr\u00E9noms du conjoint, fiche existante \u00E0 choisir ou fiche
+            // cr\u00E9\u00E9e \u00E0 l'enregistrement (anti-doublon).
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Champ("Marg. M : nom", mentionMNom, { mentionMNom = it }, modifier = Modifier.weight(1f))
+                Champ("pr\u00E9noms", mentionMPrenoms, { mentionMPrenoms = it }, modifier = Modifier.weight(1f))
+            }
+            if (mentionMNom.isNotBlank() || mentionMPrenoms.isNotBlank()) {
+                OutlinedButton(onClick = { pickerMentionM = true }) {
+                    Text("Choisir une fiche existante (sinon fiche cr\u00E9\u00E9e \u00E0 l'enregistrement)", fontSize = 12.sp)
+                }
+            }
+            if (pickerMentionM) {
+                AlertDialog(
+                    onDismissRequest = { pickerMentionM = false },
+                    title = { Text("Conjoint de la mention marginale") },
+                    text = {
+                        Column(Modifier.verticalScroll(rememberScrollState())) {
+                            personnes.sortedWith(
+                                compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
+                            ).forEach { cand ->
+                                Text(
+                                    libelleUnique(cand),
+                                    Modifier.fillMaxWidth().clickable {
+                                        pickerMentionM = false
+                                        mentionMNom = cand.nom
+                                        mentionMPrenoms = cand.prenoms
+                                    }.padding(vertical = 0.dp),
+                                    fontSize = 13.sp, lineHeight = 16.sp
+                                )
+                            }
+                            if (personnes.isEmpty()) {
+                                Text("Aucune fiche : le nom saisi cr\u00E9era la fiche du conjoint.")
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { pickerMentionM = false }) { Text("Fermer") }
+                    }
+                )
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Champ("Marg. D : date", mentionDDate, { mentionDDate = it }, erreur = mentionDDate.isNotBlank() && !dateValide(mentionDDate), modifier = Modifier.weight(1f))
@@ -977,7 +1036,13 @@ fun EcranSaisieActe(
                     // v0.98 : idem pour le parrain/marraine d'un baptême.
                     if (type == "N" || type == "B") {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Champ("Âge", t.age, { temoins[i] = t.copy(age = it) }, modifier = Modifier.weight(0.7f))
+                            // v0.99 : controle de coherence immediat de l'age
+                            // du temoin (fiche existante retrouvee par nom).
+                            Champ("Âge", t.age, { temoins[i] = t.copy(age = it) },
+                                erreur = erreurAge(
+                                    personnes.firstOrNull { cleNom(it.nom) == cleNom(t.nom) && clePrenomsNom(it.prenoms) == clePrenomsNom(t.prenoms) }?.dateNaissance ?: "",
+                                    date, t.age),
+                                modifier = Modifier.weight(0.7f))
                             Champ("Situation", t.situation, { temoins[i] = t.copy(situation = it) }, modifier = Modifier.weight(1f))
                             Champ("Domicile", t.domicile, { temoins[i] = t.copy(domicile = it) }, modifier = Modifier.weight(1.3f), communes = true)
                         }
@@ -1083,6 +1148,7 @@ fun EcranSaisieActe(
                     mereProf = mere.profession.trim(), mereDeces = mere.deces.trim(), mereLieuDeces = mere.lieuDeces.trim(),
                     mereAge = mere.age.trim(), mereSituation = mere.situation.trim(), mereDomicile = mere.domicile.trim(),
                     mentionMDate = mentionMDate.trim(), mentionMLieu = mentionMLieu.trim(),
+                    mentionMNom = mentionMNom.trim(), mentionMPrenoms = mentionMPrenoms.trim(),
                     mentionDDate = mentionDDate.trim(), mentionDLieu = mentionDLieu.trim(),
                     marieeId = marieeId,
                     marieeNom = marieeNom.trim(), marieePrenoms = marieePrenoms.trim(),
