@@ -127,10 +127,7 @@ class TestsLogiqueActe {
     fun naissanceCalculeeJamaisEcrasee() {
         val c = p(1L, "Durand", "Paul")
         c.naissanceCalculee = "vers 1880"
-        // Date de naissance deja calculee -> la fiche n'est plus "sans date" :
-        // en fill-if-blank la date saisie non vide la remplace, mais la
-        // naissance calculee existante n'est pas retouchee par un age.
-        c.dateNaissance = "vers 1880"
+        // Naissance deja calculee : un age compatible ne la retouche pas.
         renseignerChampsActe(c, "", "", "", "", "", "", "1913", edition = false, age = "34")
         assertEquals("vers 1880", c.naissanceCalculee)
     }
