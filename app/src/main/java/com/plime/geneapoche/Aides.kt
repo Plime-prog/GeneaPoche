@@ -263,6 +263,15 @@ fun couleurCompteur(n: Int, total: Int): androidx.compose.ui.graphics.Color =
 // parenth\u00E8ses dans la chronologie. Vide si incalculable.
 // G\u00E9n\u00E9aPoche 7 : pr\u00E9cision fine quand les deux dates sont compl\u00E8tes
 // ("(3 jours)", "(5 mois)") ; repli sur l'\u00E9cart d'ann\u00E9es sinon.
+// v0.100 : age d'une PERSONNE ; sans date de naissance exacte, repli sur la
+// naissance approximative calculee, signalee par un tilde "(~34 ans)".
+fun ageDePersonne(p: Personne, dateEvenement: String): String {
+    if (p.dateNaissance.isNotBlank()) return ageAffiche(p.dateNaissance, dateEvenement)
+    val an = Regex("[0-9]{4}").find(p.naissanceCalculee)?.value ?: return ""
+    val a = ageAffiche(an, dateEvenement)
+    return if (a.startsWith("(")) "(~" + a.substring(1) else a
+}
+
 fun ageAffiche(dateNaissance: String, dateEvenement: String): String {
     fun versLocalDate(s: String): java.time.LocalDate? {
         val t = s.trim()

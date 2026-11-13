@@ -141,13 +141,7 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
             icon = { Icon(painterResource(R.drawable.ic_sources), contentDescription = null) },
             label = { Text("Sources") }
         )
-        // v0.95 (12) : Geographie devient Statistiques, dernier onglet.
-        NavigationBarItem(
-            selected = onglet == 5,
-            onClick = { onChoisir(5) },
-            icon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            label = { Text("Stat.") }
-        )
+        // v0.100 : l'onglet Stat. disparait, Statistiques est un menu du Journal.
     }
 }
 // G2-09 : l'etat de l'ecran (donnees affichees) regroupe en une seule classe,
@@ -793,16 +787,6 @@ fun EcranApplication(
                     onOuvrirPersonne = { id -> onIdOuvert(id) }
                 )
                 }
-            } else if (onglet == 5) {
-                // v0.95 (12) : Geographie devient Statistiques, dernier onglet.
-                Box(Modifier.fillMaxSize().padding(marges)) {
-                EcranGeographie(
-                    personnes = personnes,
-                    idChoisie = arbreCentre,
-                    onOuvrir = { onIdOuvert(it); onArbreCentre(it) },
-                    onChoisir = { onArbreCentre(it) }
-                )
-                }
             } else {
                 Box(Modifier.fillMaxSize().padding(marges)) {
                 EcranJournal(
@@ -817,7 +801,11 @@ fun EcranApplication(
                     anomaliesIgnorees = anomaliesIgnorees,
                     onIgnorerAnomalie = { cle -> ignorerAnomalie(cle) },
                     onReafficherAnomalies = { reafficherAnomalies() },
-                    onCorrigerLieu = { id, champ, valeur -> corrigerLieu(id, champ, valeur) }
+                    onCorrigerLieu = { id, champ, valeur -> corrigerLieu(id, champ, valeur) },
+                    citations = citations,
+                    idChoisie = arbreCentre,
+                    onChoisirGeo = { onArbreCentre(it) },
+                    onOuvrirGeo = { onIdOuvert(it); onArbreCentre(it) }
                 )
                 }
             }
