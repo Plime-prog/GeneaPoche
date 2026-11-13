@@ -147,6 +147,10 @@ data class ActeSaisie(
     // ou DÉJÀ DÉCÉDÉ avant lui (veuf/veuve) ; sur un décès, un ENFANT peut
     // être déclarant. Les deux choix sont désormais PERSISTÉS.
     val conjointEnVie: Boolean = true,
+    // v0.99 : age a l'acte de la personne concernee (M, D, S) et de la
+    // mariee : date de naissance approximative calculee sur les fiches.
+    val ageConcerne: String = "",
+    val marieeAge: String = "",
     val declarantEnfantId: Long = 0L,
     // v0.98 : champs valides B/M/D/S.
     // N : jour et heure de la declaration.
@@ -374,6 +378,8 @@ fun EcranSaisieActe(
     var prenoms by remember(initial) { mutableStateOf(initial?.prenoms ?: "") }
     var sexe by remember(initial) { mutableStateOf(initial?.sexe ?: "") }
     var profession by remember(initial) { mutableStateOf(initial?.profession ?: "") }
+    var ageConcerne by remember(initial) { mutableStateOf(initial?.ageConcerne ?: "") }
+    var marieeAge by remember(initial) { mutableStateOf(initial?.marieeAge ?: "") }
     val pere = remember(initial) {
         ChampsParent().also { c ->
             initial?.let { a ->
@@ -468,6 +474,7 @@ fun EcranSaisieActe(
         mere.remplir(a.mereNom, a.merePrenoms, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces, a.mereAge, a.mereSituation, a.mereDomicile); mere.id = a.mereId
         marieeId = a.marieeId
         marieeNom = a.marieeNom; marieePrenoms = a.marieePrenoms; marieeProf = a.marieeProf
+        ageConcerne = a.ageConcerne; marieeAge = a.marieeAge
         // v0.80 : les deux suspends PERSISTENT entre deux ouvertures du formulaire.
         conjointEnVie = a.conjointEnVie
         declarantEnfantId = a.declarantEnfantId
@@ -725,6 +732,14 @@ fun EcranSaisieActe(
                 Champ("Profession", profession, { profession = it }, modifier = Modifier.weight(1f))
             }
         }
+        // v0.99 : age a l'acte (mariage, deces, sepulture) -> naissance
+        // approximative calculee, controle immediat avec la fiche.
+        if (type == "M" || type == "D" || type == "S") {
+            Champ("\u00c2ge \u00e0 l'acte", ageConcerne, { ageConcerne = it },
+                erreur = erreurAge(exPersonne?.dateNaissance ?: "", date, ageConcerne) != null,
+                aide = erreurAge(exPersonne?.dateNaissance ?: "", date, ageConcerne) ?: "",
+                modifier = Modifier.width(140.dp))
+        }
 
         // v0.67 : N/B = parents en une ligne ; D/S = sans naissance des
         // parents ; M/E = tout. Le formulaire ne montre que ce que l'acte porte.
@@ -929,6 +944,12 @@ fun EcranSaisieActe(
                 Champ("Pr\u00E9noms", marieePrenoms, { marieePrenoms = it }, modifier = Modifier.weight(1f))
             }
             Champ("Profession", marieeProf, { marieeProf = it })
+            if (type == "M") {
+                Champ("\u00c2ge \u00e0 l'acte", marieeAge, { marieeAge = it },
+                    erreur = erreurAge(exMariee?.dateNaissance ?: "", date, marieeAge) != null,
+                    aide = erreurAge(exMariee?.dateNaissance ?: "", date, marieeAge) ?: "",
+                    modifier = Modifier.width(140.dp))
+            }
             // v0.72 : les 4 parents signent le mariage - coches derrière chacun.
             BlocParent(if (type == "M") "P\u00E8re de la mari\u00E9e" else "P\u00E8re du conjoint", pereMariee, date,
                 cocheSigne = signataires.contains("P\u00E8re de la mari\u00E9e"),
@@ -1156,6 +1177,7 @@ fun EcranSaisieActe(
                     marieeId = marieeId,
                     marieeNom = marieeNom.trim(), marieePrenoms = marieePrenoms.trim(),
                     marieeProf = marieeProf.trim(),
+                    ageConcerne = ageConcerne.trim(), marieeAge = marieeAge.trim(),
                     pMarieeNom = pereMariee.nom.trim(), pMarieePrenoms = pereMariee.prenoms.trim(),
                     pMarieeNe = pereMariee.ne.trim(), pMarieeLieu = pereMariee.lieu.trim(), pMarieeDept = normaliserDept(pereMariee.dept),
                     pMarieeProf = pereMariee.profession.trim(), pMarieeDeces = pereMariee.deces.trim(), pMarieeLieuDeces = pereMariee.lieuDeces.trim(),

@@ -1721,13 +1721,17 @@ fun AppEcran(
             return np
         }
 
+        // v0.99 : incoherences detectees entre un age saisi et la fiche.
+        var incoherenceAge = ""
         // Renseigne les champs du parent : toute valeur saisie non vide
         // REMPLACE celle de la fiche (v0.60 : synchronisation totale).
         fun renseigner(c: Personne?, ne: String, lieu: String, dept: String, prof: String, dec: String, lieuDec: String,
             age: String = "", situation: String = "", domicile: String = "", sourceCalcul: String = "") {
-            // v0.99 : delegue a la fonction pure renseignerChampsActe.
-            renseignerChampsActe(c, ne, lieu, dept, prof, dec, lieuDec, a.date, edition,
+            // v0.99 : delegue a la fonction pure renseignerChampsActe ; un
+            // message d'incoherence d'age est conserve pour le message final.
+            val inc = renseignerChampsActe(c, ne, lieu, dept, prof, dec, lieuDec, a.date, edition,
                 age, situation, domicile, sourceCalcul)
+            if (inc != null) incoherenceAge = (if (incoherenceAge.isBlank()) "" else incoherenceAge + " ") + inc
         }
 
         fun lierParent(enfant: Personne, parent: Personne?, estMere: Boolean) {
@@ -1960,6 +1964,19 @@ fun AppEcran(
             }
         }
 
+        // v0.99 : age de la personne concernee (mariage, deces, sepulture) :
+        // date de naissance approximative + controle de coherence.
+        if (a.ageConcerne.isNotBlank() && a.type != "N") {
+            val lib = when (a.type) {
+                "M" -> "l'acte de mariage"
+                "B" -> "l'acte de bapt\u00eame"
+                "D" -> "l'acte de d\u00e9c\u00e8s"
+                else -> "l'acte de s\u00e9pulture"
+            }
+            val inc = naissanceDepuisAge(p, a.date, a.ageConcerne, lib + " de " + p.titre())
+            if (inc != null) incoherenceAge = (if (incoherenceAge.isBlank()) "" else incoherenceAge + " ") + inc
+        }
+
         // Mariee et ses parents (mariage uniquement).
         var mariee: Personne? = null
         if (a.type == "M") {
@@ -1970,6 +1987,10 @@ fun AppEcran(
                 if (a.commune.isNotBlank()) mariee.lieuMariage = a.commune
                 if (a.dept.isNotBlank()) mariee.deptMariage = a.dept
                 if (a.marieeProf.isNotBlank()) mariee.profession = a.marieeProf.trim()
+                if (a.marieeAge.isNotBlank()) {
+                    val inc = naissanceDepuisAge(mariee, a.date, a.marieeAge, "l'acte de mariage de " + p.titre())
+                    if (inc != null) incoherenceAge = (if (incoherenceAge.isBlank()) "" else incoherenceAge + " ") + inc
+                }
                 val mMar = trouverOuCreer(0L, a.mMarieeNom, a.mMarieePrenoms, "F")
                 renseigner(mMar, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
                 lierParent(mariee, mMar, true)
@@ -2060,7 +2081,7 @@ fun AppEcran(
                 else -> "l'acte de s\u00e9pulture"
             }
             val incohT = naissanceDepuisAge(ficheT, a.date, t.age, libActe + " de " + p.titre())
-            if (incohT != null) refusLienTxt = (if (refusLienTxt.isBlank()) "" else refusLienTxt + " ") + incohT
+            if (incohT != null) incoherenceAge = (if (incoherenceAge.isBlank()) "" else incoherenceAge + " ") + incohT
             if (!p.temoinsDe(a.type).contains(ficheT.id)) p.temoinsDe(a.type).add(ficheT.id)
             if (a.type == "M" && mariee != null && !mariee.temoinsDe(a.type).contains(ficheT.id)) {
                 mariee.temoinsDe(a.type).add(ficheT.id)
@@ -2121,6 +2142,7 @@ fun AppEcran(
         message =
             (if (refusLienTxt.isNotEmpty()) refusLienTxt + " L'acte reste enregistr\u00E9, SANS le lien de parent\u00E9. " else "") +
             refusParentTxt +
+            (if (incoherenceAge.isNotBlank()) incoherenceAge.trim() + " " else "") +
             identiteTxt +
             (if (retourLiens.isNotEmpty()) retourLiens.trim() + " " else "") +
             resumeActe

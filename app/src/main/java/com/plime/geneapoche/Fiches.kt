@@ -1491,7 +1491,7 @@ fun CarteEvenement(
         if (typeActe == "N") {
             // v0.97 : date de naissance CALCULEE d'apres un age lu sur un
             // acte (affichee seulement si pas de date de naissance connue).
-            if (p.naissanceCalculee.isNotBlank()) {
+            if (p.naissanceCalculee.isNotBlank() && p.dateNaissance.isBlank()) {
                 LigneG("N. calcul\u00e9", p.naissanceCalculee + " (" + p.naissanceCalculeeSource + ")")
             }
             LignePersonneG(

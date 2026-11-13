@@ -247,4 +247,43 @@ class TestsLogiqueActe {
         assertEquals(1, d.size)
         assertEquals(90001L, maxOf(d[0].idA, d[0].idB))
     }
+
+    // ---------------------------------------------------------- v0.99 : controles d'age (suite)
+
+    @Test
+    fun deuxiemeAgeContradictoireEstSignaleSansEcraser() {
+        val c = p(1L, "Durand", "Paul")
+        assertNull(naissanceDepuisAge(c, "12/05/1913", "34", "acte A"))
+        assertEquals("vers 1879", c.naissanceCalculee)
+        val msg = naissanceDepuisAge(c, "01/01/1930", "34", "acte B")
+        assertNotNull(msg)
+        assertEquals("vers 1879", c.naissanceCalculee)
+        // Age compatible (a un an pres) : pas de message.
+        assertNull(naissanceDepuisAge(c, "01/01/1930", "50", "acte C"))
+    }
+
+    @Test
+    fun naissanceCalculeeApresLeDecesEstSignalee() {
+        val c = p(1L, "Durand", "Paul")
+        c.dateDeces = "1850"
+        val msg = naissanceDepuisAge(c, "12/05/1913", "34", "acte")
+        assertNotNull(msg)
+        assertTrue(msg!!.contains("apr\u00e8s le d\u00e9c\u00e8s"))
+    }
+
+    @Test
+    fun mariageAvantDouzeAnsEstSignale() {
+        val c = p(1L, "Durand", "Paul")
+        c.dateMariage = "1885"
+        assertNotNull(naissanceDepuisAge(c, "12/05/1913", "34", "acte"))
+    }
+
+    @Test
+    fun dateExacteEfface_laDateCalculeeObsolete() {
+        val c = p(1L, "Durand", "Paul")
+        naissanceDepuisAge(c, "12/05/1913", "34", "acte")
+        c.dateNaissance = "1879"
+        assertNull(naissanceDepuisAge(c, "12/05/1913", "34", "acte"))
+        assertEquals("", c.naissanceCalculee)
+    }
 }

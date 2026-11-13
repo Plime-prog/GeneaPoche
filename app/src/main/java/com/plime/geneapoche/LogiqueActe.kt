@@ -74,8 +74,8 @@ fun renseignerChampsActe(
     situation: String = "",
     domicile: String = "",
     sourceCalcul: String = ""
-) {
-    if (c == null) return
+): String? {
+    if (c == null) return null
     if (edition) {
         c.dateNaissance = dateGreg(ne)
         c.lieuNaissance = lieu.trim()
@@ -95,7 +95,7 @@ fun renseignerChampsActe(
     if (domicile.isNotBlank()) c.domicile = domicile.trim()
     // v0.99 : date de naissance approximative automatique (jamais si la
     // date exacte existe), avec controle de coherence centralise.
-    naissanceDepuisAge(c, dateActe, age, sourceCalcul)
+    return naissanceDepuisAge(c, dateActe, age, sourceCalcul)
 }
 
 // ---------------------------------------------------------- Naissance approximative (v0.99)
@@ -116,16 +116,33 @@ fun naissanceDepuisAge(c: Personne?, dateActe: String, age: String, source: Stri
     val anCalc = anActe - ansAge
     val exacte = anneeDe(c.dateNaissance)
     if (exacte != null) {
+        // Une date exacte existe : une ancienne date calculee n'a plus lieu d'etre.
+        c.naissanceCalculee = ""
+        c.naissanceCalculeeSource = ""
         return if (kotlin.math.abs(exacte - anCalc) > 2)
             "Incoh\u00e9rence : " + ansAge + " ans en " + anActe +
                 " donne une naissance vers " + anCalc + ", la fiche de " + c.titre() +
                 " dit " + c.dateNaissance + "."
         else null
     }
-    if (c.naissanceCalculee.isBlank()) {
+    val dejaCalc = Regex("[0-9]{4}").find(c.naissanceCalculee)?.value?.toIntOrNull()
+    if (dejaCalc == null) {
         c.naissanceCalculee = "vers " + anCalc.toString()
         c.naissanceCalculeeSource = "calcul\u00e9e d'apr\u00e8s " + source
+    } else if (kotlin.math.abs(dejaCalc - anCalc) > 2) {
+        // Deuxieme age qui contredit la date deja calculee : on ne l'ecrase pas.
+        return "Incoh\u00e9rence : " + ansAge + " ans en " + anActe + " donne une naissance vers " +
+            anCalc + ", mais " + c.titre() + " est d\u00e9j\u00e0 calcul\u00e9(e) " + c.naissanceCalculee +
+            " (" + c.naissanceCalculeeSource + ")."
     }
+    // Controle avec les autres evenements de la fiche (decès, mariage).
+    val an = Regex("[0-9]{4}").find(c.naissanceCalculee)?.value?.toIntOrNull() ?: anCalc
+    val anDeces = anneeDe(c.dateDeces)
+    if (anDeces != null && an - anDeces > 2)
+        return "Incoh\u00e9rence : naissance " + c.naissanceCalculee + " apr\u00e8s le d\u00e9c\u00e8s de " + c.titre() + " (" + c.dateDeces + ")."
+    val anMar = anneeDe(c.dateMariage)
+    if (anMar != null && anMar - an < 12)
+        return "Incoh\u00e9rence : " + c.titre() + " se serait mari\u00e9(e) en " + anMar + ", \u00e0 moins de 12 ans (naissance " + c.naissanceCalculee + ")."
     return null
 }
 
