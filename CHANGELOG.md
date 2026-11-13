@@ -1,5 +1,19 @@
 # Historique des versions — GénéaPoche
 
+## v0.101 — Saisie en onglet, menu Autres, boîte à outils historique
+
+- **Personnes** : nouveau menu **Autres (n)** : toutes les personnes **sans numéro** (ni Sosa ni d'Aboville), classées A–Z ; la rangée de tris défile horizontalement.
+- **Saisie = 6e onglet** (Personnes / Journal / Arbre / Outils / Sources / **Saisie**) : le bouton ➕ disparaît de tous les onglets. Sur l'onglet Saisie le **titre est masqué** (seule la barre des onglets reste) pour un maximum de place. L'écran reste **scindé haut / bas** : en haut un demi-écran **complètement blanc** destiné à l'image à transcrire (bouton « Image à transcrire » au centre, zoom, rotation, luminosité et contraste), en bas la saisie.
+- **Entrées uniformisées** : « Personne complète » et « Source » ont le même gabarit (boutons de même taille) ; la Source ouvre le Carnet de sources par-dessus la saisie, sans perdre l'image ni le formulaire. Le retour système revient d'abord au menu des actes, puis à l'onglet Personnes. Toute saisie passe par la même procédure d'enregistrement : fiches, arbre, journal, sources et statistiques restent synchronisés.
+- **Boîte à outils, 4 nouveaux outils** (hors ligne, résultat ajoutable à la note de recherche) :
+  1. **Histoire** (calendriers historiques) : base locale d'une cinquantaine de repères (Villers-Cotterêts, Révolution, Républiques, Empires, Code civil, Waterloo, 1870, Commune, 1914-1918, 1939-1945…) et régimes politiques ; rapprochement avec une personne (« Paul est né 12 jours après « Proclamation de la Première République » », sinon « sous la Monarchie de Juillet »). Quelques événements **locaux** (Vendée, Alsace-Moselle, Verdun, Normandie…) liés aux départements.
+  2. **Parenté : arbre du chemin** : sous le résultat du calculateur, le chemin qui relie les deux personnes (↑ fils de, ↓ père de, ⚭ époux de), ancêtres au bord gauche, ancêtre commun repéré.
+  3. **Année** (« Que s'est-il passé cette année ? ») : changements de régime, repères historiques et locaux, naissances, mariages, décès, événements libres et âge des ancêtres ; toucher une ligne ouvre la fiche.
+  4. **Famille** (chronologie) : la personne choisie (jusqu'à trois, **juxtaposées par année**) avec naissance, mariages, remariage, naissances et décès des enfants, décès du conjoint, événements libres, décès ; les **incohérences** apparaissent en rouge (événement avant la naissance ou après le décès, enfant né après le décès de la mère ou plus d'un an après celui du père).
+- Nouveau code : `Histoire.kt` (fonctions pures), `OutilsHistoire.kt`. 135 tests unitaires JVM (nouveaux : `HistoireTest.kt`).
+- **À enrichir** : la base historique est volontairement courte. **Reporté** : refonte plus profonde de la saisie (formulaires d'acte et fiche complète).
+- Bumps v0.101 (gradle 101/« 0.101 »).
+
 ## v0.100 — Recherches : Journal en trois vues, recherche avancée, statistiques, naissance approximative visible
 
 - **Naissance approximative (correctif)** : la date « vers aaaa » calculée d'après un âge était bien enregistrée mais invisible. Elle s'affiche maintenant **à la ligne Date de l'encadré N** (« vers 1879 (calculée) », en italique orange), la ligne d'origine « calculée d'après tel acte de telle personne » reste dans la zone N, et elle est utilisée pour l'âge « (~34 ans) » affiché dans la chronologie, pour le tri par ancienneté et pour les chronologies. Elle ne remplace jamais une date exacte.

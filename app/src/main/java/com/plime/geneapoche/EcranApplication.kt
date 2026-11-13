@@ -141,7 +141,13 @@ fun BarreOnglets(onglet: Int, onChoisir: (Int) -> Unit) {
             icon = { Icon(painterResource(R.drawable.ic_sources), contentDescription = null) },
             label = { Text("Sources") }
         )
-        // v0.100 : l'onglet Stat. disparait, Statistiques est un menu du Journal.
+        // v0.101 : le bouton + devient le 6e onglet, Saisie.
+        NavigationBarItem(
+            selected = onglet == 5,
+            onClick = { onChoisir(5) },
+            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+            label = { Text("Saisie") }
+        )
     }
 }
 // G2-09 : l'etat de l'ecran (donnees affichees) regroupe en une seule classe,
@@ -268,7 +274,9 @@ fun EcranApplication(
     // un plein ecran ouvert depuis le bouton +.
     var saisieType by remember { mutableStateOf<String?>(null) }
     var saisieParentEnfant by remember { mutableStateOf(0L) }
-    var saisieOuverte by remember { mutableStateOf(false) }
+    // v0.101 : la saisie est le 6e onglet (plus de bouton +).
+    val saisieOuverte = onglet == 5
+    var sourceSaisieOuverte by remember { mutableStateOf(false) }
     // v0.96 : une image est chargee dans l'ecran scinde -> le bandeau du
     // haut (barre de titre de l'application) est masque pour agrandir la
     // zone de visualisation.
@@ -280,10 +288,11 @@ fun EcranApplication(
     // v0.96 : changer d'onglet ferme l'ecran scinde (l'image ne doit
     // jamais rester affichee sur un autre ecran).
     val choisirOnglet: (Int) -> Unit = { o ->
-        if (saisieOuverte) {
-            saisieOuverte = false
+        if (saisieOuverte || o == 5) {
+            // Entrer dans l'onglet Saisie ou le quitter : retour au menu des actes.
             saisieType = null
-            imageSaisiePresente = false
+            saisieParentEnfant = 0L
+            if (o != 5) imageSaisiePresente = false
         }
         if (o == 0 && idToucheArbre != 0L) {
             onIdOuvert(idToucheArbre)
@@ -297,7 +306,7 @@ fun EcranApplication(
         when {
             pickerRole.isNotEmpty() -> onPickerRole("")
             editionOuverte -> onEditionOuverte(false)
-            saisieOuverte -> { saisieOuverte = false; saisieType = null }
+            saisieOuverte -> { if (saisieType != null) saisieType = null else { imageSaisiePresente = false; onOnglet(0) } }
             else -> onIdOuvert(0L)
         }
     }
@@ -340,10 +349,9 @@ fun EcranApplication(
         Scaffold(
             snackbarHost = { SnackbarHost(etatSnackbar) },
             topBar = {
-                // v0.96 : le bandeau du haut est masque tant qu'une image
-                // est affichee dans l'ecran scinde de saisie (zone de
-                // visualisation agrandie).
-                if (!(saisieOuverte && imageSaisiePresente)) {
+                // v0.101 : sur l'onglet Saisie le titre est masque : seule la
+                // barre des onglets reste, pour un maximum de place.
+                if (!saisieOuverte) {
                 TopAppBar(
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -379,13 +387,7 @@ fun EcranApplication(
                 )
                 }
             },
-            bottomBar = { BarreOnglets(onglet, choisirOnglet) },
-            floatingActionButton = {
-                // G\u00E9n\u00E9aPoche 2 : nouvelle fiche depuis N'IMPORTE QUELLE page.
-                FloatingActionButton(onClick = { saisieType = null; saisieParentEnfant = 0L; saisieOuverte = true }) {
-                    Icon(Icons.Filled.Add, contentDescription = "Ajouter")
-                }
-            }
+            bottomBar = { BarreOnglets(onglet, choisirOnglet) }
         ) { marges ->
             var exportDialogue by remember { mutableStateOf(false) }
             var exportBrancheId by remember { mutableStateOf(0L) }
@@ -515,6 +517,11 @@ fun EcranApplication(
                         }
                     } else if (triPersonnes == 1) {
                         parAboville
+                    } else if (triPersonnes == 4) {
+                        // v0.101 : menu Autres = TOUTES les personnes sans numero
+                        // (ni Sosa ni d'Aboville), classees A-Z.
+                        personnes.filter { it.numeroBrut().isEmpty() }
+                            .sortedWith(compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() }))
                     } else if (triPersonnes == 3) {
                         // v0.94 : tri Sosa - seuls les ancetres de la ligne directe,
                         // meme affichage que d'Aboville.
@@ -567,12 +574,12 @@ fun EcranApplication(
                         )
                         // Compteur et tris FIGES en haut de l'ecran.
                         Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                                 Text(
                                     personnes.size.toString() + " personnes",
-                                    Modifier.weight(1f),
+                                    Modifier.padding(end = 8.dp),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -598,6 +605,13 @@ fun EcranApplication(
                                     selected = triPersonnes == 0,
                                     onClick = { triPersonnes = 0 },
                                     label = { Text("A\u2013Z") }
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                // v0.101 : Autres = personnes sans n\u00B0 (Sosa / d'Aboville).
+                                FilterChip(
+                                    selected = triPersonnes == 4,
+                                    onClick = { triPersonnes = 4 },
+                                    label = { Text("Autres (" + personnes.count { it.numeroBrut().isEmpty() }.toString() + ")") }
                                 )
                         }
                         // Index alphabetique ou 4 branches : FIGE aussi.
@@ -768,9 +782,13 @@ fun EcranApplication(
                             enregistrer()
                         }
                     },
-                    enOnglet = true
+                    enOnglet = true,
+                    onOuvrirPersonne = { onIdOuvert(it) }
                 )
                 }
+            } else if (onglet == 5) {
+                // v0.101 : onglet Saisie : l'ecran scinde est dessine plus bas.
+                Box(Modifier.fillMaxSize().padding(marges))
             } else if (onglet == 4) {
                 // v0.95 (12) : le Carnet de sources s'affiche comme les autres
                 // onglets (barre de navigation toujours visible).
@@ -971,16 +989,8 @@ fun EcranApplication(
                     // masque des qu'une image est choisie ; des boutons
                     // compacts restent superposes a l'image (fermer,
                     // changer, pivoter, reglages).
-                    if (imageTranscription == null) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            TextButton(onClick = { saisieOuverte = false; saisieType = null; imageSaisiePresente = false }) { Text("\u2190 Fermer") }
-                            Spacer(Modifier.weight(1f))
-                            TextButton(onClick = {
-                                picker(true)
-                                lanceurImage.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                            }) { Text("Image \u00e0 transcrire") }
-                        }
-                    }
+                    // v0.101 : plus de bandeau : le bouton de choix de l'image est
+                    // DANS la demi-zone blanche du haut.
                     // Zone HAUTE : l'image de reference. v0.96 : le zoom ne
                     // deborde JAMAIS de la demi-zone (clipToBounds) et la
                     // rotation + les reglages lumiere/contraste sont
@@ -994,16 +1004,26 @@ fun EcranApplication(
                                     decaleImage += pan
                                 }
                             }
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .background(Color.White)
                     ) {
                         val bmp = imageTranscription
                         if (bmp == null) {
-                            Text(
-                                "Choisissez une image (acte, capture d'\u00e9cran) : elle reste affich\u00e9e ici, zoomable, pendant que vous saisissez en bas.",
-                                Modifier.padding(12.dp),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            // v0.101 : demi-ecran COMPLETEMENT BLANC (transcription).
+                            Column(
+                                Modifier.align(Alignment.Center).padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                OutlinedButton(onClick = {
+                                    picker(true)
+                                    lanceurImage.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                }) { Text("Image \u00e0 transcrire") }
+                                Text(
+                                    "L'image (acte, capture d'\u00e9cran) reste affich\u00e9e ici, zoomable, pendant la saisie en bas.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 6.dp)
+                                )
+                            }
                         } else {
                             // v0.96 : luminosite et contraste via une matrice
                             // de couleurs (sortie = contraste * (lumiere * v)
@@ -1053,7 +1073,7 @@ fun EcranApplication(
                                     }
                                 }
                                 Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)) {
-                                    TextButton(onClick = { saisieOuverte = false; saisieType = null; imageSaisiePresente = false }) {
+                                    TextButton(onClick = { saisieType = null; imageSaisiePresente = false; onOnglet(0) }) {
                                         Text("\u2190 Fermer", fontSize = 11.sp, maxLines = 1)
                                     }
                                 }
@@ -1077,14 +1097,25 @@ fun EcranApplication(
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         if (saisieType == null) {
                             Column(Modifier.fillMaxSize()) {
-                                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp)) {
-                                    TextButton(onClick = { onEditionCible(null); onEditionOuverte(true) }) {
+                                // v0.101 : Personne complete et Source au MEME gabarit
+                                // que les actes (puces ci-dessous) : trois entrees, un style.
+                                Row(
+                                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { onEditionCible(null); onEditionOuverte(true) },
+                                        Modifier.weight(1f)
+                                    ) {
                                         Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(16.dp))
-                                        Text("  Personne compl\u00e8te")
+                                        Text("  Personne compl\u00e8te", fontSize = 12.sp, maxLines = 1)
                                     }
-                                    TextButton(onClick = { onOnglet(4) }) {
+                                    OutlinedButton(
+                                        onClick = { sourceSaisieOuverte = true },
+                                        Modifier.weight(1f)
+                                    ) {
                                         Icon(painterResource(R.drawable.ic_sources), contentDescription = null, Modifier.size(16.dp))
-                                        Text("  Source")
+                                        Text("  Source", fontSize = 12.sp, maxLines = 1)
                                     }
                                 }
                                 Box(Modifier.weight(1f)) {
@@ -1114,6 +1145,33 @@ fun EcranApplication(
                     }
                 }
             }
+            if (sourceSaisieOuverte) {
+                // v0.101 : le Carnet de sources s'ouvre par-dessus la saisie, sans
+                // la quitter (l'image et le formulaire restent en l'etat).
+                androidx.compose.ui.window.Dialog(
+                    onDismissRequest = { sourceSaisieOuverte = false },
+                    properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    Surface(Modifier.fillMaxSize()) {
+                        Column(Modifier.fillMaxSize()) {
+                            TextButton(onClick = { sourceSaisieOuverte = false }) { Text("\u2190 Retour \u00e0 la saisie") }
+                            Box(Modifier.weight(1f)) {
+                                EcranSources(
+                                    personnes = personnes,
+                                    sources = sources,
+                                    citations = citations,
+                                    onCreerSource = creerSource,
+                                    onEnregistrerSource = enregistrerSource,
+                                    onSupprimerSource = supprimerSource,
+                                    onEnregistrerCitation = enregistrerCitation,
+                                    onSupprimerCitation = supprimerCitation,
+                                    onOuvrirPersonne = { id -> sourceSaisieOuverte = false; onIdOuvert(id) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             if (menuGedcom) {
                 // G3-13 : ModalBottomSheet a la place du dialogue.
                 ModalBottomSheet(
@@ -1130,7 +1188,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.100", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.101", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },
@@ -1497,7 +1555,7 @@ fun EcranApplication(
             // Menus de l'application TOUJOURS visibles en bas, meme fiche ouverte.
             // Choisir un onglet ferme la fiche et affiche l'onglet demande.
             SnackbarHost(etatSnackbar)
-            BarreOnglets(onglet) { o -> if (saisieOuverte) { saisieOuverte = false; saisieType = null; imageSaisiePresente = false }; onOnglet(o); onIdOuvert(0L) }
+            BarreOnglets(onglet) { o -> if (saisieOuverte || o == 5) { saisieType = null; saisieParentEnfant = 0L; if (o != 5) imageSaisiePresente = false }; onOnglet(o); onIdOuvert(0L) }
         }
     }
 
