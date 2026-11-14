@@ -38,8 +38,8 @@ private fun anneeFinBio(p: Personne, anneeN: Int?): Int? {
 fun friseBiographie(p: Personne, personnes: List<Personne>, avecHistoire: Boolean = true): List<LigneBio> {
     val res = mutableListOf<LigneBio>()
     val anneeN = anneeDe(p.dateNaissance.ifBlank { p.naissanceCalculee })
-    chronologieFamille(p, personnes).forEach { e ->
-        val age = if (anneeN != null && e.annee >= anneeN && estVie(e.libelle) && e.libelle != "Naissance") " (" + (e.annee - anneeN).toString() + " ans)" else ""
+    chronologieFamille(p, personnes, true).forEach { e ->
+        val age = if (anneeN != null && e.annee >= anneeN && e.libelle != "Naissance" && !e.libelle.startsWith("Naissance (")) " (" + (e.annee - anneeN).toString() + " ans)" else ""
         res.add(
             LigneBio(e.cle, quandBio(e.annee, e.mois, e.jour), e.libelle + age,
                 if (estVie(e.libelle)) "vie" else "famille", e.alerte)
@@ -64,7 +64,7 @@ fun friseBiographie(p: Personne, personnes: List<Personne>, avecHistoire: Boolea
     return res.sortedWith(compareBy({ it.cle }, { ordre.indexOf(it.genre) }))
 }
 
-private fun detail(date: String, lieu: String): String {
+fun detail(date: String, lieu: String): String {
     val d = dateAffichee(date.trim())
     val l = lieuAffiche(lieu.trim())
     return (if (d.isNotEmpty()) " le " + d else "") + (if (l.isNotEmpty()) " \u00E0 " + l else "")

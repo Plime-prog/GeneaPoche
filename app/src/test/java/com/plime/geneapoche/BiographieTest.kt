@@ -35,4 +35,24 @@ class BiographieTest {
         assertTrue(r.first().contains("fils de"))
         assertTrue(r.last().contains("70 ans"))
     }
+
+    @Test
+    fun evenementsFamiliauxHorsVieMasques() {
+        val pere = p(1, "DUPONT", "Jean", "01/01/1800", "01/01/1850", "M")
+        val enf = p(2, "DUPONT", "Paul", "01/01/1860", "", "M")
+        pere.enfants.add(2)
+        val tout = listOf(pere, enf)
+        assertTrue(chronologieFamille(pere, tout).any { it.libelle.startsWith("Naissance du fils") })
+        assertTrue(chronologieFamille(pere, tout, true).none { it.libelle.startsWith("Naissance du fils") })
+        assertTrue(chronologieFamille(pere, tout, true).any { it.libelle == "Décès" })
+    }
+
+    @Test
+    fun agesSurLesEvenementsFamiliaux() {
+        val pere = p(1, "DUPONT", "Jean", "01/01/1800", "01/01/1870", "M")
+        val enf = p(2, "DUPONT", "Paul", "01/01/1830", "", "M")
+        pere.enfants.add(2)
+        val l = friseBiographie(pere, listOf(pere, enf), false).first { it.libelle.startsWith("Naissance du fils") }
+        assertTrue(l.texte.endsWith("(30 ans)"))
+    }
 }

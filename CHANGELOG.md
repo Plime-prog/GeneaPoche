@@ -1,5 +1,13 @@
 # Historique des versions — GénéaPoche
 
+## v0.103 — Fiche allégée en trois onglets : Fiche / Biographie / Recherches
+
+- **Règle partout** : aucun événement familial (décès du conjoint, enfants, fratrie, parents, parrainages…) n'est affiché **avant la naissance ni après le décès** de la personne (fiche, biographie ; l'outil « Chronologie d'une famille » garde ses alertes d'incohérence, c'est son rôle).
+- **Fiche** : **en-tête de synthèse** (années de vie, âge, naissance / mariage / décès avec lieux, métier, domicile, pastilles identité, renseignement, recherches) ; cadres **repliés par défaut** : Conjoint(s) et enfants (chaque ligne ouvre la fiche, bouton Ajouter un enfant), Sources, Notes ; les parents restent touchables.
+- **Biographie** : tous les événements de l'ancienne fiche y sont déplacés, **toujours touchables** (blocs N/B/M/D/S, enfants, événements libres, ajout d'événement) ; **âge** sur les événements familiaux ; repères historiques insérés dans la chronologie (filtre Histoire) ; bloc Entourage (parents, conjoints) cliquable ; récit.
+- **Recherches** : nouvel onglet qui reçoit les recherches de la fiche, chacune **repliée** (flèche pour la note).
+- 140 tests ; version 0.103.
+
 ## v0.102 — Fiche en deux onglets : Fiche / Biographie
 
 - **Personnes** : la fiche s'ouvre sur deux onglets, **Fiche** (inchangée : parents figés en tête, événements, sources, notes) et **Biographie**, une lecture sans les cadres de saisie.

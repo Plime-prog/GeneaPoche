@@ -15,7 +15,7 @@ Périmètre : France uniquement, actes N/B/M/D/S.
 
 ## Fonctions principales
 
-- **Fiche / Biographie** (v0.102) : deux onglets par personne ; la Biographie propose la famille cliquable, un récit en phrases et une chronologie mêlant vie, famille et événements historiques.
+- **Fiche / Biographie / Recherches** (v0.103) : trois onglets par personne ; synthèse et cadres repliés sur la Fiche, événements touchables et repères historiques dans la Biographie, recherches repliées dans leur onglet.
 - **Fiches par événements** : N/B/M/D/S regroupés dans l'ordre généalogique NBMDS, éditable par appui long via la saisie d'acte pré-remplie depuis la fiche.
 - **Saisie d'acte** : témoins, coche « Signe » derrière chaque personne citée, prêtre, officier d'état civil, transcription, conjoint survivant ou décédé persisté sur les actes D/S, enfant déclarant sur un décès ; actes enrichis (déclaration, légitimité, contrat de mariage, cérémonie, cimetière…).
 - **Numérotation automatique** : Sosa-Stradonitz et d'Aboville, rien ne se saisit.
@@ -58,6 +58,6 @@ Sinon, depuis les sources :
 
 - Android Kotlin + Jetpack Compose, Material 3 (thème clair/sombre, palette verte).
 - AGP 9.2.0, Kotlin 2.4.21, compileSdk 37, targetSdk 36, JDK 17, BOM Compose 2026.08.00.
-- CI GitHub Actions : lint, tests unitaires JVM (138), APK debug et release signé à chaque push.
+- CI GitHub Actions : lint, tests unitaires JVM (140), APK debug et release signé à chaque push.
 - Contribuer : voir [CONTRIBUTING.md](CONTRIBUTING.md). Historique détaillé des versions : [CHANGELOG.md](CHANGELOG.md).
 - Licence : MIT (voir [LICENSE](LICENSE)).
