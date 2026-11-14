@@ -460,7 +460,10 @@ fun DialogueChoixPersonne(
     titre: String,
     personnes: List<Personne>,
     onChoisi: (Personne) -> Unit,
-    onFermer: () -> Unit
+    onFermer: () -> Unit,
+    // v0.105 : action supplementaire facultative (ex. "Sans parent connu").
+    autreLibelle: String = "",
+    onAutre: () -> Unit = {}
 ) {
     var filtre by remember { mutableStateOf("") }
     val f = versTexteRecherche(filtre.trim())
@@ -492,7 +495,9 @@ fun DialogueChoixPersonne(
                 }
             }
         },
-        confirmButton = {},
+        confirmButton = {
+            if (autreLibelle.isNotEmpty()) TextButton(onClick = onAutre) { Text(autreLibelle) }
+        },
         dismissButton = { TextButton(onClick = onFermer) { Text("Annuler") } }
     )
 }

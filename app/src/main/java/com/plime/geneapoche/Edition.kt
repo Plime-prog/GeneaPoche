@@ -21,6 +21,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -310,6 +311,10 @@ fun Champ(
     communes: Boolean = false,
     onDept: ((String) -> Unit)? = null
 ) {
+    // v0.105 : la liste de suggestions n'existe que champ ACTIF et lieu pas
+    // encore choisi ; elle se replie au choix, a la perte du focus, et
+    // quand le lieu porte deja son code INSEE.
+    var champActif by remember { mutableStateOf(false) }
     Column(modifier) {
         Text(
             libelle,
@@ -324,6 +329,7 @@ fun Champ(
             visualTransformation = if (communes) SansCodeInsee() else VisualTransformation.None,
             modifier = Modifier
                 .fillMaxWidth()
+                .onFocusChanged { champActif = it.isFocused }
                 .border(
                     1.dp,
                     if (erreur) CouleurRouge else MaterialTheme.colorScheme.outline,
@@ -343,7 +349,15 @@ fun Champ(
             val ctx = LocalContext.current
             var charge by remember { mutableStateOf(BaseCommunes.pret()) }
             LaunchedEffect(Unit) { BaseCommunes.charger(ctx); charge = true }
-            if (charge) {
+            val lieuComplet = lieuDejaChoisi(valeur)
+            if (charge && champActif && lieuComplet) {
+                Text(
+                    "\u2715 Effacer la commune",
+                    Modifier.clickable { onChange(""); onDept?.invoke("") }.padding(vertical = 4.dp),
+                    fontSize = 11.sp, color = CouleurRouge
+                )
+            }
+            if (charge && champActif && !lieuComplet) {
                 val sugg = remember(valeur) { BaseCommunes.suggestions(partieSaisie(valeur)) }
                 if (sugg.isNotEmpty()) {
                     Column(

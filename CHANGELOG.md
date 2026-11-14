@@ -1,5 +1,13 @@
 # Historique des versions — GénéaPoche
 
+## v0.105 — Communes repliées, sélecteur de personne uniforme, correction et suppression d'actes
+
+- **Champs Commune (partout)** : la liste de suggestions ne s'affiche que champ actif et lieu non encore choisi ; elle **se replie** au choix d'une commune, à la perte du focus, et quand le lieu porte déjà son code INSEE ; un lien « ✕ Effacer la commune » permet de repartir à zéro. Un seul composant : la correction vaut pour tous les champs Commune (acte, mentions marginales, témoins, domicile, cimetière, bloc d'événement…).
+- **Personne concernée** : le menu devient le **sélecteur commun de l'application, avec recherche** (Personne concernée, Mariée, Conjoint de la mention marginale, Enfant déclarant, Enfant de quelle personne ?).
+- **Actes** : cause trouvée de « l'acte revient comme avant » — le formulaire n'indiquait pas qu'il corrigeait un acte existant, donc un champ vidé ou corrigé n'écrasait pas la fiche. L'**édition est désormais transmise** (aussi depuis l'onglet Saisie quand l'acte existe déjà) ; la profession effacée est elle aussi enregistrée. Nouveau bouton **Supprimer cet acte** (confirmation) : efface date, heure, lieu et département de l'acte.
+- **Enregistrement** : le bouton Enregistrer reste accessible clavier ouvert (la demi-image se réduit, marge clavier) ; quand il est grisé, **la raison s'affiche** (personne manquante, heure invalide).
+- 142 tests ; version 0.105.
+
 ## v0.104 — Stabilité de la saisie (image à transcrire) et trace d'incident
 
 - **Cause la plus probable du ralentissement puis de l'arrêt brutal** : l'image à transcrire (onglet Saisie) était décodée **sur le thread principal** avec une réduction fixe ×2 : une photo ou un scan de grande taille occupait des dizaines de Mo, figeait l'écran puis provoquait un manque de mémoire ou un « bitmap trop grand » (arrêt immédiat). Le décodage se fait désormais **hors du thread principal**, l'image est **ramenée à 3072 px maximum** (taille lue d'abord, nouvel essai plus réduit en cas de mémoire insuffisante, aucune exception ne remonte), et le filtre lumière/contraste n'est plus reconstruit à chaque recomposition.

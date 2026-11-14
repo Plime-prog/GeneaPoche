@@ -118,3 +118,8 @@ fun insererLieu(v: String, c: Commune): String {
     }
     return prefixe + c.nom + ", " + c.code + ", " + BaseCommunes.nomDept(c.dept)
 }
+
+// v0.105 : le lieu porte deja une commune CHOISIE (format interne
+// "Commune, code INSEE, Departement") : la liste de suggestions se replie.
+fun lieuDejaChoisi(v: String): Boolean =
+    Regex(", (\\d{5}|2[AB]\\d{3}), [^,]+$").containsMatchIn(v.trim())

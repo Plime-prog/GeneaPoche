@@ -1799,7 +1799,7 @@ fun AppEcran(
                 if (edition || a.dept.isNotBlank()) p.deptSepulture = normaliserDept(a.dept)
             }
         }
-        if (a.profession.isNotBlank()) p.profession = a.profession.trim()
+        if (edition || a.profession.isNotBlank()) p.profession = a.profession.trim()
 
         // v0.98 : nouveaux champs B/M/D/S. Nouvel acte : remplis s'ils sont
         // encore vides sur la fiche ; EDITION : le formulaire est la
