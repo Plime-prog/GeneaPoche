@@ -875,7 +875,8 @@ fun EcranPersonne(
                 onNouveauMariage(nom, prenoms, date, commune, dept)
                 mariageOuvert = false
             },
-            onAnnuler = { mariageOuvert = false }
+            onAnnuler = { mariageOuvert = false },
+            personnes = personnes
         )
     }
 
@@ -886,7 +887,8 @@ fun EcranPersonne(
                 onNouveauParent(parentRole, nom, prenoms)
                 parentRole = ""
             },
-            onAnnuler = { parentRole = "" }
+            onAnnuler = { parentRole = "" },
+            personnes = personnes
         )
     }
 
@@ -915,7 +917,8 @@ fun EcranPersonne(
                 onNouvelEnfant(nom, prenoms, sexe, date)
                 enfantSaisie = false
             },
-            onAnnuler = { enfantSaisie = false }
+            onAnnuler = { enfantSaisie = false },
+            personnes = personnes
         )
     }
 
@@ -1173,7 +1176,12 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         personnes.firstOrNull { it.dateMariage == p.mentionMDate && (it.conjoint == p.id || it.conjointsSupp.contains(p.id)) }
             ?: personneParId(personnes, p.conjoint)
     else null
-    return ActeSaisie(
+    // v0.107 : mariage ouvert depuis la fiche d'une FEMME (nouvel acte) :
+    // c'est ELLE la mariee. Ses informations vont dans le cadre de la
+    // mariee (et de ses parents), JAMAIS dans ceux du mari (homme) — le
+    // pre-remplissage ne traverse plus les sexes. Le mari reste a choisir
+    // ou saisir ; la correction d'un mariage existant n'est pas concernee.
+    val base = ActeSaisie(
         acteId = 0L,
         // v0.105 : un acte deja renseigne se corrige (ou se supprime) : le formulaire fait reference.
         editionFiche = editionFiche || (c != null && type != "E" && (c.date.isNotBlank() || c.lieu.isNotBlank())),
@@ -1236,6 +1244,39 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         ceremonieSDate = p.ceremonieSDate,
         cimetiere = p.cimetiere, concession = p.concession, ministreCulte = p.ministreCulte
     )
+    if (type == "M" && !base.editionFiche && p.sexe == "F") {
+        return base.copy(
+            personneId = 0L, nom = "", prenoms = "", sexe = "M", profession = "",
+            pereId = 0L, mereId = 0L, pereNomInit = "", mereNomInit = "",
+            pereNom = "", perePrenoms = "", pereNe = "", pereLieu = "", pereDept = "",
+            pereProf = "", pereDeces = "", pereLieuDeces = "",
+            pereAge = "", pereSituation = "", pereDomicile = "",
+            mereNom = "", merePrenoms = "", mereNe = "", mereLieu = "", mereDept = "",
+            mereProf = "", mereDeces = "", mereLieuDeces = "",
+            mereAge = "", mereSituation = "", mereDomicile = "",
+            marieeId = p.id, marieeNom = p.nom, marieePrenoms = p.prenoms, marieeProf = p.profession,
+            marieeAge = ageALActe(p), ageConcerne = "",
+            pMarieeNom = pere?.nom ?: "", pMarieePrenoms = pere?.prenoms ?: "",
+            pMarieeNe = pere?.dateNaissance ?: "", pMarieeLieu = pere?.lieuNaissance ?: "",
+            pMarieeDept = pere?.deptNaissance ?: "", pMarieeProf = pere?.profession ?: "",
+            pMarieeDeces = pere?.dateDeces ?: "", pMarieeLieuDeces = pere?.lieuDeces ?: "",
+            mMarieeNom = mere?.nom ?: "", mMarieePrenoms = mere?.prenoms ?: "",
+            mMarieeNe = mere?.dateNaissance ?: "", mMarieeLieu = mere?.lieuNaissance ?: "",
+            mMarieeDept = mere?.deptNaissance ?: "", mMarieeProf = mere?.profession ?: "",
+            mMarieeDeces = mere?.dateDeces ?: "", mMarieeLieuDeces = mere?.lieuDeces ?: "",
+            signataires = base.signataires.map { s ->
+                when (s) {
+                    "Concerne(e)" -> "Mari\u00E9e"
+                    "P\u00E8re" -> "P\u00E8re de la mari\u00E9e"
+                    "M\u00E8re" -> "M\u00E8re de la mari\u00E9e"
+                    "P\u00E8re de la mari\u00E9e" -> "P\u00E8re"
+                    "M\u00E8re de la mari\u00E9e" -> "M\u00E8re"
+                    else -> s
+                }
+            }
+        )
+    }
+    return base
 }
 
 fun champsEvenement(p: Personne, type: String): EvChamps = when (type) {
