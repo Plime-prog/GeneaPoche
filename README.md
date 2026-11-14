@@ -17,10 +17,10 @@ Périmètre : France uniquement, actes N/B/M/D/S.
 
 - **Fiche / Biographie / Recherches** (v0.103) : trois onglets par personne ; synthèse et cadres repliés sur la Fiche, événements touchables et repères historiques dans la Biographie, recherches repliées dans leur onglet.
 - **Fiches par événements** : N/B/M/D/S regroupés dans l'ordre généalogique NBMDS, éditable par appui long via la saisie d'acte pré-remplie depuis la fiche.
-- **Saisie d'acte** : témoins, coche « Signe » derrière chaque personne citée, prêtre, officier d'état civil, transcription, conjoint survivant ou décédé persisté sur les actes D/S, enfant déclarant sur un décès ; actes enrichis (déclaration, légitimité, contrat de mariage, cérémonie, cimetière…).
+- **Saisie d'acte** : témoins, coche « Signe » derrière chaque personne citée, prêtre, officier d'état civil, transcription, conjoint survivant ou décédé persisté sur les actes D/S, enfant déclarant sur un décès ; actes enrichis (déclaration, légitimité, contrat de mariage, cérémonie, cimetière…). Depuis la v0.107 : **situation militaire** (hommes) et **recensement de population** en événements pré-intitulés, et proposition systématique des fiches existantes (nom + dates) dans toutes les saisies de personne.
 - **Numérotation automatique** : Sosa-Stradonitz et d'Aboville, rien ne se saisit.
 - **Journal de recherches** : recherches à mener, anomalies à vérifier (enfant né après le décès de son père, mère trop jeune, fratrie trop rapprochée…), doublons avec fusion guidée « Garder A / Garder B » sans aucune perte.
-- **Cohérence partout** : un enfant né avant son parent est refusé sur toutes les voies d'ajout (saisie, choix de fiche, nouveau parent, acte, import fusionné) ; homonymes proposés avec leurs dates.
+- **Cohérence partout** : un enfant né avant son parent est refusé sur toutes les voies d'ajout (saisie, choix de fiche, nouveau parent, acte, import fusionné) ; depuis la v0.107, une fiche existante est proposée dès que le nom correspond, même avec des prénoms différents (la correspondance se fait par les dates).
 - **Boîte à outils** (100 % locale) : calendrier républicain ↔ grégorien (julien, fêtes, décades), calculateur de dates (âges, écarts, durées), calculateur de parenté (« Marie est la cousine germaine de Pierre »). Depuis la v0.101 : **repères historiques** (rapprochement avec les dates des ancêtres), **arbre du chemin de parenté**, **« Que s'est-il passé cette année ? »** et **chronologie d'une famille** (plusieurs personnes juxtaposées, incohérences en rouge). La **Saisie** est le 6e onglet (Personnes / Journal / Arbre / Outils / Sources / Saisie) ; le menu **Autres** liste les personnes sans numéro.
 - **Carnet de sources** : une source décrite une seule fois, citée autant de fois que nécessaire (n° d'acte, vue n°/total, fiabilité 0-3), exportée en GEDCOM (SOUR, QUAY, PAGE).
 - **GEDCOM sans perte** : les champs propres à GénéaPoche (balises `_GP*`) survivent à l'export puis au réimport, plus une NOTE de synthèse lisible dans Heredis.
@@ -46,7 +46,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.98)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.98-release.apk` (signé) ou `GeneaPoche-v0.98-debug.apk`.
+**Téléchargement direct de la dernière version (v0.107)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.107-release.apk` (signé) ou `GeneaPoche-v0.107-debug.apk`.
 
 Sinon, depuis les sources :
 
