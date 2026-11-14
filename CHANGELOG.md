@@ -1,5 +1,11 @@
 # Historique des versions — GénéaPoche
 
+## v0.104 — Stabilité de la saisie (image à transcrire) et trace d'incident
+
+- **Cause la plus probable du ralentissement puis de l'arrêt brutal** : l'image à transcrire (onglet Saisie) était décodée **sur le thread principal** avec une réduction fixe ×2 : une photo ou un scan de grande taille occupait des dizaines de Mo, figeait l'écran puis provoquait un manque de mémoire ou un « bitmap trop grand » (arrêt immédiat). Le décodage se fait désormais **hors du thread principal**, l'image est **ramenée à 3072 px maximum** (taille lue d'abord, nouvel essai plus réduit en cas de mémoire insuffisante, aucune exception ne remonte), et le filtre lumière/contraste n'est plus reconstruit à chaque recomposition.
+- **Trace d'incident locale** : en cas d'arrêt brutal, la trace technique (sans aucune donnée généalogique) est conservée dans un fichier privé et s'affiche au lancement suivant dans le menu GEDCOM (« Dernier incident »), avec bouton Effacer ; elle permettra d'identifier la cause exacte si le problème persistait.
+- Version 0.104.
+
 ## v0.103 — Fiche allégée en trois onglets : Fiche / Biographie / Recherches
 
 - **Règle partout** : aucun événement familial (décès du conjoint, enfants, fratrie, parents, parrainages…) n'est affiché **avant la naissance ni après le décès** de la personne (fiche, biographie ; l'outil « Chronologie d'une famille » garde ses alertes d'incohérence, c'est son rôle).
