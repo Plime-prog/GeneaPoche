@@ -371,6 +371,14 @@ fun EcranSaisieActe(
     var concession by remember(initial) { mutableStateOf(initial?.concession ?: "") }
     var ministreCulte by remember(initial) { mutableStateOf(initial?.ministreCulte ?: "") }
     var intitule by remember(initial) { mutableStateOf(initial?.intitule ?: "") }
+    // v0.107 : champs de la SITUATION MILITAIRE (hommes seulement) ; les
+    // renseignements sont ranges dans l'intitule de l'evenement a
+    // l'enregistrement (aucun champ nouveau, GEDCOM sans perte).
+    var milClasse by remember(initial) { mutableStateOf("") }
+    var milMatricule by remember(initial) { mutableStateOf("") }
+    var milRegiment by remember(initial) { mutableStateOf("") }
+    var milGrade by remember(initial) { mutableStateOf("") }
+    var milNotes by remember(initial) { mutableStateOf("") }
     var acteId by remember(initial) { mutableStateOf(initial?.acteId ?: 0L) }
     // v0.105 : formulaire en EDITION d'un acte existant : un champ vide EFFACE la fiche.
     var editionActe by remember(initial) { mutableStateOf(initial?.editionFiche ?: false) }
@@ -434,12 +442,11 @@ fun EcranSaisieActe(
     // v0.76 : fenêtre d'homonymes (nom + prénoms) : "pers" personne
     // concernée, "pm:<i>" parrain/marraine, "t:<i>" témoin.
     var homonymesOuvert by remember { mutableStateOf<String?>(null) }
-    // v0.76 : un homonyme = même nom ET mêmes prénoms (plus de simple patronyme).
-    val homonymesPers = personnes.filter { q ->
-        nom.isNotBlank() && prenoms.isNotBlank() && q.id != personneId &&
-            q.nom.trim().uppercase() == nom.trim().uppercase() &&
-            q.prenoms.trim().uppercase() == prenoms.trim().uppercase()
-    }.sortedBy { it.dateNaissance }
+    // v0.107 : la proposition de fiche existante est SYSTEMATIQUE des que
+    // le nom est saisi, MEME si les prenoms ne sont pas parfaitement
+    // identiques : la correspondance est determinee par les DATES
+    // (annee de naissance compatible, une date inconnue ne bloque pas).
+    val homonymesPers = candidatsCorrespondants(personnes, nom, prenoms, "", excluId = personneId)
     // v0.77 : drapeau "Créer une nouvelle fiche" pour la personne concernée ;
     // il retombe tout seul si le nom ou les prénoms changent.
     var persNouvelle by remember(nom, prenoms) { mutableStateOf(false) }
@@ -532,7 +539,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.106",
+                "  v0.107",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -575,6 +582,9 @@ fun EcranSaisieActe(
             FilterChip(selected = !rapide, onClick = { rapide = false }, label = { Text("Compl\u00E9ter") })
         }
 
+        // v0.107 : situation militaire et recensement = evenements pre-intitules.
+        val militaire = type == "E" && intitule.trim().startsWith("Situation militaire")
+        val recensement = type == "E" && intitule.trim().startsWith("Recensement")
         SectionTitre("Type d'acte")
         // GeneaPoche 4 : si le type est impose (appui long sur un bloc),
         // il ne peut pas etre change : seul le type concerne est modifiable.
@@ -590,6 +600,12 @@ fun EcranSaisieActe(
                 ).forEach { (t, l) ->
                     FilterChip(selected = type == t, onClick = { type = t; confirme = false }, label = { Text(l) })
                 }
+                // v0.107 : la situation militaire n'est PROPOSEE que pour
+                // les hommes ; le recensement concerne tout le monde.
+                if (exPersonne?.sexe != "F" && sexe != "F") {
+                    FilterChip(selected = militaire, onClick = { type = "E"; intitule = "Situation militaire"; confirme = false }, label = { Text("Militaire") })
+                }
+                FilterChip(selected = recensement, onClick = { type = "E"; intitule = "Recensement de population"; confirme = false }, label = { Text("Recensement") })
             }
         } else {
             Text(
@@ -602,6 +618,27 @@ fun EcranSaisieActe(
         if (type == "E") {
             // \u00C9v\u00E9nement \u00E0 intitul\u00E9 libre : rang\u00E9 dans la chronologie.
             Champ("Intitul\u00E9 (profession, d\u00E9m\u00E9nagement\u2026)", intitule, { intitule = it })
+            // v0.107 : champs de la situation militaire, ceux des logiciels
+            // de genealogie (classe, matricule, regiment, grade, campagnes).
+            if (militaire) {
+                if (exPersonne?.sexe == "F") {
+                    Text(
+                        "La situation militaire ne concerne que les hommes.",
+                        color = CouleurRouge,
+                        fontSize = 12.sp
+                    )
+                } else {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Champ("Classe (ann\u00E9e)", milClasse, { milClasse = it }, modifier = Modifier.weight(1f))
+                        Champ("Matricule", milMatricule, { milMatricule = it }, modifier = Modifier.weight(1f))
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Champ("R\u00E9giment / unit\u00E9", milRegiment, { milRegiment = it }, modifier = Modifier.weight(1f))
+                        Champ("Grade", milGrade, { milGrade = it }, modifier = Modifier.weight(1f))
+                    }
+                    Champ("Campagnes, d\u00E9corations, notes", milNotes, { milNotes = it })
+                }
+            }
         }
 
         // v0.58 : champs compactes, deux par ligne.
@@ -751,9 +788,8 @@ fun EcranSaisieActe(
                 modifier = Modifier.width(140.dp))
         }
 
-        // v0.67 : N/B = parents en une ligne ; D/S = sans naissance des
-        // parents ; M/E = tout. Le formulaire ne montre que ce que l'acte porte.
-        val parentsNaissance = type == "M" || type == "E"
+        // v0.107 : le bloc complet des parents reste propre au MARIAGE.
+        val parentsNaissance = type == "M"
         val parentsDeces = type != "N" && type != "B"
         // v0.72 : coches de signature - le père sur N/B/M, la mère sur M.
         // v0.99 : fiche existante du parent (par id, sinon par nom) pour le
@@ -762,18 +798,63 @@ fun EcranSaisieActe(
             ?: personnes.firstOrNull { cleNom(it.nom) == cleNom(pere.nom) && clePrenomsNom(it.prenoms) == clePrenomsNom(pere.prenoms) }
         val ficheMere = personnes.firstOrNull { it.id == mere.id }
             ?: personnes.firstOrNull { cleNom(it.nom) == cleNom(mere.nom) && clePrenomsNom(it.prenoms) == clePrenomsNom(mere.prenoms) }
+        // v0.107 : evenement alleger — ni parents ni conjoint (l'acte de
+        // mariage seul porte ces renseignements).
+        if (type != "E") {
         BlocParent("P\u00E8re", pere, date, parentsNaissance, parentsDeces,
             cocheSigne = signataires.contains("P\u00E8re"),
             onCocheSigne = if (type == "N" || type == "B" || type == "M") {
                 { if (signataires.contains("P\u00E8re")) signataires.remove("P\u00E8re") else signataires.add("P\u00E8re") }
             } else null,
             fiche = fichePere)
+        // v0.107 : une fiche existante (meme nom, DATES compatibles) est
+        // proposee systematiquement pour le pere, meme si les prenoms
+        // ne sont pas parfaitement identiques.
+        val candidatsPere = candidatsCorrespondants(personnes, pere.nom, pere.prenoms, pere.ne, excluId = personneId)
+        if (candidatsPere.isNotEmpty()) {
+            OutlinedButton(onClick = { homonymesOuvert = "pere" }) {
+                Text("P\u00E8re : " + candidatsPere.size.toString() + " fiche(s) existante(s) possible(s) \u2013 choisir ou cr\u00E9er", fontSize = 12.sp)
+            }
+        }
+        if (homonymesOuvert == "pere") {
+            DialogueHomonymes(
+                titre = "P\u00E8re : fiches existantes",
+                candidats = candidatsPere,
+                onChoisir = { q ->
+                    pere.remplir(q.nom, q.prenoms, q.dateNaissance, q.lieuNaissance, q.deptNaissance, q.profession, q.dateDeces, q.lieuDeces, "", q.situation, q.domicile)
+                    pere.id = q.id
+                    homonymesOuvert = null
+                },
+                onCreer = { homonymesOuvert = null },
+                onFermer = { homonymesOuvert = null }
+            )
+        }
         BlocParent("M\u00E8re", mere, date, parentsNaissance, parentsDeces,
             cocheSigne = signataires.contains("M\u00E8re"),
             onCocheSigne = if (type == "M") {
                 { if (signataires.contains("M\u00E8re")) signataires.remove("M\u00E8re") else signataires.add("M\u00E8re") }
             } else null,
             fiche = ficheMere)
+        val candidatsMere = candidatsCorrespondants(personnes, mere.nom, mere.prenoms, mere.ne, excluId = personneId)
+        if (candidatsMere.isNotEmpty()) {
+            OutlinedButton(onClick = { homonymesOuvert = "mere" }) {
+                Text("M\u00E8re : " + candidatsMere.size.toString() + " fiche(s) existante(s) possible(s) \u2013 choisir ou cr\u00E9er", fontSize = 12.sp)
+            }
+        }
+        if (homonymesOuvert == "mere") {
+            DialogueHomonymes(
+                titre = "M\u00E8re : fiches existantes",
+                candidats = candidatsMere,
+                onChoisir = { q ->
+                    mere.remplir(q.nom, q.prenoms, q.dateNaissance, q.lieuNaissance, q.deptNaissance, q.profession, q.dateDeces, q.lieuDeces, "", q.situation, q.domicile)
+                    mere.id = q.id
+                    homonymesOuvert = null
+                },
+                onCreer = { homonymesOuvert = null },
+                onFermer = { homonymesOuvert = null }
+            )
+        }
+        } // fin if (type != "E")
         // v0.97 : mentions marginales d'un acte de naissance : le mariage
         // et le deces portes en marge, avec date et lieu.
         // v0.99 : masquees en mode saisie rapide.
@@ -899,7 +980,9 @@ fun EcranSaisieActe(
                 }
             }
         }
-        if (type == "M" || type == "E") {
+        // v0.107 : evenement ALLEGÉ — plus la section du conjoint (copie du
+        // mariage) : un evenement libre porte intitule, date, lieu, personne.
+        if (type == "M") {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 TitrePastille(if (type == "M") "Mari\u00E9e" else "Conjoint(e)", marieeNom.isNotBlank() || marieeId != 0L)
                 // v0.72 : l'épouse signe le mariage.
@@ -938,11 +1021,50 @@ fun EcranSaisieActe(
                 onCocheSigne = if (type == "M") {
                     { if (signataires.contains("P\u00E8re de la mari\u00E9e")) signataires.remove("P\u00E8re de la mari\u00E9e") else signataires.add("P\u00E8re de la mari\u00E9e") }
                 } else null)
+            // v0.107 : fiches existantes proposees (nom + DATES compatibles).
+            val candidatsPM = candidatsCorrespondants(personnes, pereMariee.nom, pereMariee.prenoms, pereMariee.ne, excluId = marieeId)
+            if (candidatsPM.isNotEmpty()) {
+                OutlinedButton(onClick = { homonymesOuvert = "pereMariee" }) {
+                    Text("P\u00E8re de la mari\u00E9e : " + candidatsPM.size.toString() + " fiche(s) possible(s) \u2013 choisir ou cr\u00E9er", fontSize = 12.sp)
+                }
+            }
+            if (homonymesOuvert == "pereMariee") {
+                DialogueHomonymes(
+                    titre = "P\u00E8re de la mari\u00E9e : fiches existantes",
+                    candidats = candidatsPM,
+                    onChoisir = { q ->
+                        pereMariee.remplir(q.nom, q.prenoms, q.dateNaissance, q.lieuNaissance, q.deptNaissance, q.profession, q.dateDeces, q.lieuDeces)
+                        pereMariee.id = q.id
+                        homonymesOuvert = null
+                    },
+                    onCreer = { homonymesOuvert = null },
+                    onFermer = { homonymesOuvert = null }
+                )
+            }
             BlocParent(if (type == "M") "M\u00E8re de la mari\u00E9e" else "M\u00E8re du conjoint", mereMariee, date,
                 cocheSigne = signataires.contains("M\u00E8re de la mari\u00E9e"),
                 onCocheSigne = if (type == "M") {
                     { if (signataires.contains("M\u00E8re de la mari\u00E9e")) signataires.remove("M\u00E8re de la mari\u00E9e") else signataires.add("M\u00E8re de la mari\u00E9e") }
                 } else null)
+            val candidatsMM = candidatsCorrespondants(personnes, mereMariee.nom, mereMariee.prenoms, mereMariee.ne, excluId = marieeId)
+            if (candidatsMM.isNotEmpty()) {
+                OutlinedButton(onClick = { homonymesOuvert = "mereMariee" }) {
+                    Text("M\u00E8re de la mari\u00E9e : " + candidatsMM.size.toString() + " fiche(s) possible(s) \u2013 choisir ou cr\u00E9er", fontSize = 12.sp)
+                }
+            }
+            if (homonymesOuvert == "mereMariee") {
+                DialogueHomonymes(
+                    titre = "M\u00E8re de la mari\u00E9e : fiches existantes",
+                    candidats = candidatsMM,
+                    onChoisir = { q ->
+                        mereMariee.remplir(q.nom, q.prenoms, q.dateNaissance, q.lieuNaissance, q.deptNaissance, q.profession, q.dateDeces, q.lieuDeces)
+                        mereMariee.id = q.id
+                        homonymesOuvert = null
+                    },
+                    onCreer = { homonymesOuvert = null },
+                    onFermer = { homonymesOuvert = null }
+                )
+            }
         }
 
         // v0.68 : sur un bapt\u00EAme, les t\u00E9moins sont le parrain et la marraine.
@@ -959,11 +1081,8 @@ fun EcranSaisieActe(
                 val t = temoins[i]
                 // v0.76 : homonymes = même nom ET mêmes prénoms, proposés dans
                 // une FENÊTRE (une ligne compacte alignée à gauche, avec dates).
-                val homosPm = personnes.filter { q ->
-                    t.nom.isNotBlank() && t.prenoms.isNotBlank() &&
-                        q.nom.trim().uppercase() == t.nom.trim().uppercase() &&
-                        q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase()
-                }
+                // v0.107 : correspondance par nom + DATES (prenoms tolérés).
+                val homosPm = candidatsCorrespondants(personnes, t.nom, t.prenoms, "")
                 Row(
                     Modifier.fillMaxWidth().padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -1008,11 +1127,8 @@ fun EcranSaisieActe(
         } else {
         temoins.forEachIndexed { i, t ->
             // v0.76 : homonymes = même nom ET mêmes prénoms (fenêtre de choix).
-            val homosT = personnes.filter { q ->
-                t.nom.isNotBlank() && t.prenoms.isNotBlank() &&
-                    q.nom.trim().uppercase() == t.nom.trim().uppercase() &&
-                    q.prenoms.trim().uppercase() == t.prenoms.trim().uppercase()
-            }
+            // v0.107 : correspondance par nom + DATES (prenoms tolérés).
+            val homosT = candidatsCorrespondants(personnes, t.nom, t.prenoms, "")
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -1120,6 +1236,18 @@ fun EcranSaisieActe(
         }
         // v0.58 : bouton TOUJOURS visible en bas, hors du defilement.
         val enregistrerFormulaire: (Boolean) -> Unit = { suppression ->
+                // v0.107 : la situation militaire est rangee dans l'intitule
+                // de l'evenement (aucun champ nouveau, GEDCOM sans perte).
+                val intituleFinal = if (type == "E" && intitule.trim().startsWith("Situation militaire")) {
+                    val details = listOf(
+                        if (milClasse.isNotBlank()) "classe " + milClasse.trim() else "",
+                        if (milMatricule.isNotBlank()) "matricule " + milMatricule.trim() else "",
+                        if (milRegiment.isNotBlank()) "r\u00E9giment " + milRegiment.trim() else "",
+                        if (milGrade.isNotBlank()) "grade " + milGrade.trim() else "",
+                        milNotes.trim()
+                    ).filter { it.isNotBlank() }.joinToString(" \u00B7 ")
+                    if (details.isEmpty()) intitule.trim() else "Situation militaire \u2014 " + details
+                } else intitule.trim()
                 val acte0 = ActeSaisie(
                     acteId = acteId,
                     type = type,
@@ -1133,7 +1261,7 @@ fun EcranSaisieActe(
                     fiabiliteSource = fiabiliteActe,
                     date = date.trim(),
                     heure = heure.trim(),
-                    intitule = intitule.trim(),
+                    intitule = intituleFinal,
                     parentPourEnfant = parentPourEnfantId,
                     personneId = personneId,
                     pereId = pere.id,
@@ -1281,7 +1409,22 @@ fun EcranSaisieActe(
                 else personnes.filter { it.sexe != "M" },
             onChoisi = { cand ->
                 if (pickerCible == 0) {
-                    remplirDepuis(prefillActe(cand, personnes, type, citations = citations))
+                    val pf = prefillActe(cand, personnes, type, citations = citations)
+                    // v0.107 : sur un mariage deja prepare (ex ouvert depuis
+                    // la fiche de la femme = mariee pre-remplie), choisir le
+                    // mari NE PERD PLUS la mariee deja en place.
+                    val marieeEnPlace = marieeId != 0L || marieeNom.isNotBlank()
+                    remplirDepuis(
+                        if (type == "M" && marieeEnPlace) pf.copy(
+                            marieeId = marieeId, marieeNom = marieeNom, marieePrenoms = marieePrenoms, marieeProf = marieeProf,
+                            pMarieeNom = pereMariee.nom, pMarieePrenoms = pereMariee.prenoms,
+                            pMarieeNe = pereMariee.ne, pMarieeLieu = pereMariee.lieu, pMarieeDept = pereMariee.dept,
+                            pMarieeProf = pereMariee.profession, pMarieeDeces = pereMariee.deces, pMarieeLieuDeces = pereMariee.lieuDeces,
+                            mMarieeNom = mereMariee.nom, mMarieePrenoms = mereMariee.prenoms,
+                            mMarieeNe = mereMariee.ne, mMarieeLieu = mereMariee.lieu, mMarieeDept = mereMariee.dept,
+                            mMarieeProf = mereMariee.profession, mMarieeDeces = mereMariee.deces, mMarieeLieuDeces = mereMariee.lieuDeces
+                        ) else pf
+                    )
                 } else {
                     marieeId = cand.id
                     marieeNom = cand.nom
@@ -1350,7 +1493,9 @@ fun DialogueHomonymes(
 @Composable
 fun EcranSaisie(
     personnes: List<Personne>,
-    onOuvrir: (String) -> Unit,
+    // v0.107 : le 2e parametre est l'INTITULE pre-rempli (situation
+    // militaire, recensement de population).
+    onOuvrir: (String, String) -> Unit,
     onEnfant: (Long) -> Unit
 ) {
     var pickerParent by remember { mutableStateOf(false) }
@@ -1382,11 +1527,25 @@ fun EcranSaisie(
             ).forEach { (t, l) ->
                 FilterChip(
                     selected = false,
-                    onClick = { onOuvrir(t) },
+                    onClick = { onOuvrir(t, "") },
                     label = { Text(t + " \u00B7 " + l, fontSize = 11.sp) },
                     modifier = Modifier.padding(end = 6.dp)
                 )
             }
+            // v0.107 : SITUATION MILITAIRE (hommes seulement — la femme
+            // choisie apres coup verra un avertissement) et RECENSEMENT.
+            FilterChip(
+                selected = false,
+                onClick = { onOuvrir("E", "Situation militaire") },
+                label = { Text("Militaire", fontSize = 11.sp) },
+                modifier = Modifier.padding(end = 6.dp)
+            )
+            FilterChip(
+                selected = false,
+                onClick = { onOuvrir("E", "Recensement de population") },
+                label = { Text("Recensement", fontSize = 11.sp) },
+                modifier = Modifier.padding(end = 6.dp)
+            )
             // ENFANT : choisir le parent existant puis saisir sa naissance.
             FilterChip(
                 selected = false,

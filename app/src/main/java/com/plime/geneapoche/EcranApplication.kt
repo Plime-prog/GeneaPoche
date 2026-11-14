@@ -276,6 +276,9 @@ fun EcranApplication(
     // un plein ecran ouvert depuis le bouton +.
     var saisieType by remember { mutableStateOf<String?>(null) }
     var saisieParentEnfant by remember { mutableStateOf(0L) }
+    // v0.107 : intitule pre-rempli pour un evenement pre-intitule
+    // (Situation militaire, Recensement de population).
+    var saisieIntitulePre by remember { mutableStateOf("") }
     // v0.101 : la saisie est le 6e onglet (plus de bouton +).
     val saisieOuverte = onglet == 5
     var sourceSaisieOuverte by remember { mutableStateOf(false) }
@@ -294,6 +297,7 @@ fun EcranApplication(
             // Entrer dans l'onglet Saisie ou le quitter : retour au menu des actes.
             saisieType = null
             saisieParentEnfant = 0L
+            saisieIntitulePre = ""
             if (o != 5) imageSaisiePresente = false
         }
         if (o == 0 && idToucheArbre != 0L) {
@@ -366,7 +370,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.98",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.107",
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -1132,7 +1136,7 @@ fun EcranApplication(
                                 Box(Modifier.weight(1f)) {
                                     EcranSaisie(
                                         personnes = personnes,
-                                        onOuvrir = { t -> saisieType = t; saisieParentEnfant = 0L },
+                                        onOuvrir = { t, itu -> saisieType = t; saisieIntitulePre = itu; saisieParentEnfant = 0L },
                                         onEnfant = { idParent -> saisieType = "N"; saisieParentEnfant = idParent }
                                     )
                                 }
@@ -1148,9 +1152,9 @@ fun EcranApplication(
                                     personneParId(personnes, idOuvert)?.let { cand -> prefillActe(cand, personnes, saisieType, citations = citations) }
                                         ?: ActeSaisie(type = saisieType ?: "N")
                                 } else {
-                                    ActeSaisie(type = saisieType ?: "N", parentPourEnfant = saisieParentEnfant)
+                                    ActeSaisie(type = saisieType ?: "N", parentPourEnfant = saisieParentEnfant, intitule = saisieIntitulePre)
                                 },
-                                onFermer = { saisieType = null }
+                                onFermer = { saisieType = null; saisieIntitulePre = "" }
                             )
                         }
                     }
@@ -1199,7 +1203,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.106", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.107", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         // v0.104 : dernier arret brutal de l'application (trace locale).
                         val ctxIncident = LocalContext.current
                         var incident by remember { mutableStateOf(Incidents.lire(ctxIncident)) }
@@ -1591,6 +1595,9 @@ fun EcranApplication(
         DialogueEdition(
             cible = editionCible,
             idNouvelle = idNouvellePersonne,
+            // v0.107 : proposition systematique de fiche existante (nom + DATES).
+            personnes = personnes,
+            onOuvrirExistante = { q -> onEditionCible(q); onEditionOuverte(true) },
             onValider = { p2 ->
                 if (editionCible == null) {
                     // Contr\u00F4le anti-doublon : une fiche portant d\u00E9j\u00E0 le m\u00EAme
