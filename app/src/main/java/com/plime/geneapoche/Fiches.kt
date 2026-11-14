@@ -175,6 +175,8 @@ fun EcranPersonne(
     var ouverts by remember { mutableStateOf(setOf<String>()) }
     // v0.102 : onglet de la fiche (0 Fiche, 1 Biographie).
     var ongletFiche by remember { mutableStateOf(0) }
+    var avecHistoire by remember { mutableStateOf(true) }
+    var pistesOuvertes by remember { mutableStateOf(setOf<String>()) }
     // Dialogues : mariage, enfant, parent, temoin.
     var mariageOuvert by remember { mutableStateOf(false) }
     var parentRole by remember { mutableStateOf("") }    // G\u00E9n\u00E9aPoche 2 : formulaire de saisie d'acte ouvert en plein \u00E9cran
@@ -317,26 +319,44 @@ fun EcranPersonne(
         TabRow(selectedTabIndex = ongletFiche, containerColor = Color.White) {
             Tab(selected = ongletFiche == 0, onClick = { ongletFiche = 0 }, text = { Text("Fiche") })
             Tab(selected = ongletFiche == 1, onClick = { ongletFiche = 1 }, text = { Text("Biographie") })
+            Tab(
+                selected = ongletFiche == 2, onClick = { ongletFiche = 2 },
+                text = {
+                    val nbPistes = pistes.count { it.personneId == p.id && !it.faite }
+                    Text("Recherches" + (if (nbPistes > 0) " (" + nbPistes.toString() + ")" else ""))
+                }
+            )
         }
-        if (ongletFiche == 1) {
-            OngletBiographie(p = p, personnes = personnes, onOuvrir = onOuvrir)
-        } else
         LazyColumn(
             // G\u00E9n\u00E9aPoche 3 : cartouche d'identit\u00E9 et parents FIG\u00C9 en t\u00EAte
             // de fiche pendant le d\u00E9filement ; la chronologie d\u00E9file dessous.
             Modifier.fillMaxSize().padding(horizontal = 12.dp)
         ) {
-            stickyHeader(key = "tete") {
-                Column(Modifier.fillMaxWidth()) {
-                    // G\u00E9n\u00E9aPoche 5 : le cadre de la personne est
-                    // SUPPRIM\u00C9 (l'identit\u00E9 est dans la barre de titre) ;
-                    // seul le cadre des parents reste fig\u00E9 en t\u00EAte.
+            if (ongletFiche == 0) {
+                item(key = "synthese") { EnteteSynthese(p, pistes.count { it.personneId == p.id && !it.faite }) }
+                item(key = "parents") {
                     CarteParents(
                         p = p,
                         personnes = personnes,
                         onOuvrir = onOuvrir,
                         onNouveauParent = { parentRole = it }
                     )
+                }
+                item(key = "unions") {
+                    CarteUnionsEnfants(p, personnes, onOuvrir, onAjouterEnfant = { menuEnfant = true })
+                }
+            }
+            if (ongletFiche == 1) {
+                item(key = "entourage") { CarteFamilleBio(p, personnes, onOuvrir) }
+                item(key = "recit") { CarteRecitBio(p, personnes) }
+                item(key = "puceHistoire") {
+                    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Chronologie", Modifier.weight(1f), fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+                        androidx.compose.material3.FilterChip(
+                            selected = avecHistoire, onClick = { avecHistoire = !avecHistoire },
+                            label = { Text("Histoire") }
+                        )
+                    }
                 }
             }
             // v0.69 : BANDEAU ROUGE si une date de la fiche est hors format
@@ -365,6 +385,7 @@ fun EcranPersonne(
             // par date. Chaque \u00E9v\u00E9nement affiche l'\u00E2ge entre parenth\u00E8ses.
             item {
                 Column(Modifier.fillMaxWidth()) {
+                    if (ongletFiche == 1) {
                     val evsFamille = evenementsFamille(p, personnes)
                     val entrees = mutableListOf<Pair<Long, String>>()
                     ordreTypes.forEach { t ->
@@ -385,13 +406,16 @@ fun EcranPersonne(
                     evsFamille.forEachIndexed { iFam, ef ->
                         entrees.add(ef.first.toLong() * 10000L to ("fam:" + iFam.toString()))
                     }
+                    // v0.103 : repaires historiques dans la chronologie.
+                    val histo = if (avecHistoire) friseBiographie(p, personnes).filter { it.genre == "histoire" || it.genre == "regime" } else emptyList()
+                    histo.forEachIndexed { iH, h -> entrees.add(h.cle to ("his:" + iH.toString())) }
                     // v0.84 : clefs de tri en Long (aaaammjj) ; les
                     // evenements de famille/temoins, hors de la vie de la
                     // personne, restent masques comme avant.
                     val anneeN = (anneeDe(p.dateNaissance.ifBlank { p.naissanceCalculee }) ?: -1).toLong() * 10000L
                     val anneeD = (anneeDe(p.dateDeces) ?: -1).toLong() * 10000L
                     val filtreParasites = { e: Pair<Long, String> ->
-                        if (!e.second.startsWith("fam:") && !e.second.startsWith("enf:")) true
+                        if (!e.second.startsWith("fam:") && !e.second.startsWith("enf:") && !e.second.startsWith("par:")) true
                         else (anneeN < 0L || e.first < 0L || e.first >= anneeN) &&
                             (anneeD < 0L || e.first < 0L || e.first <= anneeD)
                     }
@@ -548,6 +572,18 @@ fun EcranPersonne(
                                     }
                                 }
                             }
+                            cle.startsWith("his:") -> {
+                                val h = histo.getOrNull(cle.removePrefix("his:").toIntOrNull() ?: -1)
+                                if (h != null) {
+                                    Text(
+                                        h.quand + "  " + h.texte,
+                                        Modifier.fillMaxWidth().padding(start = 18.dp, top = 2.dp, bottom = 2.dp),
+                                        fontSize = 12.sp,
+                                        fontWeight = if (h.genre == "regime") FontWeight.Bold else FontWeight.Normal,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                             else -> {
                                 val t = cle.removePrefix("ev:")
                                 val cEv = champsEvenement(p, t)
@@ -634,6 +670,8 @@ fun EcranPersonne(
                                 }
                             }
                         }
+                    }
+
                     // G\u00E9n\u00E9aPoche 7 : les \u00E9v\u00E9nements de la famille figurent
                     // d\u00E9sormais DANS la chronologie unique ci-dessus, plus de
                     // bloc s\u00E9par\u00E9.
@@ -644,7 +682,10 @@ fun EcranPersonne(
                     // le picker correspondant) et la note de recherche est
                     // la M\u00CAME que celle du journal.
                     val pistesPers = pistes.filter { it.personneId == p.id && !it.faite }
-                    if (pistesPers.isNotEmpty()) {
+                    if (ongletFiche == 2 && pistesPers.isEmpty()) {
+                        Text("Aucune recherche ouverte pour cette personne.", Modifier.padding(12.dp), color = GrisManquant)
+                    }
+                    if (ongletFiche == 2 && pistesPers.isNotEmpty()) {
                         Card(
                             Modifier.fillMaxWidth().padding(vertical = 3.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -681,6 +722,7 @@ fun EcranPersonne(
                                         ps.categorie.startsWith("sexe") -> { { onModifier() } }
                                         else -> null
                                     }
+                                    val pisteOuverte = pistesOuvertes.contains(ps.id.toString())
                                     Column(Modifier.fillMaxWidth()) {
                                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                             Text(
@@ -693,13 +735,16 @@ fun EcranPersonne(
                                                 maxLines = 2,
                                                 overflow = TextOverflow.Ellipsis
                                             )
+                                            TextButton(onClick = {
+                                                pistesOuvertes = if (pisteOuverte) pistesOuvertes - ps.id.toString() else pistesOuvertes + ps.id.toString()
+                                            }) { Text(if (pisteOuverte) "\u25B2" else "\u25BC", color = CouleurVertFonce) }
                                             IconButton(onClick = { onSupprimerPiste(ps) }, Modifier.size(28.dp)) {
                                                 Icon(Icons.Filled.Close, contentDescription = "Supprimer cette recherche", Modifier.size(14.dp))
                                             }
                                         }
                                         // G\u00E9n\u00E9aPoche 9 : la note saisie ici est la
                                         // m\u00EAme que celle du journal (piste.enCours).
-                                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                        if (pisteOuverte) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                             var notePiste by remember(ps.id) { mutableStateOf(ps.enCours) }
                                             // v0.49 : etat local, la liaison directe ne rafraichissait pas le cadre.
                                             OutlinedTextField(
@@ -722,7 +767,7 @@ fun EcranPersonne(
                     // (remplace les deux rang\u00E9es de boutons) : il ouvre la
                     // m\u00EAME saisie que le menu +Saisie, pr\u00E9-rempli avec les
                     // informations connues de la personne.
-                    Card(
+                    if (ongletFiche == 1) Card(
                         Modifier.fillMaxWidth().padding(top = 4.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         border = BorderStroke(1.dp, CouleurBordVert)
@@ -744,44 +789,17 @@ fun EcranPersonne(
                             )
                         }
                     }
-                    // G\u00E9n\u00E9aPoche 7 : bouton Ajouter un enfant (7.1).
-                    Card(
-                        Modifier.fillMaxWidth().padding(top = 4.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, CouleurBordVert)
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(8.dp)
-                                .clickable { menuEnfant = true },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Filled.Person, contentDescription = null,
-                                Modifier.size(16.dp), tint = CouleurVertFonce
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                "Ajouter un enfant",
-                                color = CouleurVertFonce,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+
                     }
                     // v0.92 : bloc SOURCES (citations de cette personne).
-                    BlocSourcesFiche(
+                    if (ongletFiche == 0) BlocSourcesFiche(
                         p = p, personnes = personnes, sources = sources, citations = citations,
                         onEnregistrerCitation = onEnregistrerCitation,
                         onSupprimerCitation = onSupprimerCitation,
                         onCreerSource = onCreerSource
                     )
-                    // G\u00E9n\u00E9aPoche 5 : bloc NOTES tout en bas de la fiche.
-                    Card(
-                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, CouleurGrisBord)
-                    ) {
-                        Column(Modifier.fillMaxWidth().padding(6.dp)) {
+                    if (ongletFiche == 0) {
+                        CadrePliable("Notes", p.notesLibres.trim().lineSequence().firstOrNull().orEmpty(), cle = p.id) {
                             var libre by remember(p.id) { mutableStateOf(p.notesLibres) }
                             OutlinedTextField(
                                 value = libre,
@@ -795,6 +813,7 @@ fun EcranPersonne(
                             }
                         }
                     }
+
             }
             item { Spacer(Modifier.height(12.dp)) }
         }
@@ -1263,6 +1282,10 @@ fun evenementsFamille(p: Personne, personnes: List<Personne>): List<Pair<Int, St
         val d = date.trim()
         if (d.isEmpty()) return null
         val an = anneeDe(d) ?: return null
+        // v0.103 : aucun evenement familial avant la naissance ni apres le deces.
+        val aN = anneeDe(p.dateNaissance.ifBlank { p.naissanceCalculee })
+        val aD = anneeDe(p.dateDeces)
+        if ((aN != null && an < aN) || (aD != null && an > aD)) return null
         val lt = lieuAvecDept(lieu, dept)
         // G\u00E9n\u00E9aPoche 7 : date en t\u00EAte + \u00E2ge de la personne
         // centrale entre parenth\u00E8ses (7.3 et 7.5).

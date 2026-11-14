@@ -208,7 +208,7 @@ private fun parties(s: String): Triple<Int, Int, Int>? {
 // Evenements d'une personne : naissance, mariages (avec le conjoint),
 // naissances et deces des enfants, deces du conjoint, evenements libres,
 // deces. Signale les incoherences evidentes (apres son deces, avant sa naissance).
-fun chronologieFamille(p: Personne, personnes: List<Personne>): List<EvtFamille> {
+fun chronologieFamille(p: Personne, personnes: List<Personne>, masquerHorsVie: Boolean = false): List<EvtFamille> {
     val res = mutableListOf<EvtFamille>()
     val parId = personnes.associateBy { it.id }
     val nais = parties(p.dateNaissance.ifBlank { p.naissanceCalculee })
@@ -216,8 +216,10 @@ fun chronologieFamille(p: Personne, personnes: List<Personne>): List<EvtFamille>
     // ctl : 0 = aucun controle ; 1 = evenement de la personne (ni avant sa
     // naissance ni apres son deces) ; 2 = naissance d'un enfant (pas apres le
     // deces de la mere, ni plus d'un an apres celui du pere).
-    fun ajoute(s: String, libelle: String, ctl: Int = 0) {
+    fun ajoute(s: String, libelle: String, ctl: Int = 0, famille: Boolean = false) {
         val t = parties(s) ?: return
+        // v0.103 : aucun evenement familial avant la naissance ni apres le deces.
+        if (masquerHorsVie && famille && ((nais != null && t.first < nais.first) || (dece != null && t.first > dece.first))) return
         var alerte = ""
         if (ctl == 1 && nais != null && t.first < nais.first) alerte = "avant sa naissance"
         if (ctl == 1 && dece != null && t.first > dece.first) alerte = "apr\u00E8s son d\u00E9c\u00E8s"
@@ -236,13 +238,13 @@ fun chronologieFamille(p: Personne, personnes: List<Personne>): List<EvtFamille>
         ajoute(p.dateMariage, "Mariage" + (if (c0 != null) " avec " + c0.titre() else "") + rang, 1)
     }
     conjoints.forEachIndexed { i, c ->
-        if (i > 0 && c.dateMariage.isNotBlank()) ajoute(c.dateMariage, "Remariage avec " + c.titre())
-        if (c.dateDeces.isNotBlank()) ajoute(c.dateDeces, "D\u00E9c\u00E8s de " + (if (c.sexe == "F") "l'\u00E9pouse " else "l'\u00E9poux ") + c.titre())
+        if (i > 0 && c.dateMariage.isNotBlank()) ajoute(c.dateMariage, "Remariage avec " + c.titre(), 0, true)
+        if (c.dateDeces.isNotBlank()) ajoute(c.dateDeces, "D\u00E9c\u00E8s de " + (if (c.sexe == "F") "l'\u00E9pouse " else "l'\u00E9poux ") + c.titre(), 0, true)
     }
     p.enfants.mapNotNull { parId[it] }.forEach { e ->
         val qui = if (e.sexe == "F") "de la fille " else if (e.sexe == "M") "du fils " else "de l'enfant "
-        ajoute(e.dateNaissance.ifBlank { e.naissanceCalculee }, "Naissance " + qui + e.titre(), 2)
-        ajoute(e.dateDeces, "D\u00E9c\u00E8s " + qui + e.titre())
+        ajoute(e.dateNaissance.ifBlank { e.naissanceCalculee }, "Naissance " + qui + e.titre(), 2, true)
+        ajoute(e.dateDeces, "D\u00E9c\u00E8s " + qui + e.titre(), 0, true)
     }
     p.evenementsLibres.forEach { e -> ajoute(e.date, e.intitule.trim().ifEmpty { "\u00C9v\u00E9nement" }, 1) }
     ajoute(p.dateSepulture, "S\u00E9pulture")
