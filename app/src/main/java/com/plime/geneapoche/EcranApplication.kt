@@ -28,6 +28,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -999,7 +1001,7 @@ fun EcranApplication(
                     // superposes a l'image.
                     // v0.105 : clavier ouvert -> l'image se reduit pour laisser la
                     // saisie (et le bouton Enregistrer) visible.
-                    val clavierOuvert = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+                    val clavierOuvert = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
                     Box(
                         Modifier.weight(if (clavierOuvert) 0.35f else 1f).fillMaxWidth()
                             .clipToBounds()
