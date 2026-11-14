@@ -1175,7 +1175,8 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
     else null
     return ActeSaisie(
         acteId = 0L,
-        editionFiche = editionFiche,
+        // v0.105 : un acte deja renseigne se corrige (ou se supprime) : le formulaire fait reference.
+        editionFiche = editionFiche || (c != null && type != "E" && (c.date.isNotBlank() || c.lieu.isNotBlank())),
         type = type,
         commune = c?.lieu?.trim() ?: "",
         dept = c?.dept?.trim() ?: "",

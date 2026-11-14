@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -371,6 +372,9 @@ fun EcranSaisieActe(
     var ministreCulte by remember(initial) { mutableStateOf(initial?.ministreCulte ?: "") }
     var intitule by remember(initial) { mutableStateOf(initial?.intitule ?: "") }
     var acteId by remember(initial) { mutableStateOf(initial?.acteId ?: 0L) }
+    // v0.105 : formulaire en EDITION d'un acte existant : un champ vide EFFACE la fiche.
+    var editionActe by remember(initial) { mutableStateOf(initial?.editionFiche ?: false) }
+    var suppressionDemandee by remember { mutableStateOf(false) }
     // Parent choisi pour la naissance d'un enfant (menu Saisie).
     var parentPourEnfantId by remember(initial) { mutableStateOf(initial?.parentPourEnfant ?: 0L) }
     var personneId by remember(initial) { mutableStateOf(initial?.personneId ?: 0L) }
@@ -459,6 +463,7 @@ fun EcranSaisieActe(
     // dans le picker : ses informations connues et son acte existant).
     fun remplirDepuis(a: ActeSaisie) {
         acteId = a.acteId
+        editionActe = a.editionFiche
         commune = a.commune
         dept = a.dept
         enregistre = a.enregistre
@@ -507,7 +512,7 @@ fun EcranSaisieActe(
 
     // v0.58 : formulaire COMPACT. Le contenu defile, mais le bouton
     // Enregistrer reste TOUJOURS visible en bas, hors du defilement.
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().imePadding()) {
         Column(
             Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(4.dp)
         ) {
@@ -527,7 +532,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.104",
+                "  v0.105",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -786,33 +791,17 @@ fun EcranSaisieActe(
                 }
             }
             if (pickerMentionM) {
-                AlertDialog(
-                    onDismissRequest = { pickerMentionM = false },
-                    title = { Text("Conjoint de la mention marginale") },
-                    text = {
-                        Column(Modifier.verticalScroll(rememberScrollState())) {
-                            personnes.sortedWith(
-                                compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
-                            ).forEach { cand ->
-                                Text(
-                                    libelleUnique(cand),
-                                    Modifier.fillMaxWidth().clickable {
-                                        pickerMentionM = false
-                                        mentionMNom = cand.nom
-                                        mentionMPrenoms = cand.prenoms
-                                    }.padding(vertical = 0.dp),
-                                    fontSize = 13.sp, lineHeight = 16.sp
-                                )
-                            }
-                            if (personnes.isEmpty()) {
-                                Text("Aucune fiche : le nom saisi cr\u00E9era la fiche du conjoint.")
-                            }
-                        }
+                DialogueChoixPersonne(
+                    titre = "Conjoint de la mention marginale",
+                    personnes = personnes,
+                    onChoisi = { cand ->
+                        pickerMentionM = false
+                        mentionMNom = cand.nom
+                        mentionMPrenoms = cand.prenoms
                     },
-                    confirmButton = {
-                        TextButton(onClick = { pickerMentionM = false }) { Text("Fermer") }
-                    }
+                    onFermer = { pickerMentionM = false }
                 )
+
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Champ("Marg. D : date", mentionDDate, { mentionDDate = it }, erreur = mentionDDate.isNotBlank() && !dateValide(mentionDDate), modifier = Modifier.weight(1f))
@@ -890,29 +879,17 @@ fun EcranSaisieActe(
                         }
                     }
                     if (pickerEnfantDecl) {
-                        AlertDialog(
-                            onDismissRequest = { pickerEnfantDecl = false },
-                            title = { Text("Enfant d\u00E9clarant") },
-                            text = {
-                                Column(Modifier.verticalScroll(rememberScrollState())) {
-                                    enfantsDecl.sortedWith(
-                                        compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
-                                    ).forEach { cand ->
-                                        // v0.79 : identifiant unique, liste compacte alignee a gauche.
-                                        Text(
-                                            libelleUnique(cand),
-                                            Modifier.fillMaxWidth().clickable {
-                                                declarantEnfantId = cand.id
-                                                if (!signataires.contains("Enfant d\u00E9clarant")) signataires.add("Enfant d\u00E9clarant")
-                                                pickerEnfantDecl = false
-                                            }.padding(vertical = 0.dp),
-                                            fontSize = 13.sp, lineHeight = 16.sp
-                                        )
-                                    }
-                                }
+                        DialogueChoixPersonne(
+                            titre = "Enfant d\u00E9clarant",
+                            personnes = enfantsDecl,
+                            onChoisi = { cand ->
+                                declarantEnfantId = cand.id
+                                if (!signataires.contains("Enfant d\u00E9clarant")) signataires.add("Enfant d\u00E9clarant")
+                                pickerEnfantDecl = false
                             },
-                            confirmButton = { TextButton(onClick = { pickerEnfantDecl = false }) { Text("Fermer") } }
+                            onFermer = { pickerEnfantDecl = false }
                         )
+
                     }
                 }
             }
@@ -1137,9 +1114,8 @@ fun EcranSaisieActe(
 
         }
         // v0.58 : bouton TOUJOURS visible en bas, hors du defilement.
-        Button(
-            onClick = {
-                val acte = ActeSaisie(
+        val enregistrerFormulaire: (Boolean) -> Unit = { suppression ->
+                val acte0 = ActeSaisie(
                     acteId = acteId,
                     type = type,
                     commune = commune.trim(),
@@ -1205,9 +1181,11 @@ fun EcranSaisieActe(
                     ceremonieSDate = ceremonieSDate.trim(),
                     cimetiere = cimetiere.trim(), concession = concession.trim(), ministreCulte = ministreCulte.trim()
                 )
+                    .copy(editionFiche = editionActe)
+                val acte = if (suppression) acte0.copy(date = "", heure = "", commune = "", dept = "") else acte0
                 // Contr\u00F4le de coh\u00E9rence : AVERTISSEMENT non bloquant,
                 // l'utilisateur peut confirmer ("Enregistrer quand m\u00EAme").
-                val avrt = avertissementCoherence(type, date, exPersonne, exMariee, parentEnfant)
+                val avrt = if (suppression) "" else avertissementCoherence(type, date, exPersonne, exMariee, parentEnfant)
                 if (avrt.isNotEmpty() && !confirme) {
                     avertissement = avrt
                     acteEnAttente = acte
@@ -1215,14 +1193,44 @@ fun EcranSaisieActe(
                     onEnregistrer(acte)
                     onFermer?.invoke()
                 }
-            },
+            }
+        Button(
+            onClick = { enregistrerFormulaire(false) },
             // v0.91 : une date ancienne hors format ne bloque plus la
             // sauvegarde de l'acte (champ date en rouge + journal).
             enabled = (personneId != 0L || nom.isNotBlank()) && heureValide(heure),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
         ) { Text("Enregistrer") }
+        if (!((personneId != 0L || nom.isNotBlank()) && heureValide(heure))) {
+            Text(
+                if (!(personneId != 0L || nom.isNotBlank())) "Choisissez ou saisissez la personne concern\u00E9e pour enregistrer."
+                else "Heure invalide : utilisez hh:mm (ex. 14:30) ou laissez vide.",
+                Modifier.padding(horizontal = 12.dp, vertical = 2.dp), fontSize = 12.sp, color = CouleurRouge
+            )
+        }
+        if (editionActe && (type == "N" || type == "B" || type == "M" || type == "D" || type == "S")) {
+            TextButton(
+                onClick = { suppressionDemandee = true },
+                Modifier.padding(horizontal = 8.dp)
+            ) { Text("Supprimer cet acte", color = CouleurRouge, fontSize = 12.sp) }
+        }
+        if (suppressionDemandee) {
+            AlertDialog(
+                onDismissRequest = { suppressionDemandee = false },
+                title = { Text("Supprimer cet acte ?") },
+                text = { Text("La date, l'heure, le lieu et le d\u00E9partement de cet acte seront effac\u00E9s de la fiche. Les autres informations sont conserv\u00E9es.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        suppressionDemandee = false
+                        enregistrerFormulaire(true)
+                    }) { Text("Supprimer", color = CouleurRouge) }
+                },
+                dismissButton = { TextButton(onClick = { suppressionDemandee = false }) { Text("Annuler") } }
+            )
+        }
         Spacer(Modifier.height(12.dp))
     }
+
 
     if (avertissement != null && acteEnAttente != null) {
         AlertDialog(
@@ -1259,49 +1267,23 @@ fun EcranSaisieActe(
         )
     }
     if (pickerOuvert) {
-        AlertDialog(
-            onDismissRequest = { pickerOuvert = false },
-            title = { Text(if (pickerCible == 0) "Personne concern\u00E9e" else "Mari\u00E9e") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    if (personnes.isEmpty()) {
-                        Text("Aucune personne. Saisissez le nom ci-dessous pour la cr\u00E9er.")
-                    }
-                    personnes.sortedWith(
-                        compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
-                    ).forEach { cand ->
-                        // v0.72 : liste RESSENREE et ALIGNEE A GAUCHE
-                        // (une ligne compacte par personne).
-                        Row(
-                            Modifier.fillMaxWidth()
-                                .clickable {
-                                    if (pickerCible == 0) {
-                                        // G\u00E9n\u00E9aPoche 3 : la personne existante est
-                                        // PROPOSEE avec tout ce qui est connu d'elle ;
-                                        // si son acte de ce type existe deja, il est
-                                        // EDITE (aucun doublon).
-                                        remplirDepuis(prefillActe(cand, personnes, type, citations = citations))
-                                    } else {
-                                        marieeId = cand.id
-                                        marieeNom = cand.nom
-                                        marieePrenoms = cand.prenoms
-                                    }
-                                    pickerOuvert = false
-                                }
-                                .padding(horizontal = 4.dp, vertical = 0.dp)
-                        ) {
-                            Text(
-                                libelleUnique(cand),
-                                fontSize = 13.sp, lineHeight = 16.sp
-                            )
-                        }
-                    }
+        // v0.105 : meme selecteur (avec recherche) que partout dans l'application.
+        DialogueChoixPersonne(
+            titre = if (pickerCible == 0) "Personne concern\u00E9e" else "Mari\u00E9e",
+            personnes = personnes,
+            onChoisi = { cand ->
+                if (pickerCible == 0) {
+                    remplirDepuis(prefillActe(cand, personnes, type, citations = citations))
+                } else {
+                    marieeId = cand.id
+                    marieeNom = cand.nom
+                    marieePrenoms = cand.prenoms
                 }
+                pickerOuvert = false
             },
-            confirmButton = {
-                TextButton(onClick = { pickerOuvert = false }) { Text("Fermer") }
-            }
+            onFermer = { pickerOuvert = false }
         )
+
     }
 }
 
@@ -1414,39 +1396,21 @@ fun EcranSaisie(
     }
 
     if (pickerParent) {
-        AlertDialog(
-            onDismissRequest = { pickerParent = false },
-            title = { Text("Enfant de quelle personne ?") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    personnes.sortedWith(
-                        compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
-                    ).forEach { cand ->
-                        // v0.76 : liste condensée et alignée à gauche.
-                        Text(
-                            libelleUnique(cand),
-                            Modifier.fillMaxWidth().clickable {
-                                pickerParent = false
-                                onEnfant(cand.id)
-                            }.padding(vertical = 0.dp),
-                            fontSize = 13.sp, lineHeight = 16.sp
-                        )
-                    }
-                    if (personnes.isEmpty()) {
-                        Text("Aucune personne : saisissez le nom dans le formulaire.")
-                    }
-                }
+        DialogueChoixPersonne(
+            titre = "Enfant de quelle personne ?",
+            personnes = personnes,
+            onChoisi = { cand ->
+                pickerParent = false
+                onEnfant(cand.id)
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    pickerParent = false
-                    onEnfant(0L)
-                }) { Text("Sans parent connu") }
-            },
-            dismissButton = {
-                TextButton(onClick = { pickerParent = false }) { Text("Annuler") }
+            onFermer = { pickerParent = false },
+            autreLibelle = "Sans parent connu",
+            onAutre = {
+                pickerParent = false
+                onEnfant(0L)
             }
         )
+
     }
 }
 

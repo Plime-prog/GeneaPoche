@@ -28,6 +28,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -997,8 +999,11 @@ fun EcranApplication(
                     // deborde JAMAIS de la demi-zone (clipToBounds) et la
                     // rotation + les reglages lumiere/contraste sont
                     // superposes a l'image.
+                    // v0.105 : clavier ouvert -> l'image se reduit pour laisser la
+                    // saisie (et le bouton Enregistrer) visible.
+                    val clavierOuvert = WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
                     Box(
-                        Modifier.weight(1f).fillMaxWidth()
+                        Modifier.weight(if (clavierOuvert) 0.35f else 1f).fillMaxWidth()
                             .clipToBounds()
                             .pointerInput(Unit) {
                                 detectTransformGestures { _, pan, zoom, _ ->
@@ -1194,7 +1199,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.104", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.105", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         // v0.104 : dernier arret brutal de l'application (trace locale).
                         val ctxIncident = LocalContext.current
                         var incident by remember { mutableStateOf(Incidents.lire(ctxIncident)) }
