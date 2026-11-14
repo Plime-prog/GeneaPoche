@@ -1199,7 +1199,7 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.105", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.106", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         // v0.104 : dernier arret brutal de l'application (trace locale).
                         val ctxIncident = LocalContext.current
                         var incident by remember { mutableStateOf(Incidents.lire(ctxIncident)) }
