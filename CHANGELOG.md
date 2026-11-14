@@ -1,5 +1,11 @@
 # Historique des versions — GénéaPoche
 
+## v0.102 — Fiche en deux onglets : Fiche / Biographie
+
+- **Personnes** : la fiche s'ouvre sur deux onglets, **Fiche** (inchangée : parents figés en tête, événements, sources, notes) et **Biographie**, une lecture sans les cadres de saisie.
+- **Biographie** : bloc **Famille** (parents, époux/épouse, enfants) dont chaque ligne **se touche pour ouvrir la fiche** ; **récit en phrases** (naissance, parents, métier, mariage, enfants, décès et âge) suivi des rapprochements historiques ; **chronologie** mêlant la vie de la personne (âge à chaque événement), sa famille, les **événements historiques** de sa vie (nationaux et locaux selon son département) et les changements de régime, avec alertes d'incohérence. Le filtre **Histoire** les masque.
+- Logique pure testée (3 tests, 138 au total) ; version 0.102.
+
 ## v0.101 — Saisie en onglet, menu Autres, boîte à outils historique
 
 - **Personnes** : nouveau menu **Autres (n)** : toutes les personnes **sans numéro** (ni Sosa ni d'Aboville), classées A–Z ; la rangée de tris défile horizontalement.
