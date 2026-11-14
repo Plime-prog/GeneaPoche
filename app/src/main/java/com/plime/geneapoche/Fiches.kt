@@ -50,6 +50,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -171,6 +173,8 @@ fun EcranPersonne(
     // GÃ©nÃ©aPoche 5 : tous les cadres REPLIÃS sur une ligne Ã  l'ouverture
     // de la fiche ; le toucher d'un cadre le dÃ©veloppe, l'appui long le modifie.
     var ouverts by remember { mutableStateOf(setOf<String>()) }
+    // v0.102 : onglet de la fiche (0 Fiche, 1 Biographie).
+    var ongletFiche by remember { mutableStateOf(0) }
     // Dialogues : mariage, enfant, parent, temoin.
     var mariageOuvert by remember { mutableStateOf(false) }
     var parentRole by remember { mutableStateOf("") }    // G\u00E9n\u00E9aPoche 2 : formulaire de saisie d'acte ouvert en plein \u00E9cran
@@ -309,10 +313,18 @@ fun EcranPersonne(
             )
         },
     ) { marges ->
+        Column(Modifier.fillMaxSize().padding(marges)) {
+        TabRow(selectedTabIndex = ongletFiche, containerColor = Color.White) {
+            Tab(selected = ongletFiche == 0, onClick = { ongletFiche = 0 }, text = { Text("Fiche") })
+            Tab(selected = ongletFiche == 1, onClick = { ongletFiche = 1 }, text = { Text("Biographie") })
+        }
+        if (ongletFiche == 1) {
+            OngletBiographie(p = p, personnes = personnes, onOuvrir = onOuvrir)
+        } else
         LazyColumn(
             // G\u00E9n\u00E9aPoche 3 : cartouche d'identit\u00E9 et parents FIG\u00C9 en t\u00EAte
             // de fiche pendant le d\u00E9filement ; la chronologie d\u00E9file dessous.
-            Modifier.fillMaxSize().padding(marges).padding(horizontal = 12.dp)
+            Modifier.fillMaxSize().padding(horizontal = 12.dp)
         ) {
             stickyHeader(key = "tete") {
                 Column(Modifier.fillMaxWidth()) {
@@ -785,6 +797,7 @@ fun EcranPersonne(
                     }
             }
             item { Spacer(Modifier.height(12.dp)) }
+        }
         }
     }
 
