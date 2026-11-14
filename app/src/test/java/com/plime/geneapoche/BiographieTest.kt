@@ -52,7 +52,7 @@ class BiographieTest {
         val pere = p(1, "DUPONT", "Jean", "01/01/1800", "01/01/1870", "M")
         val enf = p(2, "DUPONT", "Paul", "01/01/1830", "", "M")
         pere.enfants.add(2)
-        val l = friseBiographie(pere, listOf(pere, enf), false).first { it.libelle.startsWith("Naissance du fils") }
+        val l = friseBiographie(pere, listOf(pere, enf), false).first { it.texte.startsWith("Naissance du fils") }
         assertTrue(l.texte.endsWith("(30 ans)"))
     }
 }
