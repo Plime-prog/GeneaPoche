@@ -48,8 +48,15 @@ fun DialogueEdition(
     idNouvelle: Long,
     onValider: (Personne) -> Unit,
     onAnnuler: () -> Unit,
-    onSupprimer: (() -> Unit)? = null
+    onSupprimer: (() -> Unit)? = null,
+    // v0.107 : a la CREATION, une personne existante est proposee
+    // systematiquement (meme nom, prenoms tolérés, correspondance par les
+    // DATES) ; la toucher ouvre sa fiche pour modification au lieu de
+    // creer un doublon.
+    personnes: List<Personne> = emptyList(),
+    onOuvrirExistante: ((Personne) -> Unit)? = null
 ) {
+    var choixExistante by remember { mutableStateOf(false) }
     var nom by remember(cible?.id) { mutableStateOf(cible?.nom ?: "") }
     var prenoms by remember(cible?.id) { mutableStateOf(cible?.prenoms ?: "") }
     var sexe by remember(cible?.id) { mutableStateOf(cible?.sexe ?: "") }
@@ -123,6 +130,18 @@ fun DialogueEdition(
                 )
                 Champ("Nom", nom, { nom = it })
                 Champ("Pr\u00E9noms", prenoms, { prenoms = it })
+                // v0.107 : "s'agit-il d'une personne existante ?" propose
+                // systematiquement (nom saisi, prenoms tolérés, DATES).
+                if (cible == null && onOuvrirExistante != null &&
+                    candidatsCorrespondants(personnes, nom, prenoms, dateNaissance).isNotEmpty()
+                ) {
+                    OutlinedButton(onClick = { choixExistante = true }, modifier = Modifier.padding(top = 4.dp)) {
+                        Text(
+                            "D\u00E9j\u00E0 dans la base ? " + candidatsCorrespondants(personnes, nom, prenoms, dateNaissance).size.toString() + " fiche(s) possible(s)",
+                            fontSize = 12.sp
+                        )
+                    }
+                }
                 // Sexe : F ou M seulement (pas de troisieme choix affiche).
                 // Re-toucher la puce selectionnee remet le sexe non renseigne
                 // (information manquante, deduite par la couleur verte).
@@ -180,6 +199,19 @@ fun DialogueEdition(
             }
         }
     )
+
+    // v0.107 : fenetre des fiches existantes possibles (nom + DATES).
+    if (choixExistante && onOuvrirExistante != null) {
+        DialogueHomonymes(
+            titre = "Personnes existantes",
+            candidats = candidatsCorrespondants(personnes, nom, prenoms, dateNaissance),
+            onChoisir = { q ->
+                choixExistante = false
+                onOuvrirExistante!!(q)
+            },
+            onFermer = { choixExistante = false }
+        )
+    }
 }
 
 // ---------------------------------------------------------------- Saisie d'un nouveau mariage
@@ -190,13 +222,16 @@ fun DialogueEdition(
 @Composable
 fun DialogueNouveauMariage(
     onValider: (String, String, String, String, String) -> Unit,
-    onAnnuler: () -> Unit
+    onAnnuler: () -> Unit,
+    // v0.107 : fiches existantes proposees systematiquement (nom + DATES).
+    personnes: List<Personne> = emptyList()
 ) {
     var nom by remember { mutableStateOf("") }
     var prenoms by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     var commune by remember { mutableStateOf("") }
     var dept by remember { mutableStateOf("") }
+    val candidatsMariage = candidatsCorrespondants(personnes, nom, prenoms, "")
 
     AlertDialog(
         onDismissRequest = onAnnuler,
@@ -210,6 +245,23 @@ fun DialogueNouveauMariage(
                 )
                 Champ("Nom du conjoint", nom, { nom = it })
                 Champ("Pr\u00E9noms du conjoint", prenoms, { prenoms = it })
+                // v0.107 : "s'agit-il d'une personne existante ?" — meme avec
+                // des prenoms differents, la correspondance lit les DATES.
+                if (candidatsMariage.isNotEmpty()) {
+                    Text(
+                        "D\u00E9j\u00E0 dans la base ? Touchez la fiche :",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                    candidatsMariage.forEach { q ->
+                        Text(
+                            libelleUnique(q),
+                            Modifier.fillMaxWidth().clickable { nom = q.nom; prenoms = q.prenoms }.padding(vertical = 2.dp),
+                            fontSize = 13.sp, lineHeight = 16.sp
+                        )
+                    }
+                }
                 Champ("Date du mariage (jj/mm/aaaa, aaaa ou 22 Germinal An II)", date, { date = it }, !dateValide(date), "jj/mm/aaaa, aaaa ou 22 Germinal An II")
                 Champ("Commune", commune, { commune = it }, communes = true, onDept = { dept = it })
             }
@@ -237,12 +289,15 @@ fun DialogueNouveauMariage(
 @Composable
 fun DialogueNouvelEnfant(
     onValider: (String, String, String, String) -> Unit,
-    onAnnuler: () -> Unit
+    onAnnuler: () -> Unit,
+    // v0.107 : fiches existantes proposees systematiquement (nom + DATES).
+    personnes: List<Personne> = emptyList()
 ) {
     var nom by remember { mutableStateOf("") }
     var prenoms by remember { mutableStateOf("") }
     var sexe by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
+    val candidatsEnfant = candidatsCorrespondants(personnes, nom, prenoms, date)
 
     AlertDialog(
         onDismissRequest = onAnnuler,
@@ -256,6 +311,23 @@ fun DialogueNouvelEnfant(
                 )
                 Champ("Nom", nom, { nom = it })
                 Champ("Pr\u00E9noms", prenoms, { prenoms = it })
+                // v0.107 : "s'agit-il d'une personne existante ?" — la
+                // correspondance est determinee par les DATES.
+                if (candidatsEnfant.isNotEmpty()) {
+                    Text(
+                        "D\u00E9j\u00E0 dans la base ? Touchez la fiche :",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                    candidatsEnfant.forEach { q ->
+                        Text(
+                            libelleUnique(q),
+                            Modifier.fillMaxWidth().clickable { nom = q.nom; prenoms = q.prenoms; date = q.dateNaissance }.padding(vertical = 2.dp),
+                            fontSize = 13.sp, lineHeight = 16.sp
+                        )
+                    }
+                }
                 // Sexe : Garcon ou Fille seulement (pas de troisieme choix affiche).
                 // Re-toucher la puce selectionnee remet le sexe non renseigne.
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -462,11 +534,14 @@ fun DialogueEditionBloc(
 fun DialogueNouveauParent(
     role: String,
     onValider: (String, String) -> Unit,
-    onAnnuler: () -> Unit
+    onAnnuler: () -> Unit,
+    // v0.107 : fiches existantes proposees systematiquement (nom + DATES).
+    personnes: List<Personne> = emptyList()
 ) {
     var nom by remember { mutableStateOf("") }
     var prenoms by remember { mutableStateOf("") }
     val titreDialogue = if (role == "pere") "Saisir le p\u00E8re" else "Saisir la m\u00E8re"
+    val candidatsParent = candidatsCorrespondants(personnes, nom, prenoms, "")
 
     AlertDialog(
         onDismissRequest = onAnnuler,
@@ -480,6 +555,23 @@ fun DialogueNouveauParent(
                 )
                 Champ("Nom", nom, { nom = it })
                 Champ("Pr\u00E9noms", prenoms, { prenoms = it })
+                // v0.107 : "s'agit-il d'une personne existante ?" — meme avec
+                // des prenoms differents, la correspondance lit les DATES.
+                if (candidatsParent.isNotEmpty()) {
+                    Text(
+                        "D\u00E9j\u00E0 dans la base ? Touchez la fiche :",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                    candidatsParent.forEach { q ->
+                        Text(
+                            libelleUnique(q),
+                            Modifier.fillMaxWidth().clickable { nom = q.nom; prenoms = q.prenoms }.padding(vertical = 2.dp),
+                            fontSize = 13.sp, lineHeight = 16.sp
+                        )
+                    }
+                }
             }
         },
         confirmButton = {

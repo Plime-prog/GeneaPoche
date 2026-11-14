@@ -283,4 +283,40 @@ class TestsLogiqueActe {
         assertNull(naissanceDepuisAge(c, "12/05/1913", "34", "acte"))
         assertEquals("", c.naissanceCalculee)
     }
+
+    // ---------------------------------------------------------- v0.107 : candidats "personne existante"
+
+    @Test
+    fun candidatsCorrespondants_acceptePrenomsDifferentsMemeAnnee() {
+        val base = listOf(
+            p(1L, "Durand", "Marie Jeanne", "1879"),
+            p(2L, "Durand", "Paul", "1880")
+        )
+        // Prenoms saisis differents ("Marie") mais meme annee : proposee.
+        val c = candidatsCorrespondants(base, "durand", "Marie", "1879")
+        assertEquals(1, c.size)
+        assertEquals(1L, c[0].id)
+        // Prenoms exacts (sans ordre) remontent en tete.
+        val c2 = candidatsCorrespondants(base, "Durand", "Jeanne Marie", "1879")
+        assertEquals(1L, c2[0].id)
+    }
+
+    @Test
+    fun candidatsCorrespondants_datesInconnuesNeBloquentPas() {
+        val base = listOf(p(1L, "Durand", "Marie"), p(2L, "Durand", "Paul", "1880"))
+        // Aucune date saisie : toutes les fiches du meme nom sont proposees.
+        assertEquals(2, candidatsCorrespondants(base, "Durand", "", "").size)
+        // Date saisie inconnue chez la fiche : ne bloque pas non plus.
+        assertEquals(2, candidatsCorrespondants(base, "Durand", "Marie", "1879").size)
+    }
+
+    @Test
+    fun candidatsCorrespondants_anneeDifferenteExclut() {
+        val base = listOf(p(1L, "Durand", "Marie", "1879"))
+        assertTrue(candidatsCorrespondants(base, "Durand", "Marie", "1885").isEmpty())
+        // excluId retire la fiche (edition de la personne elle-meme).
+        assertTrue(candidatsCorrespondants(base, "Durand", "Marie", "1879", excluId = 1L).isEmpty())
+        // Nom vide : aucun candidat.
+        assertTrue(candidatsCorrespondants(base, "", "Marie", "1879").isEmpty())
+    }
 }

@@ -239,3 +239,45 @@ fun refusSexeMariage(sexeMarie: String, sexeMariee: String): String? {
     }
     return null
 }
+
+// ---------------------------------------------------------- Correspondance par nom + dates (v0.107)
+
+// Deux dates de naissance sont COMPATIBLES si l'une est inconnue ou si leur
+// ANNEE est la meme (le jour peut différer : sources imprécises, une année
+// seule, une date républicaine...).
+fun anneesNaissanceCompatibles(a: String, b: String): Boolean {
+    val annee = { s: String -> Regex("[0-9]{4}").find(s)?.value }
+    val aa = annee(a) ?: return true
+    val bb = annee(b) ?: return true
+    return aa == bb
+}
+
+// v0.107 : candidats "s'agit-il d'une personne existante ?" proposes
+// SYSTEMATIQUEMENT des que le nom est saisi, MEME si les prenoms ne sont
+// pas parfaitement identiques : la correspondance est determinee par les
+// DATES (annee de naissance compatible, une date inconnue ne bloque pas).
+// Les prenoms exacts (sans ordre) et la meme annee exacte remontent en tete.
+fun candidatsCorrespondants(
+    personnes: List<Personne>,
+    nom: String,
+    prenoms: String,
+    dateNaissance: String,
+    excluId: Long = 0L,
+    max: Int = 6
+): List<Personne> {
+    val n = cleNom(nom)
+    if (n.isEmpty()) return emptyList()
+    val pr = clePrenomsNom(prenoms)
+    return personnes
+        .filter { q ->
+            q.id != excluId && cleNom(q.nom) == n &&
+                anneesNaissanceCompatibles(q.dateNaissance, dateNaissance)
+        }
+        .sortedWith(
+            compareBy(
+                { if (pr.isNotEmpty() && clePrenomsNom(it.prenoms) == pr) 0 else 1 },
+                { if (dateNaissance.isNotBlank() && it.dateNaissance == dateNaissance) 0 else 1 }
+            )
+        )
+        .take(max)
+}
