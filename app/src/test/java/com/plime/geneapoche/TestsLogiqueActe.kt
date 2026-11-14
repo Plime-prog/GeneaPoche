@@ -306,8 +306,11 @@ class TestsLogiqueActe {
         val base = listOf(p(1L, "Durand", "Marie"), p(2L, "Durand", "Paul", "1880"))
         // Aucune date saisie : toutes les fiches du meme nom sont proposees.
         assertEquals(2, candidatsCorrespondants(base, "Durand", "", "").size)
-        // Date saisie inconnue chez la fiche : ne bloque pas non plus.
-        assertEquals(2, candidatsCorrespondants(base, "Durand", "Marie", "1879").size)
+        // Date saisie inconnue chez la fiche : ne bloque pas (Marie, annee
+        // inconnue, reste compatible avec 1879) ; Paul (1880) est exclu.
+        val c = candidatsCorrespondants(base, "Durand", "Marie", "1879")
+        assertEquals(1, c.size)
+        assertEquals(1L, c[0].id)
     }
 
     @Test
