@@ -1,4 +1,10 @@
-# Historique des versions — GénéaPoche
+# Historique des versions
+
+## v0.107 — 14 novembre 2026
+
+- **Mariage ouvert depuis une fiche de femme** : elle devient la mariée (bug de préremplissage corrigé), le mari reste à choisir/saisir ; signataires permutés en conséquence.
+- **Proposition systématique de fiche existante** (nom + dates, prénoms tolérés) : personne complète, saisie d'acte (concernée, mariée, parents, témoins, parrain/marraine), nouveau mariage/enfant/parent, édition de personne.
+- **Événement allégé** (plus de conjoint ni parents) ; ajout de la **Situation militaire** (hommes : classe, matricule, régiment, grade, notes — rangés dans l'intitulé, GEDCOM sans perte) et du **Recensement de population**. — GénéaPoche
 
 ## v0.106 — Mariage : les époux sont rattachés, marié = homme, mariée = femme
 
