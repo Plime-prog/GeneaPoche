@@ -206,3 +206,36 @@ object IndexPersonnes {
 
 fun personneParId(liste: List<Personne>, id: Long): Personne? =
     if (id == 0L) null else IndexPersonnes.de(liste)[id]
+
+// ---------------------------------------------------------- Mariage (v0.106)
+
+// Lie deux epoux dans les DEUX sens (conjoint principal s'il est libre des
+// deux cotes, sinon conjoint supplementaire). Retourne vrai si un lien a
+// ete ajoute.
+fun lierConjointsActe(a: Personne?, b: Personne?): Boolean {
+    if (a == null || b == null || a.id == b.id) return false
+    val dejaA = a.conjoint == b.id || a.conjointsSupp.contains(b.id)
+    val dejaB = b.conjoint == a.id || b.conjointsSupp.contains(a.id)
+    if (dejaA && dejaB) return false
+    if (a.conjoint == 0L && b.conjoint == 0L) {
+        a.conjoint = b.id
+        b.conjoint = a.id
+        return true
+    }
+    if (!dejaA) a.conjointsSupp.add(b.id)
+    if (!dejaB) b.conjointsSupp.add(a.id)
+    return true
+}
+
+// Acte de mariage : le marie est un homme, la mariee une femme. Retourne le
+// message de refus, ou null si la saisie est admise (sexe non renseigne = admis).
+fun refusSexeMariage(sexeMarie: String, sexeMariee: String): String? {
+    if (sexeMarie.trim() == "F") {
+        return "Acte de mariage : la personne concern\u00E9e est le MARI\u00C9 (un homme). " +
+            "Choisissez ou saisissez le mari\u00E9 ; la mari\u00E9e se renseigne dans son cadre."
+    }
+    if (sexeMariee.trim() == "M") {
+        return "Acte de mariage : la MARI\u00C9E est toujours une femme ; la fiche choisie est celle d'un homme."
+    }
+    return null
+}

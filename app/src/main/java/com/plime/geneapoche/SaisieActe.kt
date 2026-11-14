@@ -532,7 +532,7 @@ fun EcranSaisieActe(
             // Si ce numero n'apparait pas, l'application installee n'est
             // pas la derniere build : reinstallater le dernier APK.
             Text(
-                "  v0.105",
+                "  v0.106",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -730,8 +730,13 @@ fun EcranSaisieActe(
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("M") })
-            FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("F") })
+            if (type == "M" && !editionActe) {
+                // v0.106 : l'acte de mariage s'ouvre par le MARIE, toujours un homme.
+                FilterChip(selected = true, onClick = {}, label = { Text("Mari\u00E9 (homme)") })
+            } else {
+                FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("M") })
+                FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("F") })
+            }
             // v0.67 : un nouveau-n\u00E9 n'a pas de profession (N/B).
             if (type != "N" && type != "B") {
                 Champ("Profession", profession, { profession = it }, modifier = Modifier.weight(1f))
@@ -1137,7 +1142,7 @@ fun EcranSaisieActe(
                     mereNomInit = initial?.mereNom ?: "",
                     nom = nom.trim(),
                     prenoms = prenoms.trim(),
-                    sexe = sexe,
+                    sexe = if (type == "M" && !editionActe) "M" else sexe,
                     profession = profession.trim(),
                     pereNom = pere.nom.trim(), perePrenoms = pere.prenoms.trim(),
                     pereNe = pere.ne.trim(), pereLieu = pere.lieu.trim(), pereDept = normaliserDept(pere.dept),
@@ -1269,8 +1274,11 @@ fun EcranSaisieActe(
     if (pickerOuvert) {
         // v0.105 : meme selecteur (avec recherche) que partout dans l'application.
         DialogueChoixPersonne(
-            titre = if (pickerCible == 0) "Personne concern\u00E9e" else "Mari\u00E9e",
-            personnes = personnes,
+            titre = if (pickerCible == 0) (if (type == "M" && !editionActe) "Mari\u00E9 (homme)" else "Personne concern\u00E9e") else "Mari\u00E9e (femme)",
+            // v0.106 : mariage = le mari\u00E9 est un homme, la mari\u00E9e une femme.
+            personnes = if (type != "M" || editionActe) personnes
+                else if (pickerCible == 0) personnes.filter { it.sexe != "F" }
+                else personnes.filter { it.sexe != "M" },
             onChoisi = { cand ->
                 if (pickerCible == 0) {
                     remplirDepuis(prefillActe(cand, personnes, type, citations = citations))

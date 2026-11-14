@@ -1,5 +1,11 @@
 # Historique des versions — GénéaPoche
 
+## v0.106 — Mariage : les époux sont rattachés, marié = homme, mariée = femme
+
+- **Rattachement à l'arbre** : cause trouvée — l'acte de mariage renseignait la date et le lieu mais **ne liait jamais le marié et la mariée** (le conjoint n'était posé que par la mention marginale d'une naissance), si bien qu'une personne saisie par son mariage restait isolée de l'arbre. Les deux époux deviennent désormais **conjoints l'un de l'autre** (conjoint principal, ou conjoint supplémentaire en cas de remariage) ; la numérotation est recalculée à l'enregistrement.
+- **Marié = homme, mariée = femme** : à la saisie d'un acte de mariage, le sexe du marié est imposé (puce « Marié (homme) »), le sélecteur de personne concernée n'offre que les hommes et celui de la mariée que les femmes ; un enregistrement avec une femme comme marié, ou un homme comme mariée, est refusé avec un message, avant toute création de fiche. La correction d'un mariage existant depuis une fiche n'est pas concernée. Sexes inconnus complétés (M / F).
+- 145 tests ; version 0.106.
+
 ## v0.105 — Communes repliées, sélecteur de personne uniforme, correction et suppression d'actes
 
 - **Champs Commune (partout)** : la liste de suggestions ne s'affiche que champ actif et lieu non encore choisi ; elle **se replie** au choix d'une commune, à la perte du focus, et quand le lieu porte déjà son code INSEE ; un lien « ✕ Effacer la commune » permet de repartir à zéro. Un seul composant : la correction vaut pour tous les champs Commune (acte, mentions marginales, témoins, domicile, cimetière, bloc d'événement…).

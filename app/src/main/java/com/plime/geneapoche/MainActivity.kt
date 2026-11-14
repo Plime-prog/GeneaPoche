@@ -1688,6 +1688,20 @@ fun AppEcran(
             message = "\u00C9v\u00E9nement enregistr\u00E9 : " + a.intitule.trim().ifEmpty { "sans intitul\u00E9" }
             return
         }
+        // v0.106 : acte de mariage = un marie (homme) et une mariee (femme).
+        // Controle AVANT toute creation de fiche ; une correction d'un acte
+        // existant depuis une fiche (edition) n'est pas concernee.
+        if (a.type == "M" && !a.editionFiche) {
+            val exMarie = personneParId(personnes, a.personneId)
+                ?: matchPersonneActe(personnes, a.nom, a.prenoms, "")
+            val exMariee = personneParId(personnes, a.marieeId)
+                ?: matchPersonneActe(personnes, a.marieeNom, a.marieePrenoms, "")
+            val refusSexe = refusSexeMariage(exMarie?.sexe ?: a.sexe, exMariee?.sexe ?: "")
+            if (refusSexe != null) {
+                message = refusSexe
+                return
+            }
+        }
         val nouveaux = nomsNouveaux(a)
         if (nouveaux.isNotEmpty() && !confirme) {
             acteAConfirmer = a
@@ -2016,6 +2030,13 @@ fun AppEcran(
         // Chantier 12.0 : plus AUCUN acte stocke dans l'app. La coche
         // "Enregistre" du formulaire est PERSISTEE par type sur la fiche
         // (miroir sur la mariee pour un mariage).
+        // v0.106 : les EPOUX sont RATTACHES l'un a l'autre (le marie et la
+        // mariee de l'acte deviennent conjoints), sexes completes si inconnus.
+        if (a.type == "M" && mariee != null) {
+            lierConjointsActe(p, mariee)
+            if (p.sexe.isBlank() && !edition) p.sexe = "M"
+            if (mariee.sexe.isBlank() && !edition) mariee.sexe = "F"
+        }
         p.definirEnregistre(a.type, a.enregistre)
         if (mariee != null) mariee.definirEnregistre(a.type, a.enregistre)
         // v0.92 : source choisie sur le formulaire = CITATION (numero d'acte,
