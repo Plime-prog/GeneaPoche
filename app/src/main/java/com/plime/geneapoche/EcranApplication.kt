@@ -976,13 +976,15 @@ fun EcranApplication(
                     imageSaisiePresente = uri != null
                 }
                 LaunchedEffect(uriImage) {
-                    val u = uriImage ?: return@LaunchedEffect
-                    imageTranscription = try {
-                        val opts = android.graphics.BitmapFactory.Options().apply { inSampleSize = 2 }
-                        contexte.contentResolver.openInputStream(u)?.use { flux ->
-                            android.graphics.BitmapFactory.decodeStream(flux, null, opts)
-                        }
-                    } catch (e2: Exception) { null }
+                    val u = uriImage
+                    if (u == null) {
+                        imageTranscription = null
+                        return@LaunchedEffect
+                    }
+                    // v0.104 : decodage HORS du thread principal, taille bornee.
+                    imageTranscription = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        decoderImageReduite(contexte, u)
+                    }
                 }
                 Column(Modifier.fillMaxSize().padding(marges).imePadding()) {
                     // v0.96 : le bandeau (Fermer / Image a transcrire) est
@@ -1030,10 +1032,9 @@ fun EcranApplication(
                             // + 255 * (0.5 - 0.5 * contraste)).
                             val s = lumiereImage * contrasteImage
                             val decalage = 255f * (0.5f - 0.5f * contrasteImage)
-                            Image(
-                                bitmap = bmp.asImageBitmap(),
-                                contentDescription = "Image \u00e0 transcrire",
-                                colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(
+                            val imageCompose = remember(bmp) { bmp.asImageBitmap() }
+                            val filtreImage = remember(s, decalage) {
+                                androidx.compose.ui.graphics.ColorFilter.colorMatrix(
                                     androidx.compose.ui.graphics.ColorMatrix(
                                         floatArrayOf(
                                             s, 0f, 0f, 0f, decalage,
@@ -1042,7 +1043,12 @@ fun EcranApplication(
                                             0f, 0f, 0f, 1f, 0f
                                         )
                                     )
-                                ),
+                                )
+                            }
+                            Image(
+                                bitmap = imageCompose,
+                                contentDescription = "Image \u00e0 transcrire",
+                                colorFilter = filtreImage,
                                 modifier = Modifier.fillMaxSize().graphicsLayer {
                                     scaleX = zoomImage; scaleY = zoomImage
                                     translationX = decaleImage.x; translationY = decaleImage.y
@@ -1188,7 +1194,18 @@ fun EcranApplication(
                         Spacer(Modifier.height(4.dp))
                         Text(personnes.size.toString() + " personnes", fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(2.dp))
-                        Text("Version 0.103", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Version 0.104", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        // v0.104 : dernier arret brutal de l'application (trace locale).
+                        val ctxIncident = LocalContext.current
+                        var incident by remember { mutableStateOf(Incidents.lire(ctxIncident)) }
+                        if (incident != null) {
+                            Spacer(Modifier.height(6.dp))
+                            Text("Dernier incident (trace locale, sans donn\u00e9es g\u00e9n\u00e9alogiques) :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                            androidx.compose.foundation.text.selection.SelectionContainer {
+                                Text(incident!!.take(1200), style = MaterialTheme.typography.bodySmall, fontSize = 10.sp)
+                            }
+                            TextButton(onClick = { Incidents.effacer(ctxIncident); incident = null }) { Text("Effacer cette trace") }
+                        }
                         Spacer(Modifier.height(8.dp))
                             TextButton(
                                 onClick = { menuGedcom = false; exportDialogue = true },

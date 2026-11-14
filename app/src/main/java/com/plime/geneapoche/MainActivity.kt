@@ -102,6 +102,7 @@ class MainActivity : ComponentActivity() {
         // puis bascule vers Theme.GeneaPoche (postSplashScreenTheme).
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        Incidents.installer(this)
         // G3-03 : affichage bord a bord ; les ecrans gerent les marges
         // (barre d'etat, barre de navigation, clavier) via les insets.
         enableEdgeToEdge()
