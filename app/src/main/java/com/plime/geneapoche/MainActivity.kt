@@ -1279,84 +1279,11 @@ fun AppEcran(
     // jamais dupliqu\u00E9es ; les autres sont ajout\u00E9es avec de nouveaux ids ;
     // tous les liens (p\u00E8re, m\u00E8re, conjoint, enfants) sont remapp\u00E9s.
     fun fusionnerBase(importees: List<Personne>) {
-        val correspondances = mutableMapOf<Long, Long>()
-        fun anneesCompatibles(d1: String, d2: String): Boolean {
-            val a1 = anneeDe(d1)
-            val a2 = anneeDe(d2)
-            return a1 == null || a2 == null || a1 == a2
-        }
-        // Passe 1 : reconnaissance des personnes existantes et compl\u00E9tion
-        // de leurs champs ENCORE VIDES uniquement.
-        importees.forEach { imp ->
-            val doublon = personnes.firstOrNull { q ->
-                q.nom.trim().uppercase() == imp.nom.trim().uppercase() &&
-                q.prenoms.trim().uppercase() == imp.prenoms.trim().uppercase() &&
-                anneesCompatibles(q.dateNaissance, imp.dateNaissance)
-            }
-            if (doublon != null) {
-                correspondances[imp.id] = doublon.id
-                if (doublon.sosa.isBlank() && imp.sosa.isNotBlank()) doublon.sosa = imp.sosa
-                if (doublon.sexe.isBlank() && imp.sexe.isNotBlank()) doublon.sexe = imp.sexe
-                if (doublon.dateNaissance.isBlank()) doublon.dateNaissance = imp.dateNaissance
-                if (doublon.heureNaissance.isBlank()) doublon.heureNaissance = imp.heureNaissance
-                if (doublon.lieuNaissance.isBlank()) doublon.lieuNaissance = imp.lieuNaissance
-                if (doublon.deptNaissance.isBlank()) doublon.deptNaissance = imp.deptNaissance
-                if (doublon.dateBapteme.isBlank()) doublon.dateBapteme = imp.dateBapteme
-                if (doublon.heureBapteme.isBlank()) doublon.heureBapteme = imp.heureBapteme
-                if (doublon.lieuBapteme.isBlank()) doublon.lieuBapteme = imp.lieuBapteme
-                if (doublon.deptBapteme.isBlank()) doublon.deptBapteme = imp.deptBapteme
-                if (doublon.dateMariage.isBlank()) doublon.dateMariage = imp.dateMariage
-                if (doublon.heureMariage.isBlank()) doublon.heureMariage = imp.heureMariage
-                if (doublon.lieuMariage.isBlank()) doublon.lieuMariage = imp.lieuMariage
-                if (doublon.deptMariage.isBlank()) doublon.deptMariage = imp.deptMariage
-                if (doublon.dateDeces.isBlank()) doublon.dateDeces = imp.dateDeces
-                if (doublon.heureDeces.isBlank()) doublon.heureDeces = imp.heureDeces
-                if (doublon.lieuDeces.isBlank()) doublon.lieuDeces = imp.lieuDeces
-                if (doublon.deptDeces.isBlank()) doublon.deptDeces = imp.deptDeces
-                if (doublon.dateSepulture.isBlank()) doublon.dateSepulture = imp.dateSepulture
-                if (doublon.heureSepulture.isBlank()) doublon.heureSepulture = imp.heureSepulture
-                if (doublon.lieuSepulture.isBlank()) doublon.lieuSepulture = imp.lieuSepulture
-                if (doublon.deptSepulture.isBlank()) doublon.deptSepulture = imp.deptSepulture
-                if (doublon.profession.isBlank()) doublon.profession = imp.profession
-                if (doublon.notesLibres.isBlank()) doublon.notesLibres = imp.notesLibres
-                imp.evenementsLibres.forEach { evI ->
-                    if (doublon.evenementsLibres.none {
-                        it.intitule.trim().uppercase() == evI.intitule.trim().uppercase() &&
-                        it.date.trim() == evI.date.trim()
-                    }) {
-                        doublon.evenementsLibres.add(evI.copy(id = Stockage.prochainId(ctx)))
-                    }
-                }
-            }
-        }
-        // Passe 2 : ajout des personnes ABSENTES avec de nouveaux ids.
-        var ajoutees = 0
-        val idsNouvelles = mutableMapOf<Long, Long>()
-        importees.filter { !correspondances.containsKey(it.id) }.forEach { imp ->
-            val nid = Stockage.prochainId(ctx)
-            idsNouvelles[imp.id] = nid
-            personnes.add(imp.copy(id = nid))
-            IndexPersonnes.invalider()
-            ajoutees += 1
-        }
-        // Passe 3 : remap des liens vers la base fusionn\u00E9e (aucun doublon).
-        fun cible(idImp: Long): Long = correspondances[idImp] ?: idsNouvelles[idImp] ?: 0L
-        importees.forEach { imp ->
-            val q = personneParId(personnes, cible(imp.id)) ?: return@forEach
-            if (q.pere == 0L && imp.pere != 0L) q.pere = cible(imp.pere)
-            if (q.mere == 0L && imp.mere != 0L) q.mere = cible(imp.mere)
-            if (q.conjoint == 0L && imp.conjoint != 0L) q.conjoint = cible(imp.conjoint)
-            imp.enfants.forEach { idEnf ->
-                val idCible = cible(idEnf)
-                if (idCible != 0L && !q.enfants.contains(idCible)) {
-                    val enfImp = personneParId(personnes, idCible)
-                    if (enfImp == null || incoherenceParente(q, enfImp.dateNaissance) == null) q.enfants.add(idCible)
-                }
-            }
-        }
+        // Logique pure et testee : voir ImportBase.kt (fusionnerImportees).
+        val res = fusionnerImportees(personnes, importees) { Stockage.prochainId(ctx) }
         verifierLiensEtRapporter()
         enregistrer()
-        message = "Fusion termin\u00E9e : " + correspondances.size.toString() + " personne(s) compl\u00E9t\u00E9e(s), " + ajoutees.toString() + " ajout\u00E9e(s). Aucun doublon."
+        message = "Fusion termin\u00E9e : " + res.completees.toString() + " personne(s) compl\u00E9t\u00E9e(s), " + res.ajoutees.toString() + " ajout\u00E9e(s). Aucun doublon."
     }
 
     // Vide entierement la base (personnes et journal), apres confirmation.
