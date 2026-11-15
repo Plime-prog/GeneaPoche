@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.112 — Découpage de `MainActivity.kt` (2e étape) et liste des branches à nettoyer
+
+- **Aucun changement visible** : les deux dialogues « de cujus » (choix de la personne de référence, édition de son n° Sosa avec aperçu) quittent `MainActivity.kt` pour `DialoguesApp.kt`. Même principe que la v0.111 : état et actions passés en paramètres, textes et ordre des actions conservés ; l'action exécutée à l'ouverture (présélection) est transmise telle quelle.
+- `MainActivity.kt` : 2 696 → 2 607 lignes (2 879 avant la v0.111).
+- **Dépôt** : 186 branches sans travail perdu sont identifiées comme supprimables (déjà dans `main`, PR fusionnée, ou documentation seule) ; liste, raisons et restauration par SHA dans `docs/BRANCHES-A-SUPPRIMER-2026-11-15.md`. Suppression à exécuter par le propriétaire (non permise depuis l'environnement de l'assistant).
+- 190 tests inchangés ; version 0.112.
+
 ## v0.111 — Découpage de `MainActivity.kt` (1re étape)
 
 - **Aucun changement visible** : huit boîtes de dialogue de l'écran principal (changement de PIN, délai de verrouillage, thème, données illisibles, noms inconnus, import GEDCOM, GEDCOM chiffré, rappel de fichier exporté) sont **déplacées dans `DialoguesApp.kt`**. Chacune reçoit son état et ses actions en paramètres ; l'état reste possédé par l'écran principal. Textes, ordre des actions et comportements conservés (déplacement mécanique).
