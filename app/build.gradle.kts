@@ -12,8 +12,8 @@ android {
         applicationId = "com.plime.geneapoche"
         minSdk = 26
         targetSdk = 36
-        versionCode = 117
-        versionName = "0.117"
+        versionCode = 118
+        versionName = "0.118"
     }
 
     signingConfigs {
@@ -61,9 +61,9 @@ kotlin {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.08.00")
+    val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
     implementation(composeBom)
-    // G2-14 : dependances alignees sur le BOM Compose 2026.08.00 (bump Dependabot).
+    // G2-14 : dependances alignees sur le BOM Compose 2026.09.00 (bump Dependabot).
     implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")

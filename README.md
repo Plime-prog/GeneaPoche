@@ -46,7 +46,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.117)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.117-release.apk` (signé) ou `GeneaPoche-v0.117-debug.apk`.
+**Téléchargement direct de la dernière version (v0.118)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.118-release.apk` (signé) ou `GeneaPoche-v0.118-debug.apk`.
 
 Sinon, depuis les sources :
 
@@ -57,7 +57,7 @@ Sinon, depuis les sources :
 ## Développement
 
 - Android Kotlin + Jetpack Compose, Material 3 (thème clair/sombre, palette verte).
-- AGP 9.2.0, Kotlin 2.4.21, compileSdk 37, targetSdk 36, JDK 17, BOM Compose 2026.08.00.
+- AGP 9.2.0, Kotlin 2.4.21, compileSdk 37, targetSdk 36, JDK 17, BOM Compose 2026.09.00.
 - CI GitHub Actions : lint, tests unitaires JVM (220), APK debug et release signé à chaque push.
 - Contribuer : voir [CONTRIBUTING.md](CONTRIBUTING.md). Historique détaillé des versions : [CHANGELOG.md](CHANGELOG.md).
 - Licence : MIT (voir [LICENSE](LICENSE)).
