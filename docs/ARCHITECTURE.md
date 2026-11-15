@@ -1,10 +1,10 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 15 novembre 2026 (v0.114). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 15 novembre 2026 (v0.115). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
-Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3). Aucune permission Android, aucune bibliothèque réseau ou de mesure. Données stockées localement, chiffrées. Code dans `app/src/main/java/com/plime/geneapoche/` (39 fichiers, ~20 000 lignes) ; tests JVM dans `app/src/test/…` (12 fichiers, 216 tests).
+Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3). Aucune permission Android, aucune bibliothèque réseau ou de mesure. Données stockées localement, chiffrées. Code dans `app/src/main/java/com/plime/geneapoche/` (39 fichiers, ~20 000 lignes) ; tests JVM dans `app/src/test/…` (12 fichiers, 220 tests).
 
 ## Couches
 

@@ -122,3 +122,11 @@ fun fusionnerImportees(
     }
     return ResultatFusionImport(correspondances.size, absentes.size)
 }
+
+// v0.115 : choix du de cujus apres un REMPLACEMENT de base (logique extraite
+// de MainActivity.remplacerBase, comportement identique) : la personne au plus
+// petit numero Sosa numerique du fichier, sinon la premiere de la liste.
+fun choisirDeCujusApresImport(personnes: List<Personne>): Personne? {
+    val avecSosa = personnes.filter { it.sosa.trim().toLongOrNull() != null }
+    return avecSosa.minByOrNull { it.sosa.trim().toLong() } ?: personnes.firstOrNull()
+}
