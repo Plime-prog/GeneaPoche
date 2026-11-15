@@ -2510,126 +2510,37 @@ fun AppEcran(
         )
     }
 
-    // Dialogue : choix du de cujus et de son n Sosa (pas forcement 1).
-    // Toute la numerotation Sosa / d'Aboville en decoule automatiquement.
     // Dialogue : choix du de cujus (liste des personnes avec leur numero).
     // Toucher une personne ouvre le dialogue d'edition de son n Sosa.
     if (cujusDialogue) {
-        LaunchedEffect(cujusDialogue) {
-            val pre = cujusPreselec
-            if (cujusDialogue && pre != null) {
-                cujusEdite = pre
-                cujusPreselec = null
-            }
-        }
-        AlertDialog(
-            onDismissRequest = { cujusDialogue = false },
-            title = { Text("De cujus") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text(
-                        "Touchez la personne de r\u00E9f\u00E9rence : son n\u00B0 Sosa (pas forc\u00E9ment 1) sera demand\u00E9, puis toute la num\u00E9rotation Sosa et d'Aboville sera recalcul\u00E9e.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
-                        personnes.sortedWith(
-                            compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
-                        ).forEach { cand ->
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 32.dp)
-                                    .clickable { cujusEdite = cand }
-                                    .background(
-                                        if (idDuCujus() == cand.id) CouleurVertPale
-                                        else androidx.compose.ui.graphics.Color.Transparent
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 0.dp)
-                            ) {
-                                // v0.79 : identifiant unique (titre + N. + D.), compact.
-                                Text(
-                                    libelleUnique(cand),
-                                    Modifier.weight(1f),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
+        DialogueChoixCujus(
+            personnes = personnes,
+            idCujus = idDuCujus(),
+            onOuverture = {
+                val pre = cujusPreselec
+                if (cujusDialogue && pre != null) {
+                    cujusEdite = pre
+                    cujusPreselec = null
                 }
             },
-            confirmButton = {
-                TextButton(onClick = { cujusDialogue = false }) { Text("Fermer") }
-            }
+            onChoisir = { cujusEdite = it },
+            onFermer = { cujusDialogue = false }
         )
     }
 
     // Dialogue d'edition du n Sosa du de cujus choisi : APERCU PUR pendant la
     // saisie (aucune donnee n'est modifiee avant Enregistrer), puis recalcule
     // complet + sauvegarde a l'enregistrement, avec message de confirmation.
-    if (cujusEdite != null) {
-        val cible = cujusEdite!!
-        var numCujus by remember(cible.id) {
-            mutableStateOf((cible.sosa.trim().toLongOrNull() ?: sosaCujus).toString())
-        }
-        val numSaisi = numCujus.trim().toLongOrNull() ?: 0L
-        val numValide = numSaisi >= 1L
-        // Apercu SANS toucher aux donnees : le numero du de cujus, puis les
-        // numeros qui en decouleront (pere 2n, mere 2n+1, enfants n.1, n.2...).
-        fun apercuNumerotation(n: Long): String {
-            val m = mutableListOf<String>()
-            m.add(cible.titre() + " : Sosa " + n.toString())
-            if (cible.pere != 0L) m.add("P\u00E8re : Sosa " + (2L * n).toString())
-            if (cible.mere != 0L) m.add("M\u00E8re : Sosa " + (2L * n + 1L).toString())
-            if (cible.enfants.isNotEmpty()) {
-                m.add("Enfants : d'Aboville " + n.toString() + ".1 \u00E0 " + n.toString() + "." + cible.enfants.size.toString())
-            }
-            return m.joinToString("\n")
-        }
-        fun annulerCujus() {
-            cujusEdite = null
-        }
-        AlertDialog(
-            onDismissRequest = { annulerCujus() },
-            title = { Text("De cujus : " + cible.titre()) },
-            text = {
-                Column {
-                    Text(
-                        "N\u00B0 Sosa du de cujus : l'aper\u00E7u se met \u00E0 jour en direct ; Enregistrer recalcule et applique toute la num\u00E9rotation.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    OutlinedTextField(
-                        value = numCujus,
-                        onValueChange = { t -> numCujus = t.filter { it.isDigit() } },
-                        label = { Text("N\u00B0 Sosa (chiffres)") },
-                        isError = !numValide,
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    )
-                    if (numValide) {
-                        Text(
-                            apercuNumerotation(numSaisi),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = CouleurVertFonce,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-                }
+    cujusEdite?.let { cible ->
+        DialogueEditionCujus(
+            cible = cible,
+            sosaCujus = sosaCujus,
+            onEnregistrer = { n ->
+                definirCujus(cible, n)
+                cujusEdite = null
+                cujusDialogue = false
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        definirCujus(cible, numSaisi)
-                        cujusEdite = null
-                        cujusDialogue = false
-                    },
-                    enabled = numValide
-                ) { Text("Enregistrer") }
-            },
-            dismissButton = {
-                TextButton(onClick = { annulerCujus() }) { Text("Annuler") }
-            }
+            onAnnuler = { cujusEdite = null }
         )
     }
 

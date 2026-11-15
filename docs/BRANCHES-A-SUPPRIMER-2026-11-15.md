@@ -1,8 +1,18 @@
-# Branches supprimées le 15 novembre 2026
+# Branches à supprimer — liste établie le 15 novembre 2026
 
-Nettoyage de dépôt (186 branches). Seules ont été supprimées des branches **sans travail perdu** : entièrement contenues dans `main`, ou PR fusionnée avec le même commit de tête, ou ne portant que des fichiers de documentation (README/CHANGELOG, déjà publiés sous d'autres commits). Les **Releases GitHub et leurs APK ne sont pas touchées** : une release ne dépend pas de sa branche.
+**Statut : non supprimées.** L'environnement de l'assistant refuse les écritures de suppression (HTTP 403) ; la suppression est à exécuter par le propriétaire du dépôt (voir ci-dessous). Nettoyage proposé : 186 branches. Seules figurent ici des branches **sans travail perdu** : entièrement contenues dans `main`, ou PR fusionnée avec le même commit de tête, ou ne portant que des fichiers de documentation (README/CHANGELOG, déjà publiés sous d'autres commits). Les **Releases GitHub et leurs APK ne sont pas touchées** : une release ne dépend pas de sa branche.
 
-## Restaurer une branche
+## Supprimer ces branches (propriétaire)
+
+Depuis un clone local, avec la liste des noms de la dernière section (une branche par ligne dans un fichier `liste.txt`) :
+
+```bash
+xargs -n 40 git push origin --delete < liste.txt
+```
+
+Ou par l'interface GitHub : *Code → Branches*, icône corbeille. Réglage conseillé pour la suite : *Settings → General → « Automatically delete head branches »*.
+
+## Restaurer une branche après suppression
 
 ```bash
 git push origin <sha>:refs/heads/<nom-de-la-branche>
@@ -14,7 +24,7 @@ Le SHA est celui de la colonne « Tête » (utiliser le SHA complet). GitHub con
 
 `main`, `release-0.111` (version courante), 8 branches de PR ouvertes (`changelog-v099-bis`, `fix-edition-prefill-v56`, 6 `dependabot/*`), et 5 branches portant des commits non fusionnés touchant du code ou le workflow, à examiner : `refonte-fiche-v33`, `release-0.32`, `release-0.33`, `release-0.81`, `release-0.95`.
 
-## Branches supprimées
+## Branches à supprimer
 
 | Branche | Tête | Raison |
 |---|---|---|

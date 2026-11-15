@@ -1,6 +1,13 @@
 package com.plime.geneapoche
 
 import android.content.Context
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -333,4 +340,129 @@ fun DialogueRappelPartage(
                     TextButton(onClick = { onPlusTard() }) { Text("Me le rappeler plus tard") }
                 }
             )
+}
+
+// Dialogue : choix du de cujus et de son n Sosa (pas forcement 1).
+// Toute la numerotation Sosa / d'Aboville en decoule automatiquement.
+// onOuverture : executee une fois a l'ouverture (preselection eventuelle).
+@Composable
+fun DialogueChoixCujus(
+    personnes: List<Personne>,
+    idCujus: Long,
+    onOuverture: () -> Unit,
+    onChoisir: (Personne) -> Unit,
+    onFermer: () -> Unit
+) {
+    LaunchedEffect(Unit) { onOuverture() }
+    AlertDialog(
+                onDismissRequest = { onFermer() },
+                title = { Text("De cujus") },
+                text = {
+                    Column(Modifier.verticalScroll(rememberScrollState())) {
+                        Text(
+                            "Touchez la personne de r\u00E9f\u00E9rence : son n\u00B0 Sosa (pas forc\u00E9ment 1) sera demand\u00E9, puis toute la num\u00E9rotation Sosa et d'Aboville sera recalcul\u00E9e.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
+                            personnes.sortedWith(
+                                compareBy({ it.nom.trim().uppercase() }, { it.prenoms.trim().uppercase() })
+                            ).forEach { cand ->
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 32.dp)
+                                        .clickable { onChoisir(cand) }
+                                        .background(
+                                            if (idCujus == cand.id) CouleurVertPale
+                                            else androidx.compose.ui.graphics.Color.Transparent
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 0.dp)
+                                ) {
+                                    // v0.79 : identifiant unique (titre + N. + D.), compact.
+                                    Text(
+                                        libelleUnique(cand),
+                                        Modifier.weight(1f),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { onFermer() }) { Text("Fermer") }
+                }
+            )
+}
+
+// Edition du n Sosa du de cujus choisi (apercu pur, rien n'est modifie avant
+// Enregistrer).
+@Composable
+fun DialogueEditionCujus(
+    cible: Personne,
+    sosaCujus: Long,
+    onEnregistrer: (Long) -> Unit,
+    onAnnuler: () -> Unit
+) {
+        var numCujus by remember(cible.id) {
+            mutableStateOf((cible.sosa.trim().toLongOrNull() ?: sosaCujus).toString())
+        }
+        val numSaisi = numCujus.trim().toLongOrNull() ?: 0L
+        val numValide = numSaisi >= 1L
+        // Apercu SANS toucher aux donnees : le numero du de cujus, puis les
+        // numeros qui en decouleront (pere 2n, mere 2n+1, enfants n.1, n.2...).
+        fun apercuNumerotation(n: Long): String {
+            val m = mutableListOf<String>()
+            m.add(cible.titre() + " : Sosa " + n.toString())
+            if (cible.pere != 0L) m.add("P\u00E8re : Sosa " + (2L * n).toString())
+            if (cible.mere != 0L) m.add("M\u00E8re : Sosa " + (2L * n + 1L).toString())
+            if (cible.enfants.isNotEmpty()) {
+                m.add("Enfants : d'Aboville " + n.toString() + ".1 \u00E0 " + n.toString() + "." + cible.enfants.size.toString())
+            }
+            return m.joinToString("\n")
+        }
+        fun annulerCujus() {
+            onAnnuler()
+        }
+        AlertDialog(
+            onDismissRequest = { annulerCujus() },
+            title = { Text("De cujus : " + cible.titre()) },
+            text = {
+                Column {
+                    Text(
+                        "N\u00B0 Sosa du de cujus : l'aper\u00E7u se met \u00E0 jour en direct ; Enregistrer recalcule et applique toute la num\u00E9rotation.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = numCujus,
+                        onValueChange = { t -> numCujus = t.filter { it.isDigit() } },
+                        label = { Text("N\u00B0 Sosa (chiffres)") },
+                        isError = !numValide,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    )
+                    if (numValide) {
+                        Text(
+                            apercuNumerotation(numSaisi),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = CouleurVertFonce,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onEnregistrer(numSaisi)
+                    },
+                    enabled = numValide
+                ) { Text("Enregistrer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { annulerCujus() }) { Text("Annuler") }
+            }
+        )
 }
