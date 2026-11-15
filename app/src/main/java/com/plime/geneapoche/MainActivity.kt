@@ -1242,9 +1242,7 @@ fun AppEcran(
         modele.importCitations = emptyList()
         pileFiches.clear()
         // De cujus apres import : la personne au plus petit n Sosa du fichier, sinon la 1re.
-        val avecSosa = personnes.filter { it.sosa.trim().toLongOrNull() != null }
-        val premier = avecSosa.minByOrNull { it.sosa.trim().toLong() }
-            ?: personnes.firstOrNull()
+        val premier = choisirDeCujusApresImport(personnes)
         if (premier != null) {
             if (premier.sosa.isBlank()) {
                 renumeroter(personnes, premier.id, 1L)

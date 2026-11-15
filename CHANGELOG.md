@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.115 — Remplacement de la base : analyse, choix du de cujus testé
+
+- Relecture de « Remplacer la base » (`remplacerBase`) : sauvegarde automatique préalable, carnet de sources remplacé par celui du fichier, compteur d'identifiants réaligné sur le maximum existant (`verifierLiensEtRapporter`), rapport d'intégrité consigné au journal. **Aucun défaut de données trouvé** (contrairement à la fusion, les identifiants du fichier deviennent ceux de la base : pas de conversion à faire).
+- Seule partie pure extraite et testée (`choisirDeCujusApresImport`, 4 tests) : plus petit Sosa numérique du fichier, sinon première personne. Comportement identique. Le reste dépend de l'état de l'écran et du stockage : il reste dans `MainActivity.kt`, sans test automatique.
+- 220 tests ; version 0.115.
+
 ## v0.114 — Import GEDCOM par fusion : liens des personnes ajoutées convertis et testés
 
 - **Correctif (menu d'import, option « Fusionner »)** : d'après la lecture du code, les personnes **ajoutées** par une fusion étaient copiées avec leurs liens (père, mère, conjoint, enfants, témoins, signataires) restés dans la **numérotation du fichier importé** (1 à n), qui n'a aucun rapport avec celle de votre base : ces liens pouvaient désigner de **mauvaises personnes** de la base. La copie partageait en outre sa liste d'enfants avec la personne importée, modifiée pendant son propre parcours (risque d'erreur à l'import). Désormais tous les identifiants du fichier sont convertis : vers la personne déjà présente quand elle est reconnue, sinon vers son nouvel identifiant ; les références inconnues disparaissent ; les listes ne sont plus partagées.
