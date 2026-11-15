@@ -46,7 +46,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.110)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.110-release.apk` (signé) ou `GeneaPoche-v0.110-debug.apk`.
+**Téléchargement direct de la dernière version (v0.111)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.111-release.apk` (signé) ou `GeneaPoche-v0.111-debug.apk`.
 
 Sinon, depuis les sources :
 

@@ -2474,166 +2474,39 @@ fun AppEcran(
 
     // G1-15 : changement de code PIN (l'ancien est exige).
     if (dialoguePin) {
-        var ancienPin by remember { mutableStateOf("") }
-        var nouveauPin1 by remember { mutableStateOf("") }
-        var nouveauPin2 by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { dialoguePin = false },
-            title = { Text("Changer le code PIN") },
-            text = {
-                Column {
-                    Text("L'ancien code est exig\u00E9 ; la base est re-chiffr\u00E9e avec le nouveau code, sans rien perdre.", style = MaterialTheme.typography.bodySmall)
-                    OutlinedTextField(
-                        value = ancienPin,
-                        onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) ancienPin = it },
-                        label = { Text("Ancien code") },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    )
-                    OutlinedTextField(
-                        value = nouveauPin1,
-                        onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) nouveauPin1 = it },
-                        label = { Text("Nouveau code") },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-                    )
-                    OutlinedTextField(
-                        value = nouveauPin2,
-                        onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) nouveauPin2 = it },
-                        label = { Text("Confirmez le nouveau code") },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (nouveauPin1.length < 4) {
-                            message = "Le nouveau code doit contenir au moins 4 chiffres."
-                        } else if (nouveauPin1 != nouveauPin2) {
-                            message = "Les deux nouveaux codes ne correspondent pas."
-                        } else if (Stockage.changerPin(ctx, ancienPin, nouveauPin1)) {
-                            message = "Code PIN chang\u00E9 : utilisez le nouveau code au prochain d\u00E9verrouillage."
-                            dialoguePin = false
-                        } else {
-                            message = "Ancien code incorrect."
-                        }
-                    },
-                    enabled = ancienPin.isNotEmpty() && nouveauPin1.isNotEmpty() && nouveauPin2.isNotEmpty()
-                ) { Text("Changer") }
-            },
-            dismissButton = {
-                TextButton(onClick = { dialoguePin = false }) { Text("Annuler") }
-            }
-        )
+        DialogueChangerPin(ctx, onMessage = { message = it }, onFermer = { dialoguePin = false })
     }
 
     // G1-14 : delai de reverrouillage reglable.
     if (dialogueDelai) {
-        AlertDialog(
-            onDismissRequest = { dialogueDelai = false },
-            title = { Text("D\u00E9lai de verrouillage") },
-            text = {
-                Column {
-                    Text("Verrouillage apr\u00E8s un passage en arri\u00E8re-plan ou l'extinction de l'\u00E9cran :", style = MaterialTheme.typography.bodySmall)
-                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 0L); dialogueDelai = false; message = "Verrouillage imm\u00E9diat." }, Modifier.fillMaxWidth()) { Text("Imm\u00E9diat (par d\u00E9faut)") }
-                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 60_000L); dialogueDelai = false; message = "Verrouillage apr\u00E8s 1 minute." }, Modifier.fillMaxWidth()) { Text("Apr\u00E8s 1 minute") }
-                    TextButton(onClick = { Stockage.definirDelaiVerrouillage(ctx, 300_000L); dialogueDelai = false; message = "Verrouillage apr\u00E8s 5 minutes." }, Modifier.fillMaxWidth()) { Text("Apr\u00E8s 5 minutes") }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { dialogueDelai = false }) { Text("Fermer") }
-            }
-        )
+        DialogueDelaiVerrouillage(ctx, onMessage = { message = it }, onFermer = { dialogueDelai = false })
     }
 
     // G3-02 : choix du theme, memorise : Syst\u00E8me (suit le mode sombre du
     // t\u00E9l\u00E9phone), Clair ou Sombre. Appliqu\u00E9 imm\u00E9diatement.
     if (dialogueTheme) {
-        AlertDialog(
-            onDismissRequest = { dialogueTheme = false },
-            title = { Text("Th\u00E8me de l'application") },
-            text = {
-                Column {
-                    Text("Choisissez le th\u00E8me ; le choix est m\u00E9moris\u00E9 :", style = MaterialTheme.typography.bodySmall)
-                    TextButton(onClick = {
-                        Stockage.definirTheme(ctx, "systeme")
-                        themeChoisi.value = "systeme"
-                        dialogueTheme = false
-                    }, Modifier.fillMaxWidth()) { Text("Syst\u00E8me (par d\u00E9faut)") }
-                    TextButton(onClick = {
-                        Stockage.definirTheme(ctx, "clair")
-                        themeChoisi.value = "clair"
-                        dialogueTheme = false
-                    }, Modifier.fillMaxWidth()) { Text("Clair") }
-                    TextButton(onClick = {
-                        Stockage.definirTheme(ctx, "sombre")
-                        themeChoisi.value = "sombre"
-                        dialogueTheme = false
-                    }, Modifier.fillMaxWidth()) { Text("Sombre") }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { dialogueTheme = false }) { Text("Fermer") }
-            }
-        )
+        DialogueTheme(ctx, onChoisi = { themeChoisi.value = it }, onFermer = { dialogueTheme = false })
     }
 
     // G1-04 : donnees illisibles -> affichage + restauration depuis la copie .bak
     if (fichiersIllisibles.isNotEmpty() && !avertissementLectureFerme) {
-        AlertDialog(
-            onDismissRequest = { },
-            title = { Text("Donn\u00E9es illisibles") },
-            text = {
-                Text(
-                    fichiersIllisibles.size.toString() + " fichier(s) de donn\u00E9es ne se lisent plus, pas plus que leur copie .bak. L'enregistrement est bloqu\u00E9 pour ne rien \u00E9craser : restaurez la derni\u00E8re copie valide ou fermez sans rien modifier."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { restaurerDepuisBak() }) { Text("Restaurer la copie .bak") }
-            },
-            dismissButton = {
-                TextButton(onClick = { avertissementLectureFerme = true }) { Text("Fermer") }
-            }
+        DialogueDonneesIllisibles(
+            nombre = fichiersIllisibles.size,
+            onRestaurer = { restaurerDepuisBak() },
+            onFermer = { avertissementLectureFerme = true }
         )
     }
 
     // Confirmation : noms saisis inconnus -> creer de nouvelles fiches
     // (numerotation deduite automatiquement) ou annuler.
     acteAConfirmer?.let { a ->
-        val nouveaux = nomsNouveaux(a)
-        AlertDialog(
-            onDismissRequest = { acteAConfirmer = null },
-            title = { Text("Noms inconnus") },
-            text = {
-                Column {
-                    Text("Ces noms ne correspondent \u00E0 aucune fiche existante :")
-                    nouveaux.forEach { n ->
-                        Text("\u2022 " + n, fontWeight = FontWeight.Bold)
-                    }
-                    Text(
-                        "Cr\u00E9er de nouvelles fiches (la num\u00E9rotation sera d\u00E9duite automatiquement) ? Pour synchroniser avec une fiche existante, annulez et choisissez-la dans la saisie.",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-                }
+        DialogueNomsInconnus(
+            nouveaux = nomsNouveaux(a),
+            onCreer = {
+                acteAConfirmer = null
+                enregistrerActe(a, true)
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    acteAConfirmer = null
-                    enregistrerActe(a, true)
-                }) { Text("Cr\u00E9er les fiches") }
-            },
-            dismissButton = {
-                TextButton(onClick = { acteAConfirmer = null }) { Text("Annuler") }
-            }
+            onAnnuler = { acteAConfirmer = null }
         )
     }
 
@@ -2761,81 +2634,37 @@ fun AppEcran(
     }
 
     importConfirme?.let { importees ->
-        AlertDialog(
-            onDismissRequest = { importConfirme = null },
-            title = { Text("Importer ce GEDCOM ?") },
-            text = {
-                Column {
-                    Text(
-                        "Importer ce fichier : REMPLACER toute la base (" + personnes.size.toString() + " personnes) par les " + importees.size.toString() + " personnes du fichier, ou FUSIONNER sans aucun doublon (les fiches existantes sont compl\u00E9t\u00E9es, jamais dupliqu\u00E9es). Une sauvegarde horodat\u00E9e sera cr\u00E9\u00E9e avant le remplacement (les 5 derni\u00E8res sont conserv\u00E9es et restaurables).",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    // G2-04 : avertissement listant ce que l import ignore.
-                    if (importRapport.isNotEmpty()) {
-                        Text(
-                            "\u00C9l\u00E9ments ignor\u00E9s par l import (aucune perte silencieuse) :",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                        importRapport.take(6).forEach { ligneIgn ->
-                            Text("\u2022 " + ligneIgn, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
+        DialogueImportGedcom(
+            nbActuel = personnes.size,
+            nbImportees = importees.size,
+            rapport = importRapport,
+            onFusionner = {
+                fusionnerBase(importees)
+                importConfirme = null
             },
-            confirmButton = {
-                Row {
-                    TextButton(onClick = {
-                        fusionnerBase(importees)
-                        importConfirme = null
-                    }) { Text("Fusionner", color = CouleurVertFonce, fontWeight = FontWeight.Bold) }
-                    TextButton(onClick = {
-                        remplacerBase(importees)
-                        importConfirme = null
-                    }) { Text("Remplacer", color = CouleurRouge, fontWeight = FontWeight.Bold) }
-                }
+            onRemplacer = {
+                remplacerBase(importees)
+                importConfirme = null
             },
-            dismissButton = {
-                TextButton(onClick = { importConfirme = null }) { Text("Annuler") }
-            }
+            onAnnuler = { importConfirme = null }
         )
     }
 
     // 12.2 : phrase secr\u00E8te d'un GEDCOM chiffr\u00E9 (.gpged) import\u00E9.
     if (importChiffreUri != null) {
-        AlertDialog(
-            onDismissRequest = { importChiffreUri = null; phraseImportChiffre = "" },
-            title = { Text("GEDCOM chiffr\u00E9 (.gpged)") },
-            text = {
-                Column {
-                    Text(
-                        "Ce fichier est chiffr\u00E9 : saisissez la phrase secr\u00E8te choisie \u00E0 son export pour l'ouvrir.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    OutlinedTextField(
-                        value = phraseImportChiffre,
-                        onValueChange = { phraseImportChiffre = it },
-                        label = { Text("Phrase secr\u00E8te (6 caract\u00E8res min.)") },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    )
-                }
+        DialogueImportChiffre(
+            phrase = phraseImportChiffre,
+            onPhrase = { phraseImportChiffre = it },
+            onOuvrir = {
+                val uriChiffree = importChiffreUri
+                val ph = phraseImportChiffre
+                importChiffreUri = null
+                phraseImportChiffre = ""
+                if (uriChiffree != null) lireGedcomChiffre(uriChiffree, ph)
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val uriChiffree = importChiffreUri
-                        val ph = phraseImportChiffre
-                        importChiffreUri = null
-                        phraseImportChiffre = ""
-                        if (uriChiffree != null) lireGedcomChiffre(uriChiffree, ph)
-                    },
-                    enabled = phraseImportChiffre.length >= 6
-                ) { Text("Ouvrir") }
-            },
-            dismissButton = {
-                TextButton(onClick = { importChiffreUri = null; phraseImportChiffre = "" }) { Text("Annuler") }
+            onAnnuler = {
+                importChiffreUri = null
+                phraseImportChiffre = ""
             }
         )
     }
@@ -2845,26 +2674,14 @@ fun AppEcran(
     if (!rappelPartageFerme) {
         val rappelPartage = Stockage.lireFichierPartage(ctx)
         if (verrou.deverrouille && rappelPartage != null) {
-            AlertDialog(
-                onDismissRequest = { rappelPartageFerme = true },
-                title = { Text("Fichier export\u00E9") },
-                text = {
-                    Text(
-                        "Le fichier " + rappelPartage.first + " a \u00E9t\u00E9 export\u00E9 le " +
-                            java.text.SimpleDateFormat("dd/MM/yyyy").format(java.util.Date(rappelPartage.second)) +
-                            ". Une fois le fichier envoy\u00E9, pensez \u00E0 le SUPPRIMER de votre appareil (T\u00E9l\u00E9chargements, messages, e-mails envoy\u00E9s...) : il contient vos donn\u00E9es.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
+            DialogueRappelPartage(
+                nomFichier = rappelPartage.first,
+                dateMs = rappelPartage.second,
+                onSupprime = {
+                    Stockage.effacerFichierPartage(ctx)
+                    rappelPartageFerme = true
                 },
-                confirmButton = {
-                    TextButton(onClick = {
-                        Stockage.effacerFichierPartage(ctx)
-                        rappelPartageFerme = true
-                    }) { Text("Fichier supprim\u00E9", color = CouleurVertFonce, fontWeight = FontWeight.Bold) }
-                },
-                dismissButton = {
-                    TextButton(onClick = { rappelPartageFerme = true }) { Text("Me le rappeler plus tard") }
-                }
+                onPlusTard = { rappelPartageFerme = true }
             )
         }
     }
