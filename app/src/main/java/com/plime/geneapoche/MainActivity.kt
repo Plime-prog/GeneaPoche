@@ -566,10 +566,7 @@ fun AppEcran(
     fun supprimer(p: Personne) {
         // G3-19 : capture complete avant suppression, pour le Snackbar
         // "Annuler" (la restauration remet tout, images chiffrees comprise).
-        val liensAvant = personnes.filter {
-            it.pere == p.id || it.mere == p.id || it.conjoint == p.id ||
-                it.conjointsSupp.contains(p.id) || it.enfants.contains(p.id)
-        }.map { LienAvant(it.id, it.pere, it.mere, it.conjoint, it.conjointsSupp.toList(), it.enfants.toList()) }
+        val liensAvant = capturerLiensAvant(personnes, p.id)
         val pistesRetirees = pistes.filter { it.personneId == p.id }.toList()
         // v0.90 : les citations de la personne partent avec elle (Annuler les rend).
         val citationsRetirees = citations.filter { it.personneId == p.id }.toList()
@@ -582,13 +579,7 @@ fun AppEcran(
         citations.removeAll(citationsRetirees)
         personnes.remove(p)
             IndexPersonnes.invalider()
-        personnes.forEach { q ->
-            if (q.pere == p.id) q.pere = 0L
-            if (q.mere == p.id) q.mere = 0L
-            if (q.conjoint == p.id) q.conjoint = 0L
-            q.conjointsSupp.remove(p.id)
-            q.enfants.remove(p.id)
-        }
+        detacherReferences(personnes, p.id)
         // G2-19 : les pistes de la personne supprimee disparaissent avec
         // elle (aucune reference orpheline ne subsiste dans le journal).
         pistes.removeAll { it.personneId == p.id }
@@ -606,17 +597,7 @@ fun AppEcran(
         val a = modele.annulation ?: return
         personnes.add(a.personne)
             IndexPersonnes.invalider()
-        a.liens.forEach { l ->
-            personneParId(personnes, l.id)?.let { q ->
-                q.pere = l.pere
-                q.mere = l.mere
-                q.conjoint = l.conjoint
-                q.conjointsSupp.clear()
-                q.conjointsSupp.addAll(l.conjointsSupp)
-                q.enfants.clear()
-                q.enfants.addAll(l.enfants)
-            }
-        }
+        restaurerLiens(personnes, a.liens)
         pistes.addAll(a.pistes)
         citations.addAll(a.citations)
         modele.annulation = null
@@ -1007,59 +988,9 @@ fun AppEcran(
         if (gardeId == supprimeId) return
         val garde = personnes.firstOrNull { it.id == gardeId } ?: return
         val supprime = personnes.firstOrNull { it.id == supprimeId } ?: return
-        // 1. Champs texte : recopi\u00E9s seulement s'ils sont vides chez garde.
-        fun recopier(prop: KMutableProperty1<Personne, String>) {
-            if (prop.get(garde).isBlank() && prop.get(supprime).isNotBlank()) {
-                prop.set(garde, prop.get(supprime))
-            }
-        }
-        listOf(
-            Personne::profession, Personne::sexe, Personne::notesLibres,
-            Personne::dateNaissance, Personne::heureNaissance, Personne::lieuNaissance, Personne::deptNaissance,
-            Personne::dateBapteme, Personne::heureBapteme, Personne::lieuBapteme, Personne::deptBapteme,
-            Personne::dateMariage, Personne::heureMariage, Personne::lieuMariage, Personne::deptMariage,
-            Personne::dateDeces, Personne::heureDeces, Personne::lieuDeces, Personne::deptDeces,
-            Personne::dateSepulture, Personne::heureSepulture, Personne::lieuSepulture, Personne::deptSepulture
-        ).forEach { recopier(it) }
-        // 2. Listes : union sans doublon.
-        fun union(dest: MutableList<Long>, src: MutableList<Long>) {
-            src.filterNot { it == supprimeId || dest.contains(it) }.forEach { dest.add(it) }
-        }
-        union(garde.enfants, supprime.enfants)
-        union(garde.conjointsSupp, supprime.conjointsSupp)
-        listOf("N", "B", "M", "D", "S").forEach { t ->
-            union(garde.temoinsDe(t), supprime.temoinsDe(t))
-            union(garde.signatairesDe(t), supprime.signatairesDe(t))
-        }
-        supprime.evenementsLibres.filterNot { ev -> garde.evenementsLibres.any { it.id == ev.id } }
-            .forEach { garde.evenementsLibres.add(it) }
-        supprime.blocsOuverts.filterNot { garde.blocsOuverts.contains(it) }.forEach { garde.blocsOuverts.add(it) }
-        // 3. R\u00F4les : pris seulement s'ils sont inconnus chez garde.
-        if (garde.pere == 0L && supprime.pere != 0L) garde.pere = supprime.pere
-        if (garde.mere == 0L && supprime.mere != 0L) garde.mere = supprime.mere
-        if (garde.conjoint == 0L && supprime.conjoint != 0L) garde.conjoint = supprime.conjoint
-        // 4. Partout dans la base : toute r\u00E9f\u00E9rence au doublon vise garde.
-        personnes.filter { it.id != supprimeId }.forEach { q ->
-            fun remplace(v: Long): Long = if (v == supprimeId) gardeId else v
-            q.pere = remplace(q.pere)
-            q.mere = remplace(q.mere)
-            q.conjoint = remplace(q.conjoint)
-            q.conjointsSupp.replaceAll { remplace(it) }
-            q.enfants.replaceAll { remplace(it) }
-            listOf("N", "B", "M", "D", "S").forEach { t ->
-                q.temoinsDe(t).replaceAll { remplace(it) }
-                q.signatairesDe(t).replaceAll { remplace(it) }
-            }
-        }
-        // D\u00E9doublonnage des listes de garde apr\u00E8s remplacement.
-        fun dedupe(l: MutableList<Long>) {
-            val vus = mutableSetOf<Long>()
-            l.removeAll { !vus.add(it) }
-        }
-        dedupe(garde.enfants); dedupe(garde.conjointsSupp)
-        listOf("N", "B", "M", "D", "S").forEach { t ->
-            dedupe(garde.temoinsDe(t)); dedupe(garde.signatairesDe(t))
-        }
+        // 1 a 4 : champs, listes, roles, references partout dans la base
+        // (logique pure, testee : voir ActionsFiches.kt).
+        fusionnerFiches(personnes, garde, supprime)
         // 5. Recherches du doublon : rattachees a garde.
         pistes.filter { it.personneId == supprimeId }.forEach { it.personneId = gardeId }
         // v0.90 : les citations (sources) du doublon passent a la fiche conservee.

@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.113 — Suppression et fusion de fiches testées ; correctif des enfants en double après fusion
+
+- **Correctif (fusion de doublons)** : lorsque le doublon et la fiche conservée figuraient tous deux dans une même liste (cas typique : les deux sont enfants du même parent, ou témoins du même acte), la liste du parent finissait avec **la même personne en double** après la fusion ; seules les listes de la fiche conservée étaient dédoublonnées. Toute liste qui citait le doublon est maintenant dédoublonnée après remplacement ; les doublons préexistants sans rapport avec la fusion ne sont pas touchés.
+- **Logique extraite et testée** (`ActionsFiches.kt`, 15 tests) : capture des liens avant suppression, détachement des références, restauration par « Annuler » (aller-retour exact vérifié), et cœur de la fusion (champs vides recopiés sans jamais écraser, listes unies sans doublon, rôles repris seulement s'ils sont inconnus, références redirigées partout, témoins et signataires des cinq actes, test de charge sur 1 000 personnes). `MainActivity.kt` appelle ces fonctions : 2 607 → 2 538 lignes.
+- Comportement inchangé hors le correctif ci-dessus ; 205 tests ; version 0.113.
+
 ## v0.112 — Découpage de `MainActivity.kt` (2e étape) et liste des branches à nettoyer
 
 - **Aucun changement visible** : les deux dialogues « de cujus » (choix de la personne de référence, édition de son n° Sosa avec aperçu) quittent `MainActivity.kt` pour `DialoguesApp.kt`. Même principe que la v0.111 : état et actions passés en paramètres, textes et ordre des actions conservés ; l'action exécutée à l'ouverture (présélection) est transmise telle quelle.
