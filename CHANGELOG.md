@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.114 — Import GEDCOM par fusion : liens des personnes ajoutées convertis et testés
+
+- **Correctif (menu d'import, option « Fusionner »)** : d'après la lecture du code, les personnes **ajoutées** par une fusion étaient copiées avec leurs liens (père, mère, conjoint, enfants, témoins, signataires) restés dans la **numérotation du fichier importé** (1 à n), qui n'a aucun rapport avec celle de votre base : ces liens pouvaient désigner de **mauvaises personnes** de la base. La copie partageait en outre sa liste d'enfants avec la personne importée, modifiée pendant son propre parcours (risque d'erreur à l'import). Désormais tous les identifiants du fichier sont convertis : vers la personne déjà présente quand elle est reconnue, sinon vers son nouvel identifiant ; les références inconnues disparaissent ; les listes ne sont plus partagées.
+- **Logique extraite et testée** (`ImportBase.kt`, 11 tests) : personnes présentes complétées sans jamais écraser, personnes absentes ajoutées avec liens convertis (collision volontaire des identifiants fichier/base), aucun lien vers une personne inexistante, re-fusion du même fichier sans doublon ni lien en double, date de naissance incompatible = pas un doublon. `MainActivity.kt` : 2 538 → 2 465 lignes.
+- Reste de l'import (« Remplacer la base », lecture du fichier) inchangé ; 216 tests ; version 0.114.
+
 ## v0.113 — Suppression et fusion de fiches testées ; correctif des enfants en double après fusion
 
 - **Correctif (fusion de doublons)** : lorsque le doublon et la fiche conservée figuraient tous deux dans une même liste (cas typique : les deux sont enfants du même parent, ou témoins du même acte), la liste du parent finissait avec **la même personne en double** après la fusion ; seules les listes de la fiche conservée étaient dédoublonnées. Toute liste qui citait le doublon est maintenant dédoublonnée après remplacement ; les doublons préexistants sans rapport avec la fusion ne sont pas touchés.
