@@ -565,7 +565,7 @@ fun EcranJournal(
     val aCorriger = erreursSaisie(personnes)
     // G\u00E9n\u00E9aPoche 11 (11.2) : diagnostic complet de l'arbre.
     val doublons = doublonsPotentiels(personnes, gardes)
-    val isolees = personnes.filter { brancheIsolee(it, personnes) }
+    val isolees = personnesIsolees(personnes)
     val nonCertifiees = personnes.filterNot { identiteCertifiee(it) }
     // G\u00E9n\u00E9aPoche 12 (12.3) : anniversaires du jour (alertes locales).
     val anniversaires = alertesDuJour(personnes)

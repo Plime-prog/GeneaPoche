@@ -473,13 +473,10 @@ fun EcranApplication(
                     // triPersonnes : 0 = A-Z, 1 = Aboville (n croissant), 2 = Branches, 3 = Sosa.
                     // v0.95 (12) : SOSA par d\u00e9faut, puis Aboville, Branches, A-Z.
                     var triPersonnes by remember { mutableStateOf(3) }
-                    val triees = personnes.sortedWith(
-                        compareBy(
-                            { it.nom.trim().uppercase() },
-                            { it.prenoms.trim().uppercase() },
-                            { anneeNaissance(it) }
-                        )
-                    )
+                    // v0.109 : tris PARESSEUX (calcules seulement si le tri affiche
+                    // les utilise) et a cles pre-calculees : taper dans la recherche
+                    // ne retrie plus toute la base a chaque frappe.
+                    val triees by lazy(LazyThreadSafetyMode.NONE) { trierParNom(personnes) }
                     val etatListe = rememberLazyListState()
                     // A-Z : lettre touchee = FILTRE (seuls les noms qui
                     // commencent par elle sont affiches) ; re-toucher efface.
@@ -488,9 +485,11 @@ fun EcranApplication(
                     var brancheChoisie by remember { mutableStateOf<Long?>(null) }
                     // G3-14 : recherche immediate par nom ou lieu.
                     var recherche by remember { mutableStateOf("") }
-                    val lettresUtilisees = triees
-                        .map { it.nom.trim().uppercase().firstOrNull() ?: '?' }
-                        .toSet()
+                    val lettresUtilisees by lazy(LazyThreadSafetyMode.NONE) {
+                        triees
+                            .map { it.nom.trim().uppercase().firstOrNull() ?: '?' }
+                            .toSet()
+                    }
 
                     // Classement par branche : la racine est l'ancetre le plus haut
                     // (pere, sinon mere) ; la branche porte le nom de cette racine.
@@ -510,11 +509,7 @@ fun EcranApplication(
                     // A-Z : tout, ou la lettre choisie ; Aboville : n croissant ;
                     // Branches : tout, ou les personnes liees au grand-parent
                     // choisi (par les liens, quel que soit leur nom).
-                    val parAboville = personnes.sortedWith(
-                        ComparateurAboville
-                            .thenComparator { a, b -> a.nom.trim().uppercase().compareTo(b.nom.trim().uppercase()) }
-                            .thenComparator { a, b -> a.prenoms.trim().uppercase().compareTo(b.prenoms.trim().uppercase()) }
-                    )
+                    val parAboville by lazy(LazyThreadSafetyMode.NONE) { trierParAboville(personnes) }
                     val entrees: List<Any> = if (triPersonnes == 0) {
                         if (lettreChoisie == null) {
                             triees.toList()
