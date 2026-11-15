@@ -1862,8 +1862,8 @@ fun AppEcran(
             if (mariee != null) {
                 if (a.date.isNotBlank()) mariee.dateMariage = dateGreg(a.date)
                 if (a.heure.isNotBlank()) mariee.heureMariage = a.heure
-                if (a.commune.isNotBlank()) mariee.lieuMariage = a.commune
-                if (a.dept.isNotBlank()) mariee.deptMariage = a.dept
+                if (a.commune.isNotBlank()) mariee.lieuMariage = a.commune.trim()
+                if (a.dept.isNotBlank()) mariee.deptMariage = normaliserDept(a.dept)
                 if (a.marieeProf.isNotBlank()) mariee.profession = a.marieeProf.trim()
                 if (a.marieeAge.isNotBlank()) {
                     val inc = naissanceDepuisAge(mariee, a.date, a.marieeAge, "l'acte de mariage de " + p.titre())

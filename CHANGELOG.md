@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.117 — Saisie d'acte de mariage : département de l'épouse normalisé
+
+- Relecture complète de `enregistrerActe` (≈500 lignes, déjà en grande partie déléguée à des fonctions pures testées depuis la v0.99).
+- **Petit défaut corrigé** : sur un acte de mariage, le département et la commune de l'**épouse** étaient copiés tels quels, alors que ceux de la personne principale sont normalisés (2 chiffres, espaces retirés) depuis la v0.73. Un « 8 » ou un lieu avec espace parasite pouvait donc ne pas correspondre aux statistiques et à la recherche par département. Même traitement désormais pour les deux époux.
+- Pas d'autre défaut trouvé. Cette fonction reste dans `MainActivity.kt` (très liée à l'état de l'écran) : son extraction complète serait risquée sans pouvoir tester sur appareil ; non recommandée tant que ce n'est pas possible. Pas de test automatique pour cette retouche ; 220 tests ; version 0.117.
+
 ## v0.116 — Restauration d'une sauvegarde .gpbak : copie de sécurité de la base actuelle
 
 - **Risque corrigé** (relecture de `restaurerSauvegardeBase`) : restaurer un fichier `.gpbak` **remplaçait directement** la base actuelle, sans aucune copie de sa version courante. Une sauvegarde ancienne (ou vide) choisie par erreur détruisait donc le travail récent sans retour possible.
