@@ -1,10 +1,10 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 15 novembre 2026 (v0.108). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 15 novembre 2026 (v0.109). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
-Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3). Aucune permission Android, aucune bibliothèque réseau ou de mesure. Données stockées localement, chiffrées. Code dans `app/src/main/java/com/plime/geneapoche/` (39 fichiers, ~20 000 lignes) ; tests JVM dans `app/src/test/…` (12 fichiers, 160 tests).
+Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3). Aucune permission Android, aucune bibliothèque réseau ou de mesure. Données stockées localement, chiffrées. Code dans `app/src/main/java/com/plime/geneapoche/` (39 fichiers, ~20 000 lignes) ; tests JVM dans `app/src/test/…` (12 fichiers, 165 tests).
 
 ## Couches
 
@@ -12,7 +12,7 @@ Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3).
 |---|---|---|
 | Modèles | `Modeles.kt`, `ModeleVue.kt` | `Personne`, `Piste` (journal), événements ; sérialisation JSON champ par champ (pas de réflexion, donc pas de règle R8 spécifique) |
 | Stockage et sécurité | `Stockage.kt`, `EcranPin.kt`, `Sauvegarde.kt` | Clé maître AES-256 liée au PIN (PBKDF2 600 000 + AndroidKeyStore), écritures atomiques avec `.bak`/`.tmp`, blocage progressif, sauvegardes `.gpbak` |
-| Logique pure (testée) | `LogiqueActe.kt`, `Coherence.kt`, `Numerotation.kt`, `Parente.kt`, `CalculDates.kt`, `CalendrierRepublicain.kt`, `Histoire.kt`, `Statistiques.kt`, `RechercheAvancee.kt`, `Biographie.kt` | Règles métier sans dépendance Android : à privilégier pour tout nouveau code |
+| Logique pure (testée) | `LogiqueActe.kt`, `Coherence.kt`, `Numerotation.kt`, `Parente.kt`, `CalculDates.kt`, `CalendrierRepublicain.kt`, `Histoire.kt`, `Statistiques.kt`, `RechercheAvancee.kt`, `Biographie.kt`, `ListesPersonnes.kt` | Règles métier sans dépendance Android : à privilégier pour tout nouveau code |
 | Échange | `Export.kt`, `SourcesGedcom.kt` | GEDCOM 5.5.1 (compatible Heredis), balises `_GP*` pour ne rien perdre |
 | Interface | `MainActivity.kt`, `EcranApplication.kt`, `Fiches.kt`, `SaisieActe.kt`, `Journal.kt`, `SourcesUi.kt`, `Edition.kt`, `Outils*.kt`, `Arbre.kt`, `Frise.kt`, … | Écrans Compose ; 6 onglets Personnes / Journal / Arbre / Outils / Sources / Saisie |
 | Données embarquées | `app/src/main/assets/communes/` (101 fichiers) | Communes et codes INSEE, hors ligne |
@@ -33,3 +33,9 @@ Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3).
 ## Conventions
 
 Voir [CONTRIBUTING.md](../CONTRIBUTING.md). Rappels : jamais de permission, jamais de donnée réelle dans le dépôt, accents en `\uXXXX` dans les fichiers Kotlin.
+
+## Performance : règles pratiques
+
+- Ne jamais trier ni filtrer toute la base directement dans un composable : extraire une fonction pure (voir `ListesPersonnes.kt`), pré-calculer les clés de tri une fois par élément, et ne calculer que ce que l'affichage courant utilise (`by lazy`).
+- Toute fonction de diagnostic qui compare chaque personne à toutes les autres doit être réécrite en collectant d'abord les identifiants dans un `HashSet` (O(n)).
+- Un test d'équivalence avec l'ancienne implémentation doit accompagner toute optimisation.

@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.109 — Vitesse : onglet Personnes et diagnostic de l'arbre
+
+- **Onglet Personnes plus fluide** : les deux tris complets de la base (A-Z et Aboville) étaient refaits **à chaque recomposition**, donc à chaque frappe dans la recherche, même quand le tri affiché (Sosa par défaut) ne s'en servait pas, avec une mise en majuscules à chaque comparaison. Ils sont désormais **calculés seulement quand le tri affiché les utilise**, et leurs clés (nom, prénoms, année, numéro découpé) sont **calculées une seule fois par personne** au lieu d'à chaque comparaison. L'ordre obtenu est strictement identique (tests d'équivalence avec l'ancien code sur des bases fictives).
+- **Branches isolées en O(n)** : la détection (diagnostic à l'ouverture et encadré du Journal) comparait chaque personne à toutes les autres ; les identifiants cités sont maintenant collectés une seule fois. Même résultat (test d'équivalence avec `brancheIsolee`).
+- **Dépendances** : androidx.core:core-ktx 1.19.1, org.json 20260814 (tests).
+- Nouveau fichier `ListesPersonnes.kt` (fonctions pures). 165 tests (5 nouveaux : `ListesPersonnesTest.kt`) ; version 0.109.
+
 ## v0.108 — Audit technique : sauvegardes renforcées, documentation remise à jour
 
 - **Correctif (sauvegardes .gpbak / exports .gpged)** : le nombre d'itérations PBKDF2 écrit dans l'en-tête du fichier était lu mais **ignoré au déchiffrement** (une constante servait de clé) : il était donc impossible de renforcer le chiffrement sans rendre les anciens fichiers illisibles. Le déchiffrement utilise désormais la valeur de l'en-tête.

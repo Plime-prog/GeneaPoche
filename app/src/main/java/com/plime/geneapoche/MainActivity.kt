@@ -2262,7 +2262,7 @@ fun AppEcran(
             // l'application (anomalies + doublons + branches isolees).
             val nbDiag = anomaliesDeLArbre(personnes, anomaliesIgnorees).size +
                 doublonsPotentiels(personnes, doublonsGardes).size +
-                personnes.filter { brancheIsolee(it, personnes) }.size
+                personnesIsolees(personnes).size
             if (nbDiag > 0) {
                 message = "Diagnostic de l'arbre : " + nbDiag.toString() +
                     " point(s) \u00E0 examiner (onglet Journal)."
