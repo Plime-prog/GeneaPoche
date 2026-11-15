@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.110 — Filet de sécurité : tests de l'écriture, de la récupération et de l'enveloppe de clé
+
+- **Aucun changement visible** : cette version protège vos données en testant ce qui n'était pas testé. La logique de fichiers de `Stockage.kt` (écriture atomique, rotation de la copie `.bak`, lecture « tout ou rien », restauration) et l'enveloppe de la clé maître (PIN puis AndroidKeyStore) sont **extraites dans `FichiersSurs.kt`** sans dépendance Android ; `Stockage` ne fait plus que déléguer. Comportement identique à la v0.109.
+- **Tests ajoutés** (`FichiersSursTest.kt`, `EnveloppeCleTest.kt`) : rotation des copies, principal corrompu → bascule sur la copie, deux fichiers corrompus signalés illisibles (rien n'est effacé), liste jamais partielle, coupure en cours d'écriture (`.tmp` incomplet ignoré), restauration, mauvais PIN / mauvaise clé / enveloppe altérée refusés, changement de PIN qui conserve la clé maître.
+- **Reste non testé automatiquement** : le blocage progressif après erreurs de PIN et l'accès réel à AndroidKeyStore (dépendent d'Android) ; à vérifier sur téléphone.
+- 190 tests ; version 0.110.
+
 ## v0.109 — Vitesse : onglet Personnes et diagnostic de l'arbre
 
 - **Onglet Personnes plus fluide** : les deux tris complets de la base (A-Z et Aboville) étaient refaits **à chaque recomposition**, donc à chaque frappe dans la recherche, même quand le tri affiché (Sosa par défaut) ne s'en servait pas, avec une mise en majuscules à chaque comparaison. Ils sont désormais **calculés seulement quand le tri affiché les utilise**, et leurs clés (nom, prénoms, année, numéro découpé) sont **calculées une seule fois par personne** au lieu d'à chaque comparaison. L'ordre obtenu est strictement identique (tests d'équivalence avec l'ancien code sur des bases fictives).

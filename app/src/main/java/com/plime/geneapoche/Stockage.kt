@@ -6,15 +6,12 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import org.json.JSONArray
 import java.io.File
-import java.io.FileOutputStream
 import java.security.KeyStore
 import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
-import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.PBEKeySpec
 
 // Stockage chiffre AES-256/GCM. Depuis la v0.29, les donnees sont chiffrees
 // avec une CLE MAITRE aleatoire de 256 bits LIEE AU PIN : la cle maitre est
@@ -204,19 +201,13 @@ object Stockage {
         }
     }
 
-    // Enveloppe de la cle maitre : PBKDF2(PIN) PUIS AndroidKeyStore.
-    // Chaque couche : [12 octets IV][chiffre].
+    // Enveloppe de la cle maitre : PBKDF2(PIN) PUIS AndroidKeyStore (logique
+    // dans EnveloppeCle, testee sur JVM). Chaque couche : [12 octets IV][chiffre].
     private fun envelopperCleMaitre(ctx: Context, pin: String, maitre: javax.crypto.SecretKey): Boolean {
         return try {
             val sel = ByteArray(16)
             SecureRandom().nextBytes(sel)
-            val kek = javax.crypto.spec.SecretKeySpec(hacherPin(pin, sel), "AES")
-            val c1 = Cipher.getInstance("AES/GCM/NoPadding")
-            c1.init(Cipher.ENCRYPT_MODE, kek)
-            val blob = c1.iv + c1.doFinal(maitre.encoded)
-            val c2 = Cipher.getInstance("AES/GCM/NoPadding")
-            c2.init(Cipher.ENCRYPT_MODE, cle())
-            val emb = c2.iv + c2.doFinal(blob)
+            val emb = EnveloppeCle.envelopper(maitre.encoded, pin, sel, ITERATIONS_PIN, cle())
             prefs(ctx).edit()
                 .putString(CLE_SEL_MAITRE, Base64.encodeToString(sel, Base64.NO_WRAP))
                 .putString(CLE_MAITRE, Base64.encodeToString(emb, Base64.NO_WRAP))
@@ -231,14 +222,11 @@ object Stockage {
             val p = prefs(ctx)
             val emb64 = p.getString(CLE_MAITRE, null) ?: return null
             val sel64 = p.getString(CLE_SEL_MAITRE, null) ?: return null
-            val emb = Base64.decode(emb64, Base64.NO_WRAP)
-            val c2 = Cipher.getInstance("AES/GCM/NoPadding")
-            c2.init(Cipher.DECRYPT_MODE, cle(), GCMParameterSpec(128, emb, 0, 12))
-            val blob = c2.doFinal(emb, 12, emb.size - 12)
-            val kek = javax.crypto.spec.SecretKeySpec(hacherPin(pin, Base64.decode(sel64, Base64.NO_WRAP)), "AES")
-            val c1 = Cipher.getInstance("AES/GCM/NoPadding")
-            c1.init(Cipher.DECRYPT_MODE, kek, GCMParameterSpec(128, blob, 0, 12))
-            return javax.crypto.spec.SecretKeySpec(c1.doFinal(blob, 12, blob.size - 12), "AES")
+            val octets = EnveloppeCle.ouvrir(
+                Base64.decode(emb64, Base64.NO_WRAP), pin,
+                Base64.decode(sel64, Base64.NO_WRAP), ITERATIONS_PIN, cle()
+            ) ?: return null
+            javax.crypto.spec.SecretKeySpec(octets, "AES")
         } catch (e: Exception) {
             null
         }
@@ -373,13 +361,8 @@ object Stockage {
         return envelopperCleMaitre(ctx, nouveau, m)
     }
 
-    private fun hacherPin(pin: String, sel: ByteArray, iterations: Int = ITERATIONS_PIN): ByteArray {
-        val spec = PBEKeySpec(pin.toCharArray(), sel, iterations, 256)
-        val fabrique = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-        val hash = fabrique.generateSecret(spec).encoded
-        java.util.Arrays.fill(spec.password, ' ')
-        return hash
-    }
+    private fun hacherPin(pin: String, sel: ByteArray, iterations: Int = ITERATIONS_PIN): ByteArray =
+        EnveloppeCle.hacherPin(pin, sel, iterations)
 
     // ------------------------------------------------------------ Blocage apres erreurs
 
@@ -771,143 +754,19 @@ object Stockage {
     // principal NI la copie .bak n'ont pu etre dechiffres/parses (G1-04/G1-05).
     class ResultatLecture<T>(val nom: String, val liste: MutableList<T>, val illisible: Boolean)
 
-    // G1-05 : lecture TOUT OU RIEN - un element invalide ne produit JAMAIS une
-    // liste partielle (le parse entier echoue, la liste reste vide et illisible).
-    // G1-06 : si le fichier principal est corrompu (pas seulement absent), la
-    // copie .bak est lue a la place.
-    private fun <T> lireChiffreToutOuRien(ctx: Context, nom: String, parse: (String) -> MutableList<T>): ResultatLecture<T> {
-        val principal = File(ctx.filesDir, nom)
-        val bak = File(ctx.filesDir, nom + ".bak")
-        if (principal.exists()) {
-            try {
-                val octets = principal.readBytes()
-                val clair = dechiffrer(octets)
-                if (clair != null) {
-                    val liste = try { parse(String(clair)) } catch (e: Exception) { null }
-                    if (liste != null) return ResultatLecture(nom, liste, false)
-                }
-            } catch (e: Exception) {
-                // principal illisible : on tente la copie .bak
-            }
-            if (bak.exists()) {
-                try {
-                    val octets = bak.readBytes()
-                    val clair = dechiffrer(octets)
-                    if (clair != null) {
-                        val liste = try { parse(String(clair)) } catch (e: Exception) { null }
-                        if (liste != null) return ResultatLecture(nom, liste, false)
-                    }
-                } catch (e: Exception) {
-                    // .bak illisible aussi
-                }
-            }
-            return ResultatLecture(nom, mutableListOf(), true)
-        }
-        if (bak.exists()) {
-            try {
-                val octets = bak.readBytes()
-                val clair = dechiffrer(octets)
-                if (clair != null) {
-                    val liste = try { parse(String(clair)) } catch (e: Exception) { null }
-                    if (liste != null) return ResultatLecture(nom, liste, false)
-                }
-            } catch (e: Exception) {
-                // .bak illisible
-            }
-            return ResultatLecture(nom, mutableListOf(), true)
-        }
-        return ResultatLecture(nom, mutableListOf(), false)
-    }
+    // Lecture tout ou rien avec repli sur la copie .bak (voir FichiersSurs).
+    private fun <T> lireChiffreToutOuRien(ctx: Context, nom: String, parse: (String) -> MutableList<T>): ResultatLecture<T> =
+        FichiersSurs.lireToutOuRien(ctx.filesDir, nom, { dechiffrer(it) }, parse)
 
     // G1-04 : restauration explicite depuis la copie .bak (jamais de perte).
-    fun restaurerBak(ctx: Context, nom: String): Boolean {
-        return try {
-            val principal = File(ctx.filesDir, nom)
-            val bak = File(ctx.filesDir, nom + ".bak")
-            if (!bak.exists()) return false
-            val contenu = bak.readBytes()
-            val tmp = File(ctx.filesDir, nom + ".tmp")
-            if (!ecrireOctetsDurables(tmp, contenu)) return false
-            if (!MessageDigest.isEqual(tmp.readBytes(), contenu)) {
-                tmp.delete()
-                return false
-            }
-            principal.delete()
-            if (!tmp.renameTo(principal)) {
-                tmp.delete()
-                return false
-            }
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
+    fun restaurerBak(ctx: Context, nom: String): Boolean = FichiersSurs.restaurerBak(ctx.filesDir, nom)
 
     // G1-07 : ecriture durable sur disque (flush + fd.sync).
-    private fun ecrireOctetsDurables(f: File, octets: ByteArray): Boolean {
-        return try {
-            FileOutputStream(f).use { fos ->
-                fos.write(octets)
-                fos.flush()
-                fos.fd.sync()
-            }
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
+    private fun ecrireOctetsDurables(f: File, octets: ByteArray): Boolean = FichiersSurs.ecrireDurable(f, octets)
 
-    // Ecriture securisee (G1-06) : ecriture durable du tmp, relecture et
-    // comparaison, PUIS rotation bak ; l'ancien .bak n'est supprime qu'apres
-    // ecriture ET relecture reussies du nouveau contenu. Une coupure entre
-    // les deux renommages laisse toujours une copie lisible (.bak ou .tmp).
-    private fun ecrireFichier(ctx: Context, nom: String, octets: ByteArray): Boolean {
-        return try {
-            val tmp = File(ctx.filesDir, nom + ".tmp")
-            val principal = File(ctx.filesDir, nom)
-            val bak = File(ctx.filesDir, nom + ".bak")
-            if (!ecrireOctetsDurables(tmp, octets)) {
-                tmp.delete()
-                return false
-            }
-            if (!MessageDigest.isEqual(tmp.readBytes(), octets)) {
-                tmp.delete()
-                return false
-            }
-            if (principal.exists()) {
-                if (!bak.delete() && bak.exists()) {
-                    tmp.delete()
-                    return false
-                }
-                if (!principal.renameTo(bak)) {
-                    tmp.delete()
-                    return false
-                }
-            } else {
-                bak.delete()
-            }
-            if (!tmp.renameTo(principal)) {
-                if (bak.exists()) bak.renameTo(principal)
-                tmp.delete()
-                return false
-            }
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
+    // Ecriture securisee (G1-06), voir FichiersSurs.ecrireSecurise.
+    private fun ecrireFichier(ctx: Context, nom: String, octets: ByteArray): Boolean =
+        FichiersSurs.ecrireSecurise(ctx.filesDir, nom, octets)
 
-    private fun lireFichier(ctx: Context, nom: String): ByteArray? {
-        return try {
-            val f = File(ctx.filesDir, nom)
-            if (f.exists()) {
-                f.readBytes()
-            } else {
-                val bak = File(ctx.filesDir, nom + ".bak")
-                if (bak.exists()) bak.readBytes() else null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
+    private fun lireFichier(ctx: Context, nom: String): ByteArray? = FichiersSurs.lireFichier(ctx.filesDir, nom)
 }
