@@ -1,0 +1,35 @@
+# Architecture de GénéaPoche
+
+*Mise à jour : 15 novembre 2026 (v0.108). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+
+## Vue d'ensemble
+
+Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3). Aucune permission Android, aucune bibliothèque réseau ou de mesure. Données stockées localement, chiffrées. Code dans `app/src/main/java/com/plime/geneapoche/` (39 fichiers, ~20 000 lignes) ; tests JVM dans `app/src/test/…` (12 fichiers, 160 tests).
+
+## Couches
+
+| Couche | Fichiers principaux | Rôle |
+|---|---|---|
+| Modèles | `Modeles.kt`, `ModeleVue.kt` | `Personne`, `Piste` (journal), événements ; sérialisation JSON champ par champ (pas de réflexion, donc pas de règle R8 spécifique) |
+| Stockage et sécurité | `Stockage.kt`, `EcranPin.kt`, `Sauvegarde.kt` | Clé maître AES-256 liée au PIN (PBKDF2 600 000 + AndroidKeyStore), écritures atomiques avec `.bak`/`.tmp`, blocage progressif, sauvegardes `.gpbak` |
+| Logique pure (testée) | `LogiqueActe.kt`, `Coherence.kt`, `Numerotation.kt`, `Parente.kt`, `CalculDates.kt`, `CalendrierRepublicain.kt`, `Histoire.kt`, `Statistiques.kt`, `RechercheAvancee.kt`, `Biographie.kt` | Règles métier sans dépendance Android : à privilégier pour tout nouveau code |
+| Échange | `Export.kt`, `SourcesGedcom.kt` | GEDCOM 5.5.1 (compatible Heredis), balises `_GP*` pour ne rien perdre |
+| Interface | `MainActivity.kt`, `EcranApplication.kt`, `Fiches.kt`, `SaisieActe.kt`, `Journal.kt`, `SourcesUi.kt`, `Edition.kt`, `Outils*.kt`, `Arbre.kt`, `Frise.kt`, … | Écrans Compose ; 6 onglets Personnes / Journal / Arbre / Outils / Sources / Saisie |
+| Données embarquées | `app/src/main/assets/communes/` (101 fichiers) | Communes et codes INSEE, hors ligne |
+
+## Format des fichiers chiffrés
+
+- **Stockage interne** : `[12 octets IV][données + tag GCM]`, clé maître en mémoire uniquement pendant le déverrouillage.
+- **Sauvegarde `.gpbak` / export `.gpged`** : `[6 octets magie "GPBAK1" ou "GPGED1"][16 octets sel][4 octets itérations, grand-boutiste][12 octets IV][données + tag GCM]`. Depuis la v0.108, les itérations de l'en-tête sont **réellement utilisées** au déchiffrement (bornes acceptées : 100 000 à 2 000 000) ; les nouveaux fichiers en portent 600 000.
+
+## Construction et CI
+
+- AGP 9.2.0, Kotlin 2.4.21, compileSdk 37, targetSdk 36, minSdk 26, JDK 17, Gradle 9.4.1.
+- Workflow `.github/workflows/apk.yml` : `lintDebug testDebugUnitTest assembleDebug assembleRelease`, artefacts debug et release ; actions épinglées par SHA.
+- Le `gradle-wrapper.jar` n'est pas versionné : la CI le régénère (`gradle wrapper`). En local, lancer d'abord la même commande.
+- **Release** : pousser une branche `release-X.Y` (ou un tag `vX.Y`) déclenche le job `release`, qui publie `GeneaPoche-vX.Y-release.apk` et `-debug.apk`. L'APK release est signé avec les secrets `KEYSTORE_*` s'ils existent, sinon avec la clé debug.
+- Procédure de publication : mettre à jour `versionCode`/`versionName` dans `app/build.gradle.kts`, CHANGELOG, README ; PR vers `main` ; CI verte ; pousser `release-X.Y`.
+
+## Conventions
+
+Voir [CONTRIBUTING.md](../CONTRIBUTING.md). Rappels : jamais de permission, jamais de donnée réelle dans le dépôt, accents en `\uXXXX` dans les fichiers Kotlin.

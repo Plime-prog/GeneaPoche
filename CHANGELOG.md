@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.108 — Audit technique : sauvegardes renforcées, documentation remise à jour
+
+- **Correctif (sauvegardes .gpbak / exports .gpged)** : le nombre d'itérations PBKDF2 écrit dans l'en-tête du fichier était lu mais **ignoré au déchiffrement** (une constante servait de clé) : il était donc impossible de renforcer le chiffrement sans rendre les anciens fichiers illisibles. Le déchiffrement utilise désormais la valeur de l'en-tête.
+- **Chiffrement renforcé** : tout nouveau fichier est dérivé avec **600 000 itérations** (au lieu de 210 000). Les sauvegardes et exports créés avant la v0.108 **restent lisibles** (test dédié).
+- **Import de sauvegarde borné** : lecture par flux plafonnée à 64 Mo (comme le GEDCOM l'est déjà à 10 Mo), plus de lecture intégrale d'un fichier arbitraire en mémoire.
+- **Documentation corrigée** : SECURITY.md et PRIVACY.md décrivaient encore une recherche d'archives par navigateur, supprimée depuis la v0.33 (l'application n'a aucune permission Internet) ; README (version, nombre de tests) mis à jour ; nouveau dossier `docs/` (architecture, bilan d'audit).
+- 160 tests (12 nouveaux : `SauvegardeTest.kt`) ; version 0.108.
+
 ## v0.107 — 14 novembre 2026
 
 - **Mariage ouvert depuis une fiche de femme** : elle devient la mariée (bug de préremplissage corrigé), le mari reste à choisir/saisir ; signataires permutés en conséquence.
