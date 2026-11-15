@@ -26,7 +26,7 @@ Périmètre : France uniquement, actes N/B/M/D/S.
 - **GEDCOM sans perte** : les champs propres à GénéaPoche (balises `_GP*`) survivent à l'export puis au réimport, plus une NOTE de synthèse lisible dans Heredis.
 - **Arbre 4 générations** avec les enfants du couple central, zoom tactile ; **recherche** par nom et lieu ; **statistiques et géographie** (répartition par département, voyage chronologique) ; mode sombre ; mise en page adaptative tablette/paysage.
 
-Historique détaillé version par version : [CHANGELOG.md](CHANGELOG.md).
+Historique détaillé version par version : [CHANGELOG.md](CHANGELOG.md). Architecture et bilan technique : [docs/](docs/).
 
 ## Modèle de sécurité — exact, avec ses limites
 
@@ -36,7 +36,7 @@ Historique détaillé version par version : [CHANGELOG.md](CHANGELOG.md).
 - **Code PIN** : PBKDF2-HmacSHA256 (600 000 itérations), codes triviaux refusés, phrase secrète possible, blocage progressif après 5 erreurs (30 s / 2 min / 10 min / 1 h) insensible au changement de l'heure.
 - **FLAG_SECURE** : captures d'écran et aperçu dans les applications récentes interdits.
 - **Reverrouillage** automatique (délai réglable, immédiat par défaut) et à l'extinction de l'écran ; purge de la mémoire au verrouillage.
-- **Sauvegarde .gpbak chiffrée** exportable/importable avec phrase secrète ; écritures atomiques et durables.
+- **Sauvegarde .gpbak chiffrée** exportable/importable avec phrase secrète (PBKDF2 600 000 itérations depuis la v0.108) ; écritures atomiques et durables.
 
 **Limites, en toute honnêteté :**
 - ⚠️ Les exports GEDCOM et images sont en clair, à manipuler avec prudence.
@@ -46,7 +46,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.98)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.98-release.apk` (signé) ou `GeneaPoche-v0.98-debug.apk`.
+**Téléchargement direct de la dernière version (v0.108)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.108-release.apk` (signé) ou `GeneaPoche-v0.108-debug.apk`.
 
 Sinon, depuis les sources :
 
@@ -58,6 +58,6 @@ Sinon, depuis les sources :
 
 - Android Kotlin + Jetpack Compose, Material 3 (thème clair/sombre, palette verte).
 - AGP 9.2.0, Kotlin 2.4.21, compileSdk 37, targetSdk 36, JDK 17, BOM Compose 2026.08.00.
-- CI GitHub Actions : lint, tests unitaires JVM (145), APK debug et release signé à chaque push.
+- CI GitHub Actions : lint, tests unitaires JVM (160), APK debug et release signé à chaque push.
 - Contribuer : voir [CONTRIBUTING.md](CONTRIBUTING.md). Historique détaillé des versions : [CHANGELOG.md](CHANGELOG.md).
 - Licence : MIT (voir [LICENSE](LICENSE)).

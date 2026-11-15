@@ -13,7 +13,9 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 // G1-08 : sauvegarde exportable/importable, chiffree AES-256/GCM avec une
-// PHRASE SECRETE (PBKDF2-HmacSHA256, 210 000 iterations). Contient toute la
+// PHRASE SECRETE (PBKDF2-HmacSHA256, 600 000 iterations depuis la v0.108 ; les
+// fichiers plus anciens, a 210 000, restent lisibles : le nombre d'iterations
+// est lu dans l'en-tete). Contient toute la
 // base : personnes et journal (v0.83/12.0 : les actes ne sont plus stockes
 // dans l'application ; les coches « Enregistré » vivent sur les fiches).
 // Format .gpbak : [6 octets "GPBAK1"][16 octets sel][4 octets iterations]
@@ -21,7 +23,15 @@ import javax.crypto.spec.SecretKeySpec
 // 12.2 : le meme chassis chiffre aussi un EXPORT GEDCOM (.gpged, magie
 // "GPGED1") : le fichier ne s'ouvre que dans GeneaPoche, avec la phrase.
 object Sauvegarde {
-    private const val ITERATIONS = 210_000
+    // v0.108 : 600 000 iterations pour tout nouveau fichier (recommandation
+    // OWASP pour PBKDF2-HmacSHA256). Le dechiffrement utilise TOUJOURS la valeur
+    // lue dans l'en-tete du fichier (210 000 pour les fichiers d'avant v0.108).
+    internal const val ITERATIONS = 600_000
+    internal const val ITERATIONS_MIN = 100_000
+    internal const val ITERATIONS_MAX = 2_000_000
+    // v0.108 : taille maximale d'une sauvegarde importee (la base est en JSON,
+    // sans images) : evite de charger un fichier arbitraire en memoire.
+    internal const val TAILLE_MAX_IMPORT = 64L * 1024 * 1024
     private val MAGIQUE = "GPBAK1".toByteArray(Charsets.US_ASCII)
     // 12.2 : magie d'un export GEDCOM chiffre.
     val MAGIQUE_GPGED = "GPGED1".toByteArray(Charsets.US_ASCII)
@@ -35,8 +45,8 @@ object Sauvegarde {
         return true
     }
 
-    private fun cleDepuisPhrase(phrase: String, sel: ByteArray): SecretKeySpec {
-        val spec = PBEKeySpec(phrase.toCharArray(), sel, ITERATIONS, 256)
+    private fun cleDepuisPhrase(phrase: String, sel: ByteArray, iterations: Int): SecretKeySpec {
+        val spec = PBEKeySpec(phrase.toCharArray(), sel, iterations, 256)
         val fabrique = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         val hash = fabrique.generateSecret(spec).encoded
         java.util.Arrays.fill(spec.password, ' ')
@@ -51,7 +61,7 @@ object Sauvegarde {
             val sel = ByteArray(16)
             SecureRandom().nextBytes(sel)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.ENCRYPT_MODE, cleDepuisPhrase(phrase, sel))
+            cipher.init(Cipher.ENCRYPT_MODE, cleDepuisPhrase(phrase, sel, ITERATIONS))
             val chiffre = cipher.iv + cipher.doFinal(donnees)
             val sortie = ByteArrayOutputStream()
             sortie.write(magique)
@@ -78,10 +88,10 @@ object Sauvegarde {
             for (i in 0 until 4) {
                 iterations = (iterations shl 8) or (donnees[22 + i].toInt() and 0xFF)
             }
-            if (iterations < 100_000 || iterations > 2_000_000) return null
+            if (iterations < ITERATIONS_MIN || iterations > ITERATIONS_MAX) return null
             val corps = donnees.copyOfRange(26, donnees.size)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.DECRYPT_MODE, cleDepuisPhrase(phrase, sel), GCMParameterSpec(128, corps, 0, 12))
+            cipher.init(Cipher.DECRYPT_MODE, cleDepuisPhrase(phrase, sel, iterations), GCMParameterSpec(128, corps, 0, 12))
             cipher.doFinal(corps, 12, corps.size - 12)
         } catch (e: Exception) {
             null
@@ -126,6 +136,21 @@ object Sauvegarde {
         val citations: MutableList<Citation> = mutableListOf()
     )
 
+    // v0.108 : lecture par flux avec plafond ; null si le flux depasse la limite.
+    internal fun lireBorne(entree: java.io.InputStream, max: Long): ByteArray? {
+        val tampon = ByteArrayOutputStream()
+        val morceau = ByteArray(64 * 1024)
+        var total = 0L
+        while (true) {
+            val n = entree.read(morceau)
+            if (n < 0) break
+            total += n
+            if (total > max) return null
+            tampon.write(morceau, 0, n)
+        }
+        return tampon.toByteArray()
+    }
+
     // Importe un fichier .gpbak : null si fichier invalide OU phrase erronee
     // (le tag GCM echoue) - aucune liste partielle n'est jamais produite.
     // Les ANCIENNES sauvegardes (avec actes/images) restent lisibles : les
@@ -133,7 +158,7 @@ object Sauvegarde {
     fun importer(ctx: Context, uri: Uri, phrase: String): ContenuSauvegarde? {
         return try {
             if (phrase.length < 6) return null
-            val octets = ctx.contentResolver.openInputStream(uri)?.use { s -> s.readBytes() } ?: return null
+            val octets = ctx.contentResolver.openInputStream(uri)?.use { s -> lireBorne(s, TAILLE_MAX_IMPORT) } ?: return null
             val clair = dechiffrerOctets(phrase, octets) ?: return null
             val racine = JSONObject(String(clair, Charsets.UTF_8))
             val personnes = mutableListOf<Personne>()

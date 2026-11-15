@@ -8,7 +8,7 @@ Toutes vos données généalogiques (personnes, liens familiaux, actes d'état c
 
 ## Ce qui sort de l'application — et pourquoi
 
-- **Recherche d'archives** : lorsque vous touchez la loupe d'un acte, GénéaPoche ouvre votre navigateur et lui transmet la **commune, l'année et le type d'acte** pour la recherche. Ces éléments transitent alors par votre navigateur et le moteur de recherche, hors de l'application.
+- **Aucune recherche en ligne** : GénéaPoche n'ouvre ni navigateur ni lien et ne transmet ni commune, ni année, ni type d'acte à qui que ce soit (la recherche d'archives a été supprimée en v0.33).
 - **Fichiers que vous exportez vous-même** : GEDCOM, images et sauvegardes .gpbak (cette dernière étant chiffrée avec votre phrase secrète). Les fichiers GEDCOM et images sont **en clair** : c'est à vous de les protéger.
 
 Rien d'autre ne quitte jamais l'application : elle n'a **aucune permission Internet** dans son manifeste et ne peut donc rien transmettre d'elle-même.

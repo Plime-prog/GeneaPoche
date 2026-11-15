@@ -7,7 +7,8 @@
 - Sans le code PIN, aucune donnée ne peut être déchiffrée, même en accédant directement au stockage de l'application.
 - Blocage progressif après 5 codes incorrects (30 s / 2 min / 10 min / 1 h), insensible au changement de l'heure du téléphone.
 - Aucune sauvegarde cloud ni transfert d'appareil (règles d'exclusion explicites dans le manifeste).
-- La recherche d'archives départementales passe par le navigateur : commune, année et type d'acte sont envoyés au moteur de recherche.
+- Aucun lien, aucune recherche vers Internet : l'application ne peut ouvrir ni navigateur ni lien (supprimé en v0.33). Le seul échange avec l'extérieur est le fichier GEDCOM ou la sauvegarde que vous exportez vous-même.
+- Les sauvegardes .gpbak et exports .gpged sont chiffrés AES-256/GCM avec une clé dérivée de votre phrase secrète (PBKDF2-HmacSHA256, 600 000 itérations depuis la v0.108 ; les fichiers plus anciens, à 210 000, restent lisibles). L'import borne la taille lue (64 Mo pour une sauvegarde, 10 Mo pour un GEDCOM).
 - Les exports GEDCOM et les images exportées sont en clair.
 
 ## Signaler une vulnérabilité
