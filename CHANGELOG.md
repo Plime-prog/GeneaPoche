@@ -1,5 +1,10 @@
 # Historique des versions
 
+## v0.118 — Mise à jour : BOM Compose 2026.09.00
+
+- Bibliothèques d'interface (Jetpack Compose) alignées sur le BOM **2026.09.00** (au lieu de 2026.08.00), reprenant la proposition automatique Dependabot n° 2. Aucun changement de code : lint, 220 tests JVM et compilation passent sur CI.
+- Non vérifié sur un appareil. Les autres mises à jour en attente (AGP 9.5.1, Gradle 9.8.2, actions GitHub) restent à traiter **une par une**, une version chacune.
+
 ## v0.117 — Saisie d'acte de mariage : département de l'épouse normalisé
 
 - Relecture complète de `enregistrerActe` (≈500 lignes, déjà en grande partie déléguée à des fonctions pures testées depuis la v0.99).
