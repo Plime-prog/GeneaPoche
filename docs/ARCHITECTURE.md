@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 15 novembre 2026 (v0.116). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 15 novembre 2026 (v0.117). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
