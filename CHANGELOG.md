@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.111 — Découpage de `MainActivity.kt` (1re étape)
+
+- **Aucun changement visible** : huit boîtes de dialogue de l'écran principal (changement de PIN, délai de verrouillage, thème, données illisibles, noms inconnus, import GEDCOM, GEDCOM chiffré, rappel de fichier exporté) sont **déplacées dans `DialoguesApp.kt`**. Chacune reçoit son état et ses actions en paramètres ; l'état reste possédé par l'écran principal. Textes, ordre des actions et comportements conservés (déplacement mécanique).
+- `MainActivity.kt` passe de 2 879 à 2 696 lignes. La grosse fonction `AppEcran` reste à découper (≈ 55 fonctions d'actions locales, puis les écrans) : étapes suivantes.
+- Pas de test automatique supplémentaire (interface) ; 190 tests inchangés ; version 0.111.
+
 ## v0.110 — Filet de sécurité : tests de l'écriture, de la récupération et de l'enveloppe de clé
 
 - **Aucun changement visible** : cette version protège vos données en testant ce qui n'était pas testé. La logique de fichiers de `Stockage.kt` (écriture atomique, rotation de la copie `.bak`, lecture « tout ou rien », restauration) et l'enveloppe de la clé maître (PIN puis AndroidKeyStore) sont **extraites dans `FichiersSurs.kt`** sans dépendance Android ; `Stockage` ne fait plus que déléguer. Comportement identique à la v0.109.
