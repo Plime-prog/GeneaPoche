@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.116 — Restauration d'une sauvegarde .gpbak : copie de sécurité de la base actuelle
+
+- **Risque corrigé** (relecture de `restaurerSauvegardeBase`) : restaurer un fichier `.gpbak` **remplaçait directement** la base actuelle, sans aucune copie de sa version courante. Une sauvegarde ancienne (ou vide) choisie par erreur détruisait donc le travail récent sans retour possible.
+- Désormais la base actuelle est copiée dans l'emplacement tournant « avant import » (5 emplacements) **avant** remplacement ; si cette copie échoue, la restauration est annulée et rien n'est modifié. Le message de réussite indique où retrouver la base précédente (menu « Restaurer la base d'avant import »).
+- Relues sans changement : `restaurerSauvegardeImport` (essaie les 5 copies, saute les vides) et `restaurerSecoursBak`. Non modifiées volontairement : y ajouter une copie ferait tourner les emplacements et pourrait écraser la copie que l'on cherche à restaurer.
+- Cette modification touche le stockage et l'interface (Android) : **pas de test automatique** possible ici, non vérifiée sur appareil. 220 tests ; version 0.116.
+
 ## v0.115 — Remplacement de la base : analyse, choix du de cujus testé
 
 - Relecture de « Remplacer la base » (`remplacerBase`) : sauvegarde automatique préalable, carnet de sources remplacé par celui du fichier, compteur d'identifiants réaligné sur le maximum existant (`verifierLiensEtRapporter`), rapport d'intégrité consigné au journal. **Aucun défaut de données trouvé** (contrairement à la fusion, les identifiants du fichier deviennent ceux de la base : pas de conversion à faire).

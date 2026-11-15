@@ -1333,6 +1333,13 @@ fun AppEcran(
                     withContext(Dispatchers.Main) { message = "Sauvegarde illisible : v\u00E9rifiez le fichier et la phrase secr\u00E8te." }
                     return@launch
                 }
+                // v0.116 : copie de securite de la base ACTUELLE avant de la
+                // remplacer (comme pour un import GEDCOM) ; si elle echoue,
+                // rien n'est modifie.
+                if (!Stockage.sauvegardeAvantImport(ctx)) {
+                    withContext(Dispatchers.Main) { message = "Copie de s\u00E9curit\u00E9 impossible : la restauration est annul\u00E9e, rien n'a \u00E9t\u00E9 modifi\u00E9." }
+                    return@launch
+                }
                 // R1 : toute mutation d'etat Compose et toute sauvegarde se
                 // font sur le thread principal.
                 withContext(Dispatchers.Main) {
@@ -1365,7 +1372,7 @@ fun AppEcran(
                     }
                     verifierLiensEtRapporter()
                     if (enregistrer()) {
-                        message = "Sauvegarde restaur\u00E9e : " + contenu.personnes.size.toString() + " personnes."
+                        message = "Sauvegarde restaur\u00E9e : " + contenu.personnes.size.toString() + " personnes. Base pr\u00E9c\u00E9dente conserv\u00E9e (menu \u00AB Restaurer la base d'avant import \u00BB)."
                     } else {
                         // Echec d'ecriture : on ne detruit rien.
                         message = "\u00C9chec de l'enregistrement apr\u00E8s restauration : rien n'a \u00E9t\u00E9 supprim\u00E9."
