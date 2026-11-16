@@ -12,7 +12,11 @@ package com.plime.geneapoche
 // apostrophes ramenes a des espaces, espaces compresses.
 fun cleNom(s: String): String =
     java.text.Normalizer.normalize(s.trim().uppercase(), java.text.Normalizer.Form.NFD)
-        .replace(Regex("[\\p{Mn}\\p{Cf}']"), " ")
+        // v0.123 : les accents (marques combinantes apres NFD) sont SUPPRIMES ;
+        // avant, ils devenaient une espace ("Lefèvre" -> "LEFE VRE") et ne
+        // correspondaient plus a "Lefevre".
+        .replace(Regex("[\\p{Mn}\\p{Cf}]"), "")
+        .replace("'", " ")
         .replace("-", " ")
         .split(Regex("\\s+")).filter { it.isNotEmpty() }.joinToString(" ")
 

@@ -3,8 +3,9 @@
 ## v0.123 — Découpage : garde-fou « fiches à créer » d'un acte extrait et testé
 
 - Relevé du découpage de `MainActivity.kt` : l'interface (écrans, onglets) est **déjà** dans `EcranApplication.kt` et `DialoguesApp.kt` ; ce qui reste dans `AppEcran` (≈ 1 900 lignes) est de l'**état** et des **actions** qui le modifient. On ne peut plus déplacer de gros blocs mécaniquement : il faudrait créer un « porteur d'état » partagé, refonte risquée sans pouvoir tester sur appareil. On continue donc par **petites extractions de logique pure**.
-- Extrait vers `LogiqueActe.kt` (corps identique, paramètre `personnes` explicite) : `nomDejaConnu` et `nomsNouveaux`, la fonction qui décide **quelles fiches l'enregistrement d'un acte va créer** et les fait confirmer. **8 tests** (casse, accents, ordre des prénoms, parents, mariée et ses parents, témoins avec rôle, champs ignorés hors mariage). Aucun défaut trouvé.
-- 228 tests ; version 0.123.
+- **Défaut corrigé, révélé par ces tests** : la clé de comparaison des noms (`cleNom`) transformait chaque accent en **espace** (« Lefèvre » → « LEFE VRE », « Françoise » → « FRAN OISE »), alors que son commentaire annonçait « insensible aux accents ». Conséquence : « Lefèvre » et « Lefevre » (ou « François » et « Francois ») n'étaient pas reconnus comme la même personne dans la saisie d'acte, la fusion et la détection de doublons (les accents en début ou fin de mot passaient). Désormais les accents sont supprimés ; les tirets et apostrophes restent des séparateurs. Les clés ne sont jamais enregistrées (comparaison au vol) : aucune donnée à migrer, seulement des rapprochements en plus.
+- Extrait vers `LogiqueActe.kt` (corps identique, paramètre `personnes` explicite) : `nomDejaConnu` et `nomsNouveaux`, la fonction qui décide **quelles fiches l'enregistrement d'un acte va créer** et les fait confirmer. **9 tests** (casse, accents, ordre des prénoms, parents, mariée et ses parents, témoins avec rôle, champs ignorés hors mariage). Aucun défaut trouvé.
+- 229 tests ; version 0.123.
 
 ## v0.122 — Mise à jour : Android Gradle Plugin 9.5.1
 

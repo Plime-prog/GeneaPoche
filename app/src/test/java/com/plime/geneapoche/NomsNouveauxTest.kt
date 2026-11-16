@@ -93,4 +93,13 @@ class NomsNouveauxTest {
             nomsNouveaux(base, a)
         )
     }
+
+    @Test
+    fun cle_de_nom_supprime_les_accents_au_milieu_d_un_mot() {
+        assertEquals("LEFEVRE", cleNom("Lef\u00E8vre"))
+        assertEquals("FRANCOISE", cleNom("Fran\u00E7oise"))
+        assertEquals(cleNom("No\u00EBl"), cleNom("NOEL"))
+        assertEquals("L HEUREUX", cleNom("L'Heureux"))
+        assertEquals("DU PONT", cleNom("Du-Pont"))
+    }
 }
