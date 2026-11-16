@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.128 — Dates GEDCOM : « vers / avant / après » ne deviennent plus des dates exactes
+
+- **Défaut corrigé (import)** : un fichier GEDCOM avec une date approximative **complète**, par exemple `ABT 12 MAR 1850` (« vers le 12 mars 1850 »), était lu comme la date **exacte** `12/03/1850` : le qualificatif disparaissait et une incertitude devenait une certitude. Même sort pour `BEF`, `AFT`, `BET … AND …` suivis d'un jour et d'un mois. Désormais le qualificatif est conservé avec l'année (le format interne ne porte « vers / avant / après / entre » qu'avec une année) : `vers 1850`, `avant 1900`, `après 1900`, `entre 1850 et 1851` ; `EST`, `CAL`, `ABOUT` valent « vers ». Les mois en minuscules (`27 oct 1890`) sont reconnus.
+- **Même défaut corrigé à l'export** : une date saisie « vers 12/03/1850 » était exportée comme date exacte `12 MAR 1850` ; elle sort maintenant `ABT 1850`.
+- **Compromis assumé** : le jour et le mois sont perdus quand il y a un qualificatif (on préfère « vers 1850 » à une fausse précision). Les dates exactes, `ABT 1890`, `BET 1850 AND 1860` sont inchangées.
+- 6 nouveaux tests ; 255 tests ; version 0.128. Non vérifié avec un vrai fichier Heredis ni sur appareil.
+
 ## v0.127 — Export GEDCOM : enfants rangés dans la bonne famille (remariages)
 
 - **Défaut corrigé (export GEDCOM)** : pour une personne ayant eu **plusieurs conjoints**, tous ses enfants étaient écrits dans **chacune** de ses familles. Un enfant du second mariage apparaissait donc aussi chez le premier conjoint ; à la lecture (dans GénéaPoche comme dans Heredis), il pouvait recevoir la **mauvaise mère** (ou le mauvais père) et être compté comme enfant de deux unions. Désormais chaque enfant n'est écrit que dans **sa** famille : celle de ses deux parents connus ; s'il n'a qu'un parent connu, chez le conjoint principal (une seule fois), ou chez l'autre parent s'il est précisé. Les fiches elles-mêmes n'étaient pas touchées : seul le **fichier exporté** l'était. **Si vous avez déjà exporté une famille recomposée vers Heredis, refaites l'export avec cette version.**

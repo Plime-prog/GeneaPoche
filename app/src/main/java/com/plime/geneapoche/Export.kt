@@ -22,6 +22,12 @@ fun estVivante(p: Personne, anneeCourante: Int): Boolean {
 fun dateGedcom(s: String): String? {
     val t = s.trim()
     if (t.isEmpty()) return null
+    // v0.128 : "vers 12/03/1850" gardait la date exacte et perdait "vers" ;
+    // le format GEDCOM ne porte le qualificatif qu'avec une annee.
+    Regex("^(vers|avant|apr\\u00E8s|apres)\\s+.*?(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
+        val q = when (m.groupValues[1].lowercase()) { "vers" -> "ABT"; "avant" -> "BEF"; else -> "AFT" }
+        return q + " " + m.groupValues[2]
+    }
     Regex("(\\d{1,2})/(\\d{1,2})/(\\d{4})").find(t)?.let { m ->
         val mois = m.groupValues[2].toIntOrNull() ?: return null
         val jour = m.groupValues[1].toIntOrNull() ?: return null
@@ -209,7 +215,7 @@ fun construireGedcom(
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.127") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
+    lignes.add("2 VERS 0.128") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
@@ -414,7 +420,22 @@ fun dateFrancaise(s: String): String {
         "JAN" to 1, "FEB" to 2, "MAR" to 3, "APR" to 4, "MAY" to 5, "JUN" to 6,
         "JUL" to 7, "AUG" to 8, "SEP" to 9, "OCT" to 10, "NOV" to 11, "DEC" to 12
     )
-    Regex("(\\d{1,2})\\s+([A-Z]{3})\\s+(\\d{4})").find(t)?.let { m ->
+    // v0.128 : un QUALIFICATIF (ABT, EST, CAL, BEF, AFT, BET...) devant une date
+    // complete ne doit pas disparaitre : "ABT 12 MAR 1850" donnait la date EXACTE
+    // 12/03/1850. Le format interne ne porte le qualificatif qu'avec une annee :
+    // on garde donc le qualificatif et l'annee ("vers 1850").
+    val annees = Regex("\\d{4}").findAll(t).map { it.value }.toList()
+    if (annees.isNotEmpty()) {
+        val q = Regex("^(ABT|ABOUT|EST|CAL|BEF|BEFORE|AFT|AFTER|BET|BETWEEN)\\b", RegexOption.IGNORE_CASE)
+            .find(t)?.groupValues?.get(1)?.uppercase()
+        when (q) {
+            "ABT", "ABOUT", "EST", "CAL" -> return "vers " + annees[0]
+            "BEF", "BEFORE" -> return "avant " + annees[0]
+            "AFT", "AFTER" -> return "apr\u00E8s " + annees[0]
+            "BET", "BETWEEN" -> if (annees.size >= 2) return "entre " + annees[0] + " et " + annees[1]
+        }
+    }
+    Regex("(\\d{1,2})\\s+([A-Z]{3})\\s+(\\d{4})").find(t.uppercase())?.let { m ->
         val mois = moisAnglais[m.groupValues[2]]
         // v0.71 : ZERO D'OFFICE aussi a l'import : "5 OCT 1890" doit revenir
         // en "05/10/1890" (jj/mm/aaaa), sinon le probleme reviendrait apres
