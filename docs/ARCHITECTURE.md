@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 15 novembre 2026 (v0.124). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 15 novembre 2026 (v0.125). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -50,3 +50,5 @@ Voir [CONTRIBUTING.md](../CONTRIBUTING.md). Rappels : jamais de permission, jama
 Règle : un déplacement mécanique par version, jamais de changement de logique en même temps.
 
 > Note : la version de Gradle est fixée à **deux endroits** : `gradle/wrapper/gradle-wrapper.properties` et `.github/workflows/apk.yml` (la CI régénère le wrapper). Les changer ensemble.
+
+> Build : Kotlin intégré à AGP (pas de plugin `kotlin.android`), nouveau DSL, `buildscript` épingle KGP/Compose 2.4.21 ; aucune option `android.*=false` de compatibilité (retirées en v0.125).

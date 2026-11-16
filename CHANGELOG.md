@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.125 — Fin des options de compatibilité AGP 9 dépréciées
+
+- Le projet utilisait deux options de **retour en arrière** annoncées comme dépréciées par AGP 9 (`android.builtInKotlin=false`, `android.newDsl=false`), qui produisaient des avertissements à chaque build (et seront supprimées d'une future version d'AGP). Elles sont retirées : Kotlin est désormais celui **intégré à AGP** (plugin `org.jetbrains.kotlin.android` retiré du module) et la configuration utilise le **nouveau DSL**.
+- Validation : lint, **230 tests JVM**, APK debug et release sur CI, **zéro avertissement de build** ; le code de l'application est inchangé. Le plugin de compilation Compose et la version de Kotlin (2.4.21) restent épinglés.
+- Pas de fichier `lint.xml` ajouté : lint passe sans réglage particulier, un fichier de réglages à l'aveugle n'apporterait rien. Non essayé sur un appareil (même code, même R8 ; si un comportement diffère, la v0.124 est la version de repli).
+
 ## v0.124 — Recherche et anti-doublon insensibles aux accents
 
 Suite de la v0.123 : revue de toutes les comparaisons de noms du code.
