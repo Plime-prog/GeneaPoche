@@ -1,5 +1,10 @@
 # Historique des versions
 
+## v0.120 — Mise à jour : Gradle 9.8.2
+
+- Outil de build **Gradle 9.4.1 → 9.8.2** (wrapper et scripts `gradlew` / `gradlew.bat` régénérés, reprise de la PR Dependabot n° 4). Le code de l'application est identique à la v0.119 ; seule la chaîne de build change.
+- Validation : lint, 220 tests JVM, APK debug sur CI, puis release produite avec ce Gradle (APK signé et debug). Non essayé sur un appareil. AGP 9.5.1 reste à traiter, seul, dans une version suivante.
+
 ## v0.119 — Mise à jour des actions GitHub de la CI
 
 - `actions/checkout` 5.1.0 → **7.0.1**, `actions/setup-java` 5.0.0 → **6.2.0**, `gradle/actions/setup-gradle` 5.0.0 → **6.4.1** (reprise des PR Dependabot n° 56, 57, 58), toujours épinglées par empreinte (SHA) de commit.
