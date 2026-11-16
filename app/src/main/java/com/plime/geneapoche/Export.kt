@@ -376,8 +376,12 @@ fun construireGedcom(
             lignes.add("1 HUSB " + xrefIndi(cle.first))
             lignes.add("1 WIFE " + xrefIndi(cle.second))
         }
+        // v0.131 : l'emplacement de mariage d'une personne ne vaut que pour SA famille
+        // principale. Avant, il etait recopie dans toutes ses familles : la date du
+        // premier mariage de Henri sortait aussi dans sa famille avec Claire.
         val epoux = personnes.firstOrNull { c ->
             (c.id == cle.first || c.id == cle.second) &&
+                c.tousConjoints().firstOrNull() == (if (c.id == cle.first) cle.second else cle.first) &&
                 (c.dateMariage.trim().isNotEmpty() || c.lieuMariage.trim().isNotEmpty())
         }
         val dm = epoux?.let { dateGedcom(it.dateMariage) }
@@ -495,6 +499,14 @@ fun couperLieu(plac: String): Pair<String, String> {
     return plac.trim() to ""
 }
 
+// v0.131 : evenements de FAMILLE d'un GEDCOM externe (ranges sous FAM, pas sous
+// INDI), conserves comme evenements libres des deux conjoints.
+val EVENEMENTS_FAMILLE_GEDCOM: Map<String, String> = mapOf(
+    "DIV" to "Divorce", "ANUL" to "Annulation de mariage", "ENGA" to "Fian\u00E7ailles",
+    "MARB" to "Bans de mariage", "MARC" to "Contrat de mariage", "MARL" to "Licence de mariage",
+    "MARS" to "Contrat de mariage", "DIVF" to "D\u00E9p\u00F4t de divorce"
+)
+
 // v0.130 : evenements datables courants d'un fichier GEDCOM externe, conserves
 // comme evenements libres (chronologie) au lieu d'etre ignores.
 val EVENEMENTS_GEDCOM_LIBRES: Map<String, String> = mapOf(
@@ -609,6 +621,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
         var marrD = ""
         var marrL = ""
         var marrDept = ""
+        // v0.131 : evenements de la FAMILLE (divorce, fiancailles...), donnes aux deux conjoints.
+        val evts = mutableListOf<EvenementLibre>()
     }
 
     val indivs = LinkedHashMap<String, Ind>()
@@ -728,6 +742,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                     "WIFE" -> fam.wife = contenu.removePrefix("WIFE").trim()
                     "CHIL" -> fam.chil.add(contenu.removePrefix("CHIL").trim())
                     "SOUR" -> {}
+                    in EVENEMENTS_FAMILLE_GEDCOM.keys ->
+                        fam.evts.add(EvenementLibre(intitule = EVENEMENTS_FAMILLE_GEDCOM.getValue(blocActuel)))
                     else -> ignorer(balisesIgnorees, blocActuel)
                 }
             }
@@ -783,6 +799,13 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                 when (tag) {
                     "DATE" -> fam.marrD = dateFrancaise(valeur)
                     "PLAC" -> { val cd = couperLieu(valeur); fam.marrL = cd.first; fam.marrDept = cd.second }
+                }
+            } else if (fam != null && blocActuel in EVENEMENTS_FAMILLE_GEDCOM.keys) {
+                val dernier = fam.evts.lastOrNull()
+                if (dernier != null) when (tag) {
+                    "DATE" -> dernier.date = dateFrancaise(valeur)
+                    "TIME" -> dernier.heure = valeur
+                    "PLAC" -> { val cd = couperLieu(valeur); dernier.lieu = cd.first; dernier.dept = cd.second }
                 }
             }
         }
@@ -903,6 +926,26 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
             if (ph.deptMariage.isEmpty() && fam.marrDept.isNotEmpty()) ph.deptMariage = fam.marrDept
             if (pw.lieuMariage.isEmpty() && fam.marrL.isNotEmpty()) pw.lieuMariage = fam.marrL
             if (pw.deptMariage.isEmpty() && fam.marrDept.isNotEmpty()) pw.deptMariage = fam.marrDept
+            // v0.131 : le modele n'a qu'UN emplacement de mariage par personne. Un autre
+            // mariage (remariage) ou un evenement de famille (divorce...) ne doit pas
+            // etre perdu : il devient un evenement libre "(avec X)".
+            fun libelle(autre: Personne) = (autre.prenoms + " " + autre.nom).trim()
+            fun ajouter(pp: Personne, autre: Personne, ev: EvenementLibre) {
+                val prochainId = (pp.evenementsLibres.maxOfOrNull { it.id } ?: 0L) + 1L
+                val avec = libelle(autre)
+                pp.evenementsLibres.add(ev.copy(id = prochainId, intitule = if (avec.isEmpty()) ev.intitule else ev.intitule + " (avec " + avec + ")"))
+            }
+            fun mariageCouvert(pp: Personne) =
+                if (fam.marrD.isNotEmpty()) pp.dateMariage == fam.marrD else pp.lieuMariage == fam.marrL
+            if (fam.marrD.isNotEmpty() || fam.marrL.isNotEmpty()) {
+                val mariage = EvenementLibre(intitule = "Mariage", date = fam.marrD, lieu = fam.marrL, dept = fam.marrDept)
+                if (!mariageCouvert(ph)) ajouter(ph, pw, mariage)
+                if (!mariageCouvert(pw)) ajouter(pw, ph, mariage)
+            }
+            fam.evts.forEach { ev ->
+                ajouter(ph, pw, ev)
+                ajouter(pw, ph, ev)
+            }
         }
         fam.chil.forEach { xc ->
             val c = idDe(xc)
