@@ -175,11 +175,26 @@ fun construireGedcom(
 
     // Familles : couples (personne, conjoint) et couples (pere, mere), avec leurs enfants.
     val familles = mutableMapOf<Pair<Long, Long>, MutableList<Long>>()
+    val parId = personnes.associateBy { it.id }
+    // v0.127 : un enfant n'appartient qu'a SA famille. Avant, tous les enfants
+    // d'une personne etaient ranges dans CHACUNE de ses familles (remariage) :
+    // l'enfant du second lit apparaissait aussi chez le premier conjoint, et
+    // le reimport lui donnait la mauvaise mere. Regle : parents connus tous les
+    // deux -> seul leur couple (ajoute plus bas) ; un seul parent connu ->
+    // couple du conjoint principal, sauf si l'autre parent est precise.
+    fun enfantDeCeCouple(p: Personne, co: Long, e: Long): Boolean {
+        val c = parId[e] ?: return true
+        if (c.pere != 0L && c.mere != 0L) return false
+        val autre = if (c.pere != 0L && c.pere != p.id) c.pere
+            else if (c.mere != 0L && c.mere != p.id) c.mere else 0L
+        if (autre != 0L) return autre == co
+        return co == p.tousConjoints().first()
+    }
     personnes.forEach { p ->
         p.tousConjoints().forEach { co ->
             if (personnes.any { it.id == co }) {
                 val liste = familles.getOrPut(cleCouple(p.id, co)) { mutableListOf() }
-                p.enfants.forEach { e -> if (!liste.contains(e)) liste.add(e) }
+                p.enfants.forEach { e -> if (enfantDeCeCouple(p, co, e) && !liste.contains(e)) liste.add(e) }
             }
         }
         if (p.pere != 0L && p.mere != 0L &&
@@ -194,7 +209,7 @@ fun construireGedcom(
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.107") // G2-02 : version REELLE de l'application (a maintenir a chaque versionName)
+    lignes.add("2 VERS 0.127") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;

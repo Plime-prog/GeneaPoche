@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.127 — Export GEDCOM : enfants rangés dans la bonne famille (remariages)
+
+- **Défaut corrigé (export GEDCOM)** : pour une personne ayant eu **plusieurs conjoints**, tous ses enfants étaient écrits dans **chacune** de ses familles. Un enfant du second mariage apparaissait donc aussi chez le premier conjoint ; à la lecture (dans GénéaPoche comme dans Heredis), il pouvait recevoir la **mauvaise mère** (ou le mauvais père) et être compté comme enfant de deux unions. Désormais chaque enfant n'est écrit que dans **sa** famille : celle de ses deux parents connus ; s'il n'a qu'un parent connu, chez le conjoint principal (une seule fois), ou chez l'autre parent s'il est précisé. Les fiches elles-mêmes n'étaient pas touchées : seul le **fichier exporté** l'était. **Si vous avez déjà exporté une famille recomposée vers Heredis, refaites l'export avec cette version.**
+- **Version écrite dans l'en-tête GEDCOM** : le fichier annonçait « 0.107 » depuis la v0.107 ; elle suit maintenant la version réelle, et un test vérifie l'accord avec `versionName` (la dérive ne peut plus passer inaperçue).
+- **Aller-retour GEDCOM testé de bout en bout** (`AllerRetourGedcomTest`, 11 tests) : champs, accents, date partielle, note multiligne avec « @ » et très longue (lignes ≤ 255 caractères), liens père/mère/conjoint/enfants cohérents sans lien orphelin, export partiel, double aller-retour stable, plusieurs conjoints.
+- Limite : un enfant dont la fiche donne deux parents différents de ceux qui le listent comme enfant (donnée incohérente) n'est plus écrit chez le parent qui le listait ; la fiche de l'enfant reste exacte. Non vérifié dans Heredis ni sur appareil. 249 tests ; version 0.127.
+
 ## v0.126 — Blocage du code PIN : politique testée, déverrouillage robuste
 
 - **Relecture** du déverrouillage (`Stockage.deverrouiller`, `EcranPin`) et du blocage après erreurs : la logique est saine (échec enregistré de façon synchrone, horloge `elapsedRealtime` insensible au changement d'heure, repli sur l'horloge murale après redémarrage, un seul essai à la fois).

@@ -157,4 +157,40 @@ class AllerRetourGedcomTest {
         assertEquals(henri.id, par(l, "Paul").pere)
         assertEquals(henri.id, par(l, "Lucie").pere)
     }
+
+    @Test
+    fun enfant_du_second_lit_n_est_pas_range_chez_le_premier_conjoint() {
+        val a = Personne(id = 1L, nom = "Martin", prenoms = "Henri", sexe = "M",
+            conjoint = 2L, conjointsSupp = mutableListOf(3L), enfants = mutableListOf(4L, 5L))
+        val b = Personne(id = 2L, nom = "Roux", prenoms = "Anne", sexe = "F", conjoint = 1L, enfants = mutableListOf(4L))
+        val c = Personne(id = 3L, nom = "Petit", prenoms = "Claire", sexe = "F", conjoint = 1L, enfants = mutableListOf(5L))
+        val e1 = Personne(id = 4L, nom = "Martin", prenoms = "Paul", pere = 1L, mere = 2L)
+        val e2 = Personne(id = 5L, nom = "Martin", prenoms = "Lucie", pere = 1L, mere = 3L)
+        val ged = construireGedcom(listOf(a, b, c, e1, e2))
+        val blocs = ged.split(Regex("(?m)^0 ")).filter { it.contains(" FAM") }
+        val f12 = blocs.first { it.startsWith("@F1_2@") }
+        val f13 = blocs.first { it.startsWith("@F1_3@") }
+        assertEquals(1, Regex("CHIL").findAll(f12).count())
+        assertEquals(1, Regex("CHIL").findAll(f13).count())
+        assertTrue(f12.contains("@I4@") && !f12.contains("@I5@"))
+        assertTrue(f13.contains("@I5@") && !f13.contains("@I4@"))
+    }
+
+    @Test
+    fun enfant_a_un_seul_parent_connu_va_chez_le_conjoint_principal_une_seule_fois() {
+        val a = Personne(id = 1L, nom = "Martin", prenoms = "Henri", sexe = "M",
+            conjoint = 2L, conjointsSupp = mutableListOf(3L), enfants = mutableListOf(4L))
+        val b = Personne(id = 2L, nom = "Roux", prenoms = "Anne", sexe = "F", conjoint = 1L)
+        val c = Personne(id = 3L, nom = "Petit", prenoms = "Claire", sexe = "F", conjoint = 1L)
+        val e = Personne(id = 4L, nom = "Martin", prenoms = "Paul", pere = 1L)
+        val ged = construireGedcom(listOf(a, b, c, e))
+        assertEquals(1, Regex("1 CHIL @I4@").findAll(ged).count())
+    }
+
+    @Test
+    fun version_ecrite_dans_le_gedcom_suit_versionName() {
+        val gradle = java.io.File("build.gradle.kts").readText()
+        val v = Regex("versionName = \"([^\"]+)\"").find(gradle)!!.groupValues[1]
+        assertTrue(construireGedcom(famille()).contains("2 VERS " + v))
+    }
 }
