@@ -281,3 +281,53 @@ fun candidatsCorrespondants(
         )
         .take(max)
 }
+
+// ------------------------------------------- Noms a creer (v0.123)
+// Extrait de MainActivity (comportement identique) : noms saisis dans un acte
+// qui ne correspondent a aucune fiche -> creation a confirmer.
+// Un nom correspond-il deja a une fiche existante (nom + prenoms, casse ignoree) ?
+fun nomDejaConnu(personnes: List<Personne>, nomSaisi: String, prenomsSaisis: String): Boolean {
+    val n = nomSaisi.trim()
+    val pr = prenomsSaisis.trim()
+    if (n.isEmpty() && pr.isEmpty()) return true
+    return personnes.any {
+        cleNom(it.nom) == cleNom(n) &&
+        clePrenomsNom(it.prenoms) == clePrenomsNom(pr)
+    }
+}
+
+// Noms saisis qui ne correspondent a aucune fiche : creation a proposer.
+fun nomsNouveaux(personnes: List<Personne>, a: ActeSaisie): List<String> {
+    val res = mutableListOf<String>()
+    if (a.personneId == 0L && !nomDejaConnu(personnes, a.nom, a.prenoms) && (a.nom.isNotBlank() || a.prenoms.isNotBlank())) {
+        res.add((a.prenoms.trim() + " " + a.nom.trim()).trim())
+    }
+    if (!nomDejaConnu(personnes, a.pereNom, a.perePrenoms)) {
+        res.add("p\u00E8re : " + (a.perePrenoms.trim() + " " + a.pereNom.trim()).trim())
+    }
+    if (!nomDejaConnu(personnes, a.mereNom, a.merePrenoms)) {
+        res.add("m\u00E8re : " + (a.merePrenoms.trim() + " " + a.mereNom.trim()).trim())
+    }
+    if (a.type == "M") {
+        if (a.marieeId == 0L && !nomDejaConnu(personnes, a.marieeNom, a.marieePrenoms) && (a.marieeNom.isNotBlank() || a.marieePrenoms.isNotBlank())) {
+            res.add("mari\u00E9e : " + (a.marieePrenoms.trim() + " " + a.marieeNom.trim()).trim())
+        }
+        if (!nomDejaConnu(personnes, a.pMarieeNom, a.pMarieePrenoms)) {
+            res.add("p\u00E8re de la mari\u00E9e : " + (a.pMarieePrenoms.trim() + " " + a.pMarieeNom.trim()).trim())
+        }
+        if (!nomDejaConnu(personnes, a.mMarieeNom, a.mMarieePrenoms)) {
+            res.add("m\u00E8re de la mari\u00E9e : " + (a.mMarieePrenoms.trim() + " " + a.mMarieeNom.trim()).trim())
+        }
+    }
+    // v0.73 : coherence ETENDUE - les temoins (parrain, marraine,
+    // pretre, officier d'etat civil, temoin) sont verifies aussi.
+    a.temoins.forEach { t ->
+        if ((t.nom.isNotBlank() || t.prenoms.isNotBlank()) && !nomDejaConnu(personnes, t.nom, t.prenoms)) {
+            res.add(
+                (if (t.role.isNotBlank()) t.role.trim().lowercase() + " : " else "t\u00E9moin : ") +
+                    (t.prenoms.trim() + " " + t.nom.trim()).trim()
+            )
+        }
+    }
+    return res
+}

@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.123 — Découpage : garde-fou « fiches à créer » d'un acte extrait et testé
+
+- Relevé du découpage de `MainActivity.kt` : l'interface (écrans, onglets) est **déjà** dans `EcranApplication.kt` et `DialoguesApp.kt` ; ce qui reste dans `AppEcran` (≈ 1 900 lignes) est de l'**état** et des **actions** qui le modifient. On ne peut plus déplacer de gros blocs mécaniquement : il faudrait créer un « porteur d'état » partagé, refonte risquée sans pouvoir tester sur appareil. On continue donc par **petites extractions de logique pure**.
+- Extrait vers `LogiqueActe.kt` (corps identique, paramètre `personnes` explicite) : `nomDejaConnu` et `nomsNouveaux`, la fonction qui décide **quelles fiches l'enregistrement d'un acte va créer** et les fait confirmer. **8 tests** (casse, accents, ordre des prénoms, parents, mariée et ses parents, témoins avec rôle, champs ignorés hors mariage). Aucun défaut trouvé.
+- 228 tests ; version 0.123.
+
 ## v0.122 — Mise à jour : Android Gradle Plugin 9.5.1
 
 - Plugin Android (AGP) **9.2.0 → 9.5.1** (reprise de la PR Dependabot n° 60), seul, après la correction de Gradle en v0.121. Le code de l'application est identique à la v0.121 ; seule la chaîne de compilation change.
