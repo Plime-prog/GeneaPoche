@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.122 — Mise à jour : Android Gradle Plugin 9.5.1
+
+- Plugin Android (AGP) **9.2.0 → 9.5.1** (reprise de la PR Dependabot n° 60), seul, après la correction de Gradle en v0.121. Le code de l'application est identique à la v0.121 ; seule la chaîne de compilation change.
+- Validation : lint, 220 tests JVM, APK debug sur CI, puis release (APK signé et debug). Non essayé sur un appareil : si un comportement inattendu apparaît, la v0.121 est la version de repli.
+- Termine le backlog Dependabot (PR n° 2, 4, 56, 57, 58, 60 reprises).
+
 ## v0.121 — Gradle 9.8.2 réellement utilisé par la CI (correction de la v0.120)
 
 - **Correction d'une affirmation inexacte de la v0.120** : j'y annonçais Gradle 9.8.2 « validé sur CI ». C'était faux : le fichier de la CI (`apk.yml`) installe et régénère le wrapper avec **9.4.1 en dur** (deux endroits par job), ce qui écrasait le fichier du dépôt. Les APK v0.120 ont donc été construits avec Gradle 9.4.1. Cette erreur a été découverte en essayant AGP 9.5.1, qui exige un Gradle plus récent (erreur `NoClassDefFoundError ... ProjectTypeBinding` au premier pas de build).
