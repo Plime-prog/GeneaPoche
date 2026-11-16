@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.129 — Import GEDCOM externe : nom de naissance conservé, lieux avec département
+
+- **Défaut corrigé** : un fichier GEDCOM peut donner **plusieurs noms** à une personne (nom de naissance, puis nom d'épouse ou surnom). Le **dernier** écrasait le premier : une femme importée avec `1 NAME Marie /DUPONT/` puis `1 NAME Marie /MARTIN/` (`2 TYPE married`) devenait « MARTIN » au lieu de son **nom de naissance** « DUPONT », ce qui est le pire résultat en généalogie française. Désormais le **premier NAME** (le principal selon GEDCOM 5.5.1) est conservé ; les suivants sont ignorés.
+- **Lieux « Commune, Département, France »** (sans code postal, courant dans les exports) : le département n'était pas reconnu (le lieu restait entier avec un département vide, donc absent des statistiques et de la carte). Il est maintenant reconnu par son **nom** : « Roubaix, Nord, France » → commune « Roubaix », département 59.
+- **Tests d'import externe** (`ImportGedcomExterneTest`, 7 tests, fichiers fictifs écrits à la main, fins de ligne Windows) : structure de base, lieu avec code postal, lignes mal formées et balises inconnues ignorées sans casser l'import, enfant inexistant sans lien orphelin, note `CONC`/`CONT` recollée, plusieurs conjoints (`FAMS` multiples) avec la bonne mère pour chaque enfant.
+- Limite : un seul nom est conservé par personne (les autres noms ne sont pas gardés dans la fiche). 262 tests ; version 0.129. Non vérifié avec un vrai fichier Heredis ni sur appareil.
+
 ## v0.128 — Dates GEDCOM : « vers / avant / après » ne deviennent plus des dates exactes
 
 - **Défaut corrigé (import)** : un fichier GEDCOM avec une date approximative **complète**, par exemple `ABT 12 MAR 1850` (« vers le 12 mars 1850 »), était lu comme la date **exacte** `12/03/1850` : le qualificatif disparaissait et une incertitude devenait une certitude. Même sort pour `BEF`, `AFT`, `BET … AND …` suivis d'un jour et d'un mois. Désormais le qualificatif est conservé avec l'année (le format interne ne porte « vers / avant / après / entre » qu'avec une année) : `vers 1850`, `avant 1900`, `après 1900`, `entre 1850 et 1851` ; `EST`, `CAL`, `ABOUT` valent « vers ». Les mois en minuscules (`27 oct 1890`) sont reconnus.

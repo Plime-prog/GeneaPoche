@@ -215,7 +215,7 @@ fun construireGedcom(
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.128") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
+    lignes.add("2 VERS 0.129") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
@@ -486,6 +486,12 @@ fun couperLieu(plac: String): Pair<String, String> {
     if (parties.size >= 2 && parties[1].toIntOrNull() != null) {
         return parties[0] to parties[1]
     }
+    // v0.128 : "Roubaix, Nord, France" (sans code postal) : le departement est
+    // reconnu par son NOM dans les segments suivants ; la commune reste seule.
+    if (parties.size >= 2) {
+        val n = numeroDepartement(parties.drop(1).joinToString(", "))
+        if (n != null) return parties[0] to normaliserDept(n.toString())
+    }
     return plac.trim() to ""
 }
 
@@ -636,7 +642,10 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
             dateTampon = ""
             if (ind != null) {
                 when (blocActuel) {
-                    "NAME" -> {
+                    // v0.128 : le PREMIER NAME est le nom principal (GEDCOM 5.5.1) ; les
+                    // suivants (nom d'epouse, surnom, alias) ne l'ecrasent plus : une
+                    // femme redevenait "MARTIN" au lieu de son nom de naissance "DUPONT".
+                    "NAME" -> if (ind.nom.isEmpty() && ind.prenoms.isEmpty()) {
                         val valeur = contenu.removePrefix("NAME").trim()
                         val nomFamille = Regex("/([^/]*)/").find(valeur)?.groupValues?.get(1) ?: ""
                         val reste = valeur.replace(Regex("/[^/]*/"), " ").trim()
