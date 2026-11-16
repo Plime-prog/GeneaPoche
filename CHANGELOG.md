@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.131 — GEDCOM : remariages et divorces ne sont plus perdus ni mal attribués
+
+- **Perte corrigée à l'import (remariages)** : le modèle n'a qu'**un** emplacement de mariage par personne. Avec deux mariages, seul le premier fichier-famille lu était gardé ; la date et le lieu du **second** mariage disparaissaient en silence. Le second mariage est maintenant conservé comme événement libre « Mariage (avec Claire PETIT) » chez la personne concernée ; chaque conjoint garde la date de **sa** famille dans son emplacement. Un mariage décrit à la fois chez la personne et dans la famille n'est pas dupliqué.
+- **Divorce et autres événements de famille** (`DIV`, annulation, fiançailles, bans, contrat et licence de mariage), que les logiciels écrivent dans la **famille**, étaient ignorés : ils sont maintenant donnés aux **deux conjoints** comme événements libres (« Divorce (avec Anne ROUX) », date, lieu).
+- **Défaut corrigé à l'export** : la date de mariage d'une personne ayant plusieurs conjoints était écrite dans **toutes** ses familles (le premier mariage de Henri sortait aussi dans sa famille avec Claire). Elle n'est plus écrite que dans sa famille principale ; l'autre famille utilise la date de l'autre conjoint si elle existe.
+- 5 nouveaux tests (`FamillesGedcomTest`) : divorce, remariage, absence de doublon, aller-retour de deux mariages, export. **Limite** : à la réexportation, ces événements sortent en `EVEN` + `TYPE` sous chaque personne (pas en balise de famille). Un divorce n'est pas encore un statut du couple dans l'application. 272 tests ; version 0.131. Non vérifié avec un vrai fichier Heredis ni sur appareil.
+
 ## v0.130 — Import GEDCOM : résidences, recensements, émigration… conservés
 
 - **Perte de données évitée à l'import** : un fichier GEDCOM d'un autre logiciel contient souvent des événements datés autres que N/B/M/D/S (résidence `RESI`, recensement `CENS`, émigration/immigration, naturalisation, diplôme, études, retraite, testament, confirmation, première communion, ordination, adoption, bénédiction, crémation). Ils étaient **ignorés** (seulement comptés dans le rapport). Ils sont maintenant conservés comme **événements libres** de la chronologie de la personne, avec leur date, leur heure, leur lieu et leur département ; une balise `TYPE` précise le libellé (« Résidence (Caserne) »). Les dates approximatives gardent leur qualificatif (« vers 1912 »).
