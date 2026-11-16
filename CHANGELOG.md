@@ -1,5 +1,10 @@
 # Historique des versions
 
+## v0.119 — Mise à jour des actions GitHub de la CI
+
+- `actions/checkout` 5.1.0 → **7.0.1**, `actions/setup-java` 5.0.0 → **6.2.0**, `gradle/actions/setup-gradle` 5.0.0 → **6.4.1** (reprise des PR Dependabot n° 56, 57, 58), toujours épinglées par empreinte (SHA) de commit.
+- Ne touche **que la chaîne de build** : le code de l'application est identique à la v0.118. Validation : CI de la branche verte, puis release produite avec ces versions (APK signé et debug).
+
 ## v0.118 — Mise à jour : BOM Compose 2026.09.00
 
 - Bibliothèques d'interface (Jetpack Compose) alignées sur le BOM **2026.09.00** (au lieu de 2026.08.00), reprenant la proposition automatique Dependabot n° 2. Aucun changement de code : lint, 220 tests JVM et compilation passent sur CI.
