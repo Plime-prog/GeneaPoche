@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.121 — Mise à jour : Android Gradle Plugin 9.5.1
+
+- Plugin Android (AGP) **9.2.0 → 9.5.1** (reprise de la PR Dependabot n° 60), seul, après Gradle 9.8.2. Le code de l'application est identique à la v0.120 ; seule la chaîne de compilation change.
+- Validation : lint, 220 tests JVM, APK debug sur CI, puis release (APK signé et debug). Non essayé sur un appareil : si un comportement inattendu apparaît, la v0.120 est la version de repli.
+- Cela termine le backlog Dependabot (PR n° 2, 4, 56, 57, 58, 60 reprises).
+
 ## v0.120 — Mise à jour : Gradle 9.8.2
 
 - Outil de build **Gradle 9.4.1 → 9.8.2** (wrapper et scripts `gradlew` / `gradlew.bat` régénérés, reprise de la PR Dependabot n° 4). Le code de l'application est identique à la v0.119 ; seule la chaîne de build change.

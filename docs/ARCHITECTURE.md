@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 15 novembre 2026 (v0.120). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 15 novembre 2026 (v0.121). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -24,7 +24,7 @@ Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3).
 
 ## Construction et CI
 
-- AGP 9.2.0, Kotlin 2.4.21, compileSdk 37, targetSdk 36, minSdk 26, JDK 17, Gradle 9.8.2.
+- AGP 9.5.1, Kotlin 2.4.21, compileSdk 37, targetSdk 36, minSdk 26, JDK 17, Gradle 9.8.2.
 - Workflow `.github/workflows/apk.yml` : `lintDebug testDebugUnitTest assembleDebug assembleRelease`, artefacts debug et release ; actions épinglées par SHA.
 - Le `gradle-wrapper.jar` n'est pas versionné : la CI le régénère (`gradle wrapper`). En local, lancer d'abord la même commande.
 - **Release** : pousser une branche `release-X.Y` (ou un tag `vX.Y`) déclenche le job `release`, qui publie `GeneaPoche-vX.Y-release.apk` et `-debug.apk`. L'APK release est signé avec les secrets `KEYSTORE_*` s'ils existent, sinon avec la clé debug.
