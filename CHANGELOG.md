@@ -161,7 +161,7 @@
 ## v0.99 — Premier bilan : logique d'acte extraite et testée, index des personnes, saisie rapide, journal en 2 vues
 
 - **Logique d'acte extraite (refactoring)** : nouveau fichier `LogiqueActe.kt` regroupant les fonctions pures de l'enregistrement d'un acte (`cleNom`, `clePrenomsNom`, `matchPersonneActe` — l'anti-doublon v0.77 —, `majChamp98`, `renseignerChampsActe`, `lierParentActe`). `enregistrerActe` dans MainActivity délègue désormais à ces fonctions ; le découpage complet par onglets continuera plus tard.
-- **20 nouveaux tests JVM** (`TestsLogiqueActe.kt`) sur cette logique : clés de comparaison, anti-doublons, fill-if-blank / edition-efface, naissance calculée « vers aaaa », liaison parent avec cohérence. Le total passe de 90 à **110 tests unitaires**.
+- **20 nouveaux tests JVM** (`TestsLogiqueActe.kt`) sur cette logique : clés de comparaison, anti-doublons, fill-if-blank / edition-efface, naissance calculée « vers aaaa », liaison parent avec cohérence. Le total passe de 90 à **114 tests unitaires**.
 - **Correctif de cohérence** : `lierParentActe` refuse désormais l'incohérence parentale dans les DEUX sens (le lien enfant → parent n'est plus posé quand l'âge l'interdit, pas seulement l'entrée dans la liste enfants).
 - **Index des personnes (performances)** : `personneParId` n'est plus une recherche linéaire (~120 appels dans le code) — nouvel `IndexPersonnes` (Map id → personne), invalidé à chaque mutation de la base (ajouts, suppressions, renumérotation).
 - **Détection de doublons dé-O(n²)** : `doublonsPotentiels` groupe par clé de nom au lieu de comparer toutes les paires.
@@ -174,7 +174,10 @@
 - **Contrôle de cohérence immédiat** : sous le champ Âge dès la saisie (écart de plus de 2 ans avec la date exacte de la fiche) et à l'enregistrement : deuxième âge contredisant une date déjà calculée, naissance calculée après le décès, mariage à moins de 12 ans. Le message d'incohérence est distinct (il n'est plus mêlé au message « SANS le lien de parenté »).
 - **Correctif** : la ligne « N. calculé » n'est plus affichée quand la date de naissance exacte est connue.
 - Tests : 118 tests unitaires JVM.
-- Bumps v0.99 (gradle 99/« 0.99 »).
+- **Naissance approximative automatique, partout** : nouvelle fonction pure `naissanceDepuisAge` — dès qu'un âge est saisi (personne concernée, conjoint, père, mère, témoins, parrain/marraine, tous types d'actes), « vers aaaa » est posé sur toute fiche sans date de naissance ET sans naissance calculée, avec la ligne « N. calculé » précisant la source (« calculée d'après l'acte de mariage de … »). Jamais si une date exacte est présente ; si une date exacte existe et contredit l'âge (écart > 2 ans), l'incohérence est signalée.
+- **Contrôle de cohérence immédiat à la saisie** : nouvelle fonction `erreurAge` — sous chaque champ Âge (père, mère, témoins), un message rouge apparaît dès la frappe si l'âge contredit la date de naissance de la fiche ; l'incohérence est rappelée au message final d'enregistrement.
+- **4 nouveaux tests JVM** (`naissanceDepuisAge` : pose « vers aaaa », ne touche pas une date exacte, signale l'incohérence avec tolérance ≤ 2 ans ; `erreurAge`). Le total passe à **114 tests unitaires**.
+- Bumps v0.99 (gradle 99/« 0.99 »). Release GitHub v0.99 publiée (APK release et debug).
 
 ## v0.98 — GEDCOM sans perte, champs B/M/D/S, six corrections
 
