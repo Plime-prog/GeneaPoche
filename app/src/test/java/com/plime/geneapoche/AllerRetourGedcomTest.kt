@@ -132,4 +132,29 @@ class AllerRetourGedcomTest {
             if (x != 0L) assertTrue(ids.contains(x))
         }
     }
+
+    @Test
+    fun plusieurs_conjoints_et_leurs_enfants_reviennent() {
+        val a = Personne(
+            id = 1L, nom = "Martin", prenoms = "Henri", sexe = "M",
+            conjoint = 2L, conjointsSupp = mutableListOf(3L), enfants = mutableListOf(4L, 5L)
+        )
+        val b = Personne(id = 2L, nom = "Roux", prenoms = "Anne", sexe = "F", conjoint = 1L, enfants = mutableListOf(4L))
+        val c = Personne(id = 3L, nom = "Petit", prenoms = "Claire", sexe = "F", conjoint = 1L, enfants = mutableListOf(5L))
+        val e1 = Personne(id = 4L, nom = "Martin", prenoms = "Paul", pere = 1L, mere = 2L)
+        val e2 = Personne(id = 5L, nom = "Martin", prenoms = "Lucie", pere = 1L, mere = 3L)
+        val l = importerGedcomRapporte(construireGedcom(listOf(a, b, c, e1, e2))).personnes
+        val henri = par(l, "Henri")
+        val anne = par(l, "Anne")
+        val claire = par(l, "Claire")
+        assertEquals(5, l.size)
+        // les deux epouses restent liees a Henri (conjoint principal ou supplementaire)
+        val conjointsDeHenri = (listOf(henri.conjoint) + henri.conjointsSupp).filter { it != 0L }.toSet()
+        assertEquals(setOf(anne.id, claire.id), conjointsDeHenri)
+        // chaque enfant garde SA mere
+        assertEquals(anne.id, par(l, "Paul").mere)
+        assertEquals(claire.id, par(l, "Lucie").mere)
+        assertEquals(henri.id, par(l, "Paul").pere)
+        assertEquals(henri.id, par(l, "Lucie").pere)
+    }
 }
