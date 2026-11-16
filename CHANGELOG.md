@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.130 — Import GEDCOM : résidences, recensements, émigration… conservés
+
+- **Perte de données évitée à l'import** : un fichier GEDCOM d'un autre logiciel contient souvent des événements datés autres que N/B/M/D/S (résidence `RESI`, recensement `CENS`, émigration/immigration, naturalisation, diplôme, études, retraite, testament, confirmation, première communion, ordination, adoption, bénédiction, crémation). Ils étaient **ignorés** (seulement comptés dans le rapport). Ils sont maintenant conservés comme **événements libres** de la chronologie de la personne, avec leur date, leur heure, leur lieu et leur département ; une balise `TYPE` précise le libellé (« Résidence (Caserne) »). Les dates approximatives gardent leur qualificatif (« vers 1912 »).
+- Le comportement de `EVEN` + `TYPE` (événement générique) est inchangé. 5 nouveaux tests (`ImportEvenementsTest`).
+- **Limites** : le divorce (`DIV`) est écrit par la plupart des logiciels dans la **famille**, pas chez la personne : il reste ignoré (à traiter dans une version ultérieure). À la réexportation, ces événements sortent en `EVEN` + `TYPE` (le libellé est conservé, pas la balise d'origine). 267 tests ; version 0.130. Non vérifié avec un vrai fichier Heredis ni sur appareil.
+
 ## v0.129 — Import GEDCOM externe : nom de naissance conservé, lieux avec département
 
 - **Défaut corrigé** : un fichier GEDCOM peut donner **plusieurs noms** à une personne (nom de naissance, puis nom d'épouse ou surnom). Le **dernier** écrasait le premier : une femme importée avec `1 NAME Marie /DUPONT/` puis `1 NAME Marie /MARTIN/` (`2 TYPE married`) devenait « MARTIN » au lieu de son **nom de naissance** « DUPONT », ce qui est le pire résultat en généalogie française. Désormais le **premier NAME** (le principal selon GEDCOM 5.5.1) est conservé ; les suivants sont ignorés.
