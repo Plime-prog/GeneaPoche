@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 15 novembre 2026 (v0.120). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 15 novembre 2026 (v0.121). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -48,3 +48,5 @@ Voir [CONTRIBUTING.md](../CONTRIBUTING.md). Rappels : jamais de permission, jama
 3. actions → fonctions pures testables : *(fait, v0.113)* suppression avec Annuler et fusion de fiches (`ActionsFiches.kt`) ; *(fait, v0.114)* fusion d'un GEDCOM dans la base (`ImportBase.kt`) ; reste `remplacerBase`, la restauration depuis `.bak` et l'enregistrement d'acte ;
 4. écrans (onglets) → fichiers dédiés recevant état et callbacks.
 Règle : un déplacement mécanique par version, jamais de changement de logique en même temps.
+
+> Note : la version de Gradle est fixée à **deux endroits** : `gradle/wrapper/gradle-wrapper.properties` et `.github/workflows/apk.yml` (la CI régénère le wrapper). Les changer ensemble.

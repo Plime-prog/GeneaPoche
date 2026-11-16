@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.121 — Gradle 9.8.2 réellement utilisé par la CI (correction de la v0.120)
+
+- **Correction d'une affirmation inexacte de la v0.120** : j'y annonçais Gradle 9.8.2 « validé sur CI ». C'était faux : le fichier de la CI (`apk.yml`) installe et régénère le wrapper avec **9.4.1 en dur** (deux endroits par job), ce qui écrasait le fichier du dépôt. Les APK v0.120 ont donc été construits avec Gradle 9.4.1. Cette erreur a été découverte en essayant AGP 9.5.1, qui exige un Gradle plus récent (erreur `NoClassDefFoundError ... ProjectTypeBinding` au premier pas de build).
+- Désormais la CI utilise **Gradle 9.8.2** (aux 4 endroits), identique au wrapper du dépôt. Le code de l'application est inchangé.
+- AGP 9.5.1 sera tenté seul dans la version suivante.
+
 ## v0.120 — Mise à jour : Gradle 9.8.2
 
 - Outil de build **Gradle 9.4.1 → 9.8.2** (wrapper et scripts `gradlew` / `gradlew.bat` régénérés, reprise de la PR Dependabot n° 4). Le code de l'application est identique à la v0.119 ; seule la chaîne de build change.
