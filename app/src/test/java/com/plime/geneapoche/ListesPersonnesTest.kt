@@ -2,6 +2,7 @@ package com.plime.geneapoche
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import java.util.Random
 
@@ -99,5 +100,14 @@ class ListesPersonnesTest {
         personnesIsolees(l)
         val ms = (System.nanoTime() - debut) / 1_000_000
         assertTrue("trop lent : $ms ms", ms < 3000)
+    }
+
+    @Test
+    fun recherche_insensible_aux_accents_et_a_la_casse() {
+        assertTrue(contientSansAccents("Lef\u00E8vre Fran\u00E7ois \u00C9tampes", "lefevre"))
+        assertTrue(contientSansAccents("Lef\u00E8vre Fran\u00E7ois \u00C9tampes", "FRANCOIS"))
+        assertTrue(contientSansAccents("Lefevre Francois Etampes", "\u00E9tampes"))
+        assertTrue(contientSansAccents("Durand", ""))
+        assertFalse(contientSansAccents("Durand", "martin"))
     }
 }

@@ -1,5 +1,15 @@
 # Historique des versions
 
+## v0.124 — Recherche et anti-doublon insensibles aux accents
+
+Suite de la v0.123 : revue de toutes les comparaisons de noms du code.
+
+- **Recherche de la liste des personnes** : « lefevre » ne trouvait pas « Lefèvre » (comparaison sensible aux accents). Elle ignore désormais casse et accents (nom, prénoms, lieux).
+- **Fenêtre « nouvelle fiche »** (fiches existantes proposées, et « création proposée seulement si aucune fiche ne correspond ») : même correction, et l'égalité exacte utilise la clé de nom commune (casse, accents, tirets, ordre des prénoms).
+- **Anti-doublon à la création d'une fiche** (même nom, mêmes prénoms, même date de naissance) : utilisait une simple mise en majuscules ; utilise maintenant la même clé que la saisie d'acte, pour qu'« Anne-Marie » / « Anne Marie » ou « Lefèvre » / « Lefevre » soient reconnus.
+- Revus **sans changement** : détection de doublons du journal (déjà sans accents), calendrier, tris. **Volontairement laissé** : la fusion d'un GEDCOM (`ImportBase.kt`) compare nom et prénoms en majuscules seulement ; un écart d'accent y crée un doublon à fusionner ensuite plutôt qu'une fusion à tort.
+- Nouvelle fonction pure `contientSansAccents` (testée). 230 tests ; version 0.124. Non vérifié sur appareil.
+
 ## v0.123 — Découpage : garde-fou « fiches à créer » d'un acte extrait et testé
 
 - Relevé du découpage de `MainActivity.kt` : l'interface (écrans, onglets) est **déjà** dans `EcranApplication.kt` et `DialoguesApp.kt` ; ce qui reste dans `AppEcran` (≈ 1 900 lignes) est de l'**état** et des **actions** qui le modifient. On ne peut plus déplacer de gros blocs mécaniquement : il faudrait créer un « porteur d'état » partagé, refonte risquée sans pouvoir tester sur appareil. On continue donc par **petites extractions de logique pure**.

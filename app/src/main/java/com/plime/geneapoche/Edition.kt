@@ -600,21 +600,22 @@ fun DialogueNouveauTemoin(
 ) {
     var nom by remember { mutableStateOf("") }
     var prenoms by remember { mutableStateOf("") }
-    val motNom = nom.trim().uppercase()
-    val motPrenoms = prenoms.trim().uppercase()
+    val motNom = nom.trim()
+    val motPrenoms = prenoms.trim()
 
     // Fiches existantes dont le nom ou les prenoms contiennent la saisie.
     val correspondances = if (motNom.isEmpty() && motPrenoms.isEmpty()) {
         listOf()
     } else {
         personnes.filter { q ->
-            (motNom.isNotEmpty() && q.nom.trim().uppercase().contains(motNom)) ||
-                (motPrenoms.isNotEmpty() && q.prenoms.trim().uppercase().contains(motPrenoms))
+            // v0.124 : insensible a la casse ET aux accents.
+            (motNom.isNotEmpty() && contientSansAccents(q.nom.trim(), motNom)) ||
+                (motPrenoms.isNotEmpty() && contientSansAccents(q.prenoms.trim(), motPrenoms))
         }.take(6)
     }
     // Creation proposee seulement si aucune fiche ne correspond exactement.
     val correspondanceExacte = personnes.any { q ->
-        q.nom.trim().uppercase() == motNom && q.prenoms.trim().uppercase() == motPrenoms
+        cleNom(q.nom) == cleNom(motNom) && clePrenomsNom(q.prenoms) == clePrenomsNom(motPrenoms)
     }
     val creationPossible = (motNom.isNotEmpty() || motPrenoms.isNotEmpty()) && !correspondanceExacte
 

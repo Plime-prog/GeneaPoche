@@ -58,3 +58,8 @@ fun personnesIsolees(personnes: List<Personne>): List<Personne> {
             it.id !in cites
     }
 }
+
+// v0.124 : recherche de texte insensible a la casse ET aux accents
+// ("lefevre" trouve "Lef\u00E8vre", "francois" trouve "Fran\u00E7ois").
+fun contientSansAccents(texte: String, motif: String): Boolean =
+    sansAccents(texte).contains(sansAccents(motif), ignoreCase = true)
