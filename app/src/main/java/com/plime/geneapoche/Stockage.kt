@@ -50,8 +50,6 @@ object Stockage {
     private const val CLE_SOSA_CUJUS = "sosa_cujus"
     private const val CLE_MAITRE = "cle_maitre"
     private const val CLE_SEL_MAITRE = "cle_maitre_sel"
-    private val DUREES_BLOCAGE = longArrayOf(30_000L, 120_000L, 600_000L, 3_600_000L)
-    private const val ERREURS_AVANT_PALIER = 5
     private const val ITERATIONS_PIN = 600_000
     // v0.39 : sauvegardes d'avant import TOURNANTES (5 dernieres conservees,
     // plus jamais ecrasees par un import suivant).
@@ -372,20 +370,18 @@ object Stockage {
     // pour etre deja pris en compte au verification suivante du PIN.
     fun enregistrerEchec(ctx: Context) {
         val p = prefs(ctx)
-        var erreurs = p.getInt(CLE_ERREURS, 0) + 1
-        val niveau = p.getInt(CLE_NIVEAU, 0)
-        if (erreurs >= ERREURS_AVANT_PALIER) {
-            erreurs = 0
-            val duree = if (niveau < DUREES_BLOCAGE.size) DUREES_BLOCAGE[niveau] else DUREES_BLOCAGE.last()
+        // v0.126 : politique dans BlocagePin (testee).
+        val etat = BlocagePin.apresEchec(p.getInt(CLE_ERREURS, 0), p.getInt(CLE_NIVEAU, 0))
+        if (etat.dureeMs > 0L) {
             val e = android.os.SystemClock.elapsedRealtime()
             p.edit()
                 .putLong(CLE_ECRIT, e)
-                .putLong(CLE_JUSQUA, e + duree)
-                .putLong(CLE_JUSQUA_MUR, System.currentTimeMillis() + duree)
-                .putInt(CLE_NIVEAU, if (niveau < DUREES_BLOCAGE.size) niveau + 1 else niveau)
+                .putLong(CLE_JUSQUA, e + etat.dureeMs)
+                .putLong(CLE_JUSQUA_MUR, System.currentTimeMillis() + etat.dureeMs)
+                .putInt(CLE_NIVEAU, etat.niveau)
                 .commit()
         }
-        p.edit().putInt(CLE_ERREURS, erreurs).commit()
+        p.edit().putInt(CLE_ERREURS, etat.erreurs).commit()
     }
 
     fun reinitialiserEchecs(ctx: Context) {
@@ -398,14 +394,10 @@ object Stockage {
 
     fun secondesBlocage(ctx: Context): Long {
         val p = prefs(ctx)
-        val e = android.os.SystemClock.elapsedRealtime()
-        val reste = if (e >= p.getLong(CLE_ECRIT, 0L)) {
-            (p.getLong(CLE_JUSQUA, 0L) - e) / 1000L
-        } else {
-            // Redemarrage du telephone : repli sur l'horloge murale.
-            (p.getLong(CLE_JUSQUA_MUR, 0L) - System.currentTimeMillis()) / 1000L
-        }
-        return if (reste > 0L) reste else 0L
+        return BlocagePin.secondesRestantes(
+            android.os.SystemClock.elapsedRealtime(), p.getLong(CLE_ECRIT, 0L), p.getLong(CLE_JUSQUA, 0L),
+            System.currentTimeMillis(), p.getLong(CLE_JUSQUA_MUR, 0L)
+        )
     }
 
     // ------------------------------------------------------------ Personnes (chiffre)

@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.126 — Blocage du code PIN : politique testée, déverrouillage robuste
+
+- **Relecture** du déverrouillage (`Stockage.deverrouiller`, `EcranPin`) et du blocage après erreurs : la logique est saine (échec enregistré de façon synchrone, horloge `elapsedRealtime` insensible au changement d'heure, repli sur l'horloge murale après redémarrage, un seul essai à la fois).
+- **Politique extraite et testée** (`BlocagePin.kt`, 7 tests, comportement identique) : 5 erreurs → 30 s, puis 2 min, 10 min, 1 h, puis 1 h sans fin ; compteur remis à zéro à chaque palier ; changer l'heure du téléphone sans redémarrer n'a aucun effet ; après redémarrage, repli sur l'horloge murale.
+- **Durcissement de l'écran PIN** : une erreur technique inattendue pendant le déverrouillage (Keystore, mémoire…) faisait **fermer l'application** (exception non attrapée dans la coroutine) ou laissait l'écran figé. Elle affiche maintenant « Erreur technique… réessayez » sans compter comme un code faux ni bloquer l'écran. (Non reproduit sur appareil : correctif préventif, de lecture.)
+- **Limite connue, inchangée** : après un redémarrage, remettre l'horloge du téléphone en avance annule le reste d'un blocage (repli sur l'horloge murale). Seule parade complète : un secret côté matériel, hors périmètre.
+- 237 tests ; version 0.126. Non vérifié sur appareil.
+
 ## v0.125 — Fin des options de compatibilité AGP 9 dépréciées
 
 - Le projet utilisait deux options de **retour en arrière** annoncées comme dépréciées par AGP 9 (`android.builtInKotlin=false`, `android.newDsl=false`), qui produisaient des avertissements à chaque build (et seront supprimées d'une future version d'AGP). Elles sont retirées : Kotlin est désormais celui **intégré à AGP** (plugin `org.jetbrains.kotlin.android` retiré du module) et la configuration utilise le **nouveau DSL**.
