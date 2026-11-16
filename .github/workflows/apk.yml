@@ -27,16 +27,16 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Gradle 9.4.1
+      - name: Gradle 9.8.2
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
-          gradle-version: '9.4.1'
+          gradle-version: '9.8.2'
 
       # G2-15 : regenerer le jar du wrapper (fichier binaire non versionne)
       # puis construire avec ./gradlew, reproductible pour les developpeurs.
       - name: Wrapper Gradle
         run: |
-          gradle wrapper --gradle-version 9.4.1 --no-daemon
+          gradle wrapper --gradle-version 9.8.2 --no-daemon
           chmod +x gradlew
 
       # G2-12 : lintDebug + testDebugUnitTest dans la CI.
@@ -112,14 +112,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Gradle 9.4.1
+      - name: Gradle 9.8.2
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
-          gradle-version: '9.4.1'
+          gradle-version: '9.8.2'
 
       - name: Wrapper Gradle
         run: |
-          gradle wrapper --gradle-version 9.4.1 --no-daemon
+          gradle wrapper --gradle-version 9.8.2 --no-daemon
           chmod +x gradlew
 
       - name: Cle de signature release
