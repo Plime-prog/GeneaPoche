@@ -536,8 +536,8 @@ fun EcranApplication(
                     // G3-14 : la recherche filtre sur nom, prenoms et lieux.
                     val entreesFiltrees: List<Any> = if (recherche.isBlank()) entrees else entrees.filter { entree ->
                         val pers = entree as Personne
-                        (pers.nom + " " + pers.prenoms + " " + pers.lieuNaissance + " " + pers.lieuMariage + " " + pers.lieuDeces)
-                            .contains(recherche.trim(), ignoreCase = true)
+                        // v0.124 : insensible aux accents ("lefevre" trouve "Lef\u00E8vre").
+                        contientSansAccents(pers.nom + " " + pers.prenoms + " " + pers.lieuNaissance + " " + pers.lieuMariage + " " + pers.lieuDeces, recherche.trim())
                     }
                     // G3-14 : en tri A-Z, sans filtre ni recherche, un
                     // en-tete collant par lettre guide le defilement.
@@ -1601,8 +1601,10 @@ fun EcranApplication(
                     // m\u00EAme date de naissance. Sinon c'est un homonyme : la
                     // nouvelle fiche est cr\u00E9\u00E9e.
                     val doublon = personnes.firstOrNull { q ->
-                        q.nom.trim().uppercase() == p2.nom.trim().uppercase() &&
-                        q.prenoms.trim().uppercase() == p2.prenoms.trim().uppercase() &&
+                        // v0.124 : meme comparaison que l'anti-doublon de la saisie d'acte
+                        // (casse, accents, tirets, ordre des prenoms ignores).
+                        cleNom(q.nom) == cleNom(p2.nom) &&
+                        clePrenomsNom(q.prenoms) == clePrenomsNom(p2.prenoms) &&
                         q.dateNaissance.isNotBlank() && p2.dateNaissance.isNotBlank() &&
                         q.dateNaissance == p2.dateNaissance
                     }
