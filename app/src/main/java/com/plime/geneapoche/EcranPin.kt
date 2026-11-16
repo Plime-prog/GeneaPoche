@@ -262,16 +262,24 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
         // principal. Deverrouillage complet : PIN verifie PUIS cle maitre
         // ouverte (les donnees restent indechiffrables sans le PIN, G1-01).
         scope.launch(Dispatchers.Default) {
-            val ok = Stockage.deverrouiller(ctx, pin)
-            if (ok) {
-                onDeverrouille()
-            } else {
-                Stockage.enregistrerEchec(ctx)
-                blocage = Stockage.secondesBlocage(ctx)
-                erreur = "Code incorrect."
+            // v0.126 : une erreur technique inattendue (Keystore...) ne doit ni
+            // fermer l'application, ni laisser l'ecran bloque sur "travail", ni
+            // compter comme un PIN faux.
+            try {
+                val ok = Stockage.deverrouiller(ctx, pin)
+                if (ok) {
+                    onDeverrouille()
+                } else {
+                    Stockage.enregistrerEchec(ctx)
+                    blocage = Stockage.secondesBlocage(ctx)
+                    erreur = "Code incorrect."
+                }
+            } catch (e: Exception) {
+                erreur = "Erreur technique : d\u00E9verrouillage impossible, r\u00E9essayez."
+            } finally {
+                pin = ""
+                travail = false
             }
-            pin = ""
-            travail = false
         }
     }
 
