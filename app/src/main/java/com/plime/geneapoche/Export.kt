@@ -495,6 +495,17 @@ fun couperLieu(plac: String): Pair<String, String> {
     return plac.trim() to ""
 }
 
+// v0.130 : evenements datables courants d'un fichier GEDCOM externe, conserves
+// comme evenements libres (chronologie) au lieu d'etre ignores.
+val EVENEMENTS_GEDCOM_LIBRES: Map<String, String> = mapOf(
+    "RESI" to "R\u00E9sidence", "CENS" to "Recensement", "EMIG" to "\u00C9migration",
+    "IMMI" to "Immigration", "NATU" to "Naturalisation", "GRAD" to "Dipl\u00F4me",
+    "EDUC" to "\u00C9tudes", "RETI" to "Retraite", "PROB" to "Homologation de testament",
+    "WILL" to "Testament", "CONF" to "Confirmation", "FCOM" to "Premi\u00E8re communion",
+    "ORDN" to "Ordination", "ADOP" to "Adoption", "BLES" to "B\u00E9n\u00E9diction",
+    "CREM" to "Cr\u00E9mation"
+)
+
 // Parseur d'un fichier GEDCOM 5.5.1 (Heredis, Geneatique...) :
 // personnes (INDI), familles (FAM), dates N/BAPM/M/D/BURI, heures TIME, conjoints multiples.
 // Aucun plafond de personnes depuis la G1-10 (decision de l auteur).
@@ -705,6 +716,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                     "NOTE" -> ind.note = contenu.removePrefix("NOTE").trim().replace("@@", "@")
                     // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement libre (intitul\u00E9 en 2 TYPE).
                     "EVEN" -> ind.evLibres.add(EvenementLibre())
+                    in EVENEMENTS_GEDCOM_LIBRES.keys ->
+                        ind.evLibres.add(EvenementLibre(intitule = EVENEMENTS_GEDCOM_LIBRES.getValue(blocActuel)))
                     else -> if (blocActuel !in listOf("BIRT", "BAPM", "CHR", "BAPT", "MARR", "DEAT", "BURI", "BUR", "SOUR")) {
                         ignorer(balisesIgnorees, blocActuel)
                     }
@@ -754,10 +767,12 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                         "CONC" -> ind.note += valeur.replace("@@", "@")
                     }
                     // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement libre de la chronologie.
-                    "EVEN" -> {
+                    "EVEN", in EVENEMENTS_GEDCOM_LIBRES.keys -> {
                         val dernier = ind.evLibres.lastOrNull()
                         if (dernier != null) when (tag) {
-                            "TYPE" -> dernier.intitule = valeur.replace("@@", "@")
+                            // EVEN : TYPE = intitule ; autres balises : TYPE precise le libelle ("Residence (Caserne)")
+                            "TYPE" -> dernier.intitule = if (blocActuel == "EVEN") valeur.replace("@@", "@")
+                                else dernier.intitule + " (" + valeur.replace("@@", "@") + ")"
                             "DATE" -> dernier.date = dateFrancaise(valeur)
                             "TIME" -> dernier.heure = valeur
                             "PLAC" -> { val cd = couperLieu(valeur); dernier.lieu = cd.first; dernier.dept = cd.second }
