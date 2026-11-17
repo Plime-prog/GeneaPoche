@@ -4,7 +4,7 @@
 
 - Après un export GEDCOM réussi, le message indique maintenant la **taille réellement écrite** (ex. « 120 personnes, 85 Ko écrits et vérifiés »). Si le fichier apparaît à 0 Ko ailleurs alors que ce message annonce une taille, le défaut vient du stockage ou de l'application qui l'affiche, pas de GénéaPoche : utile pour cerner le signalement des « 0 Ko au-delà de 50 personnes », toujours non reproduit.
 - Recherche faite : aucune limite de 50 dans le code, aucun partage par intention (pas de plafond de taille de ce côté).
-- 287 tests ; version 0.136. Non vérifié sur appareil.
+- 287 tests ; version 0.136. **Retour d'essai (17 novembre) : export puis réimport réussis sur l'appareil de l'utilisateur.**
 
 ## v0.135 — Import GEDCOM : les sources d'un divorce (ou d'un autre événement de famille) ne sont plus perdues
 
