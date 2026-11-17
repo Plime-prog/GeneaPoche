@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.133 — Le numéro de version s'affiche enfin (et figure dans les fichiers téléchargés)
+
+- **Défaut corrigé** : le menu de l'application affichait « Version 0.107 » **écrit en dur** depuis la v0.107 : le vrai numéro n'apparaissait nulle part. Le numéro réel (`versionName` de l'APK installé) s'affiche maintenant en bas du menu **et sur l'écran de verrouillage** (visible sans déverrouiller). Un test interdit désormais tout numéro de version écrit en dur dans un texte affiché.
+- **Fichiers téléchargés depuis les artefacts de la CI** (page Actions) : ils s'appelaient `app-debug.apk` / `app-release.apk` dans des ZIP nommés `geneapoche-apk` / `geneapoche-release-apk` ; le numéro n'y figurait pas. Ils s'appellent maintenant `GeneaPoche-v0.133-release.apk` (ZIP `geneapoche-v0.133-release`), comme les fichiers des Releases (inchangés).
+- 279 tests ; version 0.133. Non vérifié sur appareil : à contrôler en ouvrant le menu (en haut à droite) puis en verrouillant l'application.
+
 ## v0.132 — Export : plus de fichier vide (0 Ko), sans aucune limite de taille
 
 - **Signalement** : au-delà de 50 personnes, le fichier exporté faisait 0 Ko.

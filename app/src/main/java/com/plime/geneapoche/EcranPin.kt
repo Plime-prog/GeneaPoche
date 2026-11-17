@@ -291,6 +291,8 @@ fun EcranPin(ctx: Context, onDeverrouille: () -> Unit) {
             Icon(Icons.Filled.Lock, contentDescription = null)
             Text("G\u00E9n\u00E9aPoche est verrouill\u00E9", style = MaterialTheme.typography.titleLarge)
             Text("Entrez votre code PIN.", Modifier.padding(vertical = 8.dp))
+            // v0.133 : version reelle visible meme application verrouillee.
+            Text("Version " + versionApplication(ctx), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (modeClavier) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
