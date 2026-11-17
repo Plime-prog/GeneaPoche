@@ -343,7 +343,7 @@ fun EcranPersonne(
                     )
                 }
                 item(key = "unions") {
-                    CarteUnionsEnfants(p, personnes, onOuvrir, onAjouterEnfant = { menuEnfant = true })
+                    CarteUnionsEnfants(p, personnes, onOuvrir, onAjouterEnfant = { menuEnfant = true }, onRetirer = onRetirer)
                 }
             }
             if (ongletFiche == 1) {

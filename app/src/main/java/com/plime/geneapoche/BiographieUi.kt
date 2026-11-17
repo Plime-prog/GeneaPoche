@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -34,7 +35,7 @@ import androidx.compose.ui.unit.sp
 // cliquable et recit de l'onglet Biographie.
 
 @Composable
-fun LienFamille(libelle: String, q: Personne, onOuvrir: (Long) -> Unit) {
+fun LienFamille(libelle: String, q: Personne, onOuvrir: (Long) -> Unit, onRetirer: (() -> Unit)? = null) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onOuvrir(q.id) },
         verticalAlignment = Alignment.CenterVertically
@@ -51,6 +52,9 @@ fun LienFamille(libelle: String, q: Personne, onOuvrir: (Long) -> Unit) {
             if (nd.isNotEmpty()) Text(nd.joinToString(" \u2013 "), fontSize = 12.sp)
         }
         Text("\u25B6", fontSize = 12.sp, color = CouleurVertFonce)
+        if (onRetirer != null) {
+            TextButton(onClick = onRetirer) { Text("\u2715", color = CouleurRouge) }
+        }
     }
 }
 
@@ -139,25 +143,72 @@ private fun Pastille(texte: String, couleur: Color) {
     }
 }
 
-// Conjoints et enfants (fiche) : chaque ligne ouvre la fiche.
+// v0.137 : deux blocs distincts, Conjoint(s) puis Enfant(s). Chaque ligne ouvre la
+// fiche ; la croix retire le LIEN (apres confirmation), jamais la personne.
 @Composable
 fun CarteUnionsEnfants(
     p: Personne,
     personnes: List<Personne>,
     onOuvrir: (Long) -> Unit,
-    onAjouterEnfant: () -> Unit
+    onAjouterEnfant: () -> Unit,
+    onRetirer: (String, Long) -> Unit
 ) {
     val conjoints = p.tousConjoints().mapNotNull { personneParId(personnes, it) }
     val enfants = p.enfants.mapNotNull { personneParId(personnes, it) }
-    val resume = conjoints.size.toString() + (if (conjoints.size > 1) " unions" else " union") +
-        " \u00B7 " + enfants.size.toString() + (if (enfants.size > 1) " enfants" else " enfant")
-    CadrePliable("Conjoint(s) et enfants", resume, cle = p.id) {
-        conjoints.forEach { q -> LienFamille(if (q.sexe == "F") "\u00C9pouse" else "\u00C9poux", q, onOuvrir) }
-        enfants.forEach { q -> LienFamille(if (q.sexe == "F") "Fille" else if (q.sexe == "M") "Fils" else "Enfant", q, onOuvrir) }
-        if (conjoints.isEmpty() && enfants.isEmpty()) {
-            Text("Aucun conjoint ni enfant renseign\u00E9.", fontSize = 13.sp, color = GrisManquant)
+    var aRetirer by remember(p.id) { mutableStateOf<Triple<String, Long, String>?>(null) }
+
+    CadrePliable(
+        "Conjoint(s)",
+        conjoints.size.toString() + (if (conjoints.size > 1) " unions" else " union"),
+        cle = "conj" + p.id.toString()
+    ) {
+        conjoints.forEach { q ->
+            val role = if (q.id == p.conjoint) "conjoint" else "conjointsupp"
+            LienFamille(
+                if (q.sexe == "F") "\u00C9pouse" else "\u00C9poux", q, onOuvrir,
+                onRetirer = { aRetirer = Triple(role, q.id, q.titre()) }
+            )
+        }
+        if (conjoints.isEmpty()) {
+            Text("Aucun conjoint renseign\u00E9.", fontSize = 13.sp, color = GrisManquant)
+        }
+    }
+    CadrePliable(
+        "Enfant(s)",
+        enfants.size.toString() + (if (enfants.size > 1) " enfants" else " enfant"),
+        cle = "enf" + p.id.toString()
+    ) {
+        enfants.forEach { q ->
+            LienFamille(
+                if (q.sexe == "F") "Fille" else if (q.sexe == "M") "Fils" else "Enfant", q, onOuvrir,
+                onRetirer = { aRetirer = Triple("enfant", q.id, q.titre()) }
+            )
+        }
+        if (enfants.isEmpty()) {
+            Text("Aucun enfant renseign\u00E9.", fontSize = 13.sp, color = GrisManquant)
         }
         TextButton(onClick = onAjouterEnfant) { Text("Ajouter un enfant", fontWeight = FontWeight.Bold) }
+    }
+
+    val cible = aRetirer
+    if (cible != null) {
+        val estEnfant = cible.first == "enfant"
+        AlertDialog(
+            onDismissRequest = { aRetirer = null },
+            title = { Text(if (estEnfant) "Retirer cet enfant ?" else "Retirer ce conjoint ?") },
+            text = {
+                Text(
+                    "Le lien entre " + p.titre() + " et " + cible.third + " sera supprim\u00E9. " +
+                        "La fiche de " + cible.third + " est conserv\u00E9e."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { onRetirer(cible.first, cible.second); aRetirer = null }) {
+                    Text("Retirer le lien", color = CouleurRouge)
+                }
+            },
+            dismissButton = { TextButton(onClick = { aRetirer = null }) { Text("Annuler") } }
+        )
     }
 }
 
