@@ -1061,18 +1061,25 @@ fun AppEcran(
     fun exporterGedcom(uri: Uri, sousEnsemble: Set<Long>?, exclureVivants: Boolean = false, format: String = "5.5.1", phrase: String = "") {
         // G2-06 : export HORS du thread principal, indicateur a l'ecran.
         occupation = "Export GEDCOM en cours..."
+        // v0.132 : COPIE de la base prise tout de suite, sur le thread principal. Avant,
+        // l'export lisait la liste vivante depuis un autre thread : un verrouillage ou
+        // une modification pendant l'export pouvait la vider ou la perturber.
+        val baseCopie = personnes.toList()
+        val sourcesCopie = sources.toList()
+        val citationsCopie = citations.toList()
         scopeTravail.launch(Dispatchers.IO) {
             try {
                 // G1-16 : option exclure les personnes vivantes (sans deces
                 // connu, nees il y a moins de 100 ans).
                 val annee = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-                val exportables = if (exclureVivants) personnes.filter { !estVivante(it, annee) } else personnes
+                val exportables = if (exclureVivants) baseCopie.filter { !estVivante(it, annee) } else baseCopie
                 val sous = if (exclureVivants && sousEnsemble != null) sousEnsemble.filter { id -> exportables.any { it.id == id } }.toSet() else sousEnsemble
-                val texte = construireGedcom(exportables, sous, format, sources.toList(), citations.toList())
+                val texte = construireGedcom(exportables, sous, format, sourcesCopie, citationsCopie)
                 val n = if (sous == null) exportables.size else texte.split("\n").count { it.endsWith(" INDI") }
                 // v0.41 : JAMAIS de fichier GEDCOM vide (base vide, branche
                 // vide ou vivants exclus qui retirent tout) : export refuse.
                 if (n == 0) {
+                    FichierExport.supprimerSiVide(ctx, uri)
                     withContext(Dispatchers.Main) { message = "Aucune personne \u00E0 exporter : export refus\u00E9, aucun fichier cr\u00E9\u00E9 (base vide, ou liste effac\u00E9e de la m\u00E9moire par un verrouillage pendant le choix du fichier : d\u00E9verrouillez puis recommencez)." }
                     return@launch
                 }
@@ -1084,15 +1091,22 @@ fun AppEcran(
                     texte.toByteArray(Charsets.UTF_8)
                 }
                 if (octetsSortie == null) {
+                    FichierExport.supprimerSiVide(ctx, uri)
                     withContext(Dispatchers.Main) { message = "\u00C9chec du chiffrement : export annul\u00E9, aucun fichier cr\u00E9\u00E9." }
                     return@launch
                 }
-                ctx.contentResolver.openOutputStream(uri)?.use { sortie ->
-                    sortie.write(octetsSortie)
+                // v0.132 : ecriture NON annulable (quitter l'ecran pendant l'export laissait
+                // un fichier de 0 Ko), verifiee, avec message d'erreur clair en cas d'echec.
+                val erreurEcriture = withContext(kotlinx.coroutines.NonCancellable) {
+                    FichierExport.ecrire(ctx, uri, octetsSortie).also { if (it != null) FichierExport.supprimerSiVide(ctx, uri) }
+                }
+                if (erreurEcriture != null) {
+                    withContext(Dispatchers.Main) { message = "Export GEDCOM \u00E9chou\u00E9 : " + erreurEcriture }
+                    return@launch
                 }
                 // v0.39 : avertissement si le fichier contient moins de
                 // personnes que la base (branche, vivants exclus...).
-                val alerte = if (n < personnes.size) " ATTENTION : seulement " + n.toString() + " sur " + personnes.size.toString() + " personnes de la base." else ""
+                val alerte = if (n < baseCopie.size) " ATTENTION : seulement " + n.toString() + " sur " + baseCopie.size.toString() + " personnes de la base." else ""
                 // 12.2 : rappel de suppression du fichier partag\u00E9 (GEDCOM
                 // clair ou .gpged chiffr\u00E9).
                 Stockage.noterFichierPartage(ctx, uri.lastPathSegment?.substringAfterLast('/') ?: "fichier export\u00E9")
@@ -1104,6 +1118,8 @@ fun AppEcran(
                         "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "") + alerte + " Une fois le fichier envoy\u00E9, pensez \u00E0 le supprimer."
                 }
             } catch (e: Exception) {
+                // v0.132 : pas de fichier vide laisse par le selecteur (meme si annule).
+                withContext(kotlinx.coroutines.NonCancellable) { FichierExport.supprimerSiVide(ctx, uri) }
                 // G2-05 : message distinct selon le type d'echec.
                 withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de l'export GEDCOM.") }
             } finally {
