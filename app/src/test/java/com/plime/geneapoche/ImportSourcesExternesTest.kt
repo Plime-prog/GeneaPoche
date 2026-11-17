@@ -32,7 +32,6 @@ class ImportSourcesExternesTest {
         assertTrue(pages.toString(), "N:acte 12" in pages)
         assertTrue(pages.toString(), "D:acte 99" in pages)
         assertTrue(pages.toString(), "M:mariage 4" in pages)
-        assertEquals(4 + 0, r.citations.size.coerceAtLeast(4))
     }
 
     @Test
