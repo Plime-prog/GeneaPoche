@@ -263,3 +263,11 @@ release-0.131
 remplacer-v115
 restauration-v116
 ```
+
+## Ajout du 17 novembre (v0.134 et v0.135)
+
+Branches de travail déjà fusionnées dans `main`, à supprimer : `notes-v134`, `sources-v135`, `bilan-maj`, `branches-maj`.
+
+Branches de déclenchement des releases (les fichiers restent dans la page Releases) : `release-0.132`, `release-0.133`, `release-0.134`, `release-0.135`.
+
+À conserver : `main`.
