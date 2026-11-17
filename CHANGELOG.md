@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.134 — Import GEDCOM : les notes ne sont plus perdues
+
+- **Trois pertes confirmées par des tests** sur des fichiers GEDCOM d'autres logiciels : (1) les **notes partagées** (`1 NOTE @N1@` + enregistrement `0 @N1@ NOTE`) donnaient le texte brut « @N1@ » et la vraie note était ignorée ; (2) quand une personne avait **plusieurs notes**, seule la dernière était gardée ; (3) les **notes d'un événement** (sous naissance, décès, mariage…) étaient supprimées.
+- Désormais : le texte des notes partagées est lu, toutes les notes sont conservées (séparées par une ligne vide) et une note d'événement est ajoutée à « Notes » avec son libellé (ex. « Naissance : né à la ferme du Moulin »). Une note partagée qui n'est rattachée à aucune fiche reste signalée dans le rapport d'import.
+- 284 tests ; version 0.134. Pas encore essayé avec un vrai fichier Heredis ni sur appareil : faire une sauvegarde .gpbak avant d'importer un gros fichier.
+
 ## v0.133 — Le numéro de version s'affiche enfin (et figure dans les fichiers téléchargés)
 
 - **Défaut corrigé** : le menu de l'application affichait « Version 0.107 » **écrit en dur** depuis la v0.107 : le vrai numéro n'apparaissait nulle part. Le numéro réel (`versionName` de l'APK installé) s'affiche maintenant en bas du menu **et sur l'écran de verrouillage** (visible sans déverrouiller). Un test interdit désormais tout numéro de version écrit en dur dans un texte affiché.
