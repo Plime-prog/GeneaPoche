@@ -215,7 +215,7 @@ fun construireGedcom(
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.133") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
+    lignes.add("2 VERS 0.134") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
@@ -583,6 +583,23 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
     }
     val lignes = recollerConcCont(texte.split("\n").map { it.trimEnd('\r') })
 
+    // v0.134 : notes partagees ("0 @N1@ NOTE texte") lues d'abord, pour que
+    // les "1 NOTE @N1@" des fiches soient remplaces par leur texte.
+    val notesPartagees = mutableMapOf<String, String>()
+    val notesUtilisees = mutableSetOf<String>()
+    lignes.forEach { l ->
+        val mn = Regex("^0\\s+(@[^@]+@)\\s+NOTE(?:\\s(.*))?$", RegexOption.DOT_MATCHES_ALL).find(l.trim())
+        if (mn != null) notesPartagees[mn.groupValues[1]] = mn.groupValues[2].replace("@@", "@")
+    }
+    fun texteNote(valeur: String): String {
+        val v = valeur.trim()
+        if (Regex("^@[^@]+@$").matches(v)) {
+            notesUtilisees.add(v)
+            return (notesPartagees[v] ?: "").trim()
+        }
+        return v.replace("@@", "@")
+    }
+
     class Ind {
         var nom = ""
         var prenoms = ""
@@ -603,7 +620,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
         var gpCon = ""; var gpDsp = ""
         var gpDdd = ""; var gpDth = ""; var gpDnr = ""; var gpDnp = ""; var gpDdm = ""
         var gpCer = ""; var gpCim = ""; var gpCoc = ""; var gpMin = ""
-        var note = ""
+        val notes = mutableListOf<String>()
         var nD = ""; var nH = ""; var nL = ""; var nDpt = ""
         var bD = ""; var bH = ""; var bL = ""; var bDpt = ""
         var mD = ""; var mH = ""; var mL = ""; var mDpt = ""
@@ -656,7 +673,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                 // G2-04 : comptage des enregistrements non importes (SOUR,
                 // NOTE, REPO...) pour le rapport, sans perte silencieuse.
                 val balise = Regex("^(@.*@\\s+)?([A-Za-z_]+)").find(contenu)?.groupValues?.get(2) ?: "?"
-                if (balise != "HEAD" && balise != "TRLR" && balise != "SOUR" && balise != "REPO") ignorer(enregistrementsIgnores, balise)
+                if (balise != "HEAD" && balise != "TRLR" && balise != "SOUR" && balise != "REPO" && balise != "NOTE") ignorer(enregistrementsIgnores, balise)
             }
             return@forEach
         }
@@ -727,7 +744,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                     "_GPCIM" -> ind.gpCim = contenu.removePrefix("_GPCIM").trim()
                     "_GPCOC" -> ind.gpCoc = contenu.removePrefix("_GPCOC").trim()
                     "_GPMIN" -> ind.gpMin = contenu.removePrefix("_GPMIN").trim()
-                    "NOTE" -> ind.note = contenu.removePrefix("NOTE").trim().replace("@@", "@")
+                    "NOTE" -> texteNote(contenu.removePrefix("NOTE")).let { if (it.isNotEmpty()) ind.notes.add(it) }
                     // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement libre (intitul\u00E9 en 2 TYPE).
                     "EVEN" -> ind.evLibres.add(EvenementLibre())
                     in EVENEMENTS_GEDCOM_LIBRES.keys ->
@@ -750,7 +767,20 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
         } else if (niveau == 2) {
             val tag = contenu.split(" ").firstOrNull() ?: ""
             val valeur = contenu.removePrefix(tag).trim()
-            if (ind != null) {
+            if (ind != null && tag == "NOTE" && blocActuel != "NOTE") {
+                // v0.134 : note rattachee a un evenement : gardee avec son libelle.
+                val t = texteNote(valeur)
+                val lib = when (blocActuel) {
+                    "BIRT" -> "Naissance"
+                    "BAPM", "CHR", "BAPT" -> "Bapt\u00EAme"
+                    "MARR" -> "Mariage"
+                    "DEAT" -> "D\u00E9c\u00E8s"
+                    "BURI", "BUR" -> "S\u00E9pulture"
+                    "EVEN" -> ind.evLibres.lastOrNull()?.intitule?.ifEmpty { "\u00C9v\u00E9nement" } ?: "\u00C9v\u00E9nement"
+                    else -> EVENEMENTS_GEDCOM_LIBRES[blocActuel] ?: blocActuel
+                }
+                if (t.isNotEmpty()) ind.notes.add(lib + " : " + t)
+            } else if (ind != null) {
                 when (blocActuel) {
                     "BIRT" -> when (tag) {
                         "DATE" -> ind.nD = dateFrancaise(valeur)
@@ -776,11 +806,6 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                         "DATE" -> ind.sD = dateFrancaise(valeur)
                         "TIME" -> ind.sH = valeur
                         "PLAC" -> { val cd = couperLieu(valeur); ind.sL = cd.first; ind.sDpt = cd.second }
-                    }
-                    // G2-02 : relire les notes coupees en CONC/CONT.
-                    "NOTE" -> when (tag) {
-                        "CONT" -> ind.note += "\n" + valeur.replace("@@", "@")
-                        "CONC" -> ind.note += valeur.replace("@@", "@")
                     }
                     // G\u00E9n\u00E9aPoche 3 : \u00E9v\u00E9nement libre de la chronologie.
                     "EVEN", in EVENEMENTS_GEDCOM_LIBRES.keys -> {
@@ -826,7 +851,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                 profession = ind.occu,
                 sosa = ind.rfn,
                 identiteVerifiee = if (ind.verif == "coche" || ind.verif == "croix") ind.verif else "auto",
-                notesLibres = ind.note,
+                notesLibres = ind.notes.joinToString("\n\n"),
                 dateNaissance = ind.nD, heureNaissance = ind.nH, lieuNaissance = ind.nL, deptNaissance = ind.nDpt,
                 dateBapteme = ind.bD, heureBapteme = ind.bH, lieuBapteme = ind.bL, deptBapteme = ind.bDpt,
                 dateMariage = ind.mD, heureMariage = ind.mH, lieuMariage = ind.mL, deptMariage = ind.mDpt,
@@ -958,6 +983,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
     }
 
     // G2-04 : rapport de ce qui a ete ignore (noms de balises seulement).
+    // v0.134 : notes partagees non rattachees a une fiche : signalees comme avant.
+    notesPartagees.keys.filter { it !in notesUtilisees }.forEach { ignorer(enregistrementsIgnores, "NOTE") }
     enregistrementsIgnores.forEach { (balise, n) ->
         ignoresRapport.add(n.toString() + " enregistrement(s) " + balise + " non import\u00E9(s)")
     }
