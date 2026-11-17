@@ -52,3 +52,5 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 > Note : la version de Gradle est fixée à **deux endroits** : `gradle/wrapper/gradle-wrapper.properties` et `.github/workflows/apk.yml` (la CI régénère le wrapper). Les changer ensemble.
 
 > Build : Kotlin intégré à AGP (pas de plugin `kotlin.android`), nouveau DSL, `buildscript` épingle KGP/Compose 2.4.21 ; aucune option `android.*=false` de compatibilité (retirées en v0.125).
+
+> Bilan d'étape complet (défauts trouvés, risques restants, actions du propriétaire) : [BILAN-2026-11-17.md](BILAN-2026-11-17.md).

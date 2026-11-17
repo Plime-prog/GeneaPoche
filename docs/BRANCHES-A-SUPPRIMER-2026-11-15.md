@@ -214,3 +214,52 @@ Le SHA est celui de la colonne « Tête » (utiliser le SHA complet). GitHub con
 | `v107-tmp-init` | `f9339480e4722873970027989a665f4c051a766c` | contenu entièrement dans main |
 | `v40-fiche-arbre` | `fa023acd7fc5ecf35c0420213d9ce442b492ed1c` | contenu entièrement dans main |
 | `zero-internet` | `7d5687cf449d5edd944525ee0591ef878f61f166` | contenu entièrement dans main |
+
+## Ajout du 17 novembre 2026 : branches de travail v0.112 à v0.131 (toutes fusionnées)
+
+Branches créées depuis la première liste. Les branches de travail (`*-v1NN`) sont fusionnées en squash dans `main` ; les `release-0.NNN` ont servi à déclencher la publication (la release GitHub et ses APK restent après suppression de la branche). **Conserver `release-0.131` si vous voulez pouvoir republier ; ne pas recréer une branche `release-*` supprimée sans le vouloir : cela relancerait une publication.**
+
+```
+acte-v117
+actions-v113
+actions-v119
+agp-v121
+agp-v122
+cujus-v112
+decoupe-v123
+deps-v118
+doc-v099
+events-v130
+famille-v131
+gedcom-v127
+gradle-ci-v121
+gradle-v120
+import-v114
+import-v128
+import-v129
+lint-v125
+noms-v124
+pin-v126
+release-0.112
+release-0.113
+release-0.114
+release-0.115
+release-0.116
+release-0.117
+release-0.118
+release-0.119
+release-0.120
+release-0.121
+release-0.122
+release-0.123
+release-0.124
+release-0.125
+release-0.126
+release-0.127
+release-0.128
+release-0.129
+release-0.130
+release-0.131
+remplacer-v115
+restauration-v116
+```
