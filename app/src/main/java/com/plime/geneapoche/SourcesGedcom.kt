@@ -279,8 +279,10 @@ fun lireSourcesGedcom(lignes: List<String>, idPersonne: Map<String, Long>): Sour
                     bloc1 = tag
                     if (tag == "HUSB" || tag == "WIFE") famillesMembres.getOrPut(recXref) { mutableListOf() }.add(valeur.trim())
                     if (tag == "SOUR") ouvrirCitation(1, "P", valeur)
-                } else if (niveau == 2 && tag == "SOUR" && bloc1 == "MARR") {
-                    ouvrirCitation(2, "M", valeur)
+                } else if (niveau == 2 && tag == "SOUR") {
+                    // v0.135 : mariage -> "M" ; autres evenements de famille
+                    // (divorce, fiancailles...) -> source generale des conjoints.
+                    ouvrirCitation(2, if (bloc1 == "MARR") "M" else "P", valeur)
                 }
             }
             "REPO" -> if (niveau == 1 && tag == "NAME" && recXref.isNotEmpty()) depots[recXref] = deArobase(valeur).trim()
