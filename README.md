@@ -46,11 +46,11 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.132)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.132-release.apk` (signé) ou `GeneaPoche-v0.132-debug.apk`.
+**Téléchargement direct de la dernière version (v0.133)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.133-release.apk` (signé) ou `GeneaPoche-v0.133-debug.apk`.
 
 Sinon, depuis les sources :
 
-1. Onglet **Actions** → dernier run vert → artefact **geneapoche-apk** (debug) ; les versions taguées v* publient aussi l'APK release signé.
+1. Onglet **Actions** → dernier run vert → artefact **geneapoche-vX.Y-release** (APK signé) ou **geneapoche-vX.Y-debug** ; les versions taguées v* publient aussi l'APK release signé.
 2. Décompresser le ZIP, installer l'APK sur le téléphone (autoriser les sources inconnues).
 3. Premier lancement : créer un code PIN (6 chiffres minimum ou phrase secrète). Ne l'oubliez pas.
 
@@ -58,6 +58,6 @@ Sinon, depuis les sources :
 
 - Android Kotlin + Jetpack Compose, Material 3 (thème clair/sombre, palette verte).
 - AGP 9.5.1, Kotlin 2.4.21, compileSdk 37, targetSdk 36, JDK 17, BOM Compose 2026.09.00.
-- CI GitHub Actions : lint, tests unitaires JVM (277), APK debug et release signé à chaque push.
+- CI GitHub Actions : lint, tests unitaires JVM (279), APK debug et release signé à chaque push.
 - Contribuer : voir [CONTRIBUTING.md](CONTRIBUTING.md). Historique détaillé des versions : [CHANGELOG.md](CHANGELOG.md).
 - Licence : MIT (voir [LICENSE](LICENSE)).
