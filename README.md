@@ -26,7 +26,7 @@ Périmètre : France uniquement, actes N/B/M/D/S.
 - **GEDCOM sans perte** : les champs propres à GénéaPoche (balises `_GP*`) survivent à l'export puis au réimport, plus une NOTE de synthèse lisible dans Heredis.
 - **Arbre 4 générations** avec les enfants du couple central, zoom tactile ; **recherche** par nom et lieu ; **statistiques et géographie** (répartition par département, voyage chronologique) ; mode sombre ; mise en page adaptative tablette/paysage.
 
-Historique détaillé version par version : [CHANGELOG.md](CHANGELOG.md). Architecture et bilan technique : [docs/](docs/).
+Historique détaillé version par version : [CHANGELOG.md](CHANGELOG.md). Architecture et bilan technique : [docs/](docs/) (dernier bilan : [docs/BILAN-2026-11-17.md](docs/BILAN-2026-11-17.md)).
 
 ## Modèle de sécurité — exact, avec ses limites
 
