@@ -117,9 +117,10 @@ object Sauvegarde {
             racine.put("citations", citationsVersJson(citations))
             val clair = racine.toString().toByteArray(Charsets.UTF_8)
             val chiffre = chiffrerOctets(phrase, clair) ?: return false
-            val flux = ctx.contentResolver.openOutputStream(uri) ?: return false
-            flux.use { it.write(chiffre) }
-            true
+            // v0.132 : ecriture verifiee (voir FichierExport), fichier vide supprime si echec.
+            val erreur = FichierExport.ecrire(ctx, uri, chiffre)
+            if (erreur != null) FichierExport.supprimerSiVide(ctx, uri)
+            erreur == null
         } catch (e: Exception) {
             false
         }

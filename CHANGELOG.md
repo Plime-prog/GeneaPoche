@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.132 — Export : plus de fichier vide (0 Ko), sans aucune limite de taille
+
+- **Signalement** : au-delà de 50 personnes, le fichier exporté faisait 0 Ko.
+- **Ce que j'ai vérifié** : le code d'export **ne contient aucune limite** de nombre de personnes. Un test exporte désormais des bases de 1 à 3 000 personnes (arbre profond, très large, export partiel, tous formats, version chiffrée) : tout sort en entier. La cause n'est donc **pas** dans la fabrication du GEDCOM, mais dans l'écriture du fichier côté Android, que je n'ai **pas pu reproduire** sans appareil.
+- **Ce qui pouvait produire un fichier de 0 Ko, corrigé** : (1) le sélecteur de fichiers crée le fichier **vide avant** l'export ; si le stockage choisi refusait le flux d'écriture, l'application affichait **« GEDCOM exporté »** sans rien avoir écrit ; (2) quitter l'écran ou verrouiller pendant l'export **annulait** le travail, fichier vide laissé ; (3) l'export lisait la liste des personnes **en direct** depuis un autre fil : un verrouillage ou une modification pendant l'export pouvait la perturber.
+- **Désormais** : la base est **copiée** au lancement de l'export ; l'écriture est **non annulable**, **forcée sur disque**, **vérifiée** (taille relue) ; en cas d'échec un message clair s'affiche (« Export GEDCOM échoué : … ») et le **fichier vide est supprimé** au lieu d'être laissé à 0 Ko. La sauvegarde `.gpbak` utilise la même écriture fiable.
+- **Si le problème persiste** : notez le message affiché et l'emplacement choisi (Téléchargements, Drive, carte SD…), et essayez « Téléchargements ». Non vérifié sur appareil. 277 tests ; version 0.132.
+
 ## v0.131 — GEDCOM : remariages et divorces ne sont plus perdus ni mal attribués
 
 - **Perte corrigée à l'import (remariages)** : le modèle n'a qu'**un** emplacement de mariage par personne. Avec deux mariages, seul le premier fichier-famille lu était gardé ; la date et le lieu du **second** mariage disparaissaient en silence. Le second mariage est maintenant conservé comme événement libre « Mariage (avec Claire PETIT) » chez la personne concernée ; chaque conjoint garde la date de **sa** famille dans son emplacement. Un mariage décrit à la fois chez la personne et dans la famille n'est pas dupliqué.
