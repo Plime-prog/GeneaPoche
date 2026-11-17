@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.135 — Import GEDCOM : les sources d'un divorce (ou d'un autre événement de famille) ne sont plus perdues
+
+- **Défaut confirmé par un test** : dans un GEDCOM externe, la source citée sous un divorce, des fiançailles ou une annulation de mariage était ignorée ; seules celles du mariage étaient lues. Elle est maintenant rattachée aux deux conjoints (en source générale, la fiche n'ayant pas de case « divorce » pour les citations).
+- Vérifié sans défaut : citations de naissance, baptême, décès, sépulture, mariage et événements libres (résidence…).
+- 286 tests ; version 0.135. Pas essayé avec un vrai fichier Heredis ni sur appareil : sauvegarde .gpbak avant import.
+
 ## v0.134 — Import GEDCOM : les notes ne sont plus perdues
 
 - **Trois pertes confirmées par des tests** sur des fichiers GEDCOM d'autres logiciels : (1) les **notes partagées** (`1 NOTE @N1@` + enregistrement `0 @N1@ NOTE`) donnaient le texte brut « @N1@ » et la vraie note était ignorée ; (2) quand une personne avait **plusieurs notes**, seule la dernière était gardée ; (3) les **notes d'un événement** (sous naissance, décès, mariage…) étaient supprimées.
