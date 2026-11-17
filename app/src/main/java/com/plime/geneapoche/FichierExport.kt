@@ -16,7 +16,7 @@ import java.io.FileOutputStream
 fun tailleLisible(octets: Long): String =
     if (octets < 1024L) octets.toString() + " octets"
     else if (octets < 1024L * 1024L) ((octets + 512L) / 1024L).toString() + " Ko"
-    else (octets / 104858L / 10.0).toString().replace('.', ',') + " Mo"
+    else ((octets * 10L / 1048576L) / 10.0).toString().replace('.', ',') + " Mo"
 
 object FichierExport {
 
