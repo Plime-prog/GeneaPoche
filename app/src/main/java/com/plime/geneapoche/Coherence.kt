@@ -452,6 +452,18 @@ fun anomaliesAVerifier(
     // --- Sexe incompatible avec les relations.
     val enfantsDuPere = noeuds.filter { it.pere != 0L }.groupBy { it.pere }
     val enfantsDeLaMere = noeuds.filter { it.mere != 0L }.groupBy { it.mere }
+    // v0.137 : sexe non renseigne = fiche incomplete (niveau 2 : a verifier).
+    for (p in noeuds) {
+        if (p.sexe.isBlank()) {
+            add(
+                "sexe-manquant", 2, listOf(p.id),
+                nomDe(p) + " : sexe non renseign\u00e9.",
+                "Le sexe permet de contr\u00f4ler les r\u00f4les de p\u00e8re et de m\u00e8re, et d'accorder les phrases de la biographie.",
+                listOf(p)
+            )
+        }
+    }
+
     for (p in noeuds) {
         val commePere = enfantsDuPere[p.id].orEmpty()
         val commeMere = enfantsDeLaMere[p.id].orEmpty()

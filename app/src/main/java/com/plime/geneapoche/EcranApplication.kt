@@ -370,7 +370,7 @@ fun EcranApplication(
                             Column {
                                 Text("G\u00E9n\u00E9aPoche", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v0.107",
+                                    "Ma g\u00E9n\u00E9alogie dans ma poche \u2013 v" + versionApplication(LocalContext.current),
                                     fontSize = 11.sp,
                                     color = CouleurSurvol
                                 )
@@ -1642,20 +1642,7 @@ fun EcranApplication(
     if (pickerRole.isNotEmpty() && ouverte != null) {
         val p = ouverte
         val role = pickerRole
-        val candidats = personnes
-            .filter { q ->
-                q.id != p.id && when (role) {
-                    "pere" -> q.id != p.mere && q.id != p.conjoint && !p.conjointsSupp.contains(q.id)
-                    "mere" -> q.id != p.pere && q.id != p.conjoint && !p.conjointsSupp.contains(q.id)
-                    "conjoint" -> q.id != p.pere && q.id != p.mere && !p.conjointsSupp.contains(q.id)
-                    "conjointsupp" -> q.id != p.conjoint && !p.conjointsSupp.contains(q.id) &&
-                        q.id != p.pere && q.id != p.mere
-                    "enfant" -> q.id != p.pere && q.id != p.mere && q.id != p.conjoint &&
-                        !p.conjointsSupp.contains(q.id) && !p.enfants.contains(q.id)
-                    else -> false
-                }
-            }
-            .sortedBy { it.titre() }
+        val candidats = candidatsPourRole(personnes, p, role)
         val titrePicker = when (role) {
             "pere" -> "Choisir le p\u00E8re"
             "mere" -> "Choisir la m\u00E8re"
@@ -1683,7 +1670,13 @@ fun EcranApplication(
                         )
                     }
                     if (candidats.isEmpty()) {
-                        Text("Aucune autre personne disponible. Cr\u00E9ez-la avec le bouton + de la liste.")
+                        Text(
+                            when (role) {
+                                "pere" -> "Aucun homme disponible (sexe M). Cr\u00E9ez-le avec le bouton + de la liste, ou renseignez le sexe de sa fiche."
+                                "mere" -> "Aucune femme disponible (sexe F). Cr\u00E9ez-la avec le bouton + de la liste, ou renseignez le sexe de sa fiche."
+                                else -> "Aucune autre personne disponible. Cr\u00E9ez-la avec le bouton + de la liste."
+                            }
+                        )
                     } else {
                         candidats.forEach { c ->
                             // v0.79 : liste tres compacte, alignee a gauche,
