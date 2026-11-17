@@ -12,6 +12,12 @@ import java.io.FileOutputStream
 // fournisseur de stockage) laissait donc un fichier de 0 Ko, parfois avec un
 // message de reussite. Ici : tout est ecrit d'un coup, force sur disque (sync),
 // la taille est verifiee, et le fichier vide est supprime en cas d'echec.
+// v0.136 : taille affichee apres un export, pour reperer tout de suite un fichier vide.
+fun tailleLisible(octets: Long): String =
+    if (octets < 1024L) octets.toString() + " octets"
+    else if (octets < 1024L * 1024L) ((octets + 512L) / 1024L).toString() + " Ko"
+    else ((octets * 10L / 1048576L) / 10.0).toString().replace('.', ',') + " Mo"
+
 object FichierExport {
 
     // Renvoie null si tout est ecrit et verifie, sinon un message d'erreur lisible.

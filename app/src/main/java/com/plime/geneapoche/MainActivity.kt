@@ -1113,9 +1113,9 @@ fun AppEcran(
                 // R1 : etat Compose JAMAIS modifie depuis le thread IO.
                 withContext(Dispatchers.Main) {
                     message = if (phrase.isNotEmpty())
-                        "GEDCOM chiffr\u00E9 export\u00E9 (" + n.toString() + " personnes) : fichier .gpged ouvrable uniquement dans GeneaPoche (Importer un GEDCOM) avec la phrase secr\u00E8te. Une fois le fichier envoy\u00E9, pensez \u00E0 le supprimer."
+                        "GEDCOM chiffr\u00E9 export\u00E9 (" + n.toString() + " personnes, " + tailleLisible(octetsSortie.size.toLong()) + ") : fichier .gpged ouvrable uniquement dans GeneaPoche (Importer un GEDCOM) avec la phrase secr\u00E8te. Une fois le fichier envoy\u00E9, pensez \u00E0 le supprimer."
                     else
-                        "GEDCOM export\u00E9 (" + n.toString() + " personnes) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "") + alerte + " Une fois le fichier envoy\u00E9, pensez \u00E0 le supprimer."
+                        "GEDCOM export\u00E9 (" + n.toString() + " personnes, " + tailleLisible(octetsSortie.size.toLong()) + " \u00E9crits et v\u00E9rifi\u00E9s) : importable dans Heredis." + (if (exclureVivants) " Personnes vivantes exclues." else "") + alerte + " Une fois le fichier envoy\u00E9, pensez \u00E0 le supprimer."
                 }
             } catch (e: Exception) {
                 // v0.132 : pas de fichier vide laisse par le selecteur (meme si annule).

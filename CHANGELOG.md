@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.136 — Export : la taille du fichier écrit est affichée
+
+- Après un export GEDCOM réussi, le message indique maintenant la **taille réellement écrite** (ex. « 120 personnes, 85 Ko écrits et vérifiés »). Si le fichier apparaît à 0 Ko ailleurs alors que ce message annonce une taille, le défaut vient du stockage ou de l'application qui l'affiche, pas de GénéaPoche : utile pour cerner le signalement des « 0 Ko au-delà de 50 personnes », toujours non reproduit.
+- Recherche faite : aucune limite de 50 dans le code, aucun partage par intention (pas de plafond de taille de ce côté).
+- 287 tests ; version 0.136. Non vérifié sur appareil.
+
 ## v0.135 — Import GEDCOM : les sources d'un divorce (ou d'un autre événement de famille) ne sont plus perdues
 
 - **Défaut confirmé par un test** : dans un GEDCOM externe, la source citée sous un divorce, des fiançailles ou une annulation de mariage était ignorée ; seules celles du mariage étaient lues. Elle est maintenant rattachée aux deux conjoints (en source générale, la fiche n'ayant pas de case « divorce » pour les citations).
