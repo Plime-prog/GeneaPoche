@@ -1248,16 +1248,25 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
     )
     if (type == "M" && !base.editionFiche && p.sexe == "F") {
         return base.copy(
-            personneId = 0L, nom = "", prenoms = "", sexe = "M", profession = "",
-            pereId = 0L, mereId = 0L, pereNomInit = "", mereNomInit = "",
-            pereNom = "", perePrenoms = "", pereNe = "", pereLieu = "", pereDept = "",
-            pereProf = "", pereDeces = "", pereLieuDeces = "",
-            pereAge = "", pereSituation = "", pereDomicile = "",
-            mereNom = "", merePrenoms = "", mereNe = "", mereLieu = "", mereDept = "",
-            mereProf = "", mereDeces = "", mereLieuDeces = "",
-            mereAge = "", mereSituation = "", mereDomicile = "",
+            // v0.141 : la personne choisie est une FEMME : elle devient la
+            // mariee ; le MARIE est son conjoint (avec SES parents), au lieu
+            // d'un marie vide et de parents inverses.
+            personneId = conj?.id ?: 0L, nom = conj?.nom ?: "", prenoms = conj?.prenoms ?: "",
+            sexe = "M", profession = conj?.profession ?: "",
+            pereId = pConj?.id ?: 0L, mereId = mConj?.id ?: 0L,
+            pereNomInit = pConj?.nom ?: "", mereNomInit = mConj?.nom ?: "",
+            pereNom = pConj?.nom ?: "", perePrenoms = pConj?.prenoms ?: "",
+            pereNe = pConj?.dateNaissance ?: "", pereLieu = pConj?.lieuNaissance ?: "",
+            pereDept = pConj?.deptNaissance ?: "", pereProf = pConj?.profession ?: "",
+            pereDeces = pConj?.dateDeces ?: "", pereLieuDeces = pConj?.lieuDeces ?: "",
+            pereAge = ageALActe(pConj), pereSituation = pConj?.situation ?: "", pereDomicile = pConj?.domicile ?: "",
+            mereNom = mConj?.nom ?: "", merePrenoms = mConj?.prenoms ?: "",
+            mereNe = mConj?.dateNaissance ?: "", mereLieu = mConj?.lieuNaissance ?: "",
+            mereDept = mConj?.deptNaissance ?: "", mereProf = mConj?.profession ?: "",
+            mereDeces = mConj?.dateDeces ?: "", mereLieuDeces = mConj?.lieuDeces ?: "",
+            mereAge = ageALActe(mConj), mereSituation = mConj?.situation ?: "", mereDomicile = mConj?.domicile ?: "",
             marieeId = p.id, marieeNom = p.nom, marieePrenoms = p.prenoms, marieeProf = p.profession,
-            marieeAge = ageALActe(p), ageConcerne = "",
+            marieeAge = ageALActe(p), ageConcerne = ageALActe(conj),
             pMarieeNom = pere?.nom ?: "", pMarieePrenoms = pere?.prenoms ?: "",
             pMarieeNe = pere?.dateNaissance ?: "", pMarieeLieu = pere?.lieuNaissance ?: "",
             pMarieeDept = pere?.deptNaissance ?: "", pMarieeProf = pere?.profession ?: "",
@@ -1273,6 +1282,7 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
                     "M\u00E8re" -> "M\u00E8re de la mari\u00E9e"
                     "P\u00E8re de la mari\u00E9e" -> "P\u00E8re"
                     "M\u00E8re de la mari\u00E9e" -> "M\u00E8re"
+                    "Mari\u00E9e" -> "Concerne(e)"
                     else -> s
                 }
             }
