@@ -271,3 +271,9 @@ Branches de travail déjà fusionnées dans `main`, à supprimer : `notes-v134`,
 Branches de déclenchement des releases (les fichiers restent dans la page Releases) : `release-0.132`, `release-0.133`, `release-0.134`, `release-0.135`.
 
 À conserver : `main`.
+
+## Ajout du 18 novembre (v0.136 à v0.138)
+
+Branches de travail fusionnées dans `main`, à supprimer : `taille-v136`, `retour-v136`, `retours-v137`, `docs-v138`, et les branches de la v0.137 « export GEDCOM » créées en parallèle (la pull request `#160` est restée ouverte alors que `#159` est fusionnée : à fermer).
+
+Branches de déclenchement de release : `release-0.136`, `release-0.137`, `release-0.138`. À conserver : `main`.
