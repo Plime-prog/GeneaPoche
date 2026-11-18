@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.140 — Fin du « conflit de package » à l'installation (signature stable)
+
+- **Cause constatée** : les APK v0.138 et v0.139 publiés portent des **certificats de signature différents** (empreintes vérifiées). Sans secrets de signature, la CI signait avec la clé « debug » du serveur, régénérée à chaque build ; Android refusait donc toute mise à jour par-dessus la version installée.
+- **Correction** : une clé de signature stable (`app/geneapoche-signature.jks`) signe désormais les APK debug **et** release ; la CI vérifie avec `apksigner` que les deux portent ce certificat et échoue sinon. Voir `docs/SIGNATURE.md` (limite : clé non secrète, dépôt public).
+- **À faire une seule fois en passant à la v0.140** : l'ancienne version doit être désinstallée (signature différente). **Avant**, exporter une sauvegarde `.gpbak` hors de l'application ; après installation, la restaurer. Les mises à jour suivantes s'installent par-dessus.
+- 315 tests ; version 0.140.
+
 ## v0.139 — Le bloc Notes fait partie des sauvegardes .gpbak
 
 - Le bloc **Notes** de l'onglet Recherches (v0.138) est maintenant écrit dans les sauvegardes `.gpbak` (manuelles et automatiques) et relu à la restauration. Une ancienne sauvegarde sans notes n'efface rien ; si des notes existent déjà, celles de la sauvegarde sont ajoutées à la suite sous « — Notes de la sauvegarde — » : aucun texte n'est jamais perdu.
