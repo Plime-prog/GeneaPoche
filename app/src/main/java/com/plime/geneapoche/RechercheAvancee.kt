@@ -81,18 +81,23 @@ fun RechercheAvancee(personnes: List<Personne>, onOuvrirPersonne: (Long) -> Unit
                 Text(if (ouvert) "\u25B2" else "\u25BC", color = CouleurVertFonce)
             }
             if (ouvert) {
-                OutlinedTextField(
-                    value = texte, onValueChange = { texte = it },
-                    label = { Text("Nom, pr\u00E9nom, m\u00E9tier ou lieu") }, singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(6.dp))
-                OutlinedTextField(
-                    value = lieu, onValueChange = { lieu = it },
-                    label = { Text("Lieu (commune)") }, singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(6.dp))
+                // v0.137 : menu plus compact (comme le diagnostic) : nom et lieu
+                // sur la meme ligne, libelles courts.
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    OutlinedTextField(
+                        value = texte, onValueChange = { texte = it },
+                        label = { Text("Nom, m\u00E9tier\u2026") }, singleLine = true,
+                        textStyle = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = lieu, onValueChange = { lieu = it },
+                        label = { Text("Commune") }, singleLine = true,
+                        textStyle = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = de, onValueChange = { de = it.filter { c -> c.isDigit() }.take(4) },
@@ -107,15 +112,13 @@ fun RechercheAvancee(personnes: List<Personne>, onOuvrirPersonne: (Long) -> Unit
                         modifier = Modifier.weight(1f)
                     )
                 }
-                Spacer(Modifier.height(6.dp))
-                Text("Statut de v\u00E9rification", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(4.dp))
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     FilterChip(selected = statut == "", onClick = { statut = "" }, label = { Text("Tous") })
                     FilterChip(selected = statut == "certifiee", onClick = { statut = "certifiee" }, label = { Text("Certifi\u00E9e") })
                     FilterChip(selected = statut == "non", onClick = { statut = "non" }, label = { Text("Non certifi\u00E9e") })
                 }
-                Spacer(Modifier.height(6.dp))
-                Text("Acte manquant (au moins un)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Acte manquant :", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     TypesManquants.forEach { (code, lib) ->
                         FilterChip(

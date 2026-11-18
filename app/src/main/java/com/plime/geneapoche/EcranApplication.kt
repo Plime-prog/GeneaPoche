@@ -183,7 +183,9 @@ class EtatApplication(
     val cleRecuperation: String = "",
     // v0.92 : carnet de sources (sources reutilisables + citations).
     val sources: List<Source> = emptyList(),
-    val citations: List<Citation> = emptyList()
+    val citations: List<Citation> = emptyList(),
+    // v0.137 : bloc Notes libre de l'onglet Recherches.
+    val notesLibres: String = ""
 )
 
 // G2-09 : toutes les actions de l'ecran regroupees en une seule classe.
@@ -248,6 +250,7 @@ class ActionsApplication(
     // v0.88 : Ignorer une anomalie a verifier, ou les reafficher toutes.
     val ignorerAnomalie: (String) -> Unit,
     val reafficherAnomalies: () -> Unit,
+    val sauverNotesLibres: (String) -> Unit = {},
     // v0.90 : corriger en un clic un lieu d'ancienne saisie (journal).
     val corrigerLieu: (Long, String, String) -> Unit = { _, _, _ -> },
     // 12.1 : sauvegarde automatique apr\u00E8s N modifications dans un dossier
@@ -820,6 +823,8 @@ fun EcranApplication(
                     anomaliesIgnorees = anomaliesIgnorees,
                     onIgnorerAnomalie = { cle -> ignorerAnomalie(cle) },
                     onReafficherAnomalies = { reafficherAnomalies() },
+                    notesLibres = notesLibres,
+                    onNotesLibres = { sauverNotesLibres(it) },
                     onCorrigerLieu = { id, champ, valeur -> corrigerLieu(id, champ, valeur) },
                     citations = citations,
                     idChoisie = arbreCentre,
