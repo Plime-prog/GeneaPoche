@@ -55,7 +55,7 @@ jobs:
             echo "GP_KEY_ALIAS=$KEY_ALIAS" >> $GITHUB_ENV
             echo "GP_KEY_PASSWORD=$KEY_PASSWORD" >> $GITHUB_ENV
           else
-            echo "Secrets de signature absents : APK release signe avec la cle debug (non debuggable)."
+            echo "Secrets de signature absents : APK signes avec la cle stable du depot (app/geneapoche-signature.jks)."
           fi
 
       - name: Compiler les APK debug et release
@@ -81,6 +81,21 @@ jobs:
             fi
             exit 1
           fi
+
+      # v0.140 : controle de la signature. Sans secrets, les deux APK DOIVENT porter
+      # le certificat stable du depot (sinon Android refuse la mise a jour).
+      - name: Verifier la signature des APK
+        run: |
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          ATTENDU=$(keytool -list -v -keystore app/geneapoche-signature.jks -storepass geneapoche 2>/dev/null | grep -m1 "SHA256:" | sed 's/.*SHA256: //' | tr -d ':' | tr 'A-F' 'a-f')
+          for t in debug release; do
+            REEL=$("$APKSIGNER" verify --print-certs "app/build/outputs/apk/$t/app-$t.apk" | grep -m1 "certificate SHA-256 digest" | sed 's/.*: //')
+            echo "APK $t : certificat $REEL"
+            if [ -z "$GP_KEYSTORE" ] && [ "$REEL" != "$ATTENDU" ]; then
+              echo "::error::APK $t non signe avec la cle stable du depot (attendu $ATTENDU)"
+              exit 1
+            fi
+          done
 
       # v0.133 : le numero de version figure dans le NOM des fichiers telecharges
       # depuis les artefacts (comme pour les releases).
@@ -145,7 +160,7 @@ jobs:
             echo "GP_KEY_ALIAS=$KEY_ALIAS" >> $GITHUB_ENV
             echo "GP_KEY_PASSWORD=$KEY_PASSWORD" >> $GITHUB_ENV
           else
-            echo "Secrets de signature absents : APK release signe avec la cle debug (non debuggable)."
+            echo "Secrets de signature absents : APK signes avec la cle stable du depot (app/geneapoche-signature.jks)."
           fi
 
       - name: Compiler les APK debug et release
