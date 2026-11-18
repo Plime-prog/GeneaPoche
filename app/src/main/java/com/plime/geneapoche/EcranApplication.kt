@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Person
@@ -194,6 +195,8 @@ class ActionsApplication(
     val onIdOuvert: (Long) -> Unit,
     val onRetourFiche: () -> Unit,
     val onOnglet: (Int) -> Unit,
+    // v0.141 : memorisation du dernier ecran ouvert.
+    val memoriserEcran: (Int, Long) -> Unit = { _, _ -> },
     val onEditionOuverte: (Boolean) -> Unit,
     val onEditionCible: (Personne?) -> Unit,
     val onPickerRole: (String) -> Unit,
@@ -311,14 +314,46 @@ fun EcranApplication(
     }
     // v0.95 (12) : menu interne de l'onglet Arbre (0 = arbre, 1 = ligne de vie).
     var vueArbre by remember { mutableStateOf(0) }
-    BackHandler(enabled = idOuvert != 0L || editionOuverte || pickerRole.isNotEmpty() || saisieOuverte) {
+    // v0.141 : retour arriere unique et systematique. Chaque changement d'ecran
+    // (onglet ou fiche) empile l'ecran quitte ; la fleche (et le bouton retour du
+    // telephone) revient TOUJOURS vers l'ecran precedemment ouvert. D'abord on
+    // ferme ce qui est ouvert par-dessus (choix d'une personne, edition, saisie).
+    val pileEcrans = androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateListOf<Long>() }
+    var dernierEcran by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(codeEcran(onglet, idOuvert)) }
+    var retourEnCours by remember { mutableStateOf(false) }
+    LaunchedEffect(onglet, idOuvert) {
+        val courant = codeEcran(onglet, idOuvert)
+        if (courant != dernierEcran) {
+            if (!retourEnCours) ajouterEcran(pileEcrans, dernierEcran)
+            dernierEcran = courant
+        }
+        retourEnCours = false
+        memoriserEcran(onglet, idOuvert)
+    }
+    val retourArriere: () -> Unit = {
         when {
             pickerRole.isNotEmpty() -> onPickerRole("")
             editionOuverte -> onEditionOuverte(false)
-            saisieOuverte -> { if (saisieType != null) saisieType = null else { imageSaisiePresente = false; onOnglet(0) } }
-            else -> onIdOuvert(0L)
+            saisieOuverte && saisieType != null -> saisieType = null
+            else -> {
+                val cible = depilerEcran(pileEcrans, codeEcran(onglet, idOuvert))
+                if (cible != null) {
+                    val o = ongletDeCode(cible)
+                    var id = idDeCode(cible)
+                    if (id != 0L && personneParId(personnes, id) == null) id = 0L
+                    retourEnCours = codeEcran(o, id) != codeEcran(onglet, idOuvert)
+                    idToucheArbre = 0L
+                    choisirOnglet(o)
+                    onIdOuvert(id)
+                } else if (idOuvert != 0L) {
+                    onIdOuvert(0L)
+                }
+            }
         }
     }
+    val peutRetourner = pickerRole.isNotEmpty() || editionOuverte || (saisieOuverte && saisieType != null) ||
+        pileEcrans.isNotEmpty() || idOuvert != 0L
+    BackHandler(enabled = peutRetourner) { retourArriere() }
 
     val ouverte = personneParId(personnes, idOuvert)
     var menuGedcom by remember { mutableStateOf(false) }
@@ -362,6 +397,12 @@ fun EcranApplication(
                 // barre des onglets reste, pour un maximum de place.
                 if (!saisieOuverte) {
                 TopAppBar(
+                    navigationIcon = {
+                        // v0.141 : fleche de retour sur chaque ecran.
+                        IconButton(onClick = retourArriere, enabled = peutRetourner) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
+                        }
+                    },
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Image(
@@ -394,6 +435,18 @@ fun EcranApplication(
                         actionIconContentColor = Color.White
                     ),
                 )
+                } else {
+                    // v0.141 : sur la Saisie (pas de titre) : fine barre avec la fleche.
+                    androidx.compose.material3.Surface(color = PaletteGeneaPoche.primary) {
+                        Row(
+                            Modifier.fillMaxWidth().height(40.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = retourArriere, enabled = peutRetourner) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour", tint = Color.White)
+                            }
+                        }
+                    }
                 }
             },
             bottomBar = { BarreOnglets(onglet, choisirOnglet) }
@@ -1544,7 +1597,7 @@ fun EcranApplication(
             p = p,
             enregistrer = enregistrer,
             onOuvrir = { onIdOuvert(it) },
-            onRetour = onRetourFiche,
+            onRetour = { retourArriere() },
             pistes = pistes,
             onSupprimerPiste = { supprimerPiste(it) },
             onModifier = { onEditionCible(p); onEditionOuverte(true) },

@@ -209,6 +209,13 @@ fun vivantMoinsDe30(p: Personne): Boolean {
     return java.time.LocalDate.now().year - an < 30
 }
 
+// v0.141 : un VIVANT presume de moins de 100 ans a la date du jour.
+fun vivantMoinsDe100(p: Personne): Boolean {
+    if (!presumeVivant(p)) return false
+    val an = anneeDe(p.dateNaissance) ?: return false
+    return java.time.LocalDate.now().year - an < 100
+}
+
 // v0.84 : une personne DECEDEE avant ses 25 ans (naissance et deces
 // dates) : pas de mariage a afficher ni a chercher.
 fun decedeAvant25(p: Personne): Boolean {
@@ -221,6 +228,8 @@ fun decedeAvant25(p: Personne): Boolean {
 // (en-tete de la fiche et liste des personnes) :
 // - vivant de moins de 30 ans aujourd'hui : sur 2 (uniquement N) ;
 // - decede avant 25 ans : sur 4 (N et D) ;
+// - v0.141 : vivant presume de moins de 100 ans : sur 4 (N et M), M retire
+//   du compte s'il n'y a pas de conjoint ;
 // - tous les autres : sur 6 (N, M, D), M retire du compte (total 4)
 //   s'il n'y a pas de conjoint.
 fun indicateurPersonne(p: Personne): Pair<Int, Int> {
@@ -246,6 +255,9 @@ fun indicateurPersonne(p: Personne): Pair<Int, Int> {
         n += cEvs(p.dateMariage, p.lieuMariage, p.deptMariage)
         total += 2
     }
+    // v0.141 : une personne de moins de 100 ans aujourd'hui (presumee vivante)
+    // n'a pas de deces a renseigner : 4 indicateurs (N et M) et non 6.
+    if (vivantMoinsDe100(p)) return Pair(n, total)
     n += cEvs(p.dateDeces, p.lieuDeces, p.deptDeces)
     total += 2
     return Pair(n, total)

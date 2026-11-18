@@ -2062,6 +2062,12 @@ fun AppEcran(
                 withContext(Dispatchers.IO) { Stockage.purgerActes(ctx) }
                 enregistrer()
             }
+            // v0.141 : on rouvre l'ecran laisse a la fermeture ; au tout premier
+            // lancement, aucun ecran memorise : le Journal reste affiche.
+            Stockage.lireEcran(ctx)?.let { (o, fiche) ->
+                onglet = o
+                if (fiche != 0L && personneParId(personnes, fiche) != null) idOuvert = fiche
+            }
             charge = true
             occupation = ""
             if (fichiersIllisibles.isEmpty()) {
@@ -2201,6 +2207,7 @@ fun AppEcran(
                     idOuvert = if (pileFiches.isNotEmpty()) pileFiches.removeAt(pileFiches.size - 1) else 0L
                 },
                 onOnglet = { onglet = it },
+                memoriserEcran = { o, fiche -> if (charge) Stockage.sauverEcran(ctx, o, fiche) },
                 onEditionOuverte = { editionOuverte = it },
                 onEditionCible = { editionCible = it },
                 onPickerRole = { pickerRole = it },
