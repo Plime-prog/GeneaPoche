@@ -1,5 +1,14 @@
 # Historique des versions
 
+## v0.138 — Retours d'utilisation : versions, fiche, Recherches, chronologie
+
+- **Version** : le titre « Ma généalogie dans ma poche » affiche la vraie version (il était figé à un ancien numéro) ; l'ancien « v0.107 » de l'écran Saisie d'un acte est supprimé.
+- **Anomalie « sexe non renseigné »** : une fiche sans sexe est signalée à vérifier (niveau 2).
+- **Père / mère existants** : la fenêtre « Choisir le père » ne propose que des hommes (sexe M), « Choisir la mère » que des femmes (sexe F). Une fiche sans sexe n'y apparaît pas : renseigner son sexe d'abord (la nouvelle anomalie la signale).
+- **Fiche** : deux blocs distincts **Conjoint(s)** et **Enfant(s)**, chaque ligne avec une croix pour retirer le lien (après confirmation ; la fiche de la personne n'est jamais supprimée).
+- **Recherches** : premier bloc « Notes » entièrement libre (chiffré, enregistré après une pause de frappe ; *pas encore inclus dans les sauvegardes .gpbak*) ; recherche avancée plus compacte ; **toutes** les recherches en liste compacte repliée (plus de plafond de 10 ni de règle des 75 ans ; touche pour déplier) ; un acte localisé mais non « enregistré » n'est plus une recherche (sans date connue, « Rechercher l'acte de … » reste proposé) ; nouvel onglet **5 du jour** : cinq recherches variées (une par personne, au plus deux du même genre), différentes chaque jour, stables toute la journée.
+- **Chronologie** : défaut confirmé — dès que N, M ou D n'était pas daté, tous les actes passaient en tête et les autres événements (enfants, événements libres, famille) venaient après sans s'entremêler. Une seule règle maintenant : tout ce qui est daté est rangé par date ; un acte sans date prend sa place naturelle (N au début, B après N, M après B, D à la fin, S après D).
+- 311 tests ; version 0.138. Non testé sur appareil : écrans de fiche, Recherches et 5 du jour à vérifier à la main (sauvegarde .gpbak avant).
 ## v0.137 — Export GEDCOM : l'échec sur des notes contenant des lignes vides est corrigé
 
 - **Cause exacte du fichier à 0 ko retrouvée** : une note contenant des lignes vides (notes multiples importées recollées par une ligne vide, ou simple saut de ligne dans le bloc « sans titre ») faisait planter la construction du GEDCOM — aucune ligne n'était écrite et le message affichait seulement « Échec de l'export GEDCOM. », sans explication. C'était précisément le cas des bases reconstruites par import (v0.132 avait bien noté que rien n'était reproducible avec des données de test).

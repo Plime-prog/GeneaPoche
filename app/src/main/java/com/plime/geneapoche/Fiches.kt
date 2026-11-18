@@ -215,12 +215,10 @@ fun EcranPersonne(
     if (blocRenseigne("M") && !jeuneVivant && !jeuneDecede) typesPresents.add("M")
     if (blocRenseigne("D")) typesPresents.add("D")
     if (blocRenseigne("S")) typesPresents.add("S")
-    // v0.84 : les evenements sont ranges dans l'ordre CHRONOLOGIQUE
-    // (dates completes converties en cle comparable) ; si l'un des
-    // evenements N, M ou D est sans date, retour a l'ordre naturel NBMDS.
+    // v0.138 : les evenements sont ranges dans l'ordre CHRONOLOGIQUE ; les
+    // actes sans date s'inserent a leur place naturelle (voir Chronologie.kt).
     val ordreNaturel = listOf("N", "B", "M", "D", "S")
     val ordreTypes = ordreNaturel.filter { typesPresents.contains(it) }
-    val nmdComplets = listOf("N", "M", "D").all { champsEvenement(p, it).date.isNotBlank() }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -343,7 +341,7 @@ fun EcranPersonne(
                     )
                 }
                 item(key = "unions") {
-                    CarteUnionsEnfants(p, personnes, onOuvrir, onAjouterEnfant = { menuEnfant = true })
+                    CarteUnionsEnfants(p, personnes, onOuvrir, onAjouterEnfant = { menuEnfant = true }, onRetirer = onRetirer)
                 }
             }
             if (ongletFiche == 1) {
@@ -419,18 +417,10 @@ fun EcranPersonne(
                         else (anneeN < 0L || e.first < 0L || e.first >= anneeN) &&
                             (anneeD < 0L || e.first < 0L || e.first <= anneeD)
                     }
-                    // v0.84 : si N, M et D sont dates, TOUT est range dans
-                    // l'ordre chronologique (tri stable) ; sinon les blocs
-                    // gardent l'ordre naturel NBMDS et le reste suit par date.
-                    val ordonnees = if (nmdComplets) {
-                        entrees.filter(filtreParasites).sortedBy { it.first }
-                    } else {
-                        val blocsActe = entrees.filter { it.second.startsWith("ev:") }
-                            .sortedBy { ordreNaturel.indexOf(it.second.removePrefix("ev:")) }
-                        val autres = entrees.filter { !it.second.startsWith("ev:") }
-                            .filter(filtreParasites).sortedBy { it.first }
-                        blocsActe + autres
-                    }
+                    // v0.138 : une seule regle (voir Chronologie.kt) : tout ce qui est
+                    // date est range par date, les actes sans date prennent leur place
+                    // naturelle N, B, M, D, S dans cette chronologie.
+                    val ordonnees = ordonnerChronologie(entrees.filter(filtreParasites))
                     ordonnees.forEach { entree ->
                         val cle = entree.second
                         when {

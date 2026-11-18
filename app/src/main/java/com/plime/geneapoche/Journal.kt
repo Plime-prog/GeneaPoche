@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -323,9 +325,9 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
             // v0.98 : meme SANS date connue, l'acte non coche reste une
             // recherche ; des que la coche "Enregistre" est posee, PLUS
             // AUCUNE suggestion pour cet acte (la coche retire la recherche).
-            if (!p.enregistreDe(type)) {
-                ajouter(cleBase + "_enregistrer", "Enregistrer " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
-            }
+            // v0.138 : sans date connue, l'acte lui-meme est a retrouver ;
+            // la coche "Enregistre" ne cree plus de recherche.
+            ajouter(cleBase + "_acte", "Rechercher " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
             return
         }
         // Acte localise : chaque champ manquant est une recherche a part entiere.
@@ -335,11 +337,8 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
         }
         // v0.91 : plus de recherche "Compl\u00E9ter le d\u00E9partement" : le
         // d\u00E9partement est d\u00E9riv\u00E9 du code INSEE, il n'est plus saisi.
-        // Chantier 12.0 : l'acte n'est plus stocke dans l'app ; une coche
-        // "Enregistre" par type. Pas de coche = acte manquant = une recherche.
-        if (!p.enregistreDe(type)) {
-            ajouter(cleBase + "_enregistrer", "Enregistrer " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
-        }
+        // v0.138 : un acte localise mais non "enregistre" n'est PLUS une
+        // recherche (la coche reste visible sur la fiche).
     }
 
     // Plages d'annees visees par chaque evenement (pour la regle des 75 ans).
@@ -525,6 +524,9 @@ fun EcranJournal(
     anomaliesIgnorees: Set<String> = emptySet(),
     onIgnorerAnomalie: (String) -> Unit = {},
     onReafficherAnomalies: () -> Unit = {},
+    // v0.138 : bloc Notes libre de la vue Recherches.
+    notesLibres: String = "",
+    onNotesLibres: (String) -> Unit = {},
     // v0.90 : corriger en un clic un lieu des anciennes saisies
     // (personneId, champ, nouvelle valeur).
     onCorrigerLieu: (Long, String, String) -> Unit = { _, _, _ -> },
@@ -553,13 +555,10 @@ fun EcranJournal(
     // librement communicables). Tri : l'\u00E9v\u00E9nement le plus proche de nous
     // d'abord. Plafond : 10 recherches au total. Chaque carte rappelle le
     // num\u00E9ro d'Aboville de la personne concern\u00E9e.
-    val limite = anneeCourante() - 75
-    // Reponse utilisateur : ordre CROISSANT des numeros de haut en bas
-    // (Sosa puis d Aboville), toujours limite aux evenements de plus de 75 ans.
+    // v0.138 : TOUTES les recherches ouvertes, en liste compacte non deployee,
+    // dans l'ordre croissant des numeros (Sosa puis d'Aboville).
     val prioritaires = ouvertes
-        .filter { ps -> val a = anneeCiblePiste(ps); a == null || a <= limite }
         .sortedWith { a, b -> comparerNumeros(numeroDePiste(a, personnes), numeroDePiste(b, personnes)) }
-        .take(10)
     val anomalies = anomaliesDeLArbre(personnes, anomaliesIgnorees)
     // v0.90 : anciennes saisies \u00E0 corriger (lieux, dates).
     val aCorriger = erreursSaisie(personnes)
@@ -588,6 +587,7 @@ fun EcranJournal(
     ) {
         FilterChip(selected = vueJournal == 0, onClick = { vueJournal = 0 }, label = { Text("Synth\u00E8se") })
         FilterChip(selected = vueJournal == 1, onClick = { vueJournal = 1 }, label = { Text("Recherches") })
+        FilterChip(selected = vueJournal == 3, onClick = { vueJournal = 3 }, label = { Text("5 du jour") })
         FilterChip(selected = vueJournal == 2, onClick = { vueJournal = 2 }, label = { Text("Statistiques") })
     }
     if (vueJournal == 2) {
@@ -896,6 +896,8 @@ fun EcranJournal(
 
         } // fin vue "Synthese"
         if (vueJournal == 1) {
+        // v0.138 : premier bloc = notes completement libres.
+        item { BlocNotesLibres(notesLibres, onNotesLibres) }
         // v0.100 (12.7) : recherche avancee (periode, lieu, statut, acte manquant).
         item { RechercheAvancee(personnes = personnes, onOuvrirPersonne = onOuvrirPersonne) }
         if (prioritaires.isEmpty()) {
@@ -907,29 +909,54 @@ fun EcranJournal(
                 ) {
                     Column(Modifier.fillMaxWidth().padding(12.dp)) {
                         Text("Tout est renseign\u00E9 !", fontWeight = FontWeight.Bold)
+                        Text("Aucune recherche \u00E0 faire pour le moment.", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        } else {
+            item {
+                Text(
+                    "Toutes les recherches : " + prioritaires.size.toString(),
+                    Modifier.padding(top = 6.dp, bottom = 2.dp),
+                    fontWeight = FontWeight.Bold, color = CouleurVertFonce
+                )
+            }
+        }
+        prioritaires.forEach { ps ->
+            item(key = "ouverte" + ps.id.toString()) {
+                LigneRechercheCompacte(ps, personnes, onSupprimer, onOuvrirPersonne, onSauver)
+            }
+        }
+        } // fin vue "Recherches"
+        if (vueJournal == 3) {
+            val jour = jourLocal()
+            val cinq = cinqDuJour(ouvertes, jour)
+            item {
+                Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                    Text("Vos 5 recherches du jour", fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+                    Text(
+                        "Elles changent chaque jour, sans ordre de num\u00E9rotation : le plaisir avant tout.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (cinq.isEmpty()) {
+                item { Text("Aucune recherche ouverte : bravo !", Modifier.padding(8.dp)) }
+            }
+            cinq.forEach { ps ->
+                item(key = "jour" + ps.id.toString()) {
+                    Column(Modifier.fillMaxWidth()) {
                         Text(
-                            "Aucune recherche prioritaire : aucun \u00E9v\u00E9nement de plus de 75 ans \u00E0 chercher pour le moment.",
-                            style = MaterialTheme.typography.bodySmall
+                            accrocheRecherche(ps),
+                            Modifier.padding(top = 6.dp),
+                            fontSize = 12.sp, color = CouleurVertFonce, fontWeight = FontWeight.Bold
                         )
+                        LigneRechercheCompacte(ps, personnes, onSupprimer, onOuvrirPersonne, onSauver)
                     }
                 }
             }
         }
-
-        // Liste plate, tri\u00E9e par \u00E9v\u00E9nement le plus proche de nous.
-        prioritaires.forEach { ps ->
-            item(key = "ouverte" + ps.id.toString()) {
-                CarteRecherche(
-                    piste = ps,
-                    personnes = personnes,
-                    onSupprimer = onSupprimer,
-                    onOuvrirPersonne = onOuvrirPersonne,
-                    onSauver = onSauver
-                )
-            }
-        }
-
-        } // fin vue "Recherches"
 
         // Une recherche effectuee est supprimee sans archive ni historique.
 
@@ -1091,3 +1118,74 @@ fun CarteRecherche(
 
 
 
+
+
+// ---------------------------------------------------------------- v0.138
+// Bloc "Notes" : texte completement libre, enregistre (chiffre) apres une
+// courte pause de frappe et a la sortie de l'ecran.
+@Composable
+fun BlocNotesLibres(texte: String, onChange: (String) -> Unit) {
+    var local by remember { mutableStateOf(texte) }
+    val dernier = androidx.compose.runtime.rememberUpdatedState(local)
+    val surChange = androidx.compose.runtime.rememberUpdatedState(onChange)
+    val enregistre = androidx.compose.runtime.rememberUpdatedState(texte)
+    LaunchedEffect(local) {
+        kotlinx.coroutines.delay(700)
+        if (local != enregistre.value) surChange.value(local)
+    }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose { if (dernier.value != enregistre.value) surChange.value(dernier.value) }
+    }
+    Card(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, CouleurGrisBord)
+    ) {
+        Column(Modifier.fillMaxWidth().padding(10.dp)) {
+            Text("Notes", fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+            OutlinedTextField(
+                value = local,
+                onValueChange = { local = it },
+                placeholder = { Text("Pistes, id\u00E9es, rappels\u2026 \u00E9crivez librement.") },
+                minLines = 3,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+            )
+        }
+    }
+}
+
+// Une recherche sur une ligne ; le toucher deplie la carte complete.
+@Composable
+fun LigneRechercheCompacte(
+    piste: Piste,
+    personnes: List<Personne>,
+    onSupprimer: (Piste) -> Unit,
+    onOuvrirPersonne: (Long) -> Unit,
+    onSauver: () -> Unit
+) {
+    var ouverte by remember(piste.id) { mutableStateOf(false) }
+    val pers = personneParId(personnes, piste.personneId)
+    val numero = pers?.numeroAffiche()?.ifEmpty { "?" } ?: "?"
+    Column(Modifier.fillMaxWidth()) {
+        Surface(
+            Modifier.fillMaxWidth().padding(top = 3.dp),
+            shape = RoundedCornerShape(8.dp),
+            color = Color(0xFFF7F5F1)
+        ) {
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { ouverte = !ouverte }.padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(numero, Modifier.width(44.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+                Text(textePisteActuel(piste, personnes), Modifier.weight(1f), fontSize = 13.sp, maxLines = 2)
+                Text(if (ouverte) "\u25BC" else "\u25B6", fontSize = 12.sp, color = CouleurVertFonce)
+            }
+        }
+        if (ouverte) {
+            CarteRecherche(
+                piste = piste, personnes = personnes, onSupprimer = onSupprimer,
+                onOuvrirPersonne = onOuvrirPersonne, onSauver = onSauver
+            )
+        }
+    }
+}

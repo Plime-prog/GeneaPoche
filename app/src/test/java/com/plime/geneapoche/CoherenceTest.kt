@@ -10,7 +10,7 @@ import org.junit.Test
 class CoherenceTest {
 
     private fun n(
-        id: Long, nom: String, sexe: String = "", naiss: String = "", deces: String = "",
+        id: Long, nom: String, sexe: String = "?", naiss: String = "", deces: String = "",
         mar: String = "", bap: String = "", sep: String = "", pere: Long = 0, mere: Long = 0,
         conj: List<Long> = emptyList(), libres: List<Pair<String, String>> = emptyList(),
         lieux: List<EvLieu> = emptyList()
@@ -226,5 +226,15 @@ class CoherenceTest {
         assertEquals("4 mois", dureeTexte(120))
         assertEquals("2 ans", dureeTexte(800))
         assertEquals("1 jour", dureeTexte(1))
+    }
+
+    // v0.138 : une fiche sans sexe est signalee, une fiche avec sexe non.
+    @Test
+    fun sexe_manquant_signale() {
+        val l = listOf(n(1, "DUPONT Jean", sexe = ""), n(2, "MARTIN Anne", sexe = "F"), n(3, "BERNARD Paul", sexe = "M"))
+        val a = anomaliesAVerifier(l).filter { it.type == "sexe-manquant" }
+        assertEquals(1, a.size)
+        assertEquals(1L, a[0].personneId)
+        assertEquals(2, a[0].niveau)
     }
 }

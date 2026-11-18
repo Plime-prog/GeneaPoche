@@ -63,3 +63,20 @@ fun personnesIsolees(personnes: List<Personne>): List<Personne> {
 // ("lefevre" trouve "Lef\u00E8vre", "francois" trouve "Fran\u00E7ois").
 fun contientSansAccents(texte: String, motif: String): Boolean =
     sansAccents(texte).contains(sansAccents(motif), ignoreCase = true)
+
+// v0.138 : personnes proposees pour un role de parent / conjoint / enfant dans
+// la fenetre "Choisir...". Le pere n'est choisi que parmi les hommes (sexe M),
+// la mere que parmi les femmes (sexe F) ; les autres roles restent libres.
+fun candidatsPourRole(personnes: List<Personne>, p: Personne, role: String): List<Personne> =
+    personnes.filter { q ->
+        q.id != p.id && when (role) {
+            "pere" -> q.sexe == "M" && q.id != p.mere && q.id != p.conjoint && !p.conjointsSupp.contains(q.id)
+            "mere" -> q.sexe == "F" && q.id != p.pere && q.id != p.conjoint && !p.conjointsSupp.contains(q.id)
+            "conjoint" -> q.id != p.pere && q.id != p.mere && !p.conjointsSupp.contains(q.id)
+            "conjointsupp" -> q.id != p.conjoint && !p.conjointsSupp.contains(q.id) &&
+                q.id != p.pere && q.id != p.mere
+            "enfant" -> q.id != p.pere && q.id != p.mere && q.id != p.conjoint &&
+                !p.conjointsSupp.contains(q.id) && !p.enfants.contains(q.id)
+            else -> false
+        }
+    }.sortedBy { it.titre() }

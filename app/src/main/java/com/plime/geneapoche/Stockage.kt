@@ -32,6 +32,7 @@ object Stockage {
     private const val FICHIER_JOURNAL = "journal.bin"
     // v0.90 : carnet de sources (sources reutilisables + citations).
     private const val FICHIER_SOURCES = "sources.bin"
+    private const val FICHIER_NOTES = "notes_libres.bin"
     private const val FICHIER_ACTES = "actes.bin"
     private const val DOSSIER_IMAGES = "actes_img"
     private const val ANCIEN_FICHIER_CLAIR = "personnes.json"
@@ -438,6 +439,18 @@ object Stockage {
 
     fun sauverTexteSources(ctx: Context, texte: String): Boolean =
         ecrireFichierChiffre(ctx, FICHIER_SOURCES, texte)
+
+    // v0.138 : bloc "Notes" libre de l'onglet Recherches (un seul texte, chiffre
+    // comme le reste). Pas encore inclus dans les sauvegardes .gpbak.
+    fun lireNotesLibres(ctx: Context): String =
+        try {
+            lireChiffreToutOuRien(ctx, FICHIER_NOTES) { texte -> mutableListOf(texte) }.liste.firstOrNull() ?: ""
+        } catch (e: Exception) {
+            ""
+        }
+
+    fun sauverNotesLibres(ctx: Context, texte: String): Boolean =
+        ecrireFichierChiffre(ctx, FICHIER_NOTES, texte)
 
     private fun ecrireFichierChiffre(ctx: Context, nom: String, texte: String): Boolean {
         return try {

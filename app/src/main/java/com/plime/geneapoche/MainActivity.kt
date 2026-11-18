@@ -183,6 +183,8 @@ fun AppEcran(
     var doublonsGardes by remember { mutableStateOf(Stockage.lireDoublonsGardes(ctx)) }
     // v0.88 : anomalies a verifier que l'utilisateur a choisi d'ignorer.
     var anomaliesIgnorees by remember { mutableStateOf(Stockage.lireAnomaliesIgnorees(ctx)) }
+    // v0.138 : bloc Notes libre (onglet Recherches).
+    var notesLibres by remember { mutableStateOf(Stockage.lireNotesLibres(ctx)) }
     // G\u00E9n\u00E9aPoche 12 (12.1) : sauvegarde automatique .gpbak dans un
     // dossier choisi apr\u00E8s N modifications + cl\u00E9 de r\u00E9cup\u00E9ration.
     var dossierSauvegarde by remember { mutableStateOf(Stockage.lireDossierSauvegarde(ctx)) }
@@ -2172,6 +2174,7 @@ fun AppEcran(
                 // v0.78 : paires de doublons "gardees les deux".
                 doublonsGardes = doublonsGardes,
                 anomaliesIgnorees = anomaliesIgnorees,
+                notesLibres = notesLibres,
                 // 12.1 : etat de la sauvegarde automatique.
                 dossierSauvegarde = dossierSauvegarde,
                 seuilSauvegarde = seuilSauvegarde,
@@ -2281,6 +2284,10 @@ fun AppEcran(
                 reafficherAnomalies = {
                     Stockage.reafficherAnomalies(ctx)
                     anomaliesIgnorees = emptySet()
+                },
+                sauverNotesLibres = { texte ->
+                    if (Stockage.sauverNotesLibres(ctx, texte)) notesLibres = texte
+                    else message = "Notes non enregistr\u00E9es : espace ou stockage indisponible."
                 },
                 // v0.90 : correction d'un lieu d'ancienne saisie (journal).
                 corrigerLieu = { id, champ, valeur -> corrigerLieu(id, champ, valeur) },

@@ -110,4 +110,18 @@ class ListesPersonnesTest {
         assertTrue(contientSansAccents("Durand", ""))
         assertFalse(contientSansAccents("Durand", "martin"))
     }
+
+    // v0.138 : pere = hommes seulement, mere = femmes seulement.
+    @Test
+    fun candidats_pere_et_mere_filtres_par_sexe() {
+        val h = Personne(id = 2, nom = "Dupont", prenoms = "Paul", sexe = "M")
+        val f = Personne(id = 3, nom = "Martin", prenoms = "Anne", sexe = "F")
+        val x = Personne(id = 4, nom = "Sans", prenoms = "Sexe", sexe = "")
+        val moi = Personne(id = 1, nom = "Dupont", prenoms = "Luc", sexe = "M")
+        val tous = listOf(moi, h, f, x)
+        assertEquals(listOf(2L), candidatsPourRole(tous, moi, "pere").map { it.id })
+        assertEquals(listOf(3L), candidatsPourRole(tous, moi, "mere").map { it.id })
+        assertEquals(3, candidatsPourRole(tous, moi, "conjoint").size)
+        assertEquals(3, candidatsPourRole(tous, moi, "enfant").size)
+    }
 }
