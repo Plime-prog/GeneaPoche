@@ -102,20 +102,13 @@ object Sauvegarde {
     fun exporter(
         ctx: Context, uri: Uri, phrase: String, personnes: List<Personne>, pistes: List<Piste>,
         // v0.90 : carnet de sources (absent des anciennes sauvegardes).
-        sources: List<Source> = emptyList(), citations: List<Citation> = emptyList()
+        sources: List<Source> = emptyList(), citations: List<Citation> = emptyList(),
+        // v0.139 : bloc Notes de l'onglet Recherches.
+        notes: String = ""
     ): Boolean {
         return try {
             if (phrase.length < 6) return false
-            val racine = JSONObject()
-            val jp = JSONArray()
-            personnes.forEach { jp.put(it.versJson()) }
-            val jj = JSONArray()
-            pistes.forEach { jj.put(it.versJson()) }
-            racine.put("personnes", jp)
-            racine.put("journal", jj)
-            racine.put("sources", sourcesVersJson(sources))
-            racine.put("citations", citationsVersJson(citations))
-            val clair = racine.toString().toByteArray(Charsets.UTF_8)
+            val clair = jsonSauvegarde(personnes, pistes, sources, citations, notes).toByteArray(Charsets.UTF_8)
             val chiffre = chiffrerOctets(phrase, clair) ?: return false
             // v0.132 : ecriture verifiee (voir FichierExport), fichier vide supprime si echec.
             val erreur = FichierExport.ecrire(ctx, uri, chiffre)
@@ -123,6 +116,36 @@ object Sauvegarde {
             erreur == null
         } catch (e: Exception) {
             false
+        }
+    }
+
+    // v0.139 : construction du contenu clair, separee pour etre testee sans Android.
+    fun jsonSauvegarde(
+        personnes: List<Personne>, pistes: List<Piste>, sources: List<Source>,
+        citations: List<Citation>, notes: String
+    ): String {
+        val racine = JSONObject()
+        val jp = JSONArray()
+        personnes.forEach { jp.put(it.versJson()) }
+        val jj = JSONArray()
+        pistes.forEach { jj.put(it.versJson()) }
+        racine.put("personnes", jp)
+        racine.put("journal", jj)
+        racine.put("sources", sourcesVersJson(sources))
+        racine.put("citations", citationsVersJson(citations))
+        racine.put("notes", notes)
+        return racine.toString()
+    }
+
+    // Notes apres une restauration : jamais de texte perdu.
+    fun fusionnerNotes(actuelles: String, sauvegarde: String?): String {
+        val s = sauvegarde?.trim().orEmpty()
+        val a = actuelles.trim()
+        return when {
+            s.isEmpty() -> actuelles
+            a.isEmpty() -> s
+            a == s -> actuelles
+            else -> actuelles.trimEnd() + "\n\n\u2014 Notes de la sauvegarde \u2014\n" + s
         }
     }
 
@@ -134,7 +157,9 @@ object Sauvegarde {
         val cochesActes: Map<Long, MutableSet<String>>,
         // v0.90 : carnet de sources (vide pour une sauvegarde plus ancienne).
         val sources: MutableList<Source> = mutableListOf(),
-        val citations: MutableList<Citation> = mutableListOf()
+        val citations: MutableList<Citation> = mutableListOf(),
+        // v0.139 : null = sauvegarde plus ancienne, sans bloc Notes.
+        val notes: String? = null
     )
 
     // v0.108 : lecture par flux avec plafond ; null si le flux depasse la limite.
@@ -161,7 +186,15 @@ object Sauvegarde {
             if (phrase.length < 6) return null
             val octets = ctx.contentResolver.openInputStream(uri)?.use { s -> lireBorne(s, TAILLE_MAX_IMPORT) } ?: return null
             val clair = dechiffrerOctets(phrase, octets) ?: return null
-            val racine = JSONObject(String(clair, Charsets.UTF_8))
+            contenuDepuisJson(String(clair, Charsets.UTF_8))
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun contenuDepuisJson(texte: String): ContenuSauvegarde? {
+        return try {
+            val racine = JSONObject(texte)
             val personnes = mutableListOf<Personne>()
             val jp = racine.getJSONArray("personnes")
             for (i in 0 until jp.length()) personnes.add(Personne.depuisJson(jp.getJSONObject(i)))
@@ -186,7 +219,8 @@ object Sauvegarde {
             ContenuSauvegarde(
                 personnes, pistes, coches,
                 sourcesDepuisJson(racine.optJSONArray("sources")),
-                citationsDepuisJson(racine.optJSONArray("citations"))
+                citationsDepuisJson(racine.optJSONArray("citations")),
+                if (racine.has("notes")) racine.optString("notes", "") else null
             )
         } catch (e: Exception) {
             null

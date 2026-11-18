@@ -1,5 +1,10 @@
 # Historique des versions
 
+## v0.139 — Le bloc Notes fait partie des sauvegardes .gpbak
+
+- Le bloc **Notes** de l'onglet Recherches (v0.138) est maintenant écrit dans les sauvegardes `.gpbak` (manuelles et automatiques) et relu à la restauration. Une ancienne sauvegarde sans notes n'efface rien ; si des notes existent déjà, celles de la sauvegarde sont ajoutées à la suite sous « — Notes de la sauvegarde — » : aucun texte n'est jamais perdu.
+- 315 tests (4 SauvegardeNotesTest) ; version 0.139. Non essayé sur appareil : faire une sauvegarde puis une restauration d'essai.
+
 ## v0.138 — Retours d'utilisation : versions, fiche, Recherches, chronologie
 
 - **Version** : le titre « Ma généalogie dans ma poche » affiche la vraie version (il était figé à un ancien numéro) ; l'ancien « v0.107 » de l'écran Saisie d'un acte est supprimé.
