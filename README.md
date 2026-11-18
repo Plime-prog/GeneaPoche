@@ -52,6 +52,9 @@ Sinon, depuis les sources :
 
 1. Onglet **Actions** → dernier run vert → artefact **geneapoche-vX.Y-release** (APK signé) ou **geneapoche-vX.Y-debug** ; les versions taguées v* publient aussi l'APK release signé.
 2. Décompresser le ZIP, installer l'APK sur le téléphone (autoriser les sources inconnues).
+
+**Mise à jour : « Package non installé » (conflit)** : Android refuse une mise à jour dont la signature diffère de celle de l'APK installé (clé de signature de la CI changée, ou passage d'un APK debug à release). Procédure **sans perte** : (1) dans l'application en place, exporter une sauvegarde **.gpbak** avec phrase secrète et vérifier qu'elle n'est pas vide (et, si possible, un export GEDCOM en plus) ; (2) désinstaller ; (3) installer le nouvel APK **release** ; (4) créer le PIN puis **importer la .gpbak** (personnes, sources, actes, images et journal sont restaurés). Tant que les secrets de signature ne sont pas posés sur le dépôt, ce conflit peut se reproduire à chaque mise à jour.
+
 3. Premier lancement : créer un code PIN (6 chiffres minimum ou phrase secrète). Ne l'oubliez pas.
 
 ## Développement
