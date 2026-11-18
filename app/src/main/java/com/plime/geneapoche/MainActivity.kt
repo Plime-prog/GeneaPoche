@@ -1124,7 +1124,7 @@ fun AppEcran(
                 // v0.137 : le TYPE d'exception est ajoute entre parentheses :
                 // l'ancien message generique ne permettait aucun diagnostic
                 // (echec d'export avec fichier 0 Ko, cause invisible).
-                withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de l'export GEDCOM.") + " (" + e.javaClass.simpleName + ")" }
+                withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de l'export GEDCOM.") }
             } finally {
                 withContext(Dispatchers.Main) { occupation = "" }
             }
