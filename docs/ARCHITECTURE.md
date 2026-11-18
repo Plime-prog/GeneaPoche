@@ -4,7 +4,7 @@
 
 ## Vue d'ensemble
 
-Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3). Aucune permission Android, aucune bibliothèque réseau ou de mesure. Données stockées localement, chiffrées. Code dans `app/src/main/java/com/plime/geneapoche/` (39 fichiers, ~20 000 lignes) ; tests JVM dans `app/src/test/…` (12 fichiers, 287 tests).
+Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3). Aucune permission Android, aucune bibliothèque réseau ou de mesure. Données stockées localement, chiffrées. Code dans `app/src/main/java/com/plime/geneapoche/` (41 fichiers, ~20 000 lignes) ; tests JVM dans `app/src/test/…` (12 fichiers, 303 tests).
 
 ## Couches
 
@@ -12,7 +12,7 @@ Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3).
 |---|---|---|
 | Modèles | `Modeles.kt`, `ModeleVue.kt` | `Personne`, `Piste` (journal), événements ; sérialisation JSON champ par champ (pas de réflexion, donc pas de règle R8 spécifique) |
 | Stockage et sécurité | `Stockage.kt`, `FichiersSurs.kt`, `EcranPin.kt`, `Sauvegarde.kt` | Clé maître AES-256 liée au PIN (enveloppe et fichiers atomiques dans `FichiersSurs.kt`, testés sur JVM) (PBKDF2 600 000 + AndroidKeyStore), écritures atomiques avec `.bak`/`.tmp`, blocage progressif, sauvegardes `.gpbak` |
-| Logique pure (testée) | `LogiqueActe.kt`, `Coherence.kt`, `Numerotation.kt`, `Parente.kt`, `CalculDates.kt`, `CalendrierRepublicain.kt`, `Histoire.kt`, `Statistiques.kt`, `RechercheAvancee.kt`, `Biographie.kt`, `ListesPersonnes.kt`, `ActionsFiches.kt`, `ImportBase.kt` | Règles métier sans dépendance Android : à privilégier pour tout nouveau code |
+| Logique pure (testée) | `LogiqueActe.kt`, `Coherence.kt`, `Numerotation.kt`, `Parente.kt`, `CalculDates.kt`, `CalendrierRepublicain.kt`, `Histoire.kt`, `Statistiques.kt`, `RechercheAvancee.kt`, `Biographie.kt`, `ListesPersonnes.kt`, `ActionsFiches.kt`, `ImportBase.kt`, `Chronologie.kt` (ordre de la chronologie), `RecherchesDuJour.kt` (les 5 du jour) | Règles métier sans dépendance Android : à privilégier pour tout nouveau code |
 | Échange | `Export.kt`, `SourcesGedcom.kt` | GEDCOM 5.5.1 (compatible Heredis), balises `_GP*` pour ne rien perdre |
 | Interface | `MainActivity.kt`, `DialoguesApp.kt`, `EcranApplication.kt`, `Fiches.kt`, `SaisieActe.kt`, `Journal.kt`, `SourcesUi.kt`, `Edition.kt`, `Outils*.kt`, `Arbre.kt`, `Frise.kt`, … | Écrans Compose ; 6 onglets Personnes / Journal / Arbre / Outils / Sources / Saisie |
 | Données embarquées | `app/src/main/assets/communes/` (101 fichiers) | Communes et codes INSEE, hors ligne |

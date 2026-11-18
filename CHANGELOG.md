@@ -1,5 +1,15 @@
 # Historique des versions
 
+## v0.137 — Retours d'utilisation : versions, fiche, Recherches, chronologie
+
+- **Version** : le titre « Ma généalogie dans ma poche » affiche la vraie version (il était figé à un ancien numéro) ; l'ancien « v0.107 » de l'écran Saisie d'un acte est supprimé.
+- **Anomalie « sexe non renseigné »** : une fiche sans sexe est signalée à vérifier (niveau 2).
+- **Père / mère existants** : la fenêtre « Choisir le père » ne propose que des hommes (sexe M), « Choisir la mère » que des femmes (sexe F). Une fiche sans sexe n'y apparaît pas : renseigner son sexe d'abord (la nouvelle anomalie la signale).
+- **Fiche** : deux blocs distincts **Conjoint(s)** et **Enfant(s)**, chaque ligne avec une croix pour retirer le lien (après confirmation ; la fiche de la personne n'est jamais supprimée).
+- **Recherches** : premier bloc « Notes » entièrement libre (chiffré, enregistré après une pause de frappe ; *pas encore inclus dans les sauvegardes .gpbak*) ; recherche avancée plus compacte ; **toutes** les recherches en liste compacte repliée (plus de plafond de 10 ni de règle des 75 ans ; touche pour déplier) ; un acte localisé mais non « enregistré » n'est plus une recherche (sans date connue, « Rechercher l'acte de … » reste proposé) ; nouvel onglet **5 du jour** : cinq recherches variées (une par personne, au plus deux du même genre), différentes chaque jour, stables toute la journée.
+- **Chronologie** : défaut confirmé — dès que N, M ou D n'était pas daté, tous les actes passaient en tête et les autres événements (enfants, événements libres, famille) venaient après sans s'entremêler. Une seule règle maintenant : tout ce qui est daté est rangé par date ; un acte sans date prend sa place naturelle (N au début, B après N, M après B, D à la fin, S après D).
+- 303 tests ; version 0.137. Non testé sur appareil : écrans de fiche, Recherches et 5 du jour à vérifier à la main (sauvegarde .gpbak avant).
+
 ## v0.136 — Export : la taille du fichier écrit est affichée
 
 - Après un export GEDCOM réussi, le message indique maintenant la **taille réellement écrite** (ex. « 120 personnes, 85 Ko écrits et vérifiés »). Si le fichier apparaît à 0 Ko ailleurs alors que ce message annonce une taille, le défaut vient du stockage ou de l'application qui l'affiche, pas de GénéaPoche : utile pour cerner le signalement des « 0 Ko au-delà de 50 personnes », toujours non reproduit.
