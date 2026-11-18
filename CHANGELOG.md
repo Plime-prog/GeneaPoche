@@ -5,7 +5,7 @@
 - **Cause exacte du fichier à 0 ko retrouvée** : une note contenant des lignes vides (notes multiples importées recollées par une ligne vide, ou simple saut de ligne dans le bloc « sans titre ») faisait planter la construction du GEDCOM — aucune ligne n'était écrite et le message affichait seulement « Échec de l'export GEDCOM. », sans explication. C'était précisément le cas des bases reconstruites par import (v0.132 avait bien noté que rien n'était reproducible avec des données de test).
 - Corrigé : les lignes vides d'une note sont ignorées à l'export ; une valeur vide ne peut plus faire échouer l'écriture.
 - De plus, tout échec non anticipé affiche désormais le **type et le détail** de l'exception (chemins filtrés), finis les messages sans explication.
-- 293 tests ; version 0.137.
+- 295 tests (287 + 3 ExportNoteVideTest + 5 MessageErreurTest) ; version 0.137.
 
 ## v0.136 — Export : la taille du fichier écrit est affichée
 
