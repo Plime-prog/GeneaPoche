@@ -11,11 +11,23 @@ android {
         applicationId = "com.plime.geneapoche"
         minSdk = 26
         targetSdk = 36
-        versionCode = 139
-        versionName = "0.139"
+        versionCode = 140
+        versionName = "0.140"
     }
 
     signingConfigs {
+        // v0.140 : cle de signature STABLE (depot) pour la signature par defaut.
+        // Avant, la cle "debug" etait regeneree a chaque build de la CI : chaque
+        // version avait une signature differente et Android refusait la mise a
+        // jour (« conflit de package »). Les secrets GP_KEYSTORE restent prioritaires
+        // pour la version release. Cle volontairement non secrete : appli
+        // personnelle hors boutique ; voir docs/SIGNATURE.md.
+        getByName("debug") {
+            storeFile = file("geneapoche-signature.jks")
+            storePassword = "geneapoche"
+            keyAlias = "geneapoche"
+            keyPassword = "geneapoche"
+        }
         if (System.getenv("GP_KEYSTORE") != null) {
             create("release") {
                 storeFile = file(System.getenv("GP_KEYSTORE")!!)
