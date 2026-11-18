@@ -71,6 +71,17 @@ object Stockage {
         return Pair(if (o in 0..5) o else 1, p.getLong("ecran_fiche", 0L))
     }
 
+    // v0.141 : selection "Autres recherches" du jour (identifiants seulement).
+    fun lireAutresRecherches(ctx: Context): Pair<Long, List<Long>> {
+        val p = prefs(ctx)
+        val ids = p.getString("autres_ids", "").orEmpty().split(",").mapNotNull { it.toLongOrNull() }
+        return Pair(p.getLong("autres_jour", -1L), ids)
+    }
+
+    fun sauverAutresRecherches(ctx: Context, jour: Long, ids: List<Long>) {
+        prefs(ctx).edit().putLong("autres_jour", jour).putString("autres_ids", ids.joinToString(",")).apply()
+    }
+
     fun sauverEcran(ctx: Context, onglet: Int, fiche: Long) {
         prefs(ctx).edit().putInt("ecran_onglet", onglet).putLong("ecran_fiche", fiche).apply()
     }

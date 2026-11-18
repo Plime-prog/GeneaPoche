@@ -281,6 +281,8 @@ fun EcranApplication(
     // v0.94 (12) : le menu Saisie quitte la barre d'onglets et devient
     // un plein ecran ouvert depuis le bouton +.
     var saisieType by remember { mutableStateOf<String?>(null) }
+    // v0.141 : recherche precise a declencher a l'ouverture de la fiche.
+    var actionFicheEnAttente by remember { mutableStateOf<String?>(null) }
     var saisieParentEnfant by remember { mutableStateOf(0L) }
     // v0.107 : intitule pre-rempli pour un evenement pre-intitule
     // (Situation militaire, Recensement de population).
@@ -878,6 +880,10 @@ fun EcranApplication(
                     onReafficherAnomalies = { reafficherAnomalies() },
                     notesLibres = notesLibres,
                     onNotesLibres = { sauverNotesLibres(it) },
+                    onOuvrirRecherche = { ps ->
+                        actionFicheEnAttente = actionPourCategorie(ps.categorie)
+                        onIdOuvert(ps.personneId)
+                    },
                     onCorrigerLieu = { id, champ, valeur -> corrigerLieu(id, champ, valeur) },
                     citations = citations,
                     idChoisie = arbreCentre,
@@ -1598,6 +1604,8 @@ fun EcranApplication(
             enregistrer = enregistrer,
             onOuvrir = { onIdOuvert(it) },
             onRetour = { retourArriere() },
+            actionInitiale = actionFicheEnAttente,
+            onActionConsommee = { actionFicheEnAttente = null },
             pistes = pistes,
             onSupprimerPiste = { supprimerPiste(it) },
             onModifier = { onEditionCible(p); onEditionOuverte(true) },

@@ -330,6 +330,11 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
             ajouter(cleBase + "_acte", "Rechercher " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
             return
         }
+        // v0.141 : une date INCOMPLETE (annee seule, mois seul, vers, entre, avant,
+        // apres) est une date a rechercher.
+        if (!dateComplete(ch.date)) {
+            ajouter(cleBase + "_date", "Pr\u00E9ciser la date exacte de " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
+        }
         // Acte localise : chaque champ manquant est une recherche a part entiere.
         // (L'HEURE manquante ne cree PAS de recherche : information annexe.)
         if (ch.lieu.isBlank()) {
@@ -527,6 +532,9 @@ fun EcranJournal(
     // v0.138 : bloc Notes libre de la vue Recherches.
     notesLibres: String = "",
     onNotesLibres: (String) -> Unit = {},
+    // v0.141 : une recherche ouvre DIRECTEMENT la bonne recherche (saisie de l'acte,
+    // choix du parent...) et non la fiche seule.
+    onOuvrirRecherche: (Piste) -> Unit = { onOuvrirPersonne(it.personneId) },
     // v0.90 : corriger en un clic un lieu des anciennes saisies
     // (personneId, champ, nouvelle valeur).
     onCorrigerLieu: (Long, String, String) -> Unit = { _, _, _ -> },
@@ -587,7 +595,7 @@ fun EcranJournal(
     ) {
         FilterChip(selected = vueJournal == 0, onClick = { vueJournal = 0 }, label = { Text("Synth\u00E8se") })
         FilterChip(selected = vueJournal == 1, onClick = { vueJournal = 1 }, label = { Text("Recherches") })
-        FilterChip(selected = vueJournal == 3, onClick = { vueJournal = 3 }, label = { Text("5 du jour") })
+        FilterChip(selected = vueJournal == 3, onClick = { vueJournal = 3 }, label = { Text("Autres recherches") })
         FilterChip(selected = vueJournal == 2, onClick = { vueJournal = 2 }, label = { Text("Statistiques") })
     }
     if (vueJournal == 2) {
@@ -600,8 +608,9 @@ fun EcranJournal(
         )
     } else {
     LazyColumn(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-        // GeneaPoche 12 : actualisation du diagnostic a la demande.
-        item {
+        // GeneaPoche 12 : actualisation du diagnostic a la demande
+        // (v0.141 : remplacee par "Autres recherches" dans la vue du jour).
+        if (vueJournal != 3) item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { rafraichir++ }, Modifier.size(30.dp)) {
                     Icon(Icons.Filled.Refresh, contentDescription = "Actualiser le diagnostic", Modifier.size(16.dp))
@@ -924,25 +933,34 @@ fun EcranJournal(
         }
         prioritaires.forEach { ps ->
             item(key = "ouverte" + ps.id.toString()) {
-                LigneRechercheCompacte(ps, personnes, onSupprimer, onOuvrirPersonne, onSauver)
+                LigneRechercheCompacte(ps, personnes, onSupprimer, onOuvrirPersonne, onSauver, onOuvrirRecherche)
             }
         }
         } // fin vue "Recherches"
         if (vueJournal == 3) {
             val jour = jourLocal()
-            val cinq = cinqDuJour(ouvertes, jour)
+            val ctxJour = LocalContext.current
+            // Selection figee jusqu'a minuit : une recherche terminee disparait
+            // sans etre remplacee ; renouvellement complet a 00:00.
+            val selection = remember(jour) {
+                val (jm, im) = Stockage.lireAutresRecherches(ctxJour)
+                val s = selectionDuJour(jm, im, ouvertes, jour)
+                if (s.first != jm) Stockage.sauverAutresRecherches(ctxJour, s.first, s.second)
+                s.second
+            }
+            val cinq = ouvertes.filter { it.id in selection }
             item {
                 Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                    Text("Vos 5 recherches du jour", fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+                    Text("Autres recherches", fontWeight = FontWeight.Bold, color = CouleurVertFonce)
                     Text(
-                        "Elles changent chaque jour, sans ordre de num\u00E9rotation : le plaisir avant tout.",
+                        "Une s\u00E9lection renouvel\u00E9e chaque jour \u00E0 minuit ; une recherche termin\u00E9e dispara\u00EEt.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
             if (cinq.isEmpty()) {
-                item { Text("Aucune recherche ouverte : bravo !", Modifier.padding(8.dp)) }
+                item { Text("Plus de recherche pour aujourd'hui : rendez-vous demain !", Modifier.padding(8.dp)) }
             }
             cinq.forEach { ps ->
                 item(key = "jour" + ps.id.toString()) {
@@ -952,7 +970,7 @@ fun EcranJournal(
                             Modifier.padding(top = 6.dp),
                             fontSize = 12.sp, color = CouleurVertFonce, fontWeight = FontWeight.Bold
                         )
-                        LigneRechercheCompacte(ps, personnes, onSupprimer, onOuvrirPersonne, onSauver)
+                        LigneRechercheCompacte(ps, personnes, onSupprimer, onOuvrirPersonne, onSauver, onOuvrirRecherche)
                     }
                 }
             }
@@ -1032,7 +1050,8 @@ fun CarteRecherche(
     personnes: List<Personne>,
     onSupprimer: (Piste) -> Unit,
     onOuvrirPersonne: (Long) -> Unit,
-    onSauver: () -> Unit
+    onSauver: () -> Unit,
+    onOuvrirRecherche: (Piste) -> Unit = { onOuvrirPersonne(it.personneId) }
 ) {
     val pers = personneParId(personnes, piste.personneId)
     val texte = textePisteActuel(piste, personnes)
@@ -1073,9 +1092,10 @@ fun CarteRecherche(
                 Spacer(Modifier.width(10.dp))
                 Text(
                     texte,
-                    Modifier.weight(1f),
+                    Modifier.weight(1f).clickable { onOuvrirRecherche(piste) },
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = CouleurVertFonce
                 )
                 IconButton(onClick = { onSupprimer(piste) }, Modifier.size(30.dp)) {
                     Icon(Icons.Filled.Delete, contentDescription = "Supprimer", Modifier.size(16.dp))
@@ -1086,7 +1106,7 @@ fun CarteRecherche(
             if (pers != null) {
                 Text(
                     titreCourt(pers) + " \u2013 " + pers.numeroAffiche(),
-                    Modifier.fillMaxWidth().clickable { onOuvrirPersonne(piste.personneId) },
+                    Modifier.fillMaxWidth().clickable { onOuvrirRecherche(piste) },
                     style = MaterialTheme.typography.labelMedium,
                     color = CouleurVertFonce,
                     maxLines = 1
@@ -1161,7 +1181,8 @@ fun LigneRechercheCompacte(
     personnes: List<Personne>,
     onSupprimer: (Piste) -> Unit,
     onOuvrirPersonne: (Long) -> Unit,
-    onSauver: () -> Unit
+    onSauver: () -> Unit,
+    onOuvrirRecherche: (Piste) -> Unit = { onOuvrirPersonne(it.personneId) }
 ) {
     var ouverte by remember(piste.id) { mutableStateOf(false) }
     val pers = personneParId(personnes, piste.personneId)
@@ -1184,7 +1205,8 @@ fun LigneRechercheCompacte(
         if (ouverte) {
             CarteRecherche(
                 piste = piste, personnes = personnes, onSupprimer = onSupprimer,
-                onOuvrirPersonne = onOuvrirPersonne, onSauver = onSauver
+                onOuvrirPersonne = onOuvrirPersonne, onSauver = onSauver,
+                onOuvrirRecherche = onOuvrirRecherche
             )
         }
     }

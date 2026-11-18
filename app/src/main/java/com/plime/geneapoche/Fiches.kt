@@ -157,6 +157,9 @@ fun EcranPersonne(
     // G\u00E9n\u00E9aPoche 11 (11.0) : coche de certification de l'identit\u00E9
     // (\u00E9tat "auto" / "coche" / "croix").
     onValiderIdentite: (String) -> Unit = {},
+    // v0.141 : recherche precise a ouvrir des l'arrivee sur la fiche.
+    actionInitiale: String? = null,
+    onActionConsommee: () -> Unit = {},
     // G\u00E9n\u00E9aPoche 3 : \u00E9dition directe de l'identit\u00E9 (nom, pr\u00E9noms,
     // profession) depuis la fiche, et gestion des \u00E9v\u00E9nements libres
     // (intitul\u00E9 libre) de la chronologie.
@@ -194,6 +197,20 @@ fun EcranPersonne(
     // fiche existante ou saisir un nouvel enfant).
     var menuEnfant by remember { mutableStateOf(false) }
     var enfantSaisie by remember { mutableStateOf(false) }
+    // v0.141 : arrivee depuis une recherche (journal, 5 du jour...) : on
+    // declenche directement la bonne recherche, une seule fois.
+    LaunchedEffect(actionInitiale, p.id) {
+        val a = actionInitiale
+        if (a != null) {
+            when (a) {
+                "N", "B", "M", "D", "S" -> ouvrirSaisie(a)
+                "pere", "mere" -> onChoisir(a)
+                "enfant" -> menuEnfant = true
+                "modifier" -> onModifier()
+            }
+            onActionConsommee()
+        }
+    }
 
     // v0.84 : regles d'affichage des blocs d'evenement de la fiche :
     // - vivant de moins de 30 ans aujourd'hui : N seulement ;
@@ -699,17 +716,12 @@ fun EcranPersonne(
                                         .trim()
                                     // G\u00E9n\u00E9aPoche 9 : toucher une recherche ouvre
                                     // directement la saisie correspondante.
-                                    val actionPiste: (() -> Unit)? = when {
-                                        ps.categorie.startsWith("naissance") -> { { ouvrirSaisie("N") } }
-                                        ps.categorie.startsWith("bapteme") -> { { ouvrirSaisie("B") } }
-                                        ps.categorie.startsWith("mariage") -> { { ouvrirSaisie("M") } }
-                                        ps.categorie.startsWith("deces") -> { { ouvrirSaisie("D") } }
-                                        ps.categorie.startsWith("sepulture") -> { { ouvrirSaisie("S") } }
-                                        ps.categorie.startsWith("pere") -> { { onChoisir("pere") } }
-                                        ps.categorie.startsWith("mere") -> { { onChoisir("mere") } }
-                                        ps.categorie.startsWith("conjoint") -> { { ouvrirSaisie("M") } }
-                                        ps.categorie.startsWith("enfants") -> { { menuEnfant = true } }
-                                        ps.categorie.startsWith("sexe") -> { { onModifier() } }
+                                    val actionPiste: (() -> Unit)? = when (actionPourCategorie(ps.categorie)) {
+                                        "N", "B", "M", "D", "S" -> { { ouvrirSaisie(actionPourCategorie(ps.categorie)) } }
+                                        "pere" -> { { onChoisir("pere") } }
+                                        "mere" -> { { onChoisir("mere") } }
+                                        "enfant" -> { { menuEnfant = true } }
+                                        "modifier" -> { { onModifier() } }
                                         else -> null
                                     }
                                     val pisteOuverte = pistesOuvertes.contains(ps.id.toString())

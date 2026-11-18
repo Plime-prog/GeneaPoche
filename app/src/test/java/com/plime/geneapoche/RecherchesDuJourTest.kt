@@ -61,4 +61,27 @@ class RecherchesDuJourTest {
         assertEquals(un + 1, deux)
         assertNotEquals(0L, un)
     }
+
+    @Test
+    fun selectionDuJour_figeeJusquAMinuit() {
+        val p = pistes(30)
+        val s1 = selectionDuJour(-1L, emptyList(), p, 20_000L)
+        assertEquals(5, s1.second.size)
+        // meme jour : memes identifiants, meme si l'une a disparu
+        val s2 = selectionDuJour(20_000L, s1.second, p.filter { it.id != s1.second[0] }, 20_000L)
+        assertEquals(s1.second, s2.second)
+        // lendemain : nouvelle selection
+        val s3 = selectionDuJour(20_000L, s1.second, p, 20_001L)
+        assertEquals(20_001L, s3.first)
+        assertEquals(5, s3.second.size)
+    }
+
+    @Test
+    fun actionPourCategorie_correspondances() {
+        assertEquals("N", actionPourCategorie("naissance_date"))
+        assertEquals("M", actionPourCategorie("conjoint"))
+        assertEquals("pere", actionPourCategorie("pere"))
+        assertEquals("enfant", actionPourCategorie("enfants"))
+        assertEquals(null, actionPourCategorie("zzz"))
+    }
 }
