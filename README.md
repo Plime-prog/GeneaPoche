@@ -19,6 +19,8 @@ Périmètre : France uniquement, actes N/B/M/D/S.
 - **Fiches par événements** : N/B/M/D/S regroupés dans l'ordre généalogique NBMDS, éditable par appui long via la saisie d'acte pré-remplie depuis la fiche.
 - **Saisie d'acte** : témoins, coche « Signe » derrière chaque personne citée, prêtre, officier d'état civil, transcription, conjoint survivant ou décédé persisté sur les actes D/S, enfant déclarant sur un décès ; actes enrichis (déclaration, légitimité, contrat de mariage, cérémonie, cimetière…).
 - **Numérotation automatique** : Sosa-Stradonitz et d'Aboville, rien ne se saisit.
+- **Fiche** (v0.138) : blocs distincts **Conjoint(s)** et **Enfant(s)**, chacun avec une croix pour retirer le lien (confirmation, la fiche n'est jamais supprimée) ; père et mère existants choisis parmi les hommes / les femmes seulement ; chronologie unique où les actes sans date prennent leur place naturelle N, B, M, D, S.
+- **Onglet Recherches** (v0.138) : bloc **Notes** libre (chiffré), recherche avancée compacte, **toutes** les recherches en liste repliée, et onglet **5 du jour** (cinq recherches variées qui changent chaque jour). Un acte non « enregistré » n'est plus une recherche.
 - **Journal de recherches** : recherches à mener, anomalies à vérifier (enfant né après le décès de son père, mère trop jeune, fratrie trop rapprochée…), doublons avec fusion guidée « Garder A / Garder B » sans aucune perte.
 - **Cohérence partout** : un enfant né avant son parent est refusé sur toutes les voies d'ajout (saisie, choix de fiche, nouveau parent, acte, import fusionné) ; homonymes proposés avec leurs dates.
 - **Boîte à outils** (100 % locale) : calendrier républicain ↔ grégorien (julien, fêtes, décades), calculateur de dates (âges, écarts, durées), calculateur de parenté (« Marie est la cousine germaine de Pierre »). Depuis la v0.101 : **repères historiques** (rapprochement avec les dates des ancêtres), **arbre du chemin de parenté**, **« Que s'est-il passé cette année ? »** et **chronologie d'une famille** (plusieurs personnes juxtaposées, incohérences en rouge). La **Saisie** est le 6e onglet (Personnes / Journal / Arbre / Outils / Sources / Saisie) ; le menu **Autres** liste les personnes sans numéro.
@@ -46,7 +48,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.133)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.133-release.apk` (signé) ou `GeneaPoche-v0.133-debug.apk`.
+**Téléchargement direct de la dernière version (v0.138)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.138-release.apk` (signé) ou `GeneaPoche-v0.138-debug.apk`.
 
 Sinon, depuis les sources :
 

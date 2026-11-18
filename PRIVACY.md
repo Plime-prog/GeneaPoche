@@ -4,7 +4,7 @@
 
 ## Ce que l'application stocke
 
-Toutes vos données généalogiques (personnes, liens familiaux, actes d'état civil, images d'actes, journal de recherches, notes libres) sont stockées **uniquement sur votre appareil**, dans le stockage privé de l'application, **chiffrées en AES-256/GCM**. La clé maître est elle-même chiffrée avec une clé dérivée de votre code PIN (PBKDF2) et la clé matérielle AndroidKeyStore. **Sans votre code PIN, ces données sont indéchiffrables, y compris pour vous** : il n'existe aucune procédure de récupération.
+Toutes vos données généalogiques (personnes, liens familiaux, actes d'état civil, images d'actes, journal de recherches, notes libres, bloc Notes de l'onglet Recherches) sont stockées **uniquement sur votre appareil**, dans le stockage privé de l'application, **chiffrées en AES-256/GCM**. La clé maître est elle-même chiffrée avec une clé dérivée de votre code PIN (PBKDF2) et la clé matérielle AndroidKeyStore. **Sans votre code PIN, ces données sont indéchiffrables, y compris pour vous** : il n'existe aucune procédure de récupération.
 
 ## Ce qui sort de l'application — et pourquoi
 
