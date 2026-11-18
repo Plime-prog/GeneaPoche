@@ -440,7 +440,7 @@ object Stockage {
     fun sauverTexteSources(ctx: Context, texte: String): Boolean =
         ecrireFichierChiffre(ctx, FICHIER_SOURCES, texte)
 
-    // v0.137 : bloc "Notes" libre de l'onglet Recherches (un seul texte, chiffre
+    // v0.138 : bloc "Notes" libre de l'onglet Recherches (un seul texte, chiffre
     // comme le reste). Pas encore inclus dans les sauvegardes .gpbak.
     fun lireNotesLibres(ctx: Context): String =
         try {

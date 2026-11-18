@@ -315,7 +315,10 @@ class TestsFonctions {
         assertEquals("Fichier introuvable.", messageErreur(java.io.FileNotFoundException("x"), "defaut"))
         assertEquals("Acc\u00E8s refus\u00E9 au fichier.", messageErreur(SecurityException(), "defaut"))
         assertEquals("Donn\u00E9es illisibles : fichier corrompu ?", messageErreur(org.json.JSONException("x"), "defaut"))
-        assertEquals("defaut", messageErreur(IllegalStateException(), "defaut"))
+        // v0.137 : une exception non traduite ajoute son TYPE (et son message)
+        // au libelle par defaut, plus jamais d'echec sans explication.
+        assertEquals("defaut (IllegalStateException)", messageErreur(IllegalStateException(), "defaut"))
+        assertTrue(messageErreur(RuntimeException("base vide"), "defaut").contains("base vide"))
     }
 
     // v0.98 : round-trip GEDCOM des champs prives _GP* (B/M/D/S).

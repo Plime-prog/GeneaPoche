@@ -64,7 +64,7 @@ fun personnesIsolees(personnes: List<Personne>): List<Personne> {
 fun contientSansAccents(texte: String, motif: String): Boolean =
     sansAccents(texte).contains(sansAccents(motif), ignoreCase = true)
 
-// v0.137 : personnes proposees pour un role de parent / conjoint / enfant dans
+// v0.138 : personnes proposees pour un role de parent / conjoint / enfant dans
 // la fenetre "Choisir...". Le pere n'est choisi que parmi les hommes (sexe M),
 // la mere que parmi les femmes (sexe F) ; les autres roles restent libres.
 fun candidatsPourRole(personnes: List<Personne>, p: Personne, role: String): List<Personne> =

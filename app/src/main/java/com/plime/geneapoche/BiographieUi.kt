@@ -143,7 +143,7 @@ private fun Pastille(texte: String, couleur: Color) {
     }
 }
 
-// v0.137 : deux blocs distincts, Conjoint(s) puis Enfant(s). Chaque ligne ouvre la
+// v0.138 : deux blocs distincts, Conjoint(s) puis Enfant(s). Chaque ligne ouvre la
 // fiche ; la croix retire le LIEN (apres confirmation), jamais la personne.
 @Composable
 fun CarteUnionsEnfants(

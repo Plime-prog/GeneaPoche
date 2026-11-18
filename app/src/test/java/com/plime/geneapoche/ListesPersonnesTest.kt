@@ -111,7 +111,7 @@ class ListesPersonnesTest {
         assertFalse(contientSansAccents("Durand", "martin"))
     }
 
-    // v0.137 : pere = hommes seulement, mere = femmes seulement.
+    // v0.138 : pere = hommes seulement, mere = femmes seulement.
     @Test
     fun candidats_pere_et_mere_filtres_par_sexe() {
         val h = Personne(id = 2, nom = "Dupont", prenoms = "Paul", sexe = "M")

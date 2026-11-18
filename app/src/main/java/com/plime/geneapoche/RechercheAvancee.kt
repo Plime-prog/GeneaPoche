@@ -81,7 +81,7 @@ fun RechercheAvancee(personnes: List<Personne>, onOuvrirPersonne: (Long) -> Unit
                 Text(if (ouvert) "\u25B2" else "\u25BC", color = CouleurVertFonce)
             }
             if (ouvert) {
-                // v0.137 : menu plus compact (comme le diagnostic) : nom et lieu
+                // v0.138 : menu plus compact (comme le diagnostic) : nom et lieu
                 // sur la meme ligne, libelles courts.
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     OutlinedTextField(

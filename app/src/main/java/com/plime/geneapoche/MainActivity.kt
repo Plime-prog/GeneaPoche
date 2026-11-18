@@ -183,7 +183,7 @@ fun AppEcran(
     var doublonsGardes by remember { mutableStateOf(Stockage.lireDoublonsGardes(ctx)) }
     // v0.88 : anomalies a verifier que l'utilisateur a choisi d'ignorer.
     var anomaliesIgnorees by remember { mutableStateOf(Stockage.lireAnomaliesIgnorees(ctx)) }
-    // v0.137 : bloc Notes libre (onglet Recherches).
+    // v0.138 : bloc Notes libre (onglet Recherches).
     var notesLibres by remember { mutableStateOf(Stockage.lireNotesLibres(ctx)) }
     // G\u00E9n\u00E9aPoche 12 (12.1) : sauvegarde automatique .gpbak dans un
     // dossier choisi apr\u00E8s N modifications + cl\u00E9 de r\u00E9cup\u00E9ration.
@@ -1123,6 +1123,9 @@ fun AppEcran(
                 // v0.132 : pas de fichier vide laisse par le selecteur (meme si annule).
                 withContext(kotlinx.coroutines.NonCancellable) { FichierExport.supprimerSiVide(ctx, uri) }
                 // G2-05 : message distinct selon le type d'echec.
+                // v0.137 : le TYPE d'exception est ajoute entre parentheses :
+                // l'ancien message generique ne permettait aucun diagnostic
+                // (echec d'export avec fichier 0 Ko, cause invisible).
                 withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de l'export GEDCOM.") }
             } finally {
                 withContext(Dispatchers.Main) { occupation = "" }
@@ -2442,6 +2445,7 @@ fun AppEcran(
         }
     }
 }
+
 
 
 

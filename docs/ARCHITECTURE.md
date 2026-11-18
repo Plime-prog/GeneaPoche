@@ -4,7 +4,7 @@
 
 ## Vue d'ensemble
 
-Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3). Aucune permission Android, aucune bibliothèque réseau ou de mesure. Données stockées localement, chiffrées. Code dans `app/src/main/java/com/plime/geneapoche/` (41 fichiers, ~20 000 lignes) ; tests JVM dans `app/src/test/…` (12 fichiers, 303 tests).
+Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3). Aucune permission Android, aucune bibliothèque réseau ou de mesure. Données stockées localement, chiffrées. Code dans `app/src/main/java/com/plime/geneapoche/` (41 fichiers, ~20 000 lignes) ; tests JVM dans `app/src/test/…` (12 fichiers, 311 tests).
 
 ## Couches
 

@@ -325,7 +325,7 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
             // v0.98 : meme SANS date connue, l'acte non coche reste une
             // recherche ; des que la coche "Enregistre" est posee, PLUS
             // AUCUNE suggestion pour cet acte (la coche retire la recherche).
-            // v0.137 : sans date connue, l'acte lui-meme est a retrouver ;
+            // v0.138 : sans date connue, l'acte lui-meme est a retrouver ;
             // la coche "Enregistre" ne cree plus de recherche.
             ajouter(cleBase + "_acte", "Rechercher " + lib.acte + " de " + titreCourt(p), type, ch.lieu.trim(), ch.dept.trim(), debut, fin)
             return
@@ -337,7 +337,7 @@ fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
         }
         // v0.91 : plus de recherche "Compl\u00E9ter le d\u00E9partement" : le
         // d\u00E9partement est d\u00E9riv\u00E9 du code INSEE, il n'est plus saisi.
-        // v0.137 : un acte localise mais non "enregistre" n'est PLUS une
+        // v0.138 : un acte localise mais non "enregistre" n'est PLUS une
         // recherche (la coche reste visible sur la fiche).
     }
 
@@ -524,7 +524,7 @@ fun EcranJournal(
     anomaliesIgnorees: Set<String> = emptySet(),
     onIgnorerAnomalie: (String) -> Unit = {},
     onReafficherAnomalies: () -> Unit = {},
-    // v0.137 : bloc Notes libre de la vue Recherches.
+    // v0.138 : bloc Notes libre de la vue Recherches.
     notesLibres: String = "",
     onNotesLibres: (String) -> Unit = {},
     // v0.90 : corriger en un clic un lieu des anciennes saisies
@@ -555,7 +555,7 @@ fun EcranJournal(
     // librement communicables). Tri : l'\u00E9v\u00E9nement le plus proche de nous
     // d'abord. Plafond : 10 recherches au total. Chaque carte rappelle le
     // num\u00E9ro d'Aboville de la personne concern\u00E9e.
-    // v0.137 : TOUTES les recherches ouvertes, en liste compacte non deployee,
+    // v0.138 : TOUTES les recherches ouvertes, en liste compacte non deployee,
     // dans l'ordre croissant des numeros (Sosa puis d'Aboville).
     val prioritaires = ouvertes
         .sortedWith { a, b -> comparerNumeros(numeroDePiste(a, personnes), numeroDePiste(b, personnes)) }
@@ -896,7 +896,7 @@ fun EcranJournal(
 
         } // fin vue "Synthese"
         if (vueJournal == 1) {
-        // v0.137 : premier bloc = notes completement libres.
+        // v0.138 : premier bloc = notes completement libres.
         item { BlocNotesLibres(notesLibres, onNotesLibres) }
         // v0.100 (12.7) : recherche avancee (periode, lieu, statut, acte manquant).
         item { RechercheAvancee(personnes = personnes, onOuvrirPersonne = onOuvrirPersonne) }
@@ -1120,7 +1120,7 @@ fun CarteRecherche(
 
 
 
-// ---------------------------------------------------------------- v0.137
+// ---------------------------------------------------------------- v0.138
 // Bloc "Notes" : texte completement libre, enregistre (chiffre) apres une
 // courte pause de frappe et a la sortie de l'ecran.
 @Composable

@@ -1,6 +1,6 @@
 package com.plime.geneapoche
 
-// v0.137 : "Les 5 du jour". Cinq recherches ouvertes, choisies pour la VARIETE
+// v0.138 : "Les 5 du jour". Cinq recherches ouvertes, choisies pour la VARIETE
 // (pas dans l'ordre des Sosa) et qui changent chaque jour. Le choix est
 // deterministe : un melange dependant seulement du jour et de l'identifiant de
 // chaque recherche, donc stable toute la journee ; quand une recherche est faite

@@ -4,7 +4,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-// v0.137 : un acte localise mais non "enregistre" n'est plus une recherche.
+// v0.138 : un acte localise mais non "enregistre" n'est plus une recherche.
 class ActeNonEnregistreTest {
 
     @Test

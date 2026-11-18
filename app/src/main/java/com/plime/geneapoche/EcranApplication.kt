@@ -184,7 +184,7 @@ class EtatApplication(
     // v0.92 : carnet de sources (sources reutilisables + citations).
     val sources: List<Source> = emptyList(),
     val citations: List<Citation> = emptyList(),
-    // v0.137 : bloc Notes libre de l'onglet Recherches.
+    // v0.138 : bloc Notes libre de l'onglet Recherches.
     val notesLibres: String = ""
 )
 

@@ -1,6 +1,6 @@
 package com.plime.geneapoche
 
-// v0.137 : ordre de la chronologie unique d'une fiche.
+// v0.138 : ordre de la chronologie unique d'une fiche.
 //
 // Entrees : (cle de tri aaaammjj ou aaaa0000, identifiant) ; l'identifiant
 // commence par "ev:" pour les blocs N, B, M, D, S ("ev:N"...), sinon c'est un

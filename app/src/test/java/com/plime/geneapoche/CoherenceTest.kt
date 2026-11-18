@@ -228,7 +228,7 @@ class CoherenceTest {
         assertEquals("1 jour", dureeTexte(1))
     }
 
-    // v0.137 : une fiche sans sexe est signalee, une fiche avec sexe non.
+    // v0.138 : une fiche sans sexe est signalee, une fiche avec sexe non.
     @Test
     fun sexe_manquant_signale() {
         val l = listOf(n(1, "DUPONT Jean", sexe = ""), n(2, "MARTIN Anne", sexe = "F"), n(3, "BERNARD Paul", sexe = "M"))

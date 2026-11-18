@@ -215,7 +215,7 @@ fun EcranPersonne(
     if (blocRenseigne("M") && !jeuneVivant && !jeuneDecede) typesPresents.add("M")
     if (blocRenseigne("D")) typesPresents.add("D")
     if (blocRenseigne("S")) typesPresents.add("S")
-    // v0.137 : les evenements sont ranges dans l'ordre CHRONOLOGIQUE ; les
+    // v0.138 : les evenements sont ranges dans l'ordre CHRONOLOGIQUE ; les
     // actes sans date s'inserent a leur place naturelle (voir Chronologie.kt).
     val ordreNaturel = listOf("N", "B", "M", "D", "S")
     val ordreTypes = ordreNaturel.filter { typesPresents.contains(it) }
@@ -417,7 +417,7 @@ fun EcranPersonne(
                         else (anneeN < 0L || e.first < 0L || e.first >= anneeN) &&
                             (anneeD < 0L || e.first < 0L || e.first <= anneeD)
                     }
-                    // v0.137 : une seule regle (voir Chronologie.kt) : tout ce qui est
+                    // v0.138 : une seule regle (voir Chronologie.kt) : tout ce qui est
                     // date est range par date, les actes sans date prennent leur place
                     // naturelle N, B, M, D, S dans cette chronologie.
                     val ordonnees = ordonnerChronologie(entrees.filter(filtreParasites))
