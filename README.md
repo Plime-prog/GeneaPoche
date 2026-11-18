@@ -19,7 +19,7 @@ Périmètre : France uniquement, actes N/B/M/D/S.
 - **Fiches par événements** : N/B/M/D/S regroupés dans l'ordre généalogique NBMDS, éditable par appui long via la saisie d'acte pré-remplie depuis la fiche.
 - **Saisie d'acte** : témoins, coche « Signe » derrière chaque personne citée, prêtre, officier d'état civil, transcription, conjoint survivant ou décédé persisté sur les actes D/S, enfant déclarant sur un décès ; actes enrichis (déclaration, légitimité, contrat de mariage, cérémonie, cimetière…).
 - **Numérotation automatique** : Sosa-Stradonitz et d'Aboville, rien ne se saisit.
-- **Fiche** (v0.138) : blocs distincts **Conjoint(s)** et **Enfant(s)**, chacun avec une croix pour retirer le lien (confirmation, la fiche n'est jamais supprimée) ; père et mère existants choisis parmi les hommes / les femmes seulement ; chronologie unique où les actes sans date prennent leur place naturelle N, B, M, D, S.
+- **Fiche** (v0.139) : blocs distincts **Conjoint(s)** et **Enfant(s)**, chacun avec une croix pour retirer le lien (confirmation, la fiche n'est jamais supprimée) ; père et mère existants choisis parmi les hommes / les femmes seulement ; chronologie unique où les actes sans date prennent leur place naturelle N, B, M, D, S.
 - **Onglet Recherches** (v0.138) : bloc **Notes** libre (chiffré), recherche avancée compacte, **toutes** les recherches en liste repliée, et onglet **5 du jour** (cinq recherches variées qui changent chaque jour). Un acte non « enregistré » n'est plus une recherche.
 - **Journal de recherches** : recherches à mener, anomalies à vérifier (enfant né après le décès de son père, mère trop jeune, fratrie trop rapprochée…), doublons avec fusion guidée « Garder A / Garder B » sans aucune perte.
 - **Cohérence partout** : un enfant né avant son parent est refusé sur toutes les voies d'ajout (saisie, choix de fiche, nouveau parent, acte, import fusionné) ; homonymes proposés avec leurs dates.
@@ -63,6 +63,6 @@ Sinon, depuis les sources :
 
 - Android Kotlin + Jetpack Compose, Material 3 (thème clair/sombre, palette verte).
 - AGP 9.5.1, Kotlin 2.4.21, compileSdk 37, targetSdk 36, JDK 17, BOM Compose 2026.09.00.
-- CI GitHub Actions : lint, tests unitaires JVM (311), APK debug et release signé à chaque push.
+- CI GitHub Actions : lint, tests unitaires JVM (315), APK debug et release signé à chaque push.
 - Contribuer : voir [CONTRIBUTING.md](CONTRIBUTING.md). Historique détaillé des versions : [CHANGELOG.md](CHANGELOG.md).
 - Licence : MIT (voir [LICENSE](LICENSE)).

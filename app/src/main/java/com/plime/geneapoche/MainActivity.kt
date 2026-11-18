@@ -348,6 +348,7 @@ fun AppEcran(
         val pisC = pistes.toList()
         val srcC = sources.toList()
         val citC = citations.toList()
+        val notesC = notesLibres
         occupation = "Sauvegarde automatique..."
         scopeTravail.launch(Dispatchers.IO) {
             try {
@@ -360,7 +361,7 @@ fun AppEcran(
                 )
                 var ok = false
                 if (uri != null) {
-                    ok = Sauvegarde.exporter(ctx, uri, phrase, persC, pisC, srcC, citC)
+                    ok = Sauvegarde.exporter(ctx, uri, phrase, persC, pisC, srcC, citC, notesC)
                 }
                 withContext(Dispatchers.Main) {
                     Stockage.razCompteurSauvegarde(ctx)
@@ -1326,9 +1327,10 @@ fun AppEcran(
     fun sauvegarderBase(uri: Uri, phrase: String) {
         // G2-06 : chiffrement PBKDF2 HORS du thread principal.
         occupation = "Sauvegarde .gpbak en cours..."
+        val notesC = notesLibres
         scopeTravail.launch(Dispatchers.IO) {
             try {
-                if (Sauvegarde.exporter(ctx, uri, phrase, personnes, pistes, sources.toList(), citations.toList())) {
+                if (Sauvegarde.exporter(ctx, uri, phrase, personnes, pistes, sources.toList(), citations.toList(), notesC)) {
                     // 12.2 : rappel de suppression du fichier partag\u00E9.
                     Stockage.noterFichierPartage(ctx, uri.lastPathSegment?.substringAfterLast('/') ?: "sauvegarde .gpbak")
                     withContext(Dispatchers.Main) { message = "Sauvegarde .gpbak cr\u00E9\u00E9e : conservez-la et notez la phrase secr\u00E8te." }
@@ -1374,6 +1376,11 @@ fun AppEcran(
                     sources.addAll(contenu.sources)
                     citations.clear()
                     citations.addAll(contenu.citations)
+                    // v0.139 : bloc Notes de la sauvegarde, fusionne sans rien perdre.
+                    val notesFusionnees = Sauvegarde.fusionnerNotes(notesLibres, contenu.notes)
+                    if (notesFusionnees != notesLibres && Stockage.sauverNotesLibres(ctx, notesFusionnees)) {
+                        notesLibres = notesFusionnees
+                    }
                     // Chantier 12.0 : les anciennes sauvegardes contenaient des
                     // actes stockes ; leurs coches "Enregistre" sont posees sur
                     // les fiches correspondantes (une par type d'acte).

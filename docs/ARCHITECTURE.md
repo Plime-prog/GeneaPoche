@@ -1,10 +1,10 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 18 novembre 2026 (v0.138). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 18 novembre 2026 (v0.139). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
-Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3). Aucune permission Android, aucune bibliothèque réseau ou de mesure. Données stockées localement, chiffrées. Code dans `app/src/main/java/com/plime/geneapoche/` (41 fichiers, ~20 000 lignes) ; tests JVM dans `app/src/test/…` (12 fichiers, 311 tests).
+Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3). Aucune permission Android, aucune bibliothèque réseau ou de mesure. Données stockées localement, chiffrées. Code dans `app/src/main/java/com/plime/geneapoche/` (41 fichiers, ~20 000 lignes) ; tests JVM dans `app/src/test/…` (12 fichiers, 315 tests).
 
 ## Couches
 
@@ -19,7 +19,7 @@ Application Android mono-module (`:app`), Kotlin + Jetpack Compose (Material 3).
 
 ## Format des fichiers chiffrés
 
-- **Stockage interne** : `[12 octets IV][données + tag GCM]`, clé maître en mémoire uniquement pendant le déverrouillage. Fichiers : `personnes.bin`, `journal.bin` (recherches), `sources.bin` (sources et citations), `actes.bin`, et depuis la v0.138 `notes_libres.bin` (bloc Notes de l'onglet Recherches ; **non inclus dans les sauvegardes `.gpbak`** à ce jour).
+- **Stockage interne** : `[12 octets IV][données + tag GCM]`, clé maître en mémoire uniquement pendant le déverrouillage. Fichiers : `personnes.bin`, `journal.bin` (recherches), `sources.bin` (sources et citations), `actes.bin`, et depuis la v0.138 `notes_libres.bin` (bloc Notes de l'onglet Recherches ; inclus dans les sauvegardes `.gpbak` depuis la v0.139, clé `notes`).
 - **Sauvegarde `.gpbak` / export `.gpged`** : `[6 octets magie "GPBAK1" ou "GPGED1"][16 octets sel][4 octets itérations, grand-boutiste][12 octets IV][données + tag GCM]`. Depuis la v0.108, les itérations de l'en-tête sont **réellement utilisées** au déchiffrement (bornes acceptées : 100 000 à 2 000 000) ; les nouveaux fichiers en portent 600 000.
 
 ## Construction et CI
