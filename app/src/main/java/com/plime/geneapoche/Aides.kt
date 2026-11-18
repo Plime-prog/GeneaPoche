@@ -128,12 +128,31 @@ fun heureValide(s: String): Boolean {
 
 // G2-05 : chaque echec affiche un message DISTINCT : le TYPE de l'exception
 // est traduit en fran\u00E7ais, sans jamais reveler de donnee personnelle.
-fun messageErreur(e: Exception, defaut: String): String = when (e) {
-    is java.io.FileNotFoundException -> "Fichier introuvable."
-    is SecurityException -> "Acc\u00E8s refus\u00E9 au fichier."
-    is java.io.IOException -> "Erreur de lecture ou d'\u00E9criture du fichier."
-    is org.json.JSONException -> "Donn\u00E9es illisibles : fichier corrompu ?"
-    else -> defaut
+// v0.137 (diagnostic export 0 Ko) : une exception NON traduite n'est plus
+// avalee en silence -- le libelle par defaut est suivi du TYPE et du MESSAGE
+// de l'exception (chemins censurees, texte plafonne). Sans cela, un echec
+// sec ("Echec de l'export GEDCOM.") est inexplorable depuis l'exterieur
+// (cas du signalement "0 Ko au-dela de 50 personnes").
+fun sansChemins(s: String): String =
+    s.replace(Regex("(content://|file://)?/?([A-Za-z0-9_.\\-]+/)+[A-Za-z0-9_.\\-]+"), "[chemin]")
+
+fun messageErreur(e: Exception, defaut: String): String {
+    val libelle = when (e) {
+        is java.io.FileNotFoundException -> "Fichier introuvable."
+        is SecurityException -> "Acc\u00E8s refus\u00E9 au fichier."
+        is java.io.IOException -> "Erreur de lecture ou d'\u00E9criture du fichier."
+        is org.json.JSONException -> "Donn\u00E9es illisibles : fichier corrompu ?"
+        else -> defaut
+    }
+    // Exceptions deja traduites : on garde le libelle francais seul.
+    if (e is java.io.FileNotFoundException || e is SecurityException ||
+        e is java.io.IOException || e is org.json.JSONException
+    ) return libelle
+    // v0.137 : exception non anticipee -- visible et exploitable.
+    var detail = sansChemins(e.message ?: "").trim()
+    if (detail.length > 120) detail = detail.take(117) + "..."
+    val type = e.javaClass.simpleName.ifEmpty { "Erreur interne" }
+    return libelle + " (" + type + (if (detail.isNotEmpty()) " : " + detail else "") + ")"
 }
 
 
