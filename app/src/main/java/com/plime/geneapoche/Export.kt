@@ -140,6 +140,15 @@ fun texteGedcom(s: String): String = s.replace("@", "@@")
 // niveau de la valeur + 1.
 fun ajouterValeur(lignes: MutableList<String>, niveau: Int, tag: String, valeur: String) {
     val morceaux = texteGedcom(valeur).chunked(200)
+    // v0.137 : une valeur VIDE (ligne vide dans une note multi-lignes) ne
+    // doit plus faire echouer TOUT l'export : chunked() sur une chaine vide
+    // renvoie une liste vide, et .first() levait NoSuchElementException
+    // ("Echec de l'export GEDCOM.", fichier de 0 Ko). La balise part sans
+    // valeur, l'import la relit sans erreur.
+    if (morceaux.isEmpty()) {
+        lignes.add(niveau.toString() + " " + tag)
+        return
+    }
     lignes.add(niveau.toString() + " " + tag + " " + morceaux.first())
     morceaux.drop(1).forEach { c ->
         lignes.add((niveau + 1).toString() + " CONC " + c)
@@ -996,6 +1005,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
 }
 
 fun importerGedcom(texte: String): List<Personne> = importerGedcomRapporte(texte).personnes
+
 
 
 
