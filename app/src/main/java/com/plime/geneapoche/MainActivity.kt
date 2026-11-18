@@ -1121,6 +1121,9 @@ fun AppEcran(
                 // v0.132 : pas de fichier vide laisse par le selecteur (meme si annule).
                 withContext(kotlinx.coroutines.NonCancellable) { FichierExport.supprimerSiVide(ctx, uri) }
                 // G2-05 : message distinct selon le type d'echec.
+                // v0.137 : le TYPE d'exception est ajoute entre parentheses :
+                // l'ancien message generique ne permettait aucun diagnostic
+                // (echec d'export avec fichier 0 Ko, cause invisible).
                 withContext(Dispatchers.Main) { message = messageErreur(e, "\u00C9chec de l'export GEDCOM.") }
             } finally {
                 withContext(Dispatchers.Main) { occupation = "" }
@@ -2435,6 +2438,7 @@ fun AppEcran(
         }
     }
 }
+
 
 
 

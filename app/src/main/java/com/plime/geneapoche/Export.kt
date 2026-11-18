@@ -139,7 +139,10 @@ fun texteGedcom(s: String): String = s.replace("@", "@@")
 // valeurs longues sont coupees en CONC (suite de la MEME ligne), au
 // niveau de la valeur + 1.
 fun ajouterValeur(lignes: MutableList<String>, niveau: Int, tag: String, valeur: String) {
-    val morceaux = texteGedcom(valeur).chunked(200)
+    // v0.137 : une valeur VIDE (ligne vide dans une note) produisait une
+    // liste chunked vide et faisait echouer TOUT l'export GEDCOM
+    // (NoSuchElementException sur first()) : fichier 0 Ko.
+    val morceaux = texteGedcom(valeur).chunked(200).ifEmpty { listOf("") }
     lignes.add(niveau.toString() + " " + tag + " " + morceaux.first())
     morceaux.drop(1).forEach { c ->
         lignes.add((niveau + 1).toString() + " CONC " + c)
@@ -149,10 +152,14 @@ fun ajouterValeur(lignes: MutableList<String>, niveau: Int, tag: String, valeur:
 // G2-02 : note multi-lignes : premiere ligne en NOTE, suivantes en CONT,
 // chaque ligne coupee en CONC si trop longue.
 fun ajouterNote(lignes: MutableList<String>, niveau: Int, tag: String, texte: String) {
-    val morceaux = texte.split("\n")
-    ajouterValeur(lignes, niveau, tag, morceaux.first().trim())
+    // v0.137 : les lignes VIDES d'une note sont ignorees. Les notes
+    // multiples sont recollees avec "\n\n" a l'import : des qu'une fiche
+    // en avait au moins deux, l'export plantait avant d'ecrire le fichier.
+    val morceaux = texte.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
+    if (morceaux.isEmpty()) return
+    ajouterValeur(lignes, niveau, tag, morceaux.first())
     morceaux.drop(1).forEach { suite ->
-        ajouterValeur(lignes, niveau + 1, "CONT", suite.trim())
+        ajouterValeur(lignes, niveau + 1, "CONT", suite)
     }
 }
 
@@ -194,7 +201,9 @@ fun construireGedcom(
         val autre = if (c.pere != 0L && c.pere != p.id) c.pere
             else if (c.mere != 0L && c.mere != p.id) c.mere else 0L
         if (autre != 0L) return autre == co
-        return co == p.tousConjoints().first()
+        // v0.137 : garde-fou (l appel garantit au moins un conjoint, mais un
+        // appel futur ne le garantira pas forcement) : jamais de first() nu.
+        return co == (p.tousConjoints().firstOrNull() ?: return false)
     }
     personnes.forEach { p ->
         p.tousConjoints().forEach { co ->
@@ -215,7 +224,7 @@ fun construireGedcom(
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.136") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
+    lignes.add("2 VERS 0.137") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
