@@ -5,7 +5,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class VuesArbreTest {
-    private val gp = Personne(id = 1, nom = "A", prenoms = "a", sexe = "M", enfants = listOf(2L))
+    private val gp = Personne(id = 1, nom = "A", prenoms = "a", sexe = "M", enfants = mutableListOf(2L))
     private val pere = Personne(id = 2, nom = "A", prenoms = "b", sexe = "M", pere = 1)
     private val e1 = Personne(id = 3, nom = "A", prenoms = "c", pere = 2, dateNaissance = "1990")
     private val e2 = Personne(id = 4, nom = "A", prenoms = "d", pere = 2, dateNaissance = "1985")
