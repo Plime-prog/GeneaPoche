@@ -43,4 +43,15 @@ class NavigationTest {
         val pile = mutableListOf(codeEcran(1, 0), codeEcran(0, 0), codeEcran(0, 0))
         assertEquals(codeEcran(1, 0), depilerEcran(pile, codeEcran(0, 0)))
     }
+
+    @Test
+    fun sous_ecran_dans_le_code() {
+        val c = codeEcran(1, 42L, 21)
+        assertEquals(1, ongletDeCode(c))
+        assertEquals(21, sousDeCode(c))
+        assertEquals(42L, idDeCode(c))
+        assertEquals(0, sousDeCode(codeEcran(3, 5L)))
+        // deux sous-ecrans du meme onglet sont deux ecrans differents
+        assert(codeEcran(3, 0L, 1) != codeEcran(3, 0L, 4))
+    }
 }

@@ -55,4 +55,22 @@ class MariageFemmeTest {
         assertEquals("Louis", a.perePrenoms)
         assertEquals("M", a.sexe)
     }
+
+    @Test
+    fun lien_a_sens_unique_le_mari_est_retrouve() {
+        // Seule la fiche du mari designe l'epouse comme conjointe.
+        val epouseSansLien = epouse.copy(conjoint = 0)
+        val a = prefillActe(epouseSansLien, listOf(pereMari, mereMari, mari, pereEpouse, epouseSansLien), "M")
+        assertEquals(3L, a.personneId)
+        assertEquals("Louis", a.perePrenoms)
+        assertEquals(5L, a.marieeId)
+    }
+
+    @Test
+    fun sexe_non_renseigne_avec_conjoint_homme_est_traitee_comme_mariee() {
+        val sansSexe = epouse.copy(sexe = "")
+        val a = prefillActe(sansSexe, listOf(pereMari, mereMari, mari, pereEpouse, sansSexe), "M")
+        assertEquals(5L, a.marieeId)
+        assertEquals(3L, a.personneId)
+    }
 }

@@ -1102,6 +1102,19 @@ fun libelleType(t: String): String = when (t) {
 }
 
 // Champs date/heure/lieu/dept d'un evenement selon son type.
+// v0.143 : conjoint a utiliser pour un mariage : les liens de la fiche, puis les
+// fiches qui designent cette personne comme conjoint (lien a sens unique, import) ;
+// de preference celui dont la date de mariage est la meme.
+fun conjointPourMariage(p: Personne, personnes: List<Personne>): Personne? {
+    val ids = (p.tousConjoints() + personnes
+        .filter { it.id != p.id && (it.conjoint == p.id || it.conjointsSupp.contains(p.id)) }
+        .map { it.id }).distinct()
+    val liens = ids.mapNotNull { personneParId(personnes, it) }
+    if (liens.isEmpty()) return null
+    val d = p.dateMariage.trim()
+    return (if (d.isNotEmpty()) liens.firstOrNull { it.dateMariage.trim() == d } else null) ?: liens.first()
+}
+
 data class EvChamps(val date: String, val heure: String, val lieu: String, val dept: String)
 
 // ---------------------------------------------------------------- Pr\u00E9-remplissage
@@ -1118,7 +1131,7 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
     val mere = personneParId(personnes, p.mere)
     // GÃ©nÃ©aPoche 10 : le conjoint (et ses parents) sont proposÃ©s pour
     // TOUS les types d'acte, pas seulement le mariage.
-    val conj = personneParId(personnes, p.conjoint)
+    val conj = conjointPourMariage(p, personnes)
     val pConj = if (conj != null) personneParId(personnes, conj.pere) else null
     val mConj = if (conj != null) personneParId(personnes, conj.mere) else null
     val temoinsIds = p.temoinsDe(type)
@@ -1248,7 +1261,8 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         ceremonieSDate = p.ceremonieSDate,
         cimetiere = p.cimetiere, concession = p.concession, ministreCulte = p.ministreCulte
     )
-    if (type == "M" && p.sexe == "F") {
+    // v0.143 : femme = sexe F, ou sexe non renseigne alors que le conjoint est un homme.
+    if (type == "M" && (p.sexe == "F" || (p.sexe.isBlank() && conj?.sexe == "M"))) {
         return base.copy(
             // v0.141 : la personne choisie est une FEMME : elle devient la
             // mariee ; le MARIE est son conjoint (avec SES parents), au lieu
