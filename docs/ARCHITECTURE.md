@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 19 novembre 2026 (v0.144). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 19 novembre 2026 (v0.145). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -73,3 +73,7 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 
 ## Ajouts v0.144
 - `SaisieActe.kt` : le choix du type « Mariage » dans le formulaire (ouvert via « Ajouter un événement », donc préempli en naissance) re-préremplit le formulaire avec `prefillActe(..., "M")` quand la personne est une femme (échange marié/mariée).
+
+## Ajouts v0.145
+- `VuesArbre.kt` : `EcranSablier` (3 générations d'ancêtres via `ancetresEventail`, conjoints, enfants et petits-enfants via `enfantsDe`/`descendantsSablier`) et `EcranParenteVue` (chemin entre la personne centrale et une personne choisie : `calculerParente` + `cheminParente`).
+- `Frise.kt` : `EcranFrise(histoire = true)` = « Frise historique » (bandeau des régimes `PeriodesHistoriques`, repères `reperesHistoriques`). Menu Arbre : Arbre / Ligne de vie / Éventail / Sablier / Parenté / Frise historique (sous-écrans 0 à 5 dans la pile de retour).

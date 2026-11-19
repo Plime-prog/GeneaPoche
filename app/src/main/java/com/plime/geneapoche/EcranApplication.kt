@@ -829,6 +829,12 @@ fun EcranApplication(
                             onClick = { vueArbre = 2 },
                             label = { Text("\u00C9ventail") }
                         )
+                        Spacer(Modifier.width(6.dp))
+                        FilterChip(selected = vueArbre == 3, onClick = { vueArbre = 3 }, label = { Text("Sablier") })
+                        Spacer(Modifier.width(6.dp))
+                        FilterChip(selected = vueArbre == 4, onClick = { vueArbre = 4 }, label = { Text("Parent\u00E9") })
+                        Spacer(Modifier.width(6.dp))
+                        FilterChip(selected = vueArbre == 5, onClick = { vueArbre = 5 }, label = { Text("Frise historique") })
                     }
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         if (vueArbre == 0) {
@@ -849,12 +855,27 @@ fun EcranApplication(
                                 onOuvrir = { onIdOuvert(it); onOnglet(0) },
                                 onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
                             )
+                        } else if (vueArbre == 3) {
+                            EcranSablier(
+                                personnes = personnes,
+                                idCentre = arbreCentre,
+                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
+                                onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
+                            )
+                        } else if (vueArbre == 4) {
+                            EcranParenteVue(
+                                personnes = personnes,
+                                idCentre = arbreCentre,
+                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
+                                onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
+                            )
                         } else {
                             EcranFrise(
                                 personnes = personnes,
                                 idChoisie = arbreCentre,
                                 onOuvrir = { onIdOuvert(it) },
-                                onChoisir = { onArbreCentre(it) }
+                                onChoisir = { onArbreCentre(it) },
+                                histoire = vueArbre == 5
                             )
                         }
                     }

@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.145 — Trois nouvelles vues dans le menu Arbre
+
+Inspirées de Gramps Web, Topola et des frises généalogiques (TimeNets) :
+- **Sablier** : 3 générations d'ancêtres au-dessus, la personne et ses conjoints au centre, enfants puis petits-enfants (groupés par enfant) en dessous. Toucher = centrer, appui long = fiche, défilement dans les deux sens.
+- **Parenté** : chemin entre la personne centrale et une personne choisie (« fils de », « père de », « époux de »…), ancêtre commun repéré, lien exprimé en clair (cousin germain, degré civil).
+- **Frise historique** : la ligne de vie de la famille proche avec, au-dessus, les régimes politiques (Ancien Régime, Révolution, Empire…) et des repères historiques nationaux (points rouges, liste en bas). Le menu « Ligne de vie » reste inchangé.
+- Retour arrière : chaque vue est un sous-écran de la pile. ~345 tests. **Non essayé sur appareil** : la lisibilité du Sablier et de la frise est à juger sur téléphone.
+
 ## v0.144 — Acte de mariage depuis une femme (vraie cause)
 
 - **Cause trouvée** : « Ajouter un événement » ouvre le formulaire préempli en *naissance* (la femme dans le cadre du marié, ses parents comme parents du marié) ; choisir ensuite « Mariage » ne changeait que l'intitulé, sans échanger les blocs. Le choix de **Mariage** re-préremplit maintenant le formulaire : marié = son mari avec **ses** parents, mariée = elle avec **ses** parents. La date, l'heure et la commune déjà saisies sont conservées. (Les correctifs v0.142/0.143 ne couvraient que l'ouverture directe d'un mariage.)
