@@ -609,6 +609,22 @@ fun EcranJournal(
             onChoisir = onChoisirGeo
         )
     } else {
+    // Selection "Autres recherches" figee jusqu'a minuit : une recherche terminee
+    // disparait sans etre remplacee ; renouvellement complet a 00:00. (On ne
+    // memorise rien tant que les recherches ne sont pas chargees.)
+    val ctxJour = LocalContext.current
+    val selection: List<Long> = if (vueJournal == 3) {
+        remember(jourLocal(), ouvertes.isNotEmpty()) {
+            val j = jourLocal()
+            val (jm, im) = Stockage.lireAutresRecherches(ctxJour)
+            if (ouvertes.isEmpty()) im.takeIf { jm == j } ?: emptyList()
+            else {
+                val s = selectionDuJour(jm, im, ouvertes, j)
+                if (s.first != jm) Stockage.sauverAutresRecherches(ctxJour, s.first, s.second)
+                s.second
+            }
+        }
+    } else emptyList()
     LazyColumn(Modifier.weight(1f).padding(horizontal = 12.dp)) {
         // GeneaPoche 12 : actualisation du diagnostic a la demande
         // (v0.141 : remplacee par "Autres recherches" dans la vue du jour).
@@ -941,15 +957,6 @@ fun EcranJournal(
         } // fin vue "Recherches"
         if (vueJournal == 3) {
             val jour = jourLocal()
-            val ctxJour = LocalContext.current
-            // Selection figee jusqu'a minuit : une recherche terminee disparait
-            // sans etre remplacee ; renouvellement complet a 00:00.
-            val selection = remember(jour) {
-                val (jm, im) = Stockage.lireAutresRecherches(ctxJour)
-                val s = selectionDuJour(jm, im, ouvertes, jour)
-                if (s.first != jm) Stockage.sauverAutresRecherches(ctxJour, s.first, s.second)
-                s.second
-            }
             val cinq = ouvertes.filter { it.id in selection }
             item {
                 Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
