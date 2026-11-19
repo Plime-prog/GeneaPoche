@@ -45,6 +45,40 @@ private fun melange(jour: Long, id: Long): Long {
     return h
 }
 
+/**
+ * v0.141 : action a declencher sur la fiche pour une categorie de recherche
+ * (code de l'acte N/B/M/D/S, "pere", "mere", "enfant", "modifier"), ou null.
+ * Fonction pure partagee par la fiche, le journal et les "autres recherches".
+ */
+fun actionPourCategorie(categorie: String): String? = when {
+    categorie.startsWith("naissance") -> "N"
+    categorie.startsWith("bapteme") -> "B"
+    categorie.startsWith("mariage") -> "M"
+    categorie.startsWith("deces") -> "D"
+    categorie.startsWith("sepulture") -> "S"
+    categorie.startsWith("pere") -> "pere"
+    categorie.startsWith("mere") -> "mere"
+    categorie.startsWith("conjoint") -> "M"
+    categorie.startsWith("enfants") -> "enfant"
+    categorie.startsWith("sexe") -> "modifier"
+    else -> null
+}
+
+/**
+ * v0.141 : "Autres recherches". La selection du jour est FIGEE jusqu'a minuit :
+ * si le jour memorise est celui d'aujourd'hui, on garde les memes identifiants
+ * (une recherche terminee disparait et n'est PAS remplacee) ; sinon on tire une
+ * selection neuve. Renvoie (jour, identifiants a memoriser).
+ */
+fun selectionDuJour(
+    jourMemorise: Long,
+    idsMemorises: List<Long>,
+    ouvertes: List<Piste>,
+    jour: Long
+): Pair<Long, List<Long>> =
+    if (jourMemorise == jour) Pair(jour, idsMemorises)
+    else Pair(jour, cinqDuJour(ouvertes, jour).map { it.id })
+
 fun cinqDuJour(ouvertes: List<Piste>, jour: Long, nombre: Int = 5): List<Piste> {
     val rangees = ouvertes.filter { !it.faite }.sortedBy { melange(jour, it.id) }
     val choix = mutableListOf<Piste>()

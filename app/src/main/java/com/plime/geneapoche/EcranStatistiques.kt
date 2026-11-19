@@ -46,7 +46,8 @@ fun EcranStatistiques(
     citations: List<Citation>,
     idChoisie: Long,
     onOuvrir: (Long) -> Unit,
-    onChoisir: (Long) -> Unit
+    onChoisir: (Long) -> Unit,
+    onOuvrirBio: (Long) -> Unit = onOuvrir
 ) {
     var vue by remember { mutableStateOf(0) }
     Column(Modifier.fillMaxSize()) {
@@ -65,7 +66,8 @@ fun EcranStatistiques(
                     personnes = personnes,
                     idChoisie = idChoisie,
                     onOuvrir = onOuvrir,
-                    onChoisir = onChoisir
+                    onChoisir = onChoisir,
+                    onOuvrirBio = onOuvrirBio
                 )
             }
         }

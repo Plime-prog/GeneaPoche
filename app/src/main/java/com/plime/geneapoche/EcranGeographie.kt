@@ -1,6 +1,10 @@
 package com.plime.geneapoche
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,12 +61,14 @@ fun EcranGeographie(
     personnes: List<Personne>,
     idChoisie: Long,
     onOuvrir: (Long) -> Unit,
-    onChoisir: (Long) -> Unit
+    onChoisir: (Long) -> Unit,
+    onOuvrirBio: (Long) -> Unit = onOuvrir
 ) {
     val repartition = remember(personnes) { repartitionDepartements(personnes) }
-    val communes = remember(personnes) { repartitionCommunes(personnes) }
     val maxDept = repartition.values.maxOfOrNull { it.size } ?: 0
     var deptChoisi by remember { mutableStateOf<String?>(null) }
+    // v0.141 : aucune commune selectionnee par defaut.
+    var communeChoisie by remember { mutableStateOf<String?>(null) }
     val choisi = personnes.firstOrNull { it.id == idChoisie }
 
     if (personnes.isEmpty()) {
@@ -73,10 +79,10 @@ fun EcranGeographie(
         return
     }
 
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Text(
-                        // v0.95 (12) : l'onglet Géographie devient Statistiques.
-            "Statistiques",
+            // v0.141 : intitule "Stat."
+            "Stat.",
             Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
@@ -102,7 +108,7 @@ fun EcranGeographie(
                         .height(34.dp)
                         .clip(RoundedCornerShape(6.dp))
                         .background(if (effectif > 0) couleurIntensite(effectif, maxDept) else Color(0xFFF0EDE9))
-                        .clickable(enabled = effectif > 0) { deptChoisi = if (actif) null else code },
+                        .clickable(enabled = effectif > 0) { communeChoisie = null; deptChoisi = if (actif) null else code },
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -123,7 +129,10 @@ fun EcranGeographie(
                 }
             }
         }
-        // ---- Detail du departement clique.
+        // ---- Detail du departement touche (v0.141) : communes DE CE DEPARTEMENT
+        // seulement (aucune commune selectionnee par defaut), puis les personnes
+        // concernees dans un bloc replie, deployable ; toucher une personne ouvre
+        // sa biographie.
         if (deptChoisi != null) {
             val code = deptChoisi!!
             val liste = repartition[code] ?: emptyList()
@@ -133,41 +142,63 @@ fun EcranGeographie(
                 fontWeight = FontWeight.Bold,
                 color = CouleurRouge
             )
-            LazyColumn(Modifier.fillMaxWidth().weight(0.35f).padding(horizontal = 8.dp)) {
-                items(liste, key = { it.id }) { p ->
-                    Row(
-                        Modifier.fillMaxWidth().clickable { onOuvrir(p.id) }.padding(vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            libelleUnique(p),
-                            maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            fontSize = 13.sp
-                        )
+            val communesDept = remember(code, personnes) {
+                repartitionCommunes(liste).entries.sortedByDescending { it.value.size }
+            }
+            if (communesDept.isNotEmpty()) {
+                Text(
+                    "Communes de ce d\u00E9partement",
+                    Modifier.padding(horizontal = 12.dp),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    communesDept.forEach { (commune, l) ->
+                        val actif = communeChoisie == commune
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = if (actif) CouleurVertFonce else CouleurVertPale,
+                            modifier = Modifier.padding(horizontal = 2.dp).clickable { communeChoisie = if (actif) null else commune }
+                        ) {
+                            Text(
+                                "  " + commune + " (" + l.size.toString() + ")  ",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (actif) Color.White else CouleurVertFonce
+                            )
+                        }
                     }
                 }
             }
-        }
-        // ---- Top communes de naissance.
-        val topCommunes = communes.entries.sortedByDescending { it.value.size }.take(3)
-        if (topCommunes.isNotEmpty()) {
-            Row(
+            val concernees = communeChoisie?.let { c -> communesDept.firstOrNull { it.key == c }?.value } ?: liste
+            var deploye by remember(code, communeChoisie) { mutableStateOf(false) }
+            Card(
                 Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, CouleurGrisBord)
             ) {
-                Text("Communes les plus repr\u00E9sent\u00E9es : ", style = MaterialTheme.typography.bodySmall)
-                topCommunes.forEach { (commune, liste) ->
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = CouleurVertPale,
-                        modifier = Modifier.padding(horizontal = 2.dp).clickable { onOuvrir(liste.first().id) }
+                Column(Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier.fillMaxWidth().clickable { deploye = !deploye }.padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "  " + commune + " (" + liste.size.toString() + ")  ",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = CouleurVertFonce
+                            "Personnes concern\u00E9es : " + concernees.size.toString() +
+                                (communeChoisie?.let { " (" + it + ")" } ?: ""),
+                            Modifier.weight(1f), fontWeight = FontWeight.Bold, color = CouleurVertFonce
                         )
+                        Text(if (deploye) "\u25B2" else "\u25BC", color = CouleurVertFonce)
+                    }
+                    if (deploye) {
+                        concernees.forEach { p ->
+                            Text(
+                                libelleUnique(p),
+                                Modifier.fillMaxWidth().clickable { onOuvrirBio(p.id) }.padding(horizontal = 10.dp, vertical = 6.dp),
+                                maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 13.sp
+                            )
+                        }
                     }
                 }
             }

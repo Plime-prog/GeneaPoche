@@ -80,3 +80,9 @@ fun candidatsPourRole(personnes: List<Personne>, p: Personne, role: String): Lis
             else -> false
         }
     }.sortedBy { it.titre() }
+
+// v0.141 : une liste de choix ne propose que des hommes quand l'information est
+// celle d'un homme, que des femmes sinon. Les fiches dont le sexe n'est pas
+// renseigne restent proposees (on ne peut pas les exclure a tort).
+fun List<Personne>.pourSexe(sexe: String): List<Personne> =
+    filter { it.sexe == sexe || it.sexe.isBlank() }

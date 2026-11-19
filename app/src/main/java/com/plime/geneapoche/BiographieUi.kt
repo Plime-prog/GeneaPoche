@@ -212,22 +212,35 @@ fun CarteUnionsEnfants(
     }
 }
 
-// Biographie : parents et conjoints (les enfants sont dans la chronologie).
+// Biographie : v0.141 deux blocs d'entourage, "Père et mère" d'une part,
+// "Conjoint" d'autre part (les enfants sont dans la chronologie).
 @Composable
 fun CarteFamilleBio(p: Personne, personnes: List<Personne>, onOuvrir: (Long) -> Unit) {
     val parents = listOf("P\u00E8re" to p.pere, "M\u00E8re" to p.mere)
         .mapNotNull { (l, id) -> personneParId(personnes, id)?.let { l to it } }
     val conjoints = p.tousConjoints().mapNotNull { personneParId(personnes, it) }
-    if (parents.isEmpty() && conjoints.isEmpty()) return
-    Card(
-        Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, CouleurGrisBord)
-    ) {
-        Column(Modifier.fillMaxWidth().padding(10.dp)) {
-            Text("Entourage", fontWeight = FontWeight.Bold, color = CouleurVertFonce)
-            parents.forEach { (l, q) -> LienFamille(l, q, onOuvrir) }
-            conjoints.forEach { q -> LienFamille(if (q.sexe == "F") "\u00C9pouse" else "\u00C9poux", q, onOuvrir) }
+    if (parents.isNotEmpty()) {
+        Card(
+            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = BorderStroke(1.dp, CouleurGrisBord)
+        ) {
+            Column(Modifier.fillMaxWidth().padding(10.dp)) {
+                Text("P\u00E8re et m\u00E8re", fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+                parents.forEach { (l, q) -> LienFamille(l, q, onOuvrir) }
+            }
+        }
+    }
+    if (conjoints.isNotEmpty()) {
+        Card(
+            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = BorderStroke(1.dp, CouleurGrisBord)
+        ) {
+            Column(Modifier.fillMaxWidth().padding(10.dp)) {
+                Text("Conjoint", fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+                conjoints.forEach { q -> LienFamille(if (q.sexe == "F") "\u00C9pouse" else "\u00C9poux", q, onOuvrir) }
+            }
         }
     }
 }

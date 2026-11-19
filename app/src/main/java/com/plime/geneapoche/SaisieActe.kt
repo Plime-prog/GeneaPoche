@@ -713,7 +713,7 @@ fun EcranSaisieActe(
         }
 
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            TitrePastille("Personne concern\u00E9e", exPersonne != null || nom.isNotBlank())
+            TitrePastille(if (type == "M") "Mari\u00E9" else "Personne concern\u00E9e", exPersonne != null || nom.isNotBlank())
             // v0.72 : sur un mariage, l'époux (= personne concernée) signe.
             if (type == "M") {
                 Spacer(Modifier.weight(1f))
@@ -760,8 +760,8 @@ fun EcranSaisieActe(
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             if (type == "M" && !editionActe) {
-                // v0.106 : l'acte de mariage s'ouvre par le MARIE, toujours un homme.
-                FilterChip(selected = true, onClick = {}, label = { Text("Mari\u00E9 (homme)") })
+                // v0.141 : plus d'etiquette verte "Marie (homme)" : le titre du bloc
+                // dit deja "Marie" ; le sexe du marie est toujours M.
             } else {
                 FilterChip(selected = sexe == "M", onClick = { sexe = "M" }, label = { Text("M") })
                 FilterChip(selected = sexe == "F", onClick = { sexe = "F" }, label = { Text("F") })
@@ -793,7 +793,7 @@ fun EcranSaisieActe(
         // v0.107 : evenement alleger — ni parents ni conjoint (l'acte de
         // mariage seul porte ces renseignements).
         if (type != "E") {
-        BlocParent("P\u00E8re", pere, date, parentsNaissance, parentsDeces,
+        BlocParent(if (type == "M") "P\u00E8re du mari\u00E9" else "P\u00E8re", pere, date, parentsNaissance, parentsDeces,
             cocheSigne = signataires.contains("P\u00E8re"),
             onCocheSigne = if (type == "N" || type == "B" || type == "M") {
                 { if (signataires.contains("P\u00E8re")) signataires.remove("P\u00E8re") else signataires.add("P\u00E8re") }
@@ -802,7 +802,7 @@ fun EcranSaisieActe(
         // v0.107 : une fiche existante (meme nom, DATES compatibles) est
         // proposee systematiquement pour le pere, meme si les prenoms
         // ne sont pas parfaitement identiques.
-        val candidatsPere = candidatsCorrespondants(personnes, pere.nom, pere.prenoms, pere.ne, excluId = personneId)
+        val candidatsPere = candidatsCorrespondants(personnes, pere.nom, pere.prenoms, pere.ne, excluId = personneId).pourSexe("M")
         if (candidatsPere.isNotEmpty()) {
             OutlinedButton(onClick = { homonymesOuvert = "pere" }) {
                 Text("P\u00E8re : " + candidatsPere.size.toString() + " fiche(s) existante(s) possible(s) \u2013 choisir ou cr\u00E9er", fontSize = 12.sp)
@@ -821,13 +821,13 @@ fun EcranSaisieActe(
                 onFermer = { homonymesOuvert = null }
             )
         }
-        BlocParent("M\u00E8re", mere, date, parentsNaissance, parentsDeces,
+        BlocParent(if (type == "M") "M\u00E8re du mari\u00E9" else "M\u00E8re", mere, date, parentsNaissance, parentsDeces,
             cocheSigne = signataires.contains("M\u00E8re"),
             onCocheSigne = if (type == "M") {
                 { if (signataires.contains("M\u00E8re")) signataires.remove("M\u00E8re") else signataires.add("M\u00E8re") }
             } else null,
             fiche = ficheMere)
-        val candidatsMere = candidatsCorrespondants(personnes, mere.nom, mere.prenoms, mere.ne, excluId = personneId)
+        val candidatsMere = candidatsCorrespondants(personnes, mere.nom, mere.prenoms, mere.ne, excluId = personneId).pourSexe("F")
         if (candidatsMere.isNotEmpty()) {
             OutlinedButton(onClick = { homonymesOuvert = "mere" }) {
                 Text("M\u00E8re : " + candidatsMere.size.toString() + " fiche(s) existante(s) possible(s) \u2013 choisir ou cr\u00E9er", fontSize = 12.sp)
@@ -1014,7 +1014,7 @@ fun EcranSaisieActe(
                     { if (signataires.contains("P\u00E8re de la mari\u00E9e")) signataires.remove("P\u00E8re de la mari\u00E9e") else signataires.add("P\u00E8re de la mari\u00E9e") }
                 } else null)
             // v0.107 : fiches existantes proposees (nom + DATES compatibles).
-            val candidatsPM = candidatsCorrespondants(personnes, pereMariee.nom, pereMariee.prenoms, pereMariee.ne, excluId = marieeId)
+            val candidatsPM = candidatsCorrespondants(personnes, pereMariee.nom, pereMariee.prenoms, pereMariee.ne, excluId = marieeId).pourSexe("M")
             if (candidatsPM.isNotEmpty()) {
                 OutlinedButton(onClick = { homonymesOuvert = "pereMariee" }) {
                     Text("P\u00E8re de la mari\u00E9e : " + candidatsPM.size.toString() + " fiche(s) possible(s) \u2013 choisir ou cr\u00E9er", fontSize = 12.sp)
@@ -1038,7 +1038,7 @@ fun EcranSaisieActe(
                 onCocheSigne = if (type == "M") {
                     { if (signataires.contains("M\u00E8re de la mari\u00E9e")) signataires.remove("M\u00E8re de la mari\u00E9e") else signataires.add("M\u00E8re de la mari\u00E9e") }
                 } else null)
-            val candidatsMM = candidatsCorrespondants(personnes, mereMariee.nom, mereMariee.prenoms, mereMariee.ne, excluId = marieeId)
+            val candidatsMM = candidatsCorrespondants(personnes, mereMariee.nom, mereMariee.prenoms, mereMariee.ne, excluId = marieeId).pourSexe("F")
             if (candidatsMM.isNotEmpty()) {
                 OutlinedButton(onClick = { homonymesOuvert = "mereMariee" }) {
                     Text("M\u00E8re de la mari\u00E9e : " + candidatsMM.size.toString() + " fiche(s) possible(s) \u2013 choisir ou cr\u00E9er", fontSize = 12.sp)
@@ -1394,10 +1394,11 @@ fun EcranSaisieActe(
     if (pickerOuvert) {
         // v0.105 : meme selecteur (avec recherche) que partout dans l'application.
         DialogueChoixPersonne(
-            titre = if (pickerCible == 0) (if (type == "M" && !editionActe) "Mari\u00E9 (homme)" else "Personne concern\u00E9e") else "Mari\u00E9e (femme)",
-            // v0.106 : mariage = le mari\u00E9 est un homme, la mari\u00E9e une femme.
-            personnes = if (type != "M" || editionActe) personnes
-                else if (pickerCible == 0) personnes.filter { it.sexe != "F" }
+            titre = if (pickerCible == 0) (if (type == "M") "Mari\u00E9 ou mari\u00E9e" else "Personne concern\u00E9e") else "Mari\u00E9e",
+            // v0.141 : on peut partir d'un homme OU d'une femme (une femme est
+            // placee comme mariee, son conjoint comme marie) ; le choix de la
+            // mariee reste reserve aux femmes.
+            personnes = if (type != "M" || editionActe || pickerCible == 0) personnes
                 else personnes.filter { it.sexe != "M" },
             onChoisi = { cand ->
                 if (pickerCible == 0) {
@@ -1407,7 +1408,7 @@ fun EcranSaisieActe(
                     // mari NE PERD PLUS la mariee deja en place.
                     val marieeEnPlace = marieeId != 0L || marieeNom.isNotBlank()
                     remplirDepuis(
-                        if (type == "M" && marieeEnPlace) pf.copy(
+                        if (type == "M" && marieeEnPlace && cand.sexe != "F") pf.copy(
                             marieeId = marieeId, marieeNom = marieeNom, marieePrenoms = marieePrenoms, marieeProf = marieeProf,
                             pMarieeNom = pereMariee.nom, pMarieePrenoms = pereMariee.prenoms,
                             pMarieeNe = pereMariee.ne, pMarieeLieu = pereMariee.lieu, pMarieeDept = pereMariee.dept,
