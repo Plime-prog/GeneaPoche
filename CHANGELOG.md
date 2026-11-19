@@ -1,5 +1,19 @@
 # Historique des versions
 
+## v0.141 — Navigation, recherches directes, acte de mariage, Stat.
+
+- **Ouverture** : au tout premier lancement, le Journal s'affiche ; ensuite l'application rouvre l'onglet (et la fiche) ouverts avant la fermeture.
+- **Retour arrière** : une flèche en haut de chaque écran principal et le bouton Retour du téléphone ramènent à l'écran précédemment ouvert (onglets, fiches, choix d'une personne, édition, menu Saisie ; pile de 40 écrans, sans doublon consécutif). *Limite* : les sous-vues internes de Sources, Outils et Arbre ne sont pas empilées.
+- **Fiche** : une personne vivante (présumée) de moins de 100 ans compte **4 indicateurs** (naissance et mariage : date + lieu), non 6.
+- **Recherches** : toucher une recherche (Journal, Autres recherches) ouvre la fiche **et déclenche directement** la bonne recherche (saisie de l'acte de naissance, du mariage…, choix du père/de la mère, ajout d'un enfant). Une date **incomplète** (année seule, vers, entre, avant, après) crée une recherche « Préciser la date exacte de… ».
+- **Biographie** : deux blocs, « Père et mère » et « Conjoint ».
+- **Acte de mariage** : titre « Marié », « Père du marié », « Mère du marié », étiquette verte supprimée, « Choisir une personne » conservé. On peut partir d'une **femme** : elle devient la mariée, son conjoint le marié avec **ses** parents (les informations n'étaient pas correctes/inversées) ; la signature « Mariée » suit.
+- **Choisir une personne** : pères = hommes, mères = femmes dans les formulaires d'actes (fiches sans sexe conservées) ; mariée = femmes.
+- **Autres recherches** (ex « 5 du jour ») : sélection tirée une fois par jour (renouvelée à minuit), **figée** ; une recherche terminée disparaît sans être remplacée (donc parfois moins de cinq).
+- **Stat.** : nouvel intitulé. Géographie : aucune commune sélectionnée par défaut ; toucher un département n'affiche que **ses** communes ; les personnes concernées sont dans un bloc replié, à déployer, puis toucher une personne ouvre sa **biographie**.
+- CI : le message exact des tests en échec est maintenant affiché.
+- ~329 tests ; version 0.141. **Rien n'a été essayé sur appareil.** Interprétations à confirmer : « moins de 100 ans → 4 indicateurs » pour les personnes vivantes ; « Autres recherches » remplace le bouton Actualiser dans cette vue seulement. L'**éventail** de l'arbre est reporté à une version dédiée.
+
 ## v0.140 — Fin du « conflit de package » à l'installation (signature stable)
 
 - **Cause constatée** : les APK v0.138 et v0.139 publiés portent des **certificats de signature différents** (empreintes vérifiées). Sans secrets de signature, la CI signait avec la clé « debug » du serveur, régénérée à chaque build ; Android refusait donc toute mise à jour par-dessus la version installée.

@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 18 novembre 2026 (v0.140). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 19 novembre 2026 (v0.141). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -55,3 +55,9 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 > Build : Kotlin intégré à AGP (pas de plugin `kotlin.android`), nouveau DSL, `buildscript` épingle KGP/Compose 2.4.21 ; aucune option `android.*=false` de compatibilité (retirées en v0.125).
 
 > Bilan d'étape complet (défauts trouvés, risques restants, actions du propriétaire) : [BILAN-2026-11-17.md](BILAN-2026-11-17.md).
+
+## Ajouts v0.141
+- `Navigation.kt` : pile d'écrans (codes d'onglet/fiche), `ajouterEcran`/`depilerEcran` ; `EcranApplication` unifie `retourArriere()` (flèche + BackHandler) ; dernier écran mémorisé via `Stockage.lireEcran/sauverEcran`.
+- `RecherchesDuJour.kt` : `actionPourCategorie` (recherche → action sur la fiche, transmise par `actionInitiale` à `EcranPersonne`), `selectionDuJour` (sélection figée, mémorisée par `Stockage.lireAutresRecherches`).
+- `ListesPersonnes.kt` : `pourSexe` ; `Fiches.kt` : `prefillActe` d'un mariage pour une femme = mariée + son conjoint marié.
+- `EcranGeographie.kt` : communes du département touché, bloc des personnes replié ; `onOuvrirBio` ouvre la biographie.

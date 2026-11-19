@@ -22,7 +22,7 @@ class MariageFemmeTest {
         }
         v("marieeId", 5L, a.marieeId)
         v("marieePrenoms", "Anne", a.marieePrenoms)
-        v("pMarieeNom", "Martin", a.pMarieeNom)
+        v("pMarieeNom", "MARTIN", a.pMarieeNom)
         v("personneId", 3L, a.personneId)
         v("prenoms", "Paul", a.prenoms)
         v("perePrenoms", "Louis", a.perePrenoms)

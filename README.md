@@ -19,6 +19,7 @@ Périmètre : France uniquement, actes N/B/M/D/S.
 - **Fiches par événements** : N/B/M/D/S regroupés dans l'ordre généalogique NBMDS, éditable par appui long via la saisie d'acte pré-remplie depuis la fiche.
 - **Saisie d'acte** : témoins, coche « Signe » derrière chaque personne citée, prêtre, officier d'état civil, transcription, conjoint survivant ou décédé persisté sur les actes D/S, enfant déclarant sur un décès ; actes enrichis (déclaration, légitimité, contrat de mariage, cérémonie, cimetière…).
 - **Numérotation automatique** : Sosa-Stradonitz et d'Aboville, rien ne se saisit.
+- **v0.141** : retour arrière (flèche) partout, rouverture à l'écran quitté, recherches qui ouvrent directement la bonne saisie, « Autres recherches » du jour, acte de mariage corrigé pour une femme, onglet « Stat. » (voir CHANGELOG).
 - **Fiche** (v0.140) : blocs distincts **Conjoint(s)** et **Enfant(s)**, chacun avec une croix pour retirer le lien (confirmation, la fiche n'est jamais supprimée) ; père et mère existants choisis parmi les hommes / les femmes seulement ; chronologie unique où les actes sans date prennent leur place naturelle N, B, M, D, S.
 - **Onglet Recherches** (v0.138) : bloc **Notes** libre (chiffré), recherche avancée compacte, **toutes** les recherches en liste repliée, et onglet **5 du jour** (cinq recherches variées qui changent chaque jour). Un acte non « enregistré » n'est plus une recherche.
 - **Journal de recherches** : recherches à mener, anomalies à vérifier (enfant né après le décès de son père, mère trop jeune, fratrie trop rapprochée…), doublons avec fusion guidée « Garder A / Garder B » sans aucune perte.
@@ -48,7 +49,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.140)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.140-release.apk` (signé) ou `GeneaPoche-v0.140-debug.apk`. **Mise à jour depuis une version antérieure à la v0.140 : désinstaller une fois l'ancienne version après avoir exporté une sauvegarde `.gpbak` — voir `docs/SIGNATURE.md`.**
+**Téléchargement direct de la dernière version (v0.141)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.141-release.apk` (signé) ou `GeneaPoche-v0.141-debug.apk`. **Mise à jour depuis une version antérieure à la v0.140 : désinstaller une fois l'ancienne version après avoir exporté une sauvegarde `.gpbak` — voir `docs/SIGNATURE.md`.**
 
 Sinon, depuis les sources :
 
