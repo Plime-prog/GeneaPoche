@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 19 novembre 2026 (v0.141). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 19 novembre 2026 (v0.142). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -61,3 +61,7 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 - `RecherchesDuJour.kt` : `actionPourCategorie` (recherche → action sur la fiche, transmise par `actionInitiale` à `EcranPersonne`), `selectionDuJour` (sélection figée, mémorisée par `Stockage.lireAutresRecherches`).
 - `ListesPersonnes.kt` : `pourSexe` ; `Fiches.kt` : `prefillActe` d'un mariage pour une femme = mariée + son conjoint marié.
 - `EcranGeographie.kt` : communes du département touché, bloc des personnes replié ; `onOuvrirBio` ouvre la biographie.
+
+## Ajouts v0.142
+- `Eventail.kt` : demi-éventail dessiné en Canvas (anneaux de 2, 4, 8 secteurs = mêmes 3 générations d'ascendants que l'arbre) ; fonctions pures `ancetresEventail`, `secteurEventail` (détection du secteur touché), `anneesCourtes` ; toucher = centrer, appui long = fiche. Menu Arbre : Arbre / Ligne de vie / Éventail.
+- `prefillActe` : le mariage ouvert depuis une femme place toujours la femme en mariée (même en modification) ; `autresRecherches` : nouveau tirage de 5 recherches.

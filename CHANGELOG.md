@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.142 — Éventail, acte de mariage depuis une femme, Autres recherches
+
+- **Acte de mariage depuis la fiche d'une femme** : cause réelle trouvée — depuis une fiche, le formulaire s'ouvre en « modification » et la correction de la v0.141 ne s'appliquait pas. Maintenant la femme est toujours la **mariée**, son conjoint le **marié** avec **ses** parents (Père/Mère du marié). Le choix du marié ne propose que des **hommes** (fiches sans sexe incluses) ; plus de puces M/F.
+- **5 du jour** : l'intitulé du menu est rétabli. Le bouton (icône d'actualisation) « **Autres recherches** » propose **5 nouvelles recherches** (même effet que le renouvellement de minuit, de préférence différentes des précédentes).
+- **Géographie** : « Voyage de la lignée » supprimé. (« Stat. » était déjà l'intitulé depuis la v0.141.)
+- **Arbre → Éventail** : nouveau menu, demi-éventail des **ascendants** sur 3 générations (parents, grands-parents, arrière-grands-parents, comme l'arbre classique), père à gauche et mère à droite, rose/bleu selon le sexe, texte radial pour les anneaux extérieurs. Toucher = centrer ; appui long = fiche ; pincement = zoom. *Limites* : les enfants et conjoint ne figurent pas dans l'éventail ; texte réduit (années seules) ; lisibilité à juger sur téléphone — non essayé sur appareil.
+- ~335 tests ; version 0.142.
+
 ## v0.141 — Navigation, recherches directes, acte de mariage, Stat.
 
 - **Ouverture** : au tout premier lancement, le Journal s'affiche ; ensuite l'application rouvre l'onglet (et la fiche) ouverts avant la fermeture.
