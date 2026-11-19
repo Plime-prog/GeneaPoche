@@ -807,6 +807,12 @@ fun EcranApplication(
                             onClick = { vueArbre = 1 },
                             label = { Text("Ligne de vie") }
                         )
+                        Spacer(Modifier.width(6.dp))
+                        FilterChip(
+                            selected = vueArbre == 2,
+                            onClick = { vueArbre = 2 },
+                            label = { Text("\u00C9ventail") }
+                        )
                     }
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         if (vueArbre == 0) {
@@ -816,6 +822,14 @@ fun EcranApplication(
                                 // v0.97 : toucher une carte centre seulement
                                 // (mémorise la personne) ; l'appui long
                                 // ouvre la fiche.
+                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
+                                onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
+                            )
+                        } else if (vueArbre == 2) {
+                            // v0.142 : meme comportement qu'au toucher de l'arbre.
+                            EcranEventail(
+                                personnes = personnes,
+                                idCentre = arbreCentre,
                                 onOuvrir = { onIdOuvert(it); onOnglet(0) },
                                 onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
                             )

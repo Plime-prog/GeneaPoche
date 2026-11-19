@@ -759,7 +759,7 @@ fun EcranSaisieActe(
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            if (type == "M" && !editionActe) {
+            if (type == "M") {
                 // v0.141 : plus d'etiquette verte "Marie (homme)" : le titre du bloc
                 // dit deja "Marie" ; le sexe du marie est toujours M.
             } else {
@@ -1394,12 +1394,13 @@ fun EcranSaisieActe(
     if (pickerOuvert) {
         // v0.105 : meme selecteur (avec recherche) que partout dans l'application.
         DialogueChoixPersonne(
-            titre = if (pickerCible == 0) (if (type == "M") "Mari\u00E9 ou mari\u00E9e" else "Personne concern\u00E9e") else "Mari\u00E9e",
-            // v0.141 : on peut partir d'un homme OU d'une femme (une femme est
-            // placee comme mariee, son conjoint comme marie) ; le choix de la
-            // mariee reste reserve aux femmes.
-            personnes = if (type != "M" || editionActe || pickerCible == 0) personnes
-                else personnes.filter { it.sexe != "M" },
+            titre = if (pickerCible == 0) (if (type == "M") "Mari\u00E9" else "Personne concern\u00E9e") else "Mari\u00E9e",
+            // v0.142 : le marie est un HOMME (fiches sans sexe renseigne
+            // incluses), la mariee une FEMME ; partir de la fiche d'une femme
+            // place deja celle-ci comme mariee.
+            personnes = if (type != "M") personnes
+                else if (pickerCible == 0) personnes.pourSexe("M")
+                else personnes.pourSexe("F"),
             onChoisi = { cand ->
                 if (pickerCible == 0) {
                     val pf = prefillActe(cand, personnes, type, citations = citations)
