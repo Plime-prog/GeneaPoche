@@ -69,7 +69,6 @@ fun EcranGeographie(
     var deptChoisi by remember { mutableStateOf<String?>(null) }
     // v0.141 : aucune commune selectionnee par defaut.
     var communeChoisie by remember { mutableStateOf<String?>(null) }
-    val choisi = personnes.firstOrNull { it.id == idChoisie }
 
     if (personnes.isEmpty()) {
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center) {
@@ -202,56 +201,6 @@ fun EcranGeographie(
                     }
                 }
             }
-        }
-        // ---- Voyage de la lignee de la personne choisie.
-        if (choisi != null) {
-            val etapes = remember(choisi.id, choisi.evenementsLibres.size) { etapesVoyage(choisi) }
-            Card(
-                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                colors = CardDefaults.cardColors()
-            ) {
-                Column(Modifier.padding(10.dp)) {
-                    Text(
-                        "Voyage de la lign\u00E9e \u2013 " + choisi.titre(),
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                    if (etapes.isEmpty()) {
-                        Text(
-                            "Aucun lieu connu pour cette personne.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        var precedent: String? = null
-                        etapes.forEach { e ->
-                            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
-                                val prec = precedent
-                                val changement = prec != null && prec.isNotEmpty() && e.lieu.isNotEmpty() && prec != e.lieu
-                                Text(
-                                    (if (changement) "\u2192 " else "   ") + e.intitule,
-                                    fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                                    color = if (changement) CouleurRouge else MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    (if (e.date.isNotBlank()) dateAffichee(e.date) + " " else "") + e.lieu,
-                                    fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            if (e.lieu.isNotEmpty()) precedent = e.lieu
-                        }
-                    }
-                }
-            }
-        } else {
-            Text(
-                "Touchez une personne (liste, arbre ou ligne de vie) pour voir son voyage.",
-                Modifier.padding(horizontal = 12.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
         Spacer(Modifier.height(8.dp))
     }

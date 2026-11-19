@@ -1248,7 +1248,7 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         ceremonieSDate = p.ceremonieSDate,
         cimetiere = p.cimetiere, concession = p.concession, ministreCulte = p.ministreCulte
     )
-    if (type == "M" && !base.editionFiche && p.sexe == "F") {
+    if (type == "M" && p.sexe == "F") {
         return base.copy(
             // v0.141 : la personne choisie est une FEMME : elle devient la
             // mariee ; le MARIE est son conjoint (avec SES parents), au lieu

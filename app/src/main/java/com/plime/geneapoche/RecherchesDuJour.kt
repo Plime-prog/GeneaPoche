@@ -79,6 +79,18 @@ fun selectionDuJour(
     if (jourMemorise == jour) Pair(jour, idsMemorises)
     else Pair(jour, cinqDuJour(ouvertes, jour).map { it.id })
 
+/**
+ * v0.142 : bouton "Autres recherches" : 5 NOUVELLES recherches, de preference
+ * differentes de celles affichees (si assez d'autres existent), tirees avec la
+ * meme regle de variete que celle de minuit.
+ */
+fun autresRecherches(ouvertes: List<Piste>, jour: Long, actuelles: List<Long>): List<Long> {
+    val autres = ouvertes.filter { it.id !in actuelles }
+    val base = if (autres.size >= 5) autres else ouvertes
+    val graine = jour * 31L + actuelles.sum() + 7L
+    return cinqDuJour(base, graine).map { it.id }
+}
+
 fun cinqDuJour(ouvertes: List<Piste>, jour: Long, nombre: Int = 5): List<Piste> {
     val rangees = ouvertes.filter { !it.faite }.sortedBy { melange(jour, it.id) }
     val choix = mutableListOf<Piste>()

@@ -596,7 +596,7 @@ fun EcranJournal(
     ) {
         FilterChip(selected = vueJournal == 0, onClick = { vueJournal = 0 }, label = { Text("Synth\u00E8se") })
         FilterChip(selected = vueJournal == 1, onClick = { vueJournal = 1 }, label = { Text("Recherches") })
-        FilterChip(selected = vueJournal == 3, onClick = { vueJournal = 3 }, label = { Text("Autres recherches") })
+        FilterChip(selected = vueJournal == 3, onClick = { vueJournal = 3 }, label = { Text("5 du jour") })
         FilterChip(selected = vueJournal == 2, onClick = { vueJournal = 2 }, label = { Text("Stat.") })
     }
     if (vueJournal == 2) {
@@ -613,8 +613,9 @@ fun EcranJournal(
     // disparait sans etre remplacee ; renouvellement complet a 00:00. (On ne
     // memorise rien tant que les recherches ne sont pas chargees.)
     val ctxJour = LocalContext.current
+    var tirageAutres by remember { mutableStateOf(0) }
     val selection: List<Long> = if (vueJournal == 3) {
-        remember(jourLocal(), ouvertes.isNotEmpty()) {
+        remember(jourLocal(), ouvertes.isNotEmpty(), tirageAutres) {
             val j = jourLocal()
             val (jm, im) = Stockage.lireAutresRecherches(ctxJour)
             if (ouvertes.isEmpty()) im.takeIf { jm == j } ?: emptyList()
@@ -628,6 +629,25 @@ fun EcranJournal(
     LazyColumn(Modifier.weight(1f).padding(horizontal = 12.dp)) {
         // GeneaPoche 12 : actualisation du diagnostic a la demande
         // (v0.141 : remplacee par "Autres recherches" dans la vue du jour).
+        if (vueJournal == 3) item {
+            // v0.142 : bouton "Autres recherches" = 5 NOUVELLES recherches
+            // (meme fonction que le renouvellement de minuit).
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = {
+                    val j = jourLocal()
+                    val n = autresRecherches(ouvertes, j, selection)
+                    Stockage.sauverAutresRecherches(ctxJour, j, n)
+                    tirageAutres++
+                }, Modifier.size(30.dp)) {
+                    Icon(Icons.Filled.Refresh, contentDescription = "Autres recherches", Modifier.size(16.dp))
+                }
+                Text(
+                    "Autres recherches",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
         if (vueJournal != 3) item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { rafraichir++ }, Modifier.size(30.dp)) {
@@ -960,9 +980,9 @@ fun EcranJournal(
             val cinq = ouvertes.filter { it.id in selection }
             item {
                 Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                    Text("Autres recherches", fontWeight = FontWeight.Bold, color = CouleurVertFonce)
+                    Text("Vos 5 recherches du jour", fontWeight = FontWeight.Bold, color = CouleurVertFonce)
                     Text(
-                        "Une s\u00E9lection renouvel\u00E9e chaque jour \u00E0 minuit ; une recherche termin\u00E9e dispara\u00EEt.",
+                        "Renouvel\u00E9es chaque jour \u00E0 minuit, ou avec le bouton \u00AB Autres recherches \u00BB ; une recherche termin\u00E9e dispara\u00EEt.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

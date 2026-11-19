@@ -45,4 +45,14 @@ class MariageFemmeTest {
         val l = (tous + inconnu).pourSexe("F")
         assertEquals(setOf(2L, 5L, 9L), l.map { it.id }.toSet())
     }
+
+    @Test
+    fun depuis_la_fiche_d_une_femme_meme_en_modification() {
+        // Depuis la fiche, le formulaire s'ouvre avec editionFiche = true.
+        val a = prefillActe(epouse, tous, "M", editionFiche = true)
+        assertEquals(5L, a.marieeId)
+        assertEquals(3L, a.personneId)
+        assertEquals("Louis", a.perePrenoms)
+        assertEquals("M", a.sexe)
+    }
 }
