@@ -112,7 +112,10 @@ fun EcranFrise(
     personnes: List<Personne>,
     idChoisie: Long,
     onOuvrir: (Long) -> Unit,
-    onChoisir: (Long) -> Unit
+    onChoisir: (Long) -> Unit,
+    // v0.145 : "Frise historique" = la meme ligne de vie, avec en plus les regimes
+    // politiques et les evenements historiques sur l'axe des annees.
+    histoire: Boolean = false
 ) {
     val choisie = personneParId(personnes, idChoisie) ?: personnes.firstOrNull()
     var pickerOuvert by remember { mutableStateOf(false) }
@@ -180,6 +183,42 @@ fun EcranFrise(
                     }
                 }
             }
+            if (histoire) {
+                val periodes = PeriodesHistoriques.filter { it.fin.year >= anneeMin && it.debut.year <= anneeMax }
+                Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                    Spacer(Modifier.width(largeurNoms))
+                    Box(Modifier.width(largeurAxe).height(20.dp)) {
+                        periodes.forEachIndexed { i, per ->
+                            val d = per.debut.year.coerceAtLeast(anneeMin)
+                            val f = per.fin.year.coerceAtMost(anneeMax)
+                            val x0 = largeurAxe * ((d - anneeMin).toFloat() / etendue)
+                            val l = largeurAxe * (((f - d).coerceAtLeast(1)).toFloat() / etendue)
+                            Box(
+                                Modifier.offset(x = x0).width(l).height(20.dp)
+                                    .background(if (i % 2 == 0) CouleurVertPale else CouleurGrisBord)
+                            ) {
+                                Text(
+                                    nomCourtPeriode(per.nom),
+                                    Modifier.padding(horizontal = 2.dp),
+                                    fontSize = 8.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+                val reperes = remember(anneeMin, anneeMax) { reperesHistoriques(anneeMin, anneeMax, 14) }
+                Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                    Spacer(Modifier.width(largeurNoms))
+                    Box(Modifier.width(largeurAxe).height(10.dp)) {
+                        reperes.forEach { ev ->
+                            Box(
+                                Modifier.offset(x = largeurAxe * ((ev.annee - anneeMin).toFloat() / etendue)).size(7.dp)
+                                    .clip(CircleShape).background(CouleurRouge)
+                            )
+                        }
+                    }
+                }
+            }
             // Une ligne de vie par membre.
             membres.forEach { m ->
                 LigneVie(
@@ -204,6 +243,12 @@ fun EcranFrise(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            if (histoire) {
+                Text("Rep\u00E8res historiques (points rouges)", Modifier.padding(top = 8.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp, color = CouleurVertFonce)
+                reperesHistoriques(anneeMin, anneeMax, 14).forEach { ev ->
+                    Text(ev.annee.toString() + " \u00B7 " + ev.titre, fontSize = 11.sp, lineHeight = 14.sp)
+                }
             }
             Text(
                 "Touchez une ligne : la ligne de vie se recentre sur cette personne. Points : N naissance, B baptême, M mariage, S sépulture, D décès, verticaux verts : aujourd'hui.",
@@ -376,4 +421,17 @@ fun LigneVie(
             }
         }
     }
+}
+
+// v0.145 : nom court d'un regime ("Ancien Regime (Louis XV...)" -> "Ancien Regime").
+fun nomCourtPeriode(nom: String): String =
+    nom.substringBefore(" (").substringAfter(" \u2013 ").ifBlank { nom }
+
+// Reperes historiques nationaux d'une plage d'annees : guerres et regimes d'abord,
+// puis le reste, au plus `max`, tries par annee.
+fun reperesHistoriques(anneeMin: Int, anneeMax: Int, max: Int): List<EvenementHistorique> {
+    val dansPlage = EvenementsHistoriques.filter { it.depts.isEmpty() && it.annee in anneeMin..anneeMax }
+    val prioritaires = dansPlage.filter { it.genre == "guerre" || it.genre == "regime" }
+    val autres = dansPlage.filter { it.genre != "guerre" && it.genre != "regime" }
+    return (prioritaires + autres).take(max).sortedBy { it.annee }
 }
