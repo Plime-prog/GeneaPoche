@@ -542,7 +542,8 @@ fun EcranJournal(
     citations: List<Citation> = emptyList(),
     idChoisie: Long = 0L,
     onChoisirGeo: (Long) -> Unit = {},
-    onOuvrirGeo: (Long) -> Unit = {}
+    onOuvrirGeo: (Long) -> Unit = {},
+    onOuvrirBio: (Long) -> Unit = onOuvrirGeo
 ) {
     // GeneaPoche 12 : bouton d'actualisation du diagnostic A LA DEMANDE.
     // key(rafraichir) force le recalcul complet des listes du diagnostic
@@ -596,7 +597,7 @@ fun EcranJournal(
         FilterChip(selected = vueJournal == 0, onClick = { vueJournal = 0 }, label = { Text("Synth\u00E8se") })
         FilterChip(selected = vueJournal == 1, onClick = { vueJournal = 1 }, label = { Text("Recherches") })
         FilterChip(selected = vueJournal == 3, onClick = { vueJournal = 3 }, label = { Text("Autres recherches") })
-        FilterChip(selected = vueJournal == 2, onClick = { vueJournal = 2 }, label = { Text("Statistiques") })
+        FilterChip(selected = vueJournal == 2, onClick = { vueJournal = 2 }, label = { Text("Stat.") })
     }
     if (vueJournal == 2) {
         EcranStatistiques(
@@ -604,6 +605,7 @@ fun EcranJournal(
             citations = citations,
             idChoisie = idChoisie,
             onOuvrir = onOuvrirGeo,
+            onOuvrirBio = onOuvrirBio,
             onChoisir = onChoisirGeo
         )
     } else {

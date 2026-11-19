@@ -207,6 +207,7 @@ fun EcranPersonne(
                 "pere", "mere" -> onChoisir(a)
                 "enfant" -> menuEnfant = true
                 "modifier" -> onModifier()
+                "bio" -> ongletFiche = 1
             }
             onActionConsommee()
         }

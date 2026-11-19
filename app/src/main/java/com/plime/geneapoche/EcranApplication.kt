@@ -888,7 +888,8 @@ fun EcranApplication(
                     citations = citations,
                     idChoisie = arbreCentre,
                     onChoisirGeo = { onArbreCentre(it) },
-                    onOuvrirGeo = { onIdOuvert(it); onArbreCentre(it) }
+                    onOuvrirGeo = { onIdOuvert(it); onArbreCentre(it) },
+                    onOuvrirBio = { actionFicheEnAttente = "bio"; onIdOuvert(it); onArbreCentre(it) }
                 )
                 }
             }
