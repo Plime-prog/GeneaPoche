@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 19 novembre 2026 (v0.143). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 19 novembre 2026 (v0.144). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -70,3 +70,6 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 - Pile de retour : le code d'un écran contient maintenant le **sous-écran** ((onglet*100+sous)*10^10+fiche) ; sous-écrans hissés dans `EcranApplication` (`vueJournal`, `vueStat`, `outilOuvert`, `vueArbre`). `MemoireEcrans.kt` (`rememberMemo`) conserve département/commune/bloc déployé (Géographie) et la source ouverte (Sources) quand l'écran quitte la composition.
 - `conjointPourMariage` (Fiches.kt) : conjoint tolérant (liens à sens unique, date de mariage commune) ; une personne sans sexe dont le conjoint est un homme est traitée comme mariée.
 - `Eventail.kt` : conjoint et enfants (cartes `CarteMiniArbre`) sous l'éventail.
+
+## Ajouts v0.144
+- `SaisieActe.kt` : le choix du type « Mariage » dans le formulaire (ouvert via « Ajouter un événement », donc préempli en naissance) re-préremplit le formulaire avec `prefillActe(..., "M")` quand la personne est une femme (échange marié/mariée).
