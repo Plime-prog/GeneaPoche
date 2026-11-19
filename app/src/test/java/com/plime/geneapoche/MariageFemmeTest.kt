@@ -16,14 +16,19 @@ class MariageFemmeTest {
     @Test
     fun femme_choisie_devient_la_mariee_et_son_conjoint_le_marie() {
         val a = prefillActe(epouse, tous, "M")
-        assertEquals(5L, a.marieeId)
-        assertEquals("Anne", a.marieePrenoms)
-        assertEquals("Martin", a.pMarieeNom)
-        assertEquals(3L, a.personneId)
-        assertEquals("Paul", a.prenoms)
-        assertEquals("Louis", a.perePrenoms)
-        assertEquals("Rose", a.merePrenoms)
-        assertEquals("M", a.sexe)
+        val ecarts = StringBuilder()
+        fun v(nom: String, attendu: Any?, obtenu: Any?) {
+            if (attendu != obtenu) ecarts.append(nom).append("=").append(obtenu).append(" ")
+        }
+        v("marieeId", 5L, a.marieeId)
+        v("marieePrenoms", "Anne", a.marieePrenoms)
+        v("pMarieeNom", "Martin", a.pMarieeNom)
+        v("personneId", 3L, a.personneId)
+        v("prenoms", "Paul", a.prenoms)
+        v("perePrenoms", "Louis", a.perePrenoms)
+        v("merePrenoms", "Rose", a.merePrenoms)
+        v("sexe", "M", a.sexe)
+        assertEquals("", ecarts.toString())
     }
 
     @Test
