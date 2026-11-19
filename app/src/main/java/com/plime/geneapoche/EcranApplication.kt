@@ -835,6 +835,10 @@ fun EcranApplication(
                         FilterChip(selected = vueArbre == 4, onClick = { vueArbre = 4 }, label = { Text("Parent\u00E9") })
                         Spacer(Modifier.width(6.dp))
                         FilterChip(selected = vueArbre == 5, onClick = { vueArbre = 5 }, label = { Text("Frise historique") })
+                        Spacer(Modifier.width(6.dp))
+                        FilterChip(selected = vueArbre == 6, onClick = { vueArbre = 6 }, label = { Text("Descendance") })
+                        Spacer(Modifier.width(6.dp))
+                        FilterChip(selected = vueArbre == 7, onClick = { vueArbre = 7 }, label = { Text("Compl\u00E9tude") })
                     }
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         if (vueArbre == 0) {
@@ -857,6 +861,20 @@ fun EcranApplication(
                             )
                         } else if (vueArbre == 3) {
                             EcranSablier(
+                                personnes = personnes,
+                                idCentre = arbreCentre,
+                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
+                                onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
+                            )
+                        } else if (vueArbre == 6) {
+                            EcranDescendance(
+                                personnes = personnes,
+                                idCentre = arbreCentre,
+                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
+                                onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
+                            )
+                        } else if (vueArbre == 7) {
+                            EcranCompletude(
                                 personnes = personnes,
                                 idCentre = arbreCentre,
                                 onOuvrir = { onIdOuvert(it); onOnglet(0) },

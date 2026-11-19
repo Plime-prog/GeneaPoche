@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 19 novembre 2026 (v0.145). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 19 novembre 2026 (v0.146). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -77,3 +77,6 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 ## Ajouts v0.145
 - `VuesArbre.kt` : `EcranSablier` (3 générations d'ancêtres via `ancetresEventail`, conjoints, enfants et petits-enfants via `enfantsDe`/`descendantsSablier`) et `EcranParenteVue` (chemin entre la personne centrale et une personne choisie : `calculerParente` + `cheminParente`).
 - `Frise.kt` : `EcranFrise(histoire = true)` = « Frise historique » (bandeau des régimes `PeriodesHistoriques`, repères `reperesHistoriques`). Menu Arbre : Arbre / Ligne de vie / Éventail / Sablier / Parenté / Frise historique (sous-écrans 0 à 5 dans la pile de retour).
+
+## Ajouts v0.146
+- `VuesArbre2.kt` : `EcranDescendance` (`lignesDescendance`, `tousDescendants`, branches dépliées mémorisées par `rememberMemo`) et `EcranCompletude` (`completudeAscendance`, `ancetresManquants`). Menu Arbre : sous-écrans 6 et 7.

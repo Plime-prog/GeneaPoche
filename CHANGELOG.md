@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.146 — Descendance et Complétude (menu Arbre)
+
+- **Descendance** : tous les descendants de la personne centrale en liste indentée ; flèche ▶/▼ pour déplier ou replier une branche, « Tout déplier / Tout replier », nombre d'enfants et années par ligne, nombre total de descendants. Toucher un nom = centrer, appui long = fiche. Garde-fou contre les boucles de données.
+- **Complétude** : pour 8 générations d'ascendants, jauge « connus / possibles » (rouge, orange, vert) et liste des **parents à rechercher en priorité** (père ou mère manquants, générations proches d'abord) ; toucher une ligne centre l'arbre sur la personne. Un ancêtre présent plusieurs fois compte autant de fois.
+- ~351 tests. **Non essayé sur appareil.**
+
 ## v0.145 — Trois nouvelles vues dans le menu Arbre
 
 Inspirées de Gramps Web, Topola et des frises généalogiques (TimeNets) :
