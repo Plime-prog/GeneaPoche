@@ -1,5 +1,10 @@
 # Historique des versions
 
+## v0.144 — Acte de mariage depuis une femme (vraie cause)
+
+- **Cause trouvée** : « Ajouter un événement » ouvre le formulaire préempli en *naissance* (la femme dans le cadre du marié, ses parents comme parents du marié) ; choisir ensuite « Mariage » ne changeait que l'intitulé, sans échanger les blocs. Le choix de **Mariage** re-préremplit maintenant le formulaire : marié = son mari avec **ses** parents, mariée = elle avec **ses** parents. La date, l'heure et la commune déjà saisies sont conservées. (Les correctifs v0.142/0.143 ne couvraient que l'ouverture directe d'un mariage.)
+- Version 0.144. Rien essayé sur appareil.
+
 ## v0.143 — Retour arrière partout, Éventail complet
 
 - **Retour arrière** : cause trouvée — les sous-écrans (puces du Journal, Stat. Base/Géographie, département ou ville choisis, bloc des personnes déployé, outil de la Boîte à outils, vue de l'Arbre, source ouverte) étaient perdus dès qu'on ouvrait une fiche. Ils sont maintenant mémorisés et le sous-écran fait partie de la pile : Stat. › Géographie › ville › personne › retour retrouve la ville et la liste ; idem pour un outil de la Boîte à outils. Un changement de puce compte comme un écran (le retour l'annule).

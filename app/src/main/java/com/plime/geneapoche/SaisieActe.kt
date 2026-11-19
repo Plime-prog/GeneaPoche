@@ -590,7 +590,22 @@ fun EcranSaisieActe(
                     "D" to "D\u00E9c\u00E8s", "S" to "S\u00E9pulture",
                     "E" to "\u00C9v\u00E9nement"
                 ).forEach { (t, l) ->
-                    FilterChip(selected = type == t, onClick = { type = t; confirme = false }, label = { Text(l) })
+                    FilterChip(selected = type == t, onClick = {
+                        // v0.144 : "Ajouter un evenement" puis "Mariage" depuis la fiche d'une
+                        // FEMME : le formulaire etait prerempli en naissance (elle dans le
+                        // cadre du marie) ; on le re-prerempli en mariage (elle = mariee,
+                        // son mari = marie avec ses parents).
+                        val pe = exPersonne
+                        if (t == "M" && type != "M" && pe != null && pe.id == personneId &&
+                            (pe.sexe == "F" || (pe.sexe.isBlank() && conjointPourMariage(pe, personnes)?.sexe == "M"))) {
+                            val d0 = date; val h0 = heure; val c0 = commune; val dp0 = dept
+                            remplirDepuis(prefillActe(pe, personnes, "M", citations = citations))
+                            if (d0.isNotBlank()) date = d0
+                            if (h0.isNotBlank()) heure = h0
+                            if (c0.isNotBlank()) { commune = c0; dept = dp0 }
+                        }
+                        type = t; confirme = false
+                    }, label = { Text(l) })
                 }
                 // v0.107 : la situation militaire n'est PROPOSEE que pour
                 // les hommes ; le recensement concerne tout le monde.
