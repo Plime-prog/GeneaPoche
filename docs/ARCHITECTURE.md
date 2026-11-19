@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 19 novembre 2026 (v0.142). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 19 novembre 2026 (v0.143). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -65,3 +65,8 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 ## Ajouts v0.142
 - `Eventail.kt` : demi-éventail dessiné en Canvas (anneaux de 2, 4, 8 secteurs = mêmes 3 générations d'ascendants que l'arbre) ; fonctions pures `ancetresEventail`, `secteurEventail` (détection du secteur touché), `anneesCourtes` ; toucher = centrer, appui long = fiche. Menu Arbre : Arbre / Ligne de vie / Éventail.
 - `prefillActe` : le mariage ouvert depuis une femme place toujours la femme en mariée (même en modification) ; `autresRecherches` : nouveau tirage de 5 recherches.
+
+## Ajouts v0.143
+- Pile de retour : le code d'un écran contient maintenant le **sous-écran** ((onglet*100+sous)*10^10+fiche) ; sous-écrans hissés dans `EcranApplication` (`vueJournal`, `vueStat`, `outilOuvert`, `vueArbre`). `MemoireEcrans.kt` (`rememberMemo`) conserve département/commune/bloc déployé (Géographie) et la source ouverte (Sources) quand l'écran quitte la composition.
+- `conjointPourMariage` (Fiches.kt) : conjoint tolérant (liens à sens unique, date de mariage commune) ; une personne sans sexe dont le conjoint est un homme est traitée comme mariée.
+- `Eventail.kt` : conjoint et enfants (cartes `CarteMiniArbre`) sous l'éventail.

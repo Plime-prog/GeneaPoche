@@ -78,9 +78,9 @@ fun EcranSources(
     onOuvrirPersonne: (Long) -> Unit,
     onFermer: (() -> Unit)? = null
 ) {
-    var recherche by remember { mutableStateOf("") }
+    var recherche by rememberMemo("src_recherche", "")
     // 0 = liste ; -1 = nouvelle source ; sinon identifiant de la source ouverte.
-    var ouverte by remember { mutableStateOf(0L) }
+    var ouverte by rememberMemo("src_ouverte", 0L)
     // v0.95 (12) : plus de Dialog plein ecran : l'ecran s'affiche comme
     // les autres onglets, la barre de navigation reste visible.
     Column(Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 6.dp)) {

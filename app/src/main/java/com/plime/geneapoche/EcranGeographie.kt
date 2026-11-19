@@ -66,9 +66,9 @@ fun EcranGeographie(
 ) {
     val repartition = remember(personnes) { repartitionDepartements(personnes) }
     val maxDept = repartition.values.maxOfOrNull { it.size } ?: 0
-    var deptChoisi by remember { mutableStateOf<String?>(null) }
+    var deptChoisi by rememberMemo<String?>("geo_dept", null)
     // v0.141 : aucune commune selectionnee par defaut.
-    var communeChoisie by remember { mutableStateOf<String?>(null) }
+    var communeChoisie by rememberMemo<String?>("geo_commune", null)
 
     if (personnes.isEmpty()) {
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center) {
@@ -172,7 +172,7 @@ fun EcranGeographie(
                 }
             }
             val concernees = communeChoisie?.let { c -> communesDept.firstOrNull { it.key == c }?.value } ?: liste
-            var deploye by remember(code, communeChoisie) { mutableStateOf(false) }
+            var deploye by rememberMemo("geo_deploye_" + code + "_" + communeChoisie, false)
             Card(
                 Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),

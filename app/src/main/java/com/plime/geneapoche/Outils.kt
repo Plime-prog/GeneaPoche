@@ -71,9 +71,11 @@ fun EcranOutils(
     onFermer: (() -> Unit)? = null,
     enOnglet: Boolean = false,
     // v0.101 : ouvrir la fiche d'une personne depuis un outil.
-    onOuvrirPersonne: (Long) -> Unit = {}
+    onOuvrirPersonne: (Long) -> Unit = {},
+    // v0.143 : outil affiche pilote par l'application (pile de retour).
+    outil: Int = 0,
+    onOutil: (Int) -> Unit = {}
 ) {
-    var outil by remember { mutableStateOf(0) }
     var noteTexte by remember { mutableStateOf("") }
     var noteDefaut by remember { mutableStateOf(0L) }
     var noteOuverte by remember { mutableStateOf(false) }
@@ -97,18 +99,18 @@ fun EcranOutils(
                     }
                 }
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-                    FilterChip(selected = outil == 0, onClick = { outil = 0 }, label = { Text("Calendrier") })
+                    FilterChip(selected = outil == 0, onClick = { onOutil(0) }, label = { Text("Calendrier") })
                     Spacer(Modifier.width(8.dp))
-                    FilterChip(selected = outil == 1, onClick = { outil = 1 }, label = { Text("Dates") })
+                    FilterChip(selected = outil == 1, onClick = { onOutil(1) }, label = { Text("Dates") })
                     Spacer(Modifier.width(8.dp))
-                    FilterChip(selected = outil == 2, onClick = { outil = 2 }, label = { Text("Parent\u00e9") })
+                    FilterChip(selected = outil == 2, onClick = { onOutil(2) }, label = { Text("Parent\u00e9") })
                     // v0.101 : outils historiques.
                     Spacer(Modifier.width(8.dp))
-                    FilterChip(selected = outil == 3, onClick = { outil = 3 }, label = { Text("Histoire") })
+                    FilterChip(selected = outil == 3, onClick = { onOutil(3) }, label = { Text("Histoire") })
                     Spacer(Modifier.width(8.dp))
-                    FilterChip(selected = outil == 4, onClick = { outil = 4 }, label = { Text("Ann\u00e9e") })
+                    FilterChip(selected = outil == 4, onClick = { onOutil(4) }, label = { Text("Ann\u00e9e") })
                     Spacer(Modifier.width(8.dp))
-                    FilterChip(selected = outil == 5, onClick = { outil = 5 }, label = { Text("Famille") })
+                    FilterChip(selected = outil == 5, onClick = { onOutil(5) }, label = { Text("Famille") })
                 }
                 Spacer(Modifier.height(8.dp))
                 if (confirmation.isNotEmpty()) {

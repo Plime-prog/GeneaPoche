@@ -47,16 +47,17 @@ fun EcranStatistiques(
     idChoisie: Long,
     onOuvrir: (Long) -> Unit,
     onChoisir: (Long) -> Unit,
-    onOuvrirBio: (Long) -> Unit = onOuvrir
+    onOuvrirBio: (Long) -> Unit = onOuvrir,
+    vue: Int = 0,
+    onVue: (Int) -> Unit = {}
 ) {
-    var vue by remember { mutableStateOf(0) }
     Column(Modifier.fillMaxSize()) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            FilterChip(selected = vue == 0, onClick = { vue = 0 }, label = { Text("Base") })
-            FilterChip(selected = vue == 1, onClick = { vue = 1 }, label = { Text("G\u00E9ographie") })
+            FilterChip(selected = vue == 0, onClick = { onVue(0) }, label = { Text("Base") })
+            FilterChip(selected = vue == 1, onClick = { onVue(1) }, label = { Text("G\u00E9ographie") })
         }
         Box(Modifier.fillMaxWidth().weight(1f)) {
             if (vue == 0) {

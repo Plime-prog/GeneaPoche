@@ -543,7 +543,11 @@ fun EcranJournal(
     idChoisie: Long = 0L,
     onChoisirGeo: (Long) -> Unit = {},
     onOuvrirGeo: (Long) -> Unit = {},
-    onOuvrirBio: (Long) -> Unit = onOuvrirGeo
+    onOuvrirBio: (Long) -> Unit = onOuvrirGeo,
+    vueJournal: Int = 0,
+    onVueJournal: (Int) -> Unit = {},
+    vueStat: Int = 0,
+    onVueStat: (Int) -> Unit = {}
 ) {
     // GeneaPoche 12 : bouton d'actualisation du diagnostic A LA DEMANDE.
     // key(rafraichir) force le recalcul complet des listes du diagnostic
@@ -552,7 +556,7 @@ fun EcranJournal(
     var rafraichir by remember { mutableStateOf(0) }
     // v0.100 : trois vues \u2014 0 = Synthese (alertes, anniversaires, diagnostic,
     // coherence, anomalies), 1 = Recherches, 2 = Statistiques (Base / Geographie).
-    var vueJournal by remember { mutableStateOf(0) }
+    // v0.143 : puces du Journal et vue Stat. pilotees par l'application (pile de retour).
     // v0.90 : la base des communes doit \u00EAtre charg\u00E9e pour proposer les
     // corrections automatiques de lieux.
     val ctxJournal = LocalContext.current
@@ -594,10 +598,10 @@ fun EcranJournal(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        FilterChip(selected = vueJournal == 0, onClick = { vueJournal = 0 }, label = { Text("Synth\u00E8se") })
-        FilterChip(selected = vueJournal == 1, onClick = { vueJournal = 1 }, label = { Text("Recherches") })
-        FilterChip(selected = vueJournal == 3, onClick = { vueJournal = 3 }, label = { Text("5 du jour") })
-        FilterChip(selected = vueJournal == 2, onClick = { vueJournal = 2 }, label = { Text("Stat.") })
+        FilterChip(selected = vueJournal == 0, onClick = { onVueJournal(0) }, label = { Text("Synth\u00E8se") })
+        FilterChip(selected = vueJournal == 1, onClick = { onVueJournal(1) }, label = { Text("Recherches") })
+        FilterChip(selected = vueJournal == 3, onClick = { onVueJournal(3) }, label = { Text("5 du jour") })
+        FilterChip(selected = vueJournal == 2, onClick = { onVueJournal(2) }, label = { Text("Stat.") })
     }
     if (vueJournal == 2) {
         EcranStatistiques(
@@ -606,6 +610,8 @@ fun EcranJournal(
             idChoisie = idChoisie,
             onOuvrir = onOuvrirGeo,
             onOuvrirBio = onOuvrirBio,
+            vue = vueStat,
+            onVue = onVueStat,
             onChoisir = onChoisirGeo
         )
     } else {
@@ -667,7 +673,7 @@ fun EcranJournal(
         item {
             val (trous, attendus) = trousGenealogiques(personnes)
             Card(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { vueJournal = 1 },
+                Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onVueJournal(1) },
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = BorderStroke(1.dp, if (trous == 0) Color(0xFF9CBF9A) else Color(0xFFE6A23C))
             ) {

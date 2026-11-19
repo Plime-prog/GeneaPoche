@@ -6,7 +6,10 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -203,9 +206,25 @@ fun EcranEventail(
                 drawCircle(couleurCentre, radius = r0, center = Offset(cx, cy))
                 texteSecteur(mesure, centre, Offset(cx, cy - r0 * 0.45f), 0f, r0 * 1.7f, 9f, couleurTexte)
             }
+            // v0.143 : conjoint et enfants, comme dans l'arbre classique (memes cartes,
+            // meme comportement : toucher = centrer, appui long = fiche).
+            val conjoint = personneParId(personnes, centre.conjoint)
+            val enfants = centre.enfants.mapNotNull { personneParId(personnes, it) }
+            if (conjoint != null) {
+                Spacer(Modifier.height(10.dp))
+                Text("Conjoint", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                CarteMiniArbre(conjoint, onOuvrir, onCentrerSur, modifier = Modifier.width(86.dp))
+            }
+            if (enfants.isNotEmpty()) {
+                Spacer(Modifier.height(10.dp))
+                Text("Enfants (" + enfants.size.toString() + ")", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.horizontalScroll(rememberScrollState())) {
+                    enfants.forEach { e -> CarteMiniArbre(e, onOuvrir, onCentrerSur, modifier = Modifier.width(86.dp)) }
+                }
+            }
             Spacer(Modifier.height(12.dp))
             Text(
-                "Touchez un secteur : la personne devient le centre. Appui long : sa fiche. Pincez pour zoomer.",
+                "Touchez un secteur ou une carte : la personne devient le centre. Appui long : sa fiche. Pincez pour zoomer.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

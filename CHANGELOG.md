@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.143 — Retour arrière partout, Éventail complet
+
+- **Retour arrière** : cause trouvée — les sous-écrans (puces du Journal, Stat. Base/Géographie, département ou ville choisis, bloc des personnes déployé, outil de la Boîte à outils, vue de l'Arbre, source ouverte) étaient perdus dès qu'on ouvrait une fiche. Ils sont maintenant mémorisés et le sous-écran fait partie de la pile : Stat. › Géographie › ville › personne › retour retrouve la ville et la liste ; idem pour un outil de la Boîte à outils. Un changement de puce compte comme un écran (le retour l'annule).
+- **Éventail** : conjoint et enfants sous l'éventail, comme l'arbre classique (toucher = centrer, appui long = fiche).
+- **Acte de mariage depuis une femme** : le conjoint est maintenant retrouvé même si seul le mari porte le lien (import, lien à sens unique) et, à date de mariage égale, le bon conjoint est choisi ; une personne sans sexe renseigné dont le conjoint est un homme est traitée comme la mariée. *Je n'ai pas pu reproduire le défaut décrit (le test automatique donne bien : mariée = la femme, marié = son mari avec ses parents) : si cela persiste, merci de me dire précisément ce qui s'affiche dans chaque bloc.*
+- ~340 tests ; version 0.143. Rien essayé sur appareil.
+
 ## v0.142 — Éventail, acte de mariage depuis une femme, Autres recherches
 
 - **Acte de mariage depuis la fiche d'une femme** : cause réelle trouvée — depuis une fiche, le formulaire s'ouvre en « modification » et la correction de la v0.141 ne s'appliquait pas. Maintenant la femme est toujours la **mariée**, son conjoint le **marié** avec **ses** parents (Père/Mère du marié). Le choix du marié ne propose que des **hommes** (fiches sans sexe incluses) ; plus de puces M/F.

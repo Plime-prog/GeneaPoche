@@ -316,15 +316,25 @@ fun EcranApplication(
     }
     // v0.95 (12) : menu interne de l'onglet Arbre (0 = arbre, 1 = ligne de vie).
     var vueArbre by remember { mutableStateOf(0) }
+    // v0.143 : sous-ecrans hisses ici pour faire partie de la pile de retour.
+    var vueJournal by remember { mutableStateOf(0) }
+    var vueStat by remember { mutableStateOf(0) }
+    var outilOuvert by remember { mutableStateOf(0) }
+    val sousCourant = when (onglet) {
+        1 -> vueJournal * 10 + vueStat
+        2 -> vueArbre
+        3 -> outilOuvert
+        else -> 0
+    }
     // v0.141 : retour arriere unique et systematique. Chaque changement d'ecran
     // (onglet ou fiche) empile l'ecran quitte ; la fleche (et le bouton retour du
     // telephone) revient TOUJOURS vers l'ecran precedemment ouvert. D'abord on
     // ferme ce qui est ouvert par-dessus (choix d'une personne, edition, saisie).
     val pileEcrans = androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateListOf<Long>() }
-    var dernierEcran by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(codeEcran(onglet, idOuvert)) }
+    var dernierEcran by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(codeEcran(onglet, idOuvert, sousCourant)) }
     var retourEnCours by remember { mutableStateOf(false) }
-    LaunchedEffect(onglet, idOuvert) {
-        val courant = codeEcran(onglet, idOuvert)
+    LaunchedEffect(onglet, idOuvert, sousCourant) {
+        val courant = codeEcran(onglet, idOuvert, sousCourant)
         if (courant != dernierEcran) {
             if (!retourEnCours) ajouterEcran(pileEcrans, dernierEcran)
             dernierEcran = courant
@@ -338,13 +348,19 @@ fun EcranApplication(
             editionOuverte -> onEditionOuverte(false)
             saisieOuverte && saisieType != null -> saisieType = null
             else -> {
-                val cible = depilerEcran(pileEcrans, codeEcran(onglet, idOuvert))
+                val cible = depilerEcran(pileEcrans, codeEcran(onglet, idOuvert, sousCourant))
                 if (cible != null) {
                     val o = ongletDeCode(cible)
+                    val sous = sousDeCode(cible)
                     var id = idDeCode(cible)
                     if (id != 0L && personneParId(personnes, id) == null) id = 0L
-                    retourEnCours = codeEcran(o, id) != codeEcran(onglet, idOuvert)
+                    retourEnCours = codeEcran(o, id, sous) != codeEcran(onglet, idOuvert, sousCourant)
                     idToucheArbre = 0L
+                    when (o) {
+                        1 -> { vueJournal = sous / 10; vueStat = sous % 10 }
+                        2 -> vueArbre = sous
+                        3 -> outilOuvert = sous
+                    }
                     choisirOnglet(o)
                     onIdOuvert(id)
                 } else if (idOuvert != 0L) {
@@ -856,7 +872,9 @@ fun EcranApplication(
                         }
                     },
                     enOnglet = true,
-                    onOuvrirPersonne = { onIdOuvert(it) }
+                    onOuvrirPersonne = { onIdOuvert(it) },
+                    outil = outilOuvert,
+                    onOutil = { outilOuvert = it }
                 )
                 }
             } else if (onglet == 5) {
@@ -903,7 +921,11 @@ fun EcranApplication(
                     idChoisie = arbreCentre,
                     onChoisirGeo = { onArbreCentre(it) },
                     onOuvrirGeo = { onIdOuvert(it); onArbreCentre(it) },
-                    onOuvrirBio = { actionFicheEnAttente = "bio"; onIdOuvert(it); onArbreCentre(it) }
+                    onOuvrirBio = { actionFicheEnAttente = "bio"; onIdOuvert(it); onArbreCentre(it) },
+                    vueJournal = vueJournal,
+                    onVueJournal = { vueJournal = it },
+                    vueStat = vueStat,
+                    onVueStat = { vueStat = it }
                 )
                 }
             }
