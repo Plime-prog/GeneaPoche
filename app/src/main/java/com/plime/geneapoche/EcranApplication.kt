@@ -358,7 +358,7 @@ fun EcranApplication(
                     idToucheArbre = 0L
                     when (o) {
                         1 -> { vueJournal = sous / 10; vueStat = sous % 10 }
-                        2 -> vueArbre = sous
+                        2 -> vueArbre = if (sous == 1) 0 else sous
                         3 -> outilOuvert = sous
                     }
                     choisirOnglet(o)
@@ -819,12 +819,6 @@ fun EcranApplication(
                         )
                         Spacer(Modifier.width(6.dp))
                         FilterChip(
-                            selected = vueArbre == 1,
-                            onClick = { vueArbre = 1 },
-                            label = { Text("Ligne de vie") }
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        FilterChip(
                             selected = vueArbre == 2,
                             onClick = { vueArbre = 2 },
                             label = { Text("\u00C9ventail") }
@@ -1101,6 +1095,10 @@ fun EcranApplication(
                 var lumiereImage by remember { mutableStateOf(1f) }
                 var contrasteImage by remember { mutableStateOf(1f) }
                 var reglagesImage by remember { mutableStateOf(false) }
+                // v0.147 : un site Internet peut remplacer l'image dans la zone du haut.
+                var urlSite by remember { mutableStateOf("") }
+                var modeSite by remember { mutableStateOf(false) }
+                var dialogueUrl by remember { mutableStateOf(false) }
                 val contexte = LocalContext.current
                 val lanceurImage = rememberLauncherForActivityResult(
                     ActivityResultContracts.PickVisualMedia()
@@ -1144,8 +1142,9 @@ fun EcranApplication(
                     Box(
                         Modifier.weight(if (clavierOuvert) 0.35f else 1f).fillMaxWidth()
                             .clipToBounds()
-                            .pointerInput(Unit) {
-                                detectTransformGestures { _, pan, zoom, _ ->
+                            .pointerInput(modeSite) {
+                                // En mode site, le zoom est celui de la page elle-meme.
+                                if (!modeSite) detectTransformGestures { _, pan, zoom, _ ->
                                     zoomImage = (zoomImage * zoom).coerceIn(1f, 8f)
                                     decaleImage += pan
                                 }
@@ -1153,7 +1152,22 @@ fun EcranApplication(
                             .background(Color.White)
                     ) {
                         val bmp = imageTranscription
-                        if (bmp == null) {
+                        if (dialogueUrl) {
+                            DialogueAdresseSite(
+                                initiale = urlSite,
+                                onValider = { urlSite = it; modeSite = true; dialogueUrl = false; imageSaisiePresente = true },
+                                onFermer = { dialogueUrl = false }
+                            )
+                        }
+                        if (modeSite && urlSite.isNotEmpty()) {
+                            ZoneSite(
+                                url = urlSite,
+                                onChangerAdresse = { dialogueUrl = true },
+                                onImage = { modeSite = false; imageSaisiePresente = imageTranscription != null },
+                                onFermer = { modeSite = false; urlSite = ""; saisieType = null; imageSaisiePresente = false; onOnglet(0) },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else if (bmp == null) {
                             // v0.101 : demi-ecran COMPLETEMENT BLANC (transcription).
                             Column(
                                 Modifier.align(Alignment.Center).padding(12.dp),
@@ -1163,6 +1177,7 @@ fun EcranApplication(
                                     picker(true)
                                     lanceurImage.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                                 }) { Text("Image \u00e0 transcrire") }
+                                OutlinedButton(onClick = { dialogueUrl = true }) { Text("Site Internet") }
                                 Text(
                                     "L'image (acte, capture d'\u00e9cran) reste affich\u00e9e ici, zoomable, pendant la saisie en bas.",
                                     style = MaterialTheme.typography.bodySmall,
@@ -1204,6 +1219,11 @@ fun EcranApplication(
                                 Modifier.align(Alignment.TopEnd).padding(4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
+                                Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)) {
+                                    TextButton(onClick = { dialogueUrl = true }) {
+                                        Text("Site", fontSize = 11.sp, maxLines = 1)
+                                    }
+                                }
                                 Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)) {
                                     TextButton(onClick = { angleImage += 90f }) {
                                         Text("Pivoter", fontSize = 11.sp, maxLines = 1)

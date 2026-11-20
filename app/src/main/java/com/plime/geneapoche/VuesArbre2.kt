@@ -147,19 +147,27 @@ fun EcranDescendance(
                     },
                     color = CouleurVertFonce
                 )
-                Column(
+                // v0.147 : nom + prenoms sur une ligne, annees alignees a droite.
+                Row(
                     Modifier.weight(1f).combinedClickable(
                         onClick = { onCentrerSur(l.p.id) },
                         onLongClick = { onOuvrir(l.p.id) }
-                    )
+                    ),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         l.p.titre() + (if (l.nbEnfants > 0) "  (" + l.nbEnfants.toString() + ")" else ""),
+                        Modifier.weight(1f),
                         fontSize = 14.sp,
                         fontWeight = if (l.niveau == 0) FontWeight.Bold else FontWeight.Normal
                     )
-                    val a = anneesCourtes(l.p)
-                    if (a.isNotEmpty()) Text(a, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        anneesCourtes(l.p),
+                        Modifier.width(92.dp).padding(start = 6.dp),
+                        fontSize = 11.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 19 novembre 2026 (v0.146). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 20 novembre 2026 (v0.147). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -80,3 +80,9 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 
 ## Ajouts v0.146
 - `VuesArbre2.kt` : `EcranDescendance` (`lignesDescendance`, `tousDescendants`, branches dépliées mémorisées par `rememberMemo`) et `EcranCompletude` (`completudeAscendance`, `ancetresManquants`). Menu Arbre : sous-écrans 6 et 7.
+
+## Ajouts v0.147
+
+- `OrdreChrono.kt` : `conjointsChrono`, `enfantsChrono`, `dateMariageEntre` (fonctions pures testées) ; `enfantsDe` s'appuie dessus.
+- `VisionneuseWeb.kt` : `normaliserUrl` (https seul), `DialogueAdresseSite`, `ZoneSite` (WebView : JS et DOM storage activés, accès fichiers/contenus désactivés, mixed content refusé, navigation https seule, pas d'interface JS, cookies tiers off, nettoyage à la fermeture). Réglages lumière/contraste par ColorMatrix sur la couche matérielle.
+- Manifeste : permission INTERNET (seul usage : cette visionneuse).

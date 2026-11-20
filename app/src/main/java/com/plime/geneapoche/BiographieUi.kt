@@ -153,8 +153,8 @@ fun CarteUnionsEnfants(
     onAjouterEnfant: () -> Unit,
     onRetirer: (String, Long) -> Unit
 ) {
-    val conjoints = p.tousConjoints().mapNotNull { personneParId(personnes, it) }
-    val enfants = p.enfants.mapNotNull { personneParId(personnes, it) }
+    val conjoints = conjointsChrono(p, personnes)
+    val enfants = enfantsChrono(p.enfants.mapNotNull { personneParId(personnes, it) })
     var aRetirer by remember(p.id) { mutableStateOf<Triple<String, Long, String>?>(null) }
 
     CadrePliable(
@@ -218,7 +218,7 @@ fun CarteUnionsEnfants(
 fun CarteFamilleBio(p: Personne, personnes: List<Personne>, onOuvrir: (Long) -> Unit) {
     val parents = listOf("P\u00E8re" to p.pere, "M\u00E8re" to p.mere)
         .mapNotNull { (l, id) -> personneParId(personnes, id)?.let { l to it } }
-    val conjoints = p.tousConjoints().mapNotNull { personneParId(personnes, it) }
+    val conjoints = conjointsChrono(p, personnes)
     if (parents.isNotEmpty()) {
         Card(
             Modifier.fillMaxWidth().padding(vertical = 4.dp),
