@@ -2,6 +2,7 @@
 
 ## Modèle de sécurité
 
+- **Application strictement locale : aucune connexion, nulle part.** Un test automatique (CI) échoue si la permission Internet ou un composant réseau (WebView, URLConnection, OkHttp…) apparaît.
 - Aucune permission Internet dans le manifeste : l'application elle-même ne transmet aucune donnée.
 - Stockage local chiffré AES-256/GCM ; clé maître aléatoire de 256 bits liée au code PIN (double enveloppe PBKDF2-HmacSHA256 puis AndroidKeyStore).
 - Sans le code PIN, aucune donnée ne peut être déchiffrée, même en accédant directement au stockage de l'application.

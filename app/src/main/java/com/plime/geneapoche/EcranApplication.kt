@@ -358,7 +358,7 @@ fun EcranApplication(
                     idToucheArbre = 0L
                     when (o) {
                         1 -> { vueJournal = sous / 10; vueStat = sous % 10 }
-                        2 -> vueArbre = sous
+                        2 -> vueArbre = if (sous == 1) 0 else sous
                         3 -> outilOuvert = sous
                     }
                     choisirOnglet(o)
@@ -816,12 +816,6 @@ fun EcranApplication(
                             selected = vueArbre == 0,
                             onClick = { vueArbre = 0 },
                             label = { Text("Arbre") }
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        FilterChip(
-                            selected = vueArbre == 1,
-                            onClick = { vueArbre = 1 },
-                            label = { Text("Ligne de vie") }
                         )
                         Spacer(Modifier.width(6.dp))
                         FilterChip(

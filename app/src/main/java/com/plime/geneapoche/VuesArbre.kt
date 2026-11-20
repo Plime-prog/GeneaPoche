@@ -40,7 +40,7 @@ fun enfantsDe(p: Personne, personnes: List<Personne>): List<Personne> {
     p.enfants.forEach { ids.add(it) }
     personnes.forEach { q -> if (q.id != p.id && (q.pere == p.id || q.mere == p.id)) ids.add(q.id) }
     return ids.mapNotNull { personneParId(personnes, it) }
-        .sortedBy { anneeDe(it.dateNaissance) ?: 9999 }
+        .let { enfantsChrono(it) }
 }
 
 // Descendants sur 2 generations : chaque enfant avec ses propres enfants.

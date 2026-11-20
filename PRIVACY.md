@@ -11,7 +11,7 @@ Toutes vos données généalogiques (personnes, liens familiaux, actes d'état c
 - **Aucune recherche en ligne** : GénéaPoche n'ouvre ni navigateur ni lien et ne transmet ni commune, ni année, ni type d'acte à qui que ce soit (la recherche d'archives a été supprimée en v0.33).
 - **Fichiers que vous exportez vous-même** : GEDCOM, images et sauvegardes .gpbak (cette dernière étant chiffrée avec votre phrase secrète). Les fichiers GEDCOM et images sont **en clair** : c'est à vous de les protéger.
 
-Rien d'autre ne quitte jamais l'application : elle n'a **aucune permission Internet** dans son manifeste et ne peut donc rien transmettre d'elle-même.
+**GénéaPoche fonctionne uniquement en local, sur votre téléphone : aucune connexion Internet, jamais, pour aucune fonction (pas de navigateur intégré, pas d'affichage de site, pas de mise à jour automatique, pas de statistiques).** Rien d'autre ne quitte jamais l'application : elle n'a **aucune permission Internet** dans son manifeste et ne peut donc rien transmettre d'elle-même.
 
 ## Ce que l'application ne fait pas
 

@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.147 — Ordre chronologique et Descendance alignée
+
+- **Fiche** : conjoints triés par date de mariage, enfants par date de naissance (dates inconnues en fin de liste) ; même ordre dans la Biographie, le Sablier et la Descendance.
+- **Arbre** : menu « Ligne de vie » supprimé.
+- **Descendance** : nom + prénoms et années sur une seule ligne, années alignées à droite.
+- **Confidentialité** : demande de lien Internet **abandonnée** ; l'application reste **100 % locale**, sans permission Internet ni aucune connexion.
+- Tests : ordre chronologique.
+
 ## v0.146 — Descendance et Complétude (menu Arbre)
 
 - **Descendance** : tous les descendants de la personne centrale en liste indentée ; flèche ▶/▼ pour déplier ou replier une branche, « Tout déplier / Tout replier », nombre d'enfants et années par ligne, nombre total de descendants. Toucher un nom = centrer, appui long = fiche. Garde-fou contre les boucles de données.
