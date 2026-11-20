@@ -4,6 +4,7 @@
 
 - Traitez les sujets dans l'ordre : la sécurité et les données avant la robustesse, la robustesse avant le design.
 - **Aucune donnée personnelle réelle** dans le dépôt, les captures, les tests ou les tickets : uniquement des données fictives.
+- **Application strictement locale, confidentialité maximale** (un test CI le vérifie).
 - **Ne jamais ajouter de permission Android**, notamment INTERNET, ni de bibliothèque qui mesure, journalise ou transmet des données.
 - Chaque changement garde le workflow APK **au vert** (lint, tests unitaires, debug et release) et indique le risque corrigé et la façon de le tester sur téléphone.
 - Les points marqués **Migration** touchent au format des données : tester d'abord la mise à jour depuis la version précédente avec une base fictive, en gardant les anciens fichiers jusqu'à validation.

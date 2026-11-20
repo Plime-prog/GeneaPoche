@@ -1,7 +1,6 @@
 package com.plime.geneapoche
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 class OrdreChronoTest {
@@ -20,16 +19,5 @@ class OrdreChronoTest {
         p.conjointsSupp.addAll(listOf(3L, 4L))
         val l = conjointsChrono(p, listOf(p, q1, q2, q3))
         assertEquals(listOf(3L, 2L, 4L), l.map { it.id })
-    }
-
-    @Test fun urlNormalisee() {
-        assertEquals("https://archives.exemple.fr", normaliserUrl(" archives.exemple.fr "))
-        assertEquals("https://a.fr/x", normaliserUrl("http://a.fr/x"))
-        assertEquals("https://a.fr:8080/x", normaliserUrl("a.fr:8080/x"))
-        assertNull(normaliserUrl("javascript:alert(1)"))
-        assertNull(normaliserUrl("file:///sdcard/x"))
-        assertNull(normaliserUrl("deux mots.fr"))
-        assertNull(normaliserUrl("localhost"))
-        assertNull(normaliserUrl(""))
     }
 }

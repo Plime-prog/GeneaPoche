@@ -84,5 +84,4 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 ## Ajouts v0.147
 
 - `OrdreChrono.kt` : `conjointsChrono`, `enfantsChrono`, `dateMariageEntre` (fonctions pures testées) ; `enfantsDe` s'appuie dessus.
-- `VisionneuseWeb.kt` : `normaliserUrl` (https seul), `DialogueAdresseSite`, `ZoneSite` (WebView : JS et DOM storage activés, accès fichiers/contenus désactivés, mixed content refusé, navigation https seule, pas d'interface JS, cookies tiers off, nettoyage à la fermeture). Réglages lumière/contraste par ColorMatrix sur la couche matérielle.
-- Manifeste : permission INTERNET (seul usage : cette visionneuse).
+- Principe maintenu : application **uniquement locale**, manifeste sans permission INTERNET ; aucun code réseau (pas de WebView). Toute demande d'affichage de site a été refusée pour protéger les données.

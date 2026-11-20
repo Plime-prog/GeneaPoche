@@ -1,12 +1,12 @@
 # Historique des versions
 
-## v0.147 — Ordre chronologique, Descendance alignée, site Internet en Saisie
+## v0.147 — Ordre chronologique et Descendance alignée
 
 - **Fiche** : conjoints triés par date de mariage, enfants par date de naissance (dates inconnues en fin de liste) ; même ordre dans la Biographie, le Sablier et la Descendance.
 - **Arbre** : menu « Ligne de vie » supprimé.
 - **Descendance** : nom + prénoms et années sur une seule ligne, années alignées à droite.
-- **Saisie** : bouton « Site Internet » dans le bloc du haut (et « Site » quand une image est affichée) : la page s'affiche à la place de l'image, avec zoom au pincement, taille du texte, lumière et contraste ; boutons Adresse / Image / Fermer. https uniquement, cookies effacés à la fermeture, aucune donnée de l'arbre envoyée. **Nouvelle permission Android : Internet** (PRIVACY.md mis à jour).
-- Tests : ordre chronologique, normalisation des adresses.
+- **Confidentialité** : demande de lien Internet **abandonnée** ; l'application reste **100 % locale**, sans permission Internet ni aucune connexion.
+- Tests : ordre chronologique.
 
 ## v0.146 — Descendance et Complétude (menu Arbre)
 

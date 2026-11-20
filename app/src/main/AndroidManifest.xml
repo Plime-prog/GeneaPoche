@@ -5,10 +5,6 @@
     <!-- G1-20 : aucune donnee (chiffree, inutilisable sans le PIN) ne quitte
          l'appareil via Android Backup ou un transfert d'appareil. -->
 
-    <!-- v0.147 : Internet UNIQUEMENT pour afficher un site dans la zone du haut de la Saisie
-         (aucune donnee de l'application n'est envoyee). -->
-    <uses-permission android:name="android.permission.INTERNET" />
-
     <application
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
