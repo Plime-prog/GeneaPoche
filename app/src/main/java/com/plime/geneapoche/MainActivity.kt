@@ -97,12 +97,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        DiagnosticBlocage.definirActif(true)
+    }
+
+    override fun onPause() {
+        DiagnosticBlocage.definirActif(false)
+        super.onPause()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // G3-05 : ecran de demarrage aux couleurs de l'application,
         // puis bascule vers Theme.GeneaPoche (postSplashScreenTheme).
         installSplashScreen()
         super.onCreate(savedInstanceState)
         Incidents.installer(this)
+        DiagnosticBlocage.lireHistoriqueAnr(this)
+        DiagnosticBlocage.demarrerSentinelle(this)
         // G3-03 : affichage bord a bord ; les ecrans gerent les marges
         // (barre d'etat, barre de navigation, clavier) via les insets.
         enableEdgeToEdge()

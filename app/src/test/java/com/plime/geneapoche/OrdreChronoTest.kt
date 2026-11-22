@@ -21,3 +21,17 @@ class OrdreChronoTest {
         assertEquals(listOf(3L, 2L, 4L), l.map { it.id })
     }
 }
+
+class CommuneSourceTest {
+    @Test fun communeLisible() {
+        assertEquals("Bourges", communeLisible("Bourges, 18033, Cher"))
+        assertEquals("Ville inconnue", communeLisible(" Ville inconnue "))
+        assertEquals("Ajaccio", communeLisible("Ajaccio, 2A004, Corse-du-Sud"))
+    }
+
+    @Test fun communeAVerifier() {
+        org.junit.Assert.assertTrue(communeAVerifier("Bourge"))
+        org.junit.Assert.assertFalse(communeAVerifier("Bourges, 18033, Cher"))
+        org.junit.Assert.assertFalse(communeAVerifier(""))
+    }
+}

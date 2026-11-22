@@ -306,7 +306,7 @@ fun EcranApplication(
             saisieType = null
             saisieParentEnfant = 0L
             saisieIntitulePre = ""
-            if (o != 5) imageSaisiePresente = false
+            if (o != 5) { imageSaisiePresente = false; sourceSaisieOuverte = false; if (saisieOuverte) onEditionOuverte(false) }
         }
         if (o == 0 && idToucheArbre != 0L) {
             onIdOuvert(idToucheArbre)
@@ -346,6 +346,7 @@ fun EcranApplication(
         when {
             pickerRole.isNotEmpty() -> onPickerRole("")
             editionOuverte -> onEditionOuverte(false)
+            sourceSaisieOuverte -> sourceSaisieOuverte = false
             saisieOuverte && saisieType != null -> saisieType = null
             else -> {
                 val cible = depilerEcran(pileEcrans, codeEcran(onglet, idOuvert, sousCourant))
@@ -369,7 +370,7 @@ fun EcranApplication(
             }
         }
     }
-    val peutRetourner = pickerRole.isNotEmpty() || editionOuverte || (saisieOuverte && saisieType != null) ||
+    val peutRetourner = pickerRole.isNotEmpty() || editionOuverte || sourceSaisieOuverte || (saisieOuverte && saisieType != null) ||
         pileEcrans.isNotEmpty() || idOuvert != 0L
     BackHandler(enabled = peutRetourner) { retourArriere() }
 
@@ -406,6 +407,66 @@ fun EcranApplication(
             }
         }
     }
+
+    // v0.148 : la fenetre d'edition d'une personne est aussi affichable DANS la
+    // demi-zone basse de la Saisie (enLigne), l'image restant visible au-dessus.
+    val afficherEdition: @Composable (Boolean) -> Unit = { enLigne ->
+        // G2-18 residuel : identifiant alloue UNE seule fois par ouverture du
+        // dialogue, strictement croissant (compteur persistant).
+        val idNouvellePersonne = remember { prochainId() }
+        key(editionCible?.id ?: idNouvellePersonne) {
+        DialogueEdition(
+            cible = editionCible,
+            idNouvelle = idNouvellePersonne,
+            // v0.107 : proposition systematique de fiche existante (nom + DATES).
+            personnes = personnes,
+            onOuvrirExistante = { q -> onEditionCible(q); onEditionOuverte(true) },
+            onValider = { p2 ->
+                if (editionCible == null) {
+                    // Contr\u00F4le anti-doublon : une fiche portant d\u00E9j\u00E0 le m\u00EAme
+                    // couple nom + pr\u00E9noms n'est JAMAIS recr\u00E9\u00E9e (insensible \u00E0 la casse).
+                    // v0.77 : un VRAI doublon = m\u00EAme nom, m\u00EAmes pr\u00E9noms ET
+                    // m\u00EAme date de naissance. Sinon c'est un homonyme : la
+                    // nouvelle fiche est cr\u00E9\u00E9e.
+                    val doublon = personnes.firstOrNull { q ->
+                        // v0.124 : meme comparaison que l'anti-doublon de la saisie d'acte
+                        // (casse, accents, tirets, ordre des prenoms ignores).
+                        cleNom(q.nom) == cleNom(p2.nom) &&
+                        clePrenomsNom(q.prenoms) == clePrenomsNom(p2.prenoms) &&
+                        q.dateNaissance.isNotBlank() && p2.dateNaissance.isNotBlank() &&
+                        q.dateNaissance == p2.dateNaissance
+                    }
+                    if (doublon != null) {
+                        onMessage(
+                            "Cette personne existe d\u00E9j\u00E0 (m\u00Eame nom, m\u00Eames pr\u00E9noms, m\u00Eame date de naissance) : " + doublon.titre() +
+                            ". Ouvrez sa fiche pour la compl\u00E9ter (aucun doublon dans la base)."
+                        )
+                        return@DialogueEdition
+                    }
+                    (personnes as? MutableList<Personne>)?.add(p2)
+                    if (pickerRole.isNotEmpty()) {
+                        lier(pickerRole, p2.id)
+                        onEditionOuverte(false)
+                        return@DialogueEdition
+                    }
+                } else {
+                    (personnes as? MutableList<Personne>)?.let { l ->
+                        val i = l.indexOfFirst { q -> q.id == p2.id }
+                        if (i >= 0) l[i] = p2
+                    }
+                }
+                enregistrer()
+                onEditionOuverte(false)
+            },
+            enLigne = enLigne,
+            onAnnuler = { onEditionOuverte(false) },
+            onSupprimer = {
+                editionCible?.let { onConfirmSuppression(it) }
+                onEditionOuverte(false)
+            }
+        )
+        }
+        }
 
     if (ouverte == null) {
         Scaffold(
@@ -1239,7 +1300,28 @@ fun EcranApplication(
                     }
                     // Zone BASSE : la saisie.
                     Box(Modifier.weight(1f).fillMaxWidth()) {
-                        if (saisieType == null) {
+                        if (editionOuverte) {
+                            // v0.148 : Personne complete dans la demi-zone basse.
+                            afficherEdition(true)
+                        } else if (sourceSaisieOuverte) {
+                            // v0.148 : Carnet de sources dans la demi-zone basse.
+                            Column(Modifier.fillMaxSize()) {
+                                TextButton(onClick = { sourceSaisieOuverte = false }) { Text("\u2190 Retour \u00e0 la saisie") }
+                                Box(Modifier.weight(1f)) {
+                                    EcranSources(
+                                        personnes = personnes,
+                                        sources = sources,
+                                        citations = citations,
+                                        onCreerSource = creerSource,
+                                        onEnregistrerSource = enregistrerSource,
+                                        onSupprimerSource = supprimerSource,
+                                        onEnregistrerCitation = enregistrerCitation,
+                                        onSupprimerCitation = supprimerCitation,
+                                        onOuvrirPersonne = { id -> sourceSaisieOuverte = false; onIdOuvert(id) }
+                                    )
+                                }
+                            }
+                        } else if (saisieType == null) {
                             Column(Modifier.fillMaxSize()) {
                                 // v0.101 : Personne complete et Source au MEME gabarit
                                 // que les actes (puces ci-dessous) : trois entrees, un style.
@@ -1289,33 +1371,6 @@ fun EcranApplication(
                     }
                 }
             }
-            if (sourceSaisieOuverte) {
-                // v0.101 : le Carnet de sources s'ouvre par-dessus la saisie, sans
-                // la quitter (l'image et le formulaire restent en l'etat).
-                androidx.compose.ui.window.Dialog(
-                    onDismissRequest = { sourceSaisieOuverte = false },
-                    properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
-                ) {
-                    Surface(Modifier.fillMaxSize()) {
-                        Column(Modifier.fillMaxSize()) {
-                            TextButton(onClick = { sourceSaisieOuverte = false }) { Text("\u2190 Retour \u00e0 la saisie") }
-                            Box(Modifier.weight(1f)) {
-                                EcranSources(
-                                    personnes = personnes,
-                                    sources = sources,
-                                    citations = citations,
-                                    onCreerSource = creerSource,
-                                    onEnregistrerSource = enregistrerSource,
-                                    onSupprimerSource = supprimerSource,
-                                    onEnregistrerCitation = enregistrerCitation,
-                                    onSupprimerCitation = supprimerCitation,
-                                    onOuvrirPersonne = { id -> sourceSaisieOuverte = false; onIdOuvert(id) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
             if (menuGedcom) {
                 // G3-13 : ModalBottomSheet a la place du dialogue.
                 ModalBottomSheet(
@@ -1340,7 +1395,7 @@ fun EcranApplication(
                             Spacer(Modifier.height(6.dp))
                             Text("Dernier incident (trace locale, sans donn\u00e9es g\u00e9n\u00e9alogiques) :", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
                             androidx.compose.foundation.text.selection.SelectionContainer {
-                                Text(incident!!.take(1200), style = MaterialTheme.typography.bodySmall, fontSize = 10.sp)
+                                Text(incident!!.take(2500), style = MaterialTheme.typography.bodySmall, fontSize = 10.sp)
                             }
                             TextButton(onClick = { Incidents.effacer(ctxIncident); incident = null }) { Text("Effacer cette trace") }
                         }
@@ -1712,67 +1767,14 @@ fun EcranApplication(
             // Menus de l'application TOUJOURS visibles en bas, meme fiche ouverte.
             // Choisir un onglet ferme la fiche et affiche l'onglet demande.
             SnackbarHost(etatSnackbar)
-            BarreOnglets(onglet) { o -> if (saisieOuverte || o == 5) { saisieType = null; saisieParentEnfant = 0L; if (o != 5) imageSaisiePresente = false }; onOnglet(o); onIdOuvert(0L) }
+            BarreOnglets(onglet) { o -> if (saisieOuverte || o == 5) { saisieType = null; saisieParentEnfant = 0L; if (o != 5) { imageSaisiePresente = false; sourceSaisieOuverte = false; if (saisieOuverte) onEditionOuverte(false) } }; onOnglet(o); onIdOuvert(0L) }
         }
     }
 
     // G3-19 : le message passe par le Snackbar (declare plus haut).
 
-    if (editionOuverte) {
-        // G2-18 residuel : identifiant alloue UNE seule fois par ouverture du
-        // dialogue, strictement croissant (compteur persistant).
-        val idNouvellePersonne = remember { prochainId() }
-        key(editionCible?.id ?: idNouvellePersonne) {
-        DialogueEdition(
-            cible = editionCible,
-            idNouvelle = idNouvellePersonne,
-            // v0.107 : proposition systematique de fiche existante (nom + DATES).
-            personnes = personnes,
-            onOuvrirExistante = { q -> onEditionCible(q); onEditionOuverte(true) },
-            onValider = { p2 ->
-                if (editionCible == null) {
-                    // Contr\u00F4le anti-doublon : une fiche portant d\u00E9j\u00E0 le m\u00EAme
-                    // couple nom + pr\u00E9noms n'est JAMAIS recr\u00E9\u00E9e (insensible \u00E0 la casse).
-                    // v0.77 : un VRAI doublon = m\u00EAme nom, m\u00EAmes pr\u00E9noms ET
-                    // m\u00EAme date de naissance. Sinon c'est un homonyme : la
-                    // nouvelle fiche est cr\u00E9\u00E9e.
-                    val doublon = personnes.firstOrNull { q ->
-                        // v0.124 : meme comparaison que l'anti-doublon de la saisie d'acte
-                        // (casse, accents, tirets, ordre des prenoms ignores).
-                        cleNom(q.nom) == cleNom(p2.nom) &&
-                        clePrenomsNom(q.prenoms) == clePrenomsNom(p2.prenoms) &&
-                        q.dateNaissance.isNotBlank() && p2.dateNaissance.isNotBlank() &&
-                        q.dateNaissance == p2.dateNaissance
-                    }
-                    if (doublon != null) {
-                        onMessage(
-                            "Cette personne existe d\u00E9j\u00E0 (m\u00Eame nom, m\u00Eames pr\u00E9noms, m\u00Eame date de naissance) : " + doublon.titre() +
-                            ". Ouvrez sa fiche pour la compl\u00E9ter (aucun doublon dans la base)."
-                        )
-                        return@DialogueEdition
-                    }
-                    (personnes as? MutableList<Personne>)?.add(p2)
-                    if (pickerRole.isNotEmpty()) {
-                        lier(pickerRole, p2.id)
-                        onEditionOuverte(false)
-                        return@DialogueEdition
-                    }
-                } else {
-                    (personnes as? MutableList<Personne>)?.let { l ->
-                        val i = l.indexOfFirst { q -> q.id == p2.id }
-                        if (i >= 0) l[i] = p2
-                    }
-                }
-                enregistrer()
-                onEditionOuverte(false)
-            },
-            onAnnuler = { onEditionOuverte(false) },
-            onSupprimer = {
-                editionCible?.let { onConfirmSuppression(it) }
-                onEditionOuverte(false)
-            }
-        )
-        }
+    if (editionOuverte && !(saisieOuverte && ouverte == null)) {
+        afficherEdition(false)
     }
 
     if (pickerRole.isNotEmpty() && ouverte != null) {

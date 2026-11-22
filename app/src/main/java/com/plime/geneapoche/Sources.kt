@@ -263,7 +263,7 @@ fun titreSuggere(s: Source): String {
     if (s.depot.isNotBlank()) l.add(s.depot.trim())
     val t = libelleTypeSource(s.type)
     if (t.isNotEmpty()) l.add(t)
-    if (s.commune.isNotBlank()) l.add(s.commune.trim())
+    if (s.commune.isNotBlank()) l.add(communeLisible(s.commune))
     if (s.periode.isNotBlank()) l.add(s.periode.trim())
     return l.joinToString(", ")
 }

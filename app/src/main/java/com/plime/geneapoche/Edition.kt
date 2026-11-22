@@ -3,9 +3,11 @@ package com.plime.geneapoche
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -54,7 +56,10 @@ fun DialogueEdition(
     // DATES) ; la toucher ouvre sa fiche pour modification au lieu de
     // creer un doublon.
     personnes: List<Personne> = emptyList(),
-    onOuvrirExistante: ((Personne) -> Unit)? = null
+    onOuvrirExistante: ((Personne) -> Unit)? = null,
+    // v0.148 : true = affiche dans la demi-zone basse de la Saisie (l'image reste
+    // visible au-dessus) au lieu d'une fenetre.
+    enLigne: Boolean = false
 ) {
     var choixExistante by remember { mutableStateOf(false) }
     var nom by remember(cible?.id) { mutableStateOf(cible?.nom ?: "") }
@@ -117,10 +122,8 @@ fun DialogueEdition(
         listOf(dateNaissance, dateBapteme, dateMariage, dateDeces, dateSepulture).all { dateValide(it) } &&
         listOf(heureNaissance, heureBapteme, heureMariage, heureDeces, heureSepulture).all { heureValide(it) }
 
-    AlertDialog(
-        onDismissRequest = onAnnuler,
-        title = { Text(if (cible == null) "Ajouter une personne" else "Modifier la personne") },
-        text = {
+    val titreEdition = if (cible == null) "Ajouter une personne" else "Modifier la personne"
+    val corps: @Composable () -> Unit = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text("Identit\u00E9", fontWeight = FontWeight.Bold)
                 Text(
@@ -181,24 +184,41 @@ fun DialogueEdition(
                 Champ("Heure", heureSepulture, { heureSepulture = it }, erreur = !heureValide(heureSepulture), aide = "hh:mm")
                 Champ("Lieu", lieuSepulture, { lieuSepulture = it }, communes = true, onDept = { deptSepulture = it })
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onValider(construire()) },
-                enabled = formulaireValide
-            ) { Text("Enregistrer") }
-        },
-        dismissButton = {
-            Row {
-                if (cible != null && onSupprimer != null) {
-                    TextButton(onClick = onSupprimer) {
-                        Text("Supprimer", color = androidx.compose.ui.graphics.Color(0xFFB23A2E))
-                    }
+    }
+    val boutonEnregistrer: @Composable () -> Unit = {
+        TextButton(
+            onClick = { onValider(construire()) },
+            enabled = formulaireValide
+        ) { Text("Enregistrer") }
+    }
+    val boutonsAnnuler: @Composable () -> Unit = {
+        Row {
+            if (cible != null && onSupprimer != null) {
+                TextButton(onClick = onSupprimer) {
+                    Text("Supprimer", color = androidx.compose.ui.graphics.Color(0xFFB23A2E))
                 }
-                TextButton(onClick = onAnnuler) { Text("Annuler") }
+            }
+            TextButton(onClick = onAnnuler) { Text("Annuler") }
+        }
+    }
+    if (enLigne) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 4.dp)) {
+            Text(titreEdition, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Box(Modifier.weight(1f).fillMaxWidth()) { corps() }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                boutonsAnnuler()
+                boutonEnregistrer()
             }
         }
-    )
+    } else {
+        AlertDialog(
+            onDismissRequest = onAnnuler,
+            title = { Text(titreEdition) },
+            text = { corps() },
+            confirmButton = { boutonEnregistrer() },
+            dismissButton = { boutonsAnnuler() }
+        )
+    }
 
     // v0.107 : fenetre des fiches existantes possibles (nom + DATES).
     if (choixExistante && onOuvrirExistante != null) {
