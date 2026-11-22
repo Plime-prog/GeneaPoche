@@ -7,9 +7,9 @@ import android.net.Uri
 
 // ---------------------------------------------------------------- Image a transcrire (v0.104)
 // Decodage PRUDENT : dimensions lues d'abord, puis reduction pour que le
-// plus grand cote ne depasse pas `cote` pixels (memoire bornee, pas de
+// plus grand cote ne depasse pas `cote` pixels (2048 depuis v0.149 : ~16 Mo au lieu de ~36 Mo) (memoire bornee, pas de
 // "bitmap trop grand" au dessin). A appeler HORS du thread principal.
-fun decoderImageReduite(ctx: Context, uri: Uri, cote: Int = 3072): Bitmap? {
+fun decoderImageReduite(ctx: Context, uri: Uri, cote: Int = 2048): Bitmap? {
     return try {
         val bornes = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         ctx.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bornes) }
@@ -76,6 +76,40 @@ object Incidents {
 // Tout reste LOCAL : fichier prive, noms de fonctions uniquement, aucune donnee
 // genealogique, aucune connexion.
 
+// Extrait les blocs de fils nommes (ex. "HeapTaskDaemon" = ramasse-miettes).
+fun extraireFils(trace: String, noms: List<String>, maxLignes: Int = 14): String {
+    val lignes = trace.lines()
+    val sortie = ArrayList<String>()
+    for (nom in noms) {
+        val debut = lignes.indexOfFirst { it.startsWith("\"" + nom) }
+        if (debut < 0) continue
+        var n = 0
+        for (i in debut until lignes.size) {
+            if (i > debut && lignes[i].isBlank()) break
+            sortie.add(lignes[i])
+            if (++n >= maxLignes) break
+        }
+        sortie.add("")
+    }
+    return sortie.joinToString("\n").trim()
+}
+
+// Memoire et appareil (aucune donnee personnelle) : aide a reconnaitre une saturation.
+fun resumeMemoire(ctx: Context): String {
+    return try {
+        val am = ctx.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        val mi = android.app.ActivityManager.MemoryInfo()
+        am.getMemoryInfo(mi)
+        val rt = Runtime.getRuntime()
+        val mo = 1024L * 1024L
+        "Appareil : " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + ", Android " + android.os.Build.VERSION.RELEASE +
+            "\nRAM : " + (mi.totalMem / mo) + " Mo (libre " + (mi.availMem / mo) + " Mo" + (if (mi.lowMemory) ", MEMOIRE FAIBLE" else "") + ")" +
+            "\nTas application : " + ((rt.totalMemory() - rt.freeMemory()) / mo) + " / " + (rt.maxMemory() / mo) + " Mo (classe " + am.memoryClass + " Mo)"
+    } catch (e: Throwable) {
+        "(memoire indisponible)"
+    }
+}
+
 // Extrait le bloc du fil principal ("main") d'une trace ANR complete.
 fun extraireFilPrincipal(trace: String, maxLignes: Int = 40): String {
     val lignes = trace.lines()
@@ -109,7 +143,9 @@ object DiagnosticBlocage {
             val texte = "BLOCAGE Android (ANR) du " +
                 java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.FRANCE).format(java.util.Date(anr.timestamp)) +
                 "\nDescription : " + (anr.description ?: "-") + "\n\n" +
-                (if (fil.isEmpty()) "(pile du fil principal non fournie par Android)" else fil)
+                (if (fil.isEmpty()) "(pile du fil principal non fournie par Android)" else fil) +
+                "\n\n" + extraireFils(trace, listOf("HeapTaskDaemon", "RenderThread", "FinalizerDaemon")) +
+                "\n\n" + resumeMemoire(ctx)
             java.io.File(ctx.filesDir, "dernier_incident.txt").writeText(texte.take(6000))
             prefs.edit().putLong("dernier_anr", anr.timestamp).apply()
         } catch (e: Throwable) {
@@ -138,7 +174,7 @@ object DiagnosticBlocage {
                     try {
                         val pile = principal.thread.stackTrace.take(40).joinToString("\n") { "  at " + it }
                         java.io.File(appCtx.filesDir, "dernier_incident.txt").writeText(
-                            "FIGE (ecran principal bloque plus de 4 s)\n\n" + pile
+                            "FIGE (ecran principal bloque plus de 4 s)\n" + resumeMemoire(appCtx) + "\n\n" + pile
                         )
                     } catch (e: Throwable) {
                     }

@@ -6,6 +6,7 @@
          l'appareil via Android Backup ou un transfert d'appareil. -->
 
     <application
+        android:largeHeap="true"
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
