@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 20 novembre 2026 (v0.147). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 22 novembre 2026 (v0.148). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -85,3 +85,10 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 
 - `OrdreChrono.kt` : `conjointsChrono`, `enfantsChrono`, `dateMariageEntre` (fonctions pures testées) ; `enfantsDe` s'appuie dessus.
 - Principe maintenu : application **uniquement locale**, manifeste sans permission INTERNET ; aucun code réseau (pas de WebView). Toute demande d'affichage de site a été refusée pour protéger les données.
+
+## Ajouts v0.148
+
+- `Declaration.kt` : `relationDeclarant`, `candidatsDeclarant`, `peutDeclarer`, `ageDeclarantAuto`, phrases de biographie (fonctions pures testées). `Personne` gagne `declarantId`, `declarantAge`, `declarantRelation` (JSON ; GEDCOM `_GPDNA`/`_GPDNL`).
+- `ImageReduite.kt` : `DiagnosticBlocage` (lecture de `ApplicationExitInfo` ANR + sentinelle du fil principal, écriture locale dans `dernier_incident.txt`), `extraireFilPrincipal`.
+- `Edition.kt` : `DialogueEdition(enLigne = true)` ; `EcranApplication` affiche Personne complète et Carnet de sources dans la demi-zone basse de la Saisie.
+- Principe maintenu : application strictement locale, aucune permission.

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -163,6 +164,8 @@ data class ActeSaisie(
     // D : declaration (date/heure) et declarant (nom, profession, domicile).
     val declDDate: String = "", val declDHeure: String = "",
     val declarantNom: String = "", val declarantProfession: String = "", val declarantDomicile: String = "",
+    // v0.148 : age a l'acte et relation du declarant avec le defunt.
+    val declarantAge: String = "", val declarantRelation: String = "",
     // S : ceremonie, cimetiere, concession, ministre du culte.
     val ceremonieSDate: String = "", val cimetiere: String = "",
     val concession: String = "", val ministreCulte: String = ""
@@ -366,6 +369,9 @@ fun EcranSaisieActe(
     var declarantNom by remember(initial) { mutableStateOf(initial?.declarantNom ?: "") }
     var declarantProfession by remember(initial) { mutableStateOf(initial?.declarantProfession ?: "") }
     var declarantDomicile by remember(initial) { mutableStateOf(initial?.declarantDomicile ?: "") }
+    var declarantAge by remember(initial) { mutableStateOf(initial?.declarantAge ?: "") }
+    var declarantRelation by remember(initial) { mutableStateOf(initial?.declarantRelation ?: "") }
+    var pickerDeclarant by remember { mutableStateOf(false) }
     var ceremonieSDate by remember(initial) { mutableStateOf(initial?.ceremonieSDate ?: "") }
     var cimetiere by remember(initial) { mutableStateOf(initial?.cimetiere ?: "") }
     var concession by remember(initial) { mutableStateOf(initial?.concession ?: "") }
@@ -497,6 +503,7 @@ fun EcranSaisieActe(
         contratMariage = a.contratMariage; dispenses = a.dispenses
         declDDate = a.declDDate; declDHeure = a.declDHeure
         declarantNom = a.declarantNom; declarantProfession = a.declarantProfession; declarantDomicile = a.declarantDomicile
+        declarantAge = a.declarantAge; declarantRelation = a.declarantRelation
         ceremonieSDate = a.ceremonieSDate
         cimetiere = a.cimetiere; concession = a.concession; ministreCulte = a.ministreCulte
         mentionDDate = a.mentionDDate; mentionDLieu = a.mentionDLieu
@@ -710,10 +717,59 @@ fun EcranSaisieActe(
                     Champ("Déclarée le (jj/mm/aaaa)", declDDate, { declDDate = it }, erreur = declDDate.isNotBlank() && !dateValide(declDDate), modifier = Modifier.weight(1f))
                     Champ("à", declDHeure, { declDHeure = it }, modifier = Modifier.weight(0.6f))
                 }
+                // v0.148 : le declarant peut etre N'IMPORTE QUELLE personne de la base
+                // qui a pu declarer le deces (enfant, conjoint, frere, gendre, voisin...).
+                val defuntDecl = exPersonne
+                val declChoisi = if (declarantEnfantId != 0L) personneParId(personnes, declarantEnfantId) else null
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (declChoisi != null) "Personne existante : " + declChoisi.titre() else "Déclarant : personne existante ?",
+                        Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
+                        color = if (declChoisi != null) CouleurVertFonce else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (defuntDecl != null) {
+                        if (declChoisi == null) {
+                            OutlinedButton(onClick = { pickerDeclarant = true }) { Text("Choisir", fontSize = 12.sp) }
+                        } else {
+                            TextButton(onClick = {
+                                declarantEnfantId = 0L
+                                signataires.remove("Enfant d\u00E9clarant")
+                            }) { Text("Retirer", fontSize = 12.sp) }
+                        }
+                    }
+                }
                 Champ("Déclarant : nom", declarantNom, { declarantNom = it })
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Champ(
+                        "Âge", declarantAge, { declarantAge = it },
+                        erreur = erreurAge(declChoisi?.dateNaissance ?: "", declDDate.ifBlank { date }, declarantAge) != null,
+                        aide = erreurAge(declChoisi?.dateNaissance ?: "", declDDate.ifBlank { date }, declarantAge) ?: "",
+                        modifier = Modifier.weight(0.6f)
+                    )
                     Champ("Profession", declarantProfession, { declarantProfession = it }, modifier = Modifier.weight(1f))
-                    Champ("Domicile", declarantDomicile, { declarantDomicile = it }, modifier = Modifier.weight(1.3f), communes = true)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Champ("Relation avec le défunt (fils, épouse…)", declarantRelation, { declarantRelation = it }, modifier = Modifier.weight(1f))
+                    Champ("Domicile", declarantDomicile, { declarantDomicile = it }, modifier = Modifier.weight(1f), communes = true)
+                }
+                if (pickerDeclarant && defuntDecl != null) {
+                    val an = anneeDe(declDDate.ifBlank { date }) ?: anneeDe(defuntDecl.dateDeces)
+                    val cands = remember(defuntDecl.id, an) { candidatsDeclarant(defuntDecl, personnes, an) }
+                    DialogueChoixDeclarant(
+                        candidats = cands,
+                        onChoisi = { q, rel ->
+                            declarantEnfantId = q.id
+                            if (!signataires.contains("Enfant d\u00E9clarant")) signataires.add("Enfant d\u00E9clarant")
+                            declarantNom = (q.nom.trim() + " " + q.prenoms.trim()).trim()
+                            if (declarantProfession.isBlank()) declarantProfession = q.profession
+                            if (declarantDomicile.isBlank()) declarantDomicile = q.domicile
+                            if (declarantRelation.isBlank()) declarantRelation = rel
+                            val ag = ageDeclarantAuto(q, an)
+                            if (ag.isNotEmpty()) declarantAge = ag
+                            pickerDeclarant = false
+                        },
+                        onFermer = { pickerDeclarant = false }
+                    )
                 }
             }
             "S" -> {
@@ -950,7 +1006,7 @@ fun EcranSaisieActe(
             }
             // v0.80 : sur un DÉCÈS, un ENFANT du défunt peut être le
             // déclarant (fiche existante, coche de signature automatique).
-            if (type == "D" && exPersonne != null) {
+            if (false && type == "D" && exPersonne != null) {
                 val enfantsDecl = personnes.filter { q ->
                     q.pere == exPersonne.id || q.mere == exPersonne.id || exPersonne.enfants.contains(q.id)
                 }
@@ -1318,6 +1374,7 @@ fun EcranSaisieActe(
                     contratMariage = contratMariage.trim(), dispenses = dispenses.trim(),
                     declDDate = declDDate.trim(), declDHeure = declDHeure.trim(),
                     declarantNom = declarantNom.trim(), declarantProfession = declarantProfession.trim(), declarantDomicile = declarantDomicile.trim(),
+                    declarantAge = declarantAge.trim(), declarantRelation = declarantRelation.trim(),
                     ceremonieSDate = ceremonieSDate.trim(),
                     cimetiere = cimetiere.trim(), concession = concession.trim(), ministreCulte = ministreCulte.trim()
                 )
@@ -1590,6 +1647,43 @@ fun EcranSaisie(
     }
 }
 
-
-
-
+// v0.148 : choix du declarant parmi les personnes plausibles, classees par proximite.
+@Composable
+fun DialogueChoixDeclarant(
+    candidats: List<Pair<Personne, String>>,
+    onChoisi: (Personne, String) -> Unit,
+    onFermer: () -> Unit
+) {
+    var filtre by remember { mutableStateOf("") }
+    val f = sansAccents(filtre.trim()).lowercase()
+    val liste = candidats.filter { f.isEmpty() || sansAccents(it.first.titre()).lowercase().contains(f) }.take(60)
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onFermer,
+        title = { Text("Qui a déclaré le décès ?") },
+        text = {
+            Column {
+                androidx.compose.material3.OutlinedTextField(
+                    value = filtre, onValueChange = { filtre = it },
+                    label = { Text("Rechercher") }, singleLine = true, modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    "Classées par lien avec le défunt ; sont exclues les personnes déjà décédées ou trop jeunes à cette date.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+                Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
+                    liste.forEach { (q, rel) ->
+                        Text(
+                            q.titre() + (if (rel.isNotEmpty()) " \u2014 " + rel else "") + (anneesCourtes(q).let { if (it.isNotEmpty()) " (" + it + ")" else "" }),
+                            Modifier.fillMaxWidth().clickable { onChoisi(q, rel) }.padding(vertical = 8.dp),
+                            fontSize = 14.sp
+                        )
+                    }
+                    if (liste.isEmpty()) Text("Aucune personne correspondante.")
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onFermer) { Text("Annuler") } }
+    )
+}

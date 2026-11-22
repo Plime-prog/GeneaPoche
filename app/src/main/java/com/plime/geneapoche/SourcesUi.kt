@@ -56,11 +56,23 @@ private fun resumeSource(s: Source): String {
     val l = mutableListOf<String>()
     val t = libelleTypeSource(s.type)
     if (t.isNotEmpty()) l.add(t)
-    if (s.commune.isNotBlank()) l.add(s.commune.trim())
+    if (s.commune.isNotBlank()) l.add(communeLisible(s.commune))
     if (s.periode.isNotBlank()) l.add(s.periode.trim())
     if (s.cote.isNotBlank()) l.add("cote " + s.cote.trim())
     return l.joinToString(" \u00b7 ")
 }
+
+// v0.148 : une commune saisie mais pas choisie dans la liste (sans code INSEE)
+// est signalee en rouge ; non bloquant (communes etrangeres, anciennes communes).
+// Nom de commune sans code INSEE ni departement ("Bourges, 18033, Cher" -> "Bourges").
+fun communeLisible(v: String): String {
+    val t = v.trim()
+    val m = Regex("^(.*?),\\s*(\\d{5}|2[AB]\\d{3}),\\s*[^,]+$").find(t)
+    return if (m != null) m.groupValues[1].trim() else t
+}
+
+fun communeAVerifier(commune: String): Boolean =
+    commune.isNotBlank() && !lieuDejaChoisi(commune)
 
 private fun intOuZero(s: String): Int = s.trim().toIntOrNull() ?: 0
 
@@ -161,12 +173,9 @@ fun EcranSources(
                             citations = if (existante != null) citationsDeSource(citations, existante.id) else emptyList(),
                             sources = sources,
                             onEnregistrer = { s ->
-                                if (s.id == 0L) {
-                                    val nouvelId = onCreerSource(s)
-                                    ouverte = if (nouvelId > 0L) nouvelId else 0L
-                                } else {
-                                    onEnregistrerSource(s)
-                                }
+                                // v0.148 : enregistrer FERME la fiche et revient a la liste.
+                                if (s.id == 0L) onCreerSource(s) else onEnregistrerSource(s)
+                                ouverte = 0L
                             },
                             onSupprimer = { id -> onSupprimerSource(id); ouverte = 0L },
                             onEnregistrerCitation = onEnregistrerCitation,
@@ -246,9 +255,12 @@ private fun FicheSource(
         }
         Spacer(Modifier.height(4.dp))
         Row(Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = commune, onValueChange = { commune = it },
-                label = { Text("Commune") }, singleLine = true, modifier = Modifier.weight(1f)
+            // v0.148 : commune CONTROLEE (suggestions du COG, comme dans les actes).
+            Champ(
+                "Commune", commune, { commune = it },
+                erreur = communeAVerifier(commune),
+                aide = if (communeAVerifier(commune)) "Choisissez une commune dans la liste" else "",
+                modifier = Modifier.weight(1f), communes = true
             )
             Spacer(Modifier.width(8.dp))
             OutlinedTextField(
@@ -584,7 +596,12 @@ private fun DialogueNouvelleSource(onCreer: (Source) -> Unit, onFermer: () -> Un
                         Spacer(Modifier.width(6.dp))
                     }
                 }
-                OutlinedTextField(value = commune, onValueChange = { commune = it }, label = { Text("Commune") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                Champ(
+                    "Commune", commune, { commune = it },
+                    erreur = communeAVerifier(commune),
+                    aide = if (communeAVerifier(commune)) "Choisissez une commune dans la liste" else "",
+                    communes = true
+                )
                 OutlinedTextField(value = periode, onValueChange = { periode = it }, label = { Text("P\u00e9riode") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = depot, onValueChange = { depot = it }, label = { Text("D\u00e9p\u00f4t") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = cote, onValueChange = { cote = it }, label = { Text("Cote") }, singleLine = true, modifier = Modifier.fillMaxWidth())

@@ -97,12 +97,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        DiagnosticBlocage.definirActif(true)
+    }
+
+    override fun onPause() {
+        DiagnosticBlocage.definirActif(false)
+        super.onPause()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // G3-05 : ecran de demarrage aux couleurs de l'application,
         // puis bascule vers Theme.GeneaPoche (postSplashScreenTheme).
         installSplashScreen()
         super.onCreate(savedInstanceState)
         Incidents.installer(this)
+        DiagnosticBlocage.lireHistoriqueAnr(this)
+        DiagnosticBlocage.demarrerSentinelle(this)
         // G3-03 : affichage bord a bord ; les ecrans gerent les marges
         // (barre d'etat, barre de navigation, clavier) via les insets.
         enableEdgeToEdge()
@@ -1681,6 +1693,22 @@ fun AppEcran(
         p.declarantNom = maj98(p.declarantNom, a.declarantNom)
         p.declarantProfession = maj98(p.declarantProfession, a.declarantProfession)
         p.declarantDomicile = maj98(p.declarantDomicile, a.declarantDomicile)
+        // v0.148 : age et relation du declarant ; lien vers sa fiche (formulaire = reference).
+        p.declarantAge = maj98(p.declarantAge, a.declarantAge)
+        p.declarantRelation = maj98(p.declarantRelation, a.declarantRelation)
+        if (a.type == "D") {
+            if (a.declarantEnfantId != 0L || edition) p.declarantId = a.declarantEnfantId
+            // La fiche du declarant resservit : naissance approximative aussitot
+            // calculee depuis son age, controle de coherence, profession/domicile manquants.
+            val decl = personneParId(personnes, p.declarantId)
+            if (decl != null && decl.id != p.id) {
+                val dateDecl = a.declDDate.ifBlank { a.date }
+                val incohD = naissanceDepuisAge(decl, dateDecl, a.declarantAge, "l'acte de d\u00E9c\u00E8s de " + p.titre())
+                if (incohD != null) incoherenceAge = (if (incoherenceAge.isBlank()) "" else incoherenceAge + " ") + incohD
+                if (decl.profession.isBlank() && a.declarantProfession.isNotBlank()) decl.profession = a.declarantProfession
+                if (decl.domicile.isBlank() && a.declarantDomicile.isNotBlank()) decl.domicile = a.declarantDomicile
+            }
+        }
         p.ceremonieSDate = maj98(p.ceremonieSDate, a.ceremonieSDate, greg = true)
         p.cimetiere = maj98(p.cimetiere, a.cimetiere)
         p.concession = maj98(p.concession, a.concession)

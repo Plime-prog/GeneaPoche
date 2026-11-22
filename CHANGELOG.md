@@ -1,5 +1,16 @@
 # Historique des versions
 
+## v0.148 — Diagnostic des blocages, déclarant d'un décès, Saisie en demi-écran
+
+- **Diagnostic (blocage « ne répond pas »)** : au démarrage, si Android a noté un blocage (Android 11+), sa pile est copiée dans « Dernier incident » (menu GEDCOM) ; si l'écran reste figé plus de 4 s, l'endroit du blocage y est noté. Noms de fonctions uniquement, aucune donnée généalogique, tout reste sur le téléphone. **Cause du blocage de la v0.147 non encore identifiée** : à envoyer si « Dernier incident » apparaît.
+- **Saisie** : « Personne complète » et « Source » s'ouvrent maintenant dans la demi-zone basse, l'image restant visible et zoomable au-dessus (comme pour les actes).
+- **Source** : la commune est contrôlée (suggestions du COG, rouge si non choisie dans la liste, non bloquant) ; **Enregistrer ferme la fiche et affiche la liste des sources** ; la commune s'affiche sans code INSEE.
+- **Acte de décès — déclarant = personne existante** : bouton « Choisir » proposant toute personne ayant pu déclarer (exclut les personnes déjà décédées ou de moins de 15 ans à la date), classées par lien (enfants, conjoint, parents, fratrie, petits-enfants, gendres/brus, neveux) ; âge calculé, profession, domicile et relation préremplis (modifiables). Âge, relation et lien sont conservés sur l'acte.
+- **Biographie** : « X, 45 ans, cultivateur, a déclaré le décès de Y, son père, à la mairie de C le D » (fiche du déclarant) et « Son décès a été déclaré par X… » (fiche du défunt).
+- **Cohérence** : la date de naissance **approximative** du déclarant est calculée aussitôt depuis son âge ; une incohérence avec sa fiche est signalée.
+- GEDCOM : âge et relation du déclarant exportés (`_GPDNA`, `_GPDNL`) ; le lien vers la fiche n'est conservé que dans la sauvegarde .gpbak.
+- Tests : déclarant (relations, candidats, phrases), commune de source, extraction de pile.
+
 ## v0.147 — Ordre chronologique et Descendance alignée
 
 - **Fiche** : conjoints triés par date de mariage, enfants par date de naissance (dates inconnues en fin de liste) ; même ordre dans la Biographie, le Sablier et la Descendance.
