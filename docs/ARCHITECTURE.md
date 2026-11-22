@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 22 novembre 2026 (v0.148). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 22 novembre 2026 (v0.149). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -92,3 +92,9 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 - `ImageReduite.kt` : `DiagnosticBlocage` (lecture de `ApplicationExitInfo` ANR + sentinelle du fil principal, écriture locale dans `dernier_incident.txt`), `extraireFilPrincipal`.
 - `Edition.kt` : `DialogueEdition(enLigne = true)` ; `EcranApplication` affiche Personne complète et Carnet de sources dans la demi-zone basse de la Saisie.
 - Principe maintenu : application strictement locale, aucune permission.
+
+## Ajouts v0.149
+
+- `decoderImageReduite` : 2048 px par défaut ; `android:largeHeap` ; `resumeMemoire`, `extraireFils` dans `DiagnosticBlocage`.
+- `departementsUtilises` (Geographie.kt) : damier limité aux départements présents.
+- Biographie : enfants via `enfantsChrono`.

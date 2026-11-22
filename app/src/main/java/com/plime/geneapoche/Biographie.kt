@@ -103,7 +103,8 @@ fun recitBiographie(p: Personne, personnes: List<Personne>): List<String> {
                 (if (conjoints.size > 1) ", puis avec " + conjoints.drop(1).joinToString(", ") { it.titre() } else "") + "."
         )
     }
-    val enfants = p.enfants.mapNotNull { parId[it] }
+    // v0.149 : enfants cites dans l'ordre CHRONOLOGIQUE des naissances.
+    val enfants = enfantsChrono(p.enfants.mapNotNull { parId[it] })
     if (enfants.isNotEmpty()) {
         res.add(
             il + " a eu " + enfants.size.toString() + (if (enfants.size == 1) " enfant : " else " enfants : ") +

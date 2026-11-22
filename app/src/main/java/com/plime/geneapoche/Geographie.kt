@@ -77,6 +77,14 @@ fun repartitionDepartements(personnes: List<Personne>): Map<String, List<Personn
     return res
 }
 
+// v0.149 : seuls les departements UTILISES, dans l'ordre officiel (puis les codes
+// hors liste, ex. etranger, a la suite).
+fun departementsUtilises(repartition: Map<String, List<Personne>>): List<String> {
+    val ordre = CodesDepartements.filter { (repartition[it]?.size ?: 0) > 0 }
+    val autres = repartition.keys.filter { it !in CodesDepartements && (repartition[it]?.size ?: 0) > 0 }.sorted()
+    return ordre + autres
+}
+
 // Repartition par commune (meme regle : lieu de naissance d'abord).
 fun repartitionCommunes(personnes: List<Personne>): Map<String, List<Personne>> {
     val res = mutableMapOf<String, MutableList<Personne>>()

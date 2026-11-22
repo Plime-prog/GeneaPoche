@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.149 — Mémoire de l'image, Stat. Géographie, Biographie
+
+- **Blocage « ne répond pas »** (trace v0.148 : fil principal inactif, application suspendue par le système, piste mémoire) : l'image à transcrire est décodée à 2048 px au plus (≈ 16 Mo au lieu de ≈ 36 Mo) et l'application demande un tas mémoire élargi (`largeHeap`, sans aucune permission). Le diagnostic « Dernier incident » ajoute l'appareil, la RAM, le tas et l'état du ramasse-miettes. **Cause non prouvée** : à confirmer à l'usage.
+- **Stat. Géographie** : seuls les départements utilisés sont affichés.
+- **Biographie** : enfants cités dans l'ordre chronologique des naissances.
+- Tests : départements utilisés, ordre des enfants, extraction de fils.
+- **Signalé, non corrigé** : parents du marié dotés du mariage du fils après un acte de mariage — chemin d'écriture introuvable par relecture, reproduction demandée.
+
 ## v0.148 — Diagnostic des blocages, déclarant d'un décès, Saisie en demi-écran
 
 - **Diagnostic (blocage « ne répond pas »)** : au démarrage, si Android a noté un blocage (Android 11+), sa pile est copiée dans « Dernier incident » (menu GEDCOM) ; si l'écran reste figé plus de 4 s, l'endroit du blocage y est noté. Noms de fonctions uniquement, aucune donnée généalogique, tout reste sur le téléphone. **Cause du blocage de la v0.147 non encore identifiée** : à envoyer si « Dernier incident » apparaît.

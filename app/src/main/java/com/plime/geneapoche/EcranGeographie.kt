@@ -93,12 +93,15 @@ fun EcranGeographie(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        // ---- Damier de France : une case par departement.
+        // ---- Damier : UNIQUEMENT les departements utilises (v0.149).
+        val codesUtilises = departementsUtilises(repartition)
+        val lignesDamier = (codesUtilises.size + 5) / 6
         LazyVerticalGrid(
             columns = GridCells.Fixed(6),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp).height(220.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp).height((lignesDamier * 38 + 4).dp),
+            userScrollEnabled = false
         ) {
-            itemsGrille(CodesDepartements) { code ->
+            itemsGrille(codesUtilises) { code ->
                 val effectif = repartition[code]?.size ?: 0
                 val actif = deptChoisi == code
                 Box(
