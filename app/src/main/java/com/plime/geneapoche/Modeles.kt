@@ -302,6 +302,11 @@ data class Personne(
     var declarantNom: String = "",
     var declarantProfession: String = "",
     var declarantDomicile: String = "",
+    // v0.148 : declarant = personne existante (id), son age a l'acte et sa relation
+    // avec le defunt ("fils", "epouse"...).
+    var declarantId: Long = 0L,
+    var declarantAge: String = "",
+    var declarantRelation: String = "",
     // S : ceremonie religieuse (distincte de l'inhumation), cimetiere,
     // concession, ministre du culte.
     var ceremonieSDate: String = "",
@@ -505,6 +510,9 @@ data class Personne(
         o.put("declarantNom", declarantNom)
         o.put("declarantProfession", declarantProfession)
         o.put("declarantDomicile", declarantDomicile)
+        o.put("declarantId", declarantId)
+        o.put("declarantAge", declarantAge)
+        o.put("declarantRelation", declarantRelation)
         o.put("ceremonieSDate", ceremonieSDate)
         o.put("cimetiere", cimetiere)
         o.put("concession", concession)
@@ -617,6 +625,9 @@ data class Personne(
                 declarantNom = o.optString("declarantNom", ""),
                 declarantProfession = o.optString("declarantProfession", ""),
                 declarantDomicile = o.optString("declarantDomicile", ""),
+                declarantId = o.optLong("declarantId", 0L),
+                declarantAge = o.optString("declarantAge", ""),
+                declarantRelation = o.optString("declarantRelation", ""),
                 ceremonieSDate = o.optString("ceremonieSDate", ""),
                 cimetiere = o.optString("cimetiere", ""),
                 concession = o.optString("concession", ""),

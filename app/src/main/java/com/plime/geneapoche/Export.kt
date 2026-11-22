@@ -337,6 +337,9 @@ fun construireGedcom(
         if (p.declarantNom.trim().isNotEmpty()) lignes.add("1 _GPDNR " + texteGedcom(p.declarantNom.trim()))
         if (p.declarantProfession.trim().isNotEmpty()) lignes.add("1 _GPDNP " + texteGedcom(p.declarantProfession.trim()))
         if (p.declarantDomicile.trim().isNotEmpty()) lignes.add("1 _GPDDM " + texteGedcom(p.declarantDomicile.trim()))
+        // v0.148 : age et relation du declarant (le lien vers sa fiche n'est pas exporte).
+        if (p.declarantAge.trim().isNotEmpty()) lignes.add("1 _GPDNA " + texteGedcom(p.declarantAge.trim()))
+        if (p.declarantRelation.trim().isNotEmpty()) lignes.add("1 _GPDNL " + texteGedcom(p.declarantRelation.trim()))
         if (p.ceremonieSDate.trim().isNotEmpty()) lignes.add("1 _GPCER " + texteGedcom(p.ceremonieSDate.trim()))
         if (p.cimetiere.trim().isNotEmpty()) lignes.add("1 _GPCIM " + texteGedcom(p.cimetiere.trim()))
         if (p.concession.trim().isNotEmpty()) lignes.add("1 _GPCOC " + texteGedcom(p.concession.trim()))
@@ -627,7 +630,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
         var gpBlo = ""
         var gpNdd = ""; var gpNth = ""; var gpBlg = ""
         var gpCon = ""; var gpDsp = ""
-        var gpDdd = ""; var gpDth = ""; var gpDnr = ""; var gpDnp = ""; var gpDdm = ""
+        var gpDdd = ""; var gpDth = ""; var gpDnr = ""; var gpDnp = ""; var gpDdm = ""; var gpDna = ""; var gpDnl = ""
         var gpCer = ""; var gpCim = ""; var gpCoc = ""; var gpMin = ""
         val notes = mutableListOf<String>()
         var nD = ""; var nH = ""; var nL = ""; var nDpt = ""
@@ -749,6 +752,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                     "_GPDNR" -> ind.gpDnr = contenu.removePrefix("_GPDNR").trim()
                     "_GPDNP" -> ind.gpDnp = contenu.removePrefix("_GPDNP").trim()
                     "_GPDDM" -> ind.gpDdm = contenu.removePrefix("_GPDDM").trim()
+                    "_GPDNA" -> ind.gpDna = contenu.removePrefix("_GPDNA").trim()
+                    "_GPDNL" -> ind.gpDnl = contenu.removePrefix("_GPDNL").trim()
                     "_GPCER" -> ind.gpCer = contenu.removePrefix("_GPCER").trim()
                     "_GPCIM" -> ind.gpCim = contenu.removePrefix("_GPCIM").trim()
                     "_GPCOC" -> ind.gpCoc = contenu.removePrefix("_GPCOC").trim()
@@ -886,6 +891,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                 declarantNom = ind.gpDnr.replace("@@", "@"),
                 declarantProfession = ind.gpDnp.replace("@@", "@"),
                 declarantDomicile = ind.gpDdm.replace("@@", "@"),
+                declarantAge = ind.gpDna.replace("@@", "@"),
+                declarantRelation = ind.gpDnl.replace("@@", "@"),
                 ceremonieSDate = ind.gpCer.replace("@@", "@"),
                 cimetiere = ind.gpCim.replace("@@", "@"),
                 concession = ind.gpCoc.replace("@@", "@"),

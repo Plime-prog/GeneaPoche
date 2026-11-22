@@ -117,5 +117,8 @@ fun recitBiographie(p: Personne, personnes: List<Personne>): List<String> {
         val age = if (an != null && ad != null && ad >= an) " \u00E0 l'\u00E2ge d'environ " + (ad - an).toString() + " ans" else ""
         res.add(il + (if (f) " est d\u00E9c\u00E9d\u00E9e" else " est d\u00E9c\u00E9d\u00E9") + dec + age + ".")
     }
+    // v0.148 : declaration du deces (par une personne existante ou saisie libre).
+    phraseDecesDeclarePar(p, parId[p.declarantId])?.let { res.add(it) }
+    personnes.filter { it.id != p.id && it.declarantId == p.id }.forEach { res.add(phraseADeclare(p, it)) }
     return res
 }

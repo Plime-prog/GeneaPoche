@@ -1161,7 +1161,8 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
     // enfant D\u00C9CLARANT d'un d\u00E9c\u00E8s (coche de signature persist\u00E9e).
     val conjointEnVie = if (type == "D" || type == "S") p.conjointEnVieDeces
         else conj == null || conj.dateDeces.isBlank()
-    val declarantEnfantId = if (type == "D") p.signatairesDe(type).firstOrNull { id ->
+    val declarantEnfantId = if (type == "D" && p.declarantId != 0L && personneParId(personnes, p.declarantId) != null) p.declarantId
+        else if (type == "D") p.signatairesDe(type).firstOrNull { id ->
         id != 0L && id != p.id &&
             (p.enfants.contains(id) || personnes.firstOrNull { it.id == id }?.let { q -> q.pere == p.id || q.mere == p.id } == true)
     } ?: 0L else 0L
@@ -1257,6 +1258,8 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         declDDate = p.declDDate, declDHeure = p.declDHeure,
         declarantNom = p.declarantNom.ifBlank { declarant?.nom ?: "" },
         declarantProfession = p.declarantProfession.ifBlank { declarant?.profession ?: "" },
+        declarantAge = p.declarantAge.ifBlank { if (declarant != null) ageDeclarantAuto(declarant, anneeDe(p.declDDate.ifBlank { c?.date ?: "" })) else "" },
+        declarantRelation = p.declarantRelation.ifBlank { if (declarant != null) relationDeclarant(p, declarant, personnes) else "" },
         declarantDomicile = p.declarantDomicile.ifBlank { declarant?.domicile ?: "" },
         ceremonieSDate = p.ceremonieSDate,
         cimetiere = p.cimetiere, concession = p.concession, ministreCulte = p.ministreCulte
@@ -1589,7 +1592,8 @@ fun CarteEvenement(
                 }
                 if (p.declarantNom.isNotBlank()) {
                     val det = listOf(p.declarantProfession.trim(), p.declarantDomicile.trim()).filter { it.isNotEmpty() }
-                    LigneG("D\u00E9clarant", p.declarantNom.trim() + (if (det.isNotEmpty()) ", " + det.joinToString(", ") else ""))
+                    val rel = p.declarantRelation.trim()
+                    LigneG("D\u00E9clarant", identiteDeclarant(p.declarantNom, p.declarantAge, det.joinToString(", ")) + (if (rel.isNotEmpty()) " (" + rel + ")" else ""))
                 }
             }
             "S" -> {
