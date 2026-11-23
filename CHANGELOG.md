@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.150 — Homonymes, témoins et officier, première ouverture
+
+- **Homonymes** : à l'enregistrement d'un acte, si un nom + prénoms correspond à **plusieurs fiches**, l'application le signale et demande laquelle choisir ou de créer une nouvelle fiche ; si **une seule** fiche existe mais que ses dates ne concordent pas (âge saisi incompatible, née après l'acte, décédée avant l'acte, trop jeune pour témoigner), elle prévient avant de rattacher. **Rien n'est rattaché sans choix explicite** (père, mère, mari, mariée, mère de la mariée, témoins, officier). « Créer une nouvelle fiche » est désormais effectif aussi pour les parents (il était ignoré avant).
+- **Témoins et officier/prêtre** : bouton « Personne existante » systématique (personnes plausibles à la date de l'acte), **âge** et **résidence** sur tous les types d'acte, âge prérempli depuis la fiche ; l'âge calcule aussitôt une naissance approximative dans la fiche (déjà en place), et la **biographie** (récit et chronologie) ajoute « X, 45 ans, meunier, domicilié à Y, a été témoin de l'acte de mariage de A et B à C le D ». Limite : un officier ou un prêtre relié à un acte est présenté comme témoin dans cette phrase (le rôle n'est pas conservé sur la fiche).
+- **Première ouverture** : le Journal s'affiche au premier lancement après une installation, une mise à jour ou un changement de jour ; ensuite l'application reprend le dernier écran.
+- Tests : homonymes, témoignages, ouverture. L'application reste strictement locale.
+
 ## v0.149 — Mémoire de l'image, Stat. Géographie, Biographie
 
 - **Blocage « ne répond pas »** (trace v0.148 : fil principal inactif, application suspendue par le système, piste mémoire) : l'image à transcrire est décodée à 2048 px au plus (≈ 16 Mo au lieu de ≈ 36 Mo) et l'application demande un tas mémoire élargi (`largeHeap`, sans aucune permission). Le diagnostic « Dernier incident » ajoute l'appareil, la RAM, le tas et l'état du ramasse-miettes. **Cause non prouvée** : à confirmer à l'usage.

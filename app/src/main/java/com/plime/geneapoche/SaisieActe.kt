@@ -65,6 +65,8 @@ data class TemoinSaisie(
     // v0.77 : vrai homonyme (autre date de naissance) : la fenêtre
     // "Créer une nouvelle fiche" force une fiche DISTINCTE.
     val nouveau: Boolean = false,
+    // v0.150 : fiche existante CHOISIE explicitement (0 = rattachement par le nom).
+    val id: Long = 0L,
     // v0.97 : renseignements portes par l'acte pour CE temoin.
     val age: String = "",
     val situation: String = "",
@@ -145,6 +147,10 @@ data class ActeSaisie(
     // v0.77 : "Créer une nouvelle fiche" choisi dans la fenêtre d'homonymes
     // pour la personne concernée (vrai homonyme, autre date de naissance).
     val persNouvelle: Boolean = false,
+    // v0.150 : emplacements pour lesquels "Creer une nouvelle fiche" a ete choisi
+    // (homonymes) et id de la mere de la mariee choisie.
+    val nouveauxForces: List<String> = listOf(),
+    val mMarieeId: Long = 0L,
     // v0.80 : le conjoint du défunt est ENCORE EN VIE (déclarant possible)
     // ou DÉJÀ DÉCÉDÉ avant lui (veuf/veuve) ; sur un décès, un ENFANT peut
     // être déclarant. Les deux choix sont désormais PERSISTÉS.
@@ -448,6 +454,16 @@ fun EcranSaisieActe(
     // v0.76 : fenêtre d'homonymes (nom + prénoms) : "pers" personne
     // concernée, "pm:<i>" parrain/marraine, "t:<i>" témoin.
     var homonymesOuvert by remember { mutableStateOf<String?>(null) }
+    // v0.150 : avertissement d'homonymes a l'enregistrement + emplacements ou
+    // "Creer une nouvelle fiche" a ete choisi.
+    val forces = remember(initial) { mutableStateListOf<String>().also { l -> initial?.nouveauxForces?.let { l.addAll(it) } } }
+    var alerteOuverte by remember { mutableStateOf<AlerteHomonyme?>(null) }
+    // v0.150 : choix d'une personne EXISTANTE pour un temoin (index) ou l'officier (-2).
+    var pickerTemoin by remember { mutableStateOf(-1) }
+    var roleOfficielId by remember(initial) { mutableStateOf(0L) }
+    var roleOfficielNouveau by remember(initial) { mutableStateOf(false) }
+    var roleOfficielAge by remember(initial) { mutableStateOf(initial?.temoins?.firstOrNull { it.role.isNotBlank() }?.age ?: "") }
+    var roleOfficielDomicile by remember(initial) { mutableStateOf(initial?.temoins?.firstOrNull { it.role.isNotBlank() }?.domicile ?: "") }
     // v0.107 : la proposition de fiche existante est SYSTEMATIQUE des que
     // le nom est saisi, MEME si les prenoms ne sont pas parfaitement
     // identiques : la correspondance est determinee par les DATES
@@ -516,6 +532,9 @@ fun EcranSaisieActe(
         roleOfficielNom = tRole?.nom ?: ""
         roleOfficielPrenoms = tRole?.prenoms ?: ""
         roleOfficielProf = tRole?.profession ?: ""
+        roleOfficielAge = tRole?.age ?: ""
+        roleOfficielDomicile = tRole?.domicile ?: ""
+        roleOfficielId = tRole?.id ?: 0L
     }
 
 
@@ -1152,8 +1171,8 @@ fun EcranSaisieActe(
                 ) {
                     Column(Modifier.weight(1f)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Champ(libelle, t.nom, { temoins[i] = t.copy(nom = it) }, modifier = Modifier.weight(1f))
-                            Champ("Pr\u00E9noms", t.prenoms, { temoins[i] = t.copy(prenoms = it) }, modifier = Modifier.weight(1f))
+                            Champ(libelle, t.nom, { temoins[i] = t.copy(nom = it, id = 0L) }, modifier = Modifier.weight(1f))
+                            Champ("Pr\u00E9noms", t.prenoms, { temoins[i] = t.copy(prenoms = it, id = 0L) }, modifier = Modifier.weight(1f))
                             // v0.76 : colonne Signe CALQUÉE sur le champ (même
                             // hauteur que l'OutlinedTextField, libellé en tête).
                             Column(Modifier.width(58.dp).height(56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1167,6 +1186,7 @@ fun EcranSaisieActe(
                                 )
                             }
                         }
+                        OutlinedButton(onClick = { pickerTemoin = i }) { Text("Personne existante", fontSize = 12.sp) }
                         if (homosPm.isNotEmpty()) {
                             OutlinedButton(onClick = { homonymesOuvert = "pm:" + i.toString() }) {
                                 Text("Homonymes : " + homosPm.size.toString() + " – choisir ou créer")
@@ -1198,8 +1218,8 @@ fun EcranSaisieActe(
             ) {
                 Column(Modifier.weight(1f)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Champ("Nom du t\u00E9moin", t.nom, { temoins[i] = t.copy(nom = it) }, modifier = Modifier.weight(1f))
-                        Champ("Pr\u00E9noms", t.prenoms, { temoins[i] = t.copy(prenoms = it) }, modifier = Modifier.weight(1f))
+                        Champ("Nom du t\u00E9moin", t.nom, { temoins[i] = t.copy(nom = it, id = 0L) }, modifier = Modifier.weight(1f))
+                        Champ("Pr\u00E9noms", t.prenoms, { temoins[i] = t.copy(prenoms = it, id = 0L) }, modifier = Modifier.weight(1f))
                         Champ("Profession", t.profession, { temoins[i] = t.copy(profession = it) }, modifier = Modifier.weight(1f))
                         Column(Modifier.width(58.dp).height(56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("Signe", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1216,7 +1236,8 @@ fun EcranSaisieActe(
                     // v0.97 : sur un acte de naissance, l'acte porte l'age,
                     // la situation et le domicile de chaque temoin.
                     // v0.98 : idem pour le parrain/marraine d'un baptême.
-                    if (type == "N" || type == "B") {
+                    // v0.150 : age et residence sur TOUS les actes (mariage, deces...).
+                    run {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             // v0.99 : controle de coherence immediat de l'age
                             // du temoin (fiche existante retrouvee par nom).
@@ -1232,6 +1253,7 @@ fun EcranSaisieActe(
                             Champ("Domicile", t.domicile, { temoins[i] = t.copy(domicile = it) }, modifier = Modifier.weight(1.3f), communes = true)
                         }
                     }
+                    OutlinedButton(onClick = { pickerTemoin = i }) { Text("Personne existante", fontSize = 12.sp) }
                     if (homosT.isNotEmpty()) {
                         OutlinedButton(onClick = { homonymesOuvert = "t:" + i.toString() }) {
                             Text("Homonymes : " + homosT.size.toString() + " – choisir ou créer")
@@ -1277,8 +1299,8 @@ fun EcranSaisieActe(
             val roleOfficiel = if (type == "B" || type == "S") "Pr\u00EAtre" else "Officier d'\u00E9tat civil"
             TitrePastille(roleOfficiel, roleOfficielNom.isNotBlank())
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Champ("Nom", roleOfficielNom, { roleOfficielNom = it }, modifier = Modifier.weight(1f))
-                Champ("Pr\u00E9noms", roleOfficielPrenoms, { roleOfficielPrenoms = it }, modifier = Modifier.weight(1f))
+                Champ("Nom", roleOfficielNom, { roleOfficielNom = it; roleOfficielId = 0L }, modifier = Modifier.weight(1f))
+                Champ("Pr\u00E9noms", roleOfficielPrenoms, { roleOfficielPrenoms = it; roleOfficielId = 0L }, modifier = Modifier.weight(1f))
                 if (type != "B" && type != "S") {
                     Champ("Profession", roleOfficielProf, { roleOfficielProf = it }, modifier = Modifier.weight(1f))
                 }
@@ -1292,6 +1314,12 @@ fun EcranSaisieActe(
                     )
                 }
             }
+            // v0.150 : age et residence de l'officier / du pretre, personne existante proposee.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Champ("Âge", roleOfficielAge, { roleOfficielAge = it }, modifier = Modifier.weight(0.6f))
+                Champ("Domicile", roleOfficielDomicile, { roleOfficielDomicile = it }, modifier = Modifier.weight(1.4f), communes = true)
+            }
+            OutlinedButton(onClick = { pickerTemoin = -2 }) { Text("Personne existante", fontSize = 12.sp) }
         }
         } // fin if (!rapide) temoins + officier
 
@@ -1329,6 +1357,8 @@ fun EcranSaisieActe(
                     personneId = personneId,
                     pereId = pere.id,
                     mereId = mere.id,
+                    nouveauxForces = forces.toList(),
+                    mMarieeId = mereMariee.id,
                     pereNomInit = initial?.pereNom ?: "",
                     mereNomInit = initial?.mereNom ?: "",
                     nom = nom.trim(),
@@ -1359,6 +1389,7 @@ fun EcranSaisieActe(
                     temoins = (if (type == "B") temoins.take(2).toList() else temoins.toList()) + listOfNotNull(
                         if (type != "E" && roleOfficielNom.isNotBlank())
                             TemoinSaisie(nom = roleOfficielNom.trim(), prenoms = roleOfficielPrenoms.trim(), profession = roleOfficielProf.trim(),
+                                id = roleOfficielId, nouveau = roleOfficielNouveau, age = roleOfficielAge.trim(), domicile = roleOfficielDomicile.trim(),
                                 role = if (type == "B" || type == "S") "Pr\u00EAtre" else "Officier d'état civil") else null
                     ),
                     signataires = if (type == "N") signataires.filter { it != "M\u00E8re" } else signataires.toList(),
@@ -1382,6 +1413,12 @@ fun EcranSaisieActe(
                 val acte = if (suppression) acte0.copy(date = "", heure = "", commune = "", dept = "") else acte0
                 // Contr\u00F4le de coh\u00E9rence : AVERTISSEMENT non bloquant,
                 // l'utilisateur peut confirmer ("Enregistrer quand m\u00EAme").
+                // v0.150 : homonymes -> RIEN n'est rattache sans choix explicite.
+                val alertesH = if (suppression) emptyList() else alertesHomonymes(personnes, acte)
+                if (alertesH.isNotEmpty()) {
+                    alerteOuverte = alertesH.first()
+                    return@enregistrerFormulaire
+                }
                 val avrt = if (suppression) "" else avertissementCoherence(type, date, exPersonne, exMariee, parentEnfant)
                 if (avrt.isNotEmpty() && !confirme) {
                     avertissement = avrt
@@ -1450,6 +1487,51 @@ fun EcranSaisieActe(
         )
     }
 
+    alerteOuverte?.let { al ->
+        DialogueHomonymes(
+            titre = al.libelle + " : homonymes",
+            explication = al.raison + " Puis appuyez de nouveau sur Enregistrer.",
+            candidats = al.candidats,
+            onChoisir = { q ->
+                when {
+                    al.cle == "pers" -> { remplirDepuis(prefillActe(q, personnes, type, citations = citations)); persNouvelle = false }
+                    al.cle == "pere" -> {
+                        pere.remplir(q.nom, q.prenoms, q.dateNaissance, q.lieuNaissance, q.deptNaissance, q.profession, q.dateDeces, q.lieuDeces, "", q.situation, q.domicile)
+                        pere.id = q.id
+                    }
+                    al.cle == "mere" -> {
+                        mere.remplir(q.nom, q.prenoms, q.dateNaissance, q.lieuNaissance, q.deptNaissance, q.profession, q.dateDeces, q.lieuDeces, "", q.situation, q.domicile)
+                        mere.id = q.id
+                    }
+                    al.cle == "mariee" -> { marieeId = q.id; marieeNom = q.nom; marieePrenoms = q.prenoms }
+                    al.cle == "mMariee" -> {
+                        mereMariee.remplir(q.nom, q.prenoms, q.dateNaissance, q.lieuNaissance, q.deptNaissance, q.profession, q.dateDeces, q.lieuDeces)
+                        mereMariee.id = q.id
+                    }
+                    al.cle.startsWith("t:") -> {
+                        val i = al.cle.substring(2).toIntOrNull()
+                        val nT = if (type == "B") minOf(2, temoins.size) else temoins.size
+                        if (i != null && i in temoins.indices && i < nT) temoins[i] = temoins[i].copy(nom = q.nom, prenoms = q.prenoms, id = q.id, nouveau = false)
+                        else if (i != null && i == nT) { roleOfficielNom = q.nom; roleOfficielPrenoms = q.prenoms; roleOfficielId = q.id }
+                    }
+                }
+                alerteOuverte = null
+            },
+            onCreer = {
+                if (al.cle.startsWith("t:")) {
+                    val i = al.cle.substring(2).toIntOrNull()
+                    val nT = if (type == "B") minOf(2, temoins.size) else temoins.size
+                    if (i != null && i in temoins.indices && i < nT) temoins[i] = temoins[i].copy(nouveau = true)
+                    else if (i != null && i == nT) { roleOfficielNouveau = true }
+                } else {
+                    if (al.cle == "pers") persNouvelle = true
+                    if (al.cle !in forces) forces.add(al.cle)
+                }
+                alerteOuverte = null
+            },
+            onFermer = { alerteOuverte = null }
+        )
+    }
     if (homonymesOuvert == "pers") {
         DialogueHomonymes(
             titre = "Personne concern\u00E9e : fiches homonymes",
@@ -1461,6 +1543,34 @@ fun EcranSaisieActe(
             },
             onCreer = { persNouvelle = true; homonymesOuvert = null },
             onFermer = { homonymesOuvert = null }
+        )
+    }
+    if (pickerTemoin != -1) {
+        // v0.150 : une personne existante plausible (ni decedee avant l'acte, ni trop jeune).
+        val anActe = anneeDe(date)
+        DialogueChoixPersonne(
+            titre = if (pickerTemoin == -2) "Officier / pr\u00EAtre : personne existante" else "T\u00E9moin : personne existante",
+            personnes = personnes.filter { it.id != personneId && peutDeclarer(it, anActe) },
+            onChoisi = { q ->
+                val ag = ageDeclarantAuto(q, anActe)
+                if (pickerTemoin == -2) {
+                    roleOfficielNom = q.nom; roleOfficielPrenoms = q.prenoms; roleOfficielId = q.id
+                    if (roleOfficielProf.isBlank()) roleOfficielProf = q.profession
+                    if (roleOfficielDomicile.isBlank()) roleOfficielDomicile = q.domicile
+                    if (ag.isNotEmpty()) roleOfficielAge = ag
+                } else if (pickerTemoin in temoins.indices) {
+                    val t = temoins[pickerTemoin]
+                    temoins[pickerTemoin] = t.copy(
+                        nom = q.nom, prenoms = q.prenoms, id = q.id, nouveau = false,
+                        profession = t.profession.ifBlank { q.profession },
+                        situation = t.situation.ifBlank { q.situation },
+                        domicile = t.domicile.ifBlank { q.domicile },
+                        age = if (ag.isNotEmpty()) ag else t.age
+                    )
+                }
+                pickerTemoin = -1
+            },
+            onFermer = { pickerTemoin = -1 }
         )
     }
     if (pickerOuvert) {
@@ -1525,7 +1635,9 @@ fun DialogueHomonymes(
     // v0.77 : "Créer une nouvelle fiche" force une fiche distincte
     // (vrai homonyme : date de naissance différente).
     onCreer: (() -> Unit)? = null,
-    onFermer: () -> Unit
+    onFermer: () -> Unit,
+    // v0.150 : explication specifique (avertissement d'homonymes a l'enregistrement).
+    explication: String? = null
 ) {
     AlertDialog(
         onDismissRequest = onFermer,
@@ -1533,7 +1645,7 @@ fun DialogueHomonymes(
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    "M\u00EAme nom et m\u00EAmes pr\u00E9noms : touchez la fiche \u00E0 reprendre.",
+                    explication ?: "M\u00EAme nom et m\u00EAmes pr\u00E9noms : touchez la fiche \u00E0 reprendre.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

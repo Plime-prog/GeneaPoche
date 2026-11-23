@@ -121,5 +121,7 @@ fun recitBiographie(p: Personne, personnes: List<Personne>): List<String> {
     // v0.148 : declaration du deces (par une personne existante ou saisie libre).
     phraseDecesDeclarePar(p, parId[p.declarantId])?.let { res.add(it) }
     personnes.filter { it.id != p.id && it.declarantId == p.id }.forEach { res.add(phraseADeclare(p, it)) }
+    // v0.150 : actes dont la personne a ete temoin.
+    temoignagesDe(p, personnes).forEach { res.add(phraseTemoin(p, it)) }
     return res
 }

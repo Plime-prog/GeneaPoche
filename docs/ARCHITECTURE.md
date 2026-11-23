@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 22 novembre 2026 (v0.149). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 23 novembre 2026 (v0.150). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -98,3 +98,10 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 - `decoderImageReduite` : 2048 px par défaut ; `android:largeHeap` ; `resumeMemoire`, `extraireFils` dans `DiagnosticBlocage`.
 - `departementsUtilises` (Geographie.kt) : damier limité aux départements présents.
 - Biographie : enfants via `enfantsChrono`.
+
+## Ajouts v0.150
+
+- `LogiqueActe.kt` : `fichesRattachables`, `incompatibleAvecActe`, `alertesHomonymes` (pures, testées) ; `ActeSaisie.nouveauxForces` / `mMarieeId`, `TemoinSaisie.id`. Le formulaire d'acte ouvre `DialogueHomonymes` (avec explication) avant `onEnregistrer`.
+- `Temoignage.kt` : `temoignagesDe`, `phraseTemoin`, `libelleTemoin` (récit de la biographie et chronologie).
+- `VersionApp.kt` : `reprendreEcran` (Journal au premier lancement après installation, mise à jour ou changement de jour) ; `Stockage.lireEcran/sauverEcran` mémorisent jour et version.
+- Principe maintenu : application strictement locale, aucune permission.

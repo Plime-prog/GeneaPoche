@@ -64,9 +64,12 @@ object Stockage {
 
     // v0.141 : dernier ecran ouvert (onglet + fiche), pour rouvrir l'application
     // la ou on l'a laissee. Absent au tout premier lancement (Journal alors).
-    fun lireEcran(ctx: Context): Pair<Int, Long>? {
+    fun lireEcran(ctx: Context, jour: Long = jourCourant(), version: String = versionApplication(ctx)): Pair<Int, Long>? {
         val p = prefs(ctx)
         if (!p.contains("ecran_onglet")) return null
+        // v0.150 : premier lancement apres installation, mise a jour ou changement
+        // de jour -> Journal (pas de reprise de l'ecran).
+        if (!reprendreEcran(p.getLong("ecran_jour", -1L), p.getString("ecran_version", "").orEmpty(), jour, version)) return null
         val o = p.getInt("ecran_onglet", 1)
         return Pair(if (o in 0..5) o else 1, p.getLong("ecran_fiche", 0L))
     }
@@ -83,7 +86,8 @@ object Stockage {
     }
 
     fun sauverEcran(ctx: Context, onglet: Int, fiche: Long) {
-        prefs(ctx).edit().putInt("ecran_onglet", onglet).putLong("ecran_fiche", fiche).apply()
+        prefs(ctx).edit().putInt("ecran_onglet", onglet).putLong("ecran_fiche", fiche)
+            .putLong("ecran_jour", jourCourant()).putString("ecran_version", versionApplication(ctx)).apply()
     }
 
     // ---------------------------- 12.1 : sauvegarde automatique (.gpbak)

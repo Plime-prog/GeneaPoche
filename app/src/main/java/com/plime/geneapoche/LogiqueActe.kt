@@ -335,3 +335,79 @@ fun nomsNouveaux(personnes: List<Personne>, a: ActeSaisie): List<String> {
     }
     return res
 }
+
+// ------------------------------------------------ Homonymes (v0.150)
+// Un nom saisi dans un acte peut viser PLUSIEURS fiches de meme nom et prenoms,
+// ou une seule dont les dates ne concordent pas avec l'acte. Rien n'est rattache
+// sans confirmation : l'application signale et demande de choisir une fiche ou
+// d'en creer une nouvelle.
+
+data class AlerteHomonyme(
+    val cle: String,            // emplacement : "pers", "pere", "mere", "mariee", "mMariee", "t:0"...
+    val libelle: String,        // "Père", "Témoin : Jean DUPONT"...
+    val candidats: List<Personne>,
+    val plusieurs: Boolean,
+    val raison: String
+)
+
+// Fiches que l'enregistrement rattacherait au nom saisi (meme regle que
+// matchPersonneActe, mais TOUTES, pas seulement la premiere).
+fun fichesRattachables(personnes: List<Personne>, nom: String, prenoms: String, dateNaissance: String): List<Personne> {
+    val n = nom.trim()
+    val pr = prenoms.trim()
+    if (n.isEmpty() && pr.isEmpty()) return emptyList()
+    return personnes.filter {
+        cleNom(it.nom) == cleNom(n) &&
+            clePrenomsNom(it.prenoms) == clePrenomsNom(pr) &&
+            (it.dateNaissance.isBlank() || dateNaissance.isBlank() || dateGreg(dateNaissance) == it.dateNaissance)
+    }
+}
+
+// Raison pour laquelle une fiche ne peut pas etre la personne de l'acte (ou null).
+// morteAvant : controler aussi un deces anterieur a l'acte (temoin, officier, marie(e)).
+fun incompatibleAvecActe(q: Personne, dateActe: String, age: String, morteAvant: Boolean, adulte: Boolean): String? {
+    erreurAge(q.dateNaissance, dateActe, age)?.let { return it }
+    val an = anneeDe(dateActe) ?: return null
+    val nais = anneeDe(q.dateNaissance)
+    if (nais != null && nais > an) return "n\u00E9(e) en " + nais.toString() + ", apr\u00E8s l'acte (" + an.toString() + ")."
+    val dec = anneeDe(q.dateDeces)
+    if (morteAvant && dec != null && dec < an) return "d\u00E9c\u00E9d\u00E9(e) en " + dec.toString() + ", avant l'acte (" + an.toString() + ")."
+    if (adulte && nais != null && an - nais < 15) return "n\u00E9(e) en " + nais.toString() + ", trop jeune \u00E0 la date de l'acte (" + an.toString() + ")."
+    return null
+}
+
+fun alertesHomonymes(personnes: List<Personne>, a: ActeSaisie): List<AlerteHomonyme> {
+    val res = mutableListOf<AlerteHomonyme>()
+    fun verifier(cle: String, libelle: String, id: Long, nom: String, prenoms: String, forcee: Boolean,
+                 naissance: String, age: String, morteAvant: Boolean, adulte: Boolean) {
+        if (id != 0L || forcee || (nom.isBlank() && prenoms.isBlank())) return
+        val l = fichesRattachables(personnes, nom, prenoms, naissance)
+        val nomComplet = (prenoms.trim() + " " + nom.trim()).trim()
+        if (l.size >= 2) {
+            res.add(AlerteHomonyme(cle, libelle, l.take(8), true,
+                nomComplet + " correspond \u00E0 " + l.size.toString() + " fiches : choisissez laquelle, ou cr\u00E9ez une nouvelle fiche."))
+        } else if (l.size == 1) {
+            val r = incompatibleAvecActe(l[0], a.date, age, morteAvant, adulte)
+            if (r != null) {
+                res.add(AlerteHomonyme(cle, libelle, l, false,
+                    "Une seule fiche porte le nom " + nomComplet + ", mais elle ne concorde pas avec l'acte : " + r +
+                        " Rattacher l'acte \u00E0 cette fiche, ou cr\u00E9er une nouvelle fiche ?"))
+            }
+        }
+    }
+    val concerne = a.type
+    verifier("pers", if (concerne == "M") "Mari\u00E9" else "Personne concern\u00E9e", a.personneId, a.nom, a.prenoms, a.persNouvelle || "pers" in a.nouveauxForces,
+        if (concerne == "N") a.date else "", a.ageConcerne, concerne == "M", false)
+    verifier("pere", "P\u00E8re", a.pereId, a.pereNom, a.perePrenoms, "pere" in a.nouveauxForces, a.pereNe, a.pereAge, false, false)
+    verifier("mere", "M\u00E8re", a.mereId, a.mereNom, a.merePrenoms, "mere" in a.nouveauxForces, a.mereNe, a.mereAge, false, false)
+    if (concerne == "M") {
+        verifier("mariee", "Mari\u00E9e", a.marieeId, a.marieeNom, a.marieePrenoms, "mariee" in a.nouveauxForces, "", a.marieeAge, true, false)
+        verifier("mMariee", "M\u00E8re de la mari\u00E9e", a.mMarieeId, a.mMarieeNom, a.mMarieePrenoms, "mMariee" in a.nouveauxForces, a.mMarieeNe, "", false, false)
+    }
+    a.temoins.forEachIndexed { i, t ->
+        verifier("t:" + i.toString(),
+            (if (t.role.isNotBlank()) t.role.trim() else "T\u00E9moin") + " : " + (t.prenoms.trim() + " " + t.nom.trim()).trim(),
+            t.id, t.nom, t.prenoms, t.nouveau, "", t.age, true, true)
+    }
+    return res
+}

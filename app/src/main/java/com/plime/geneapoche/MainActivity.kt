@@ -1616,7 +1616,7 @@ fun AppEcran(
             lierParentActe(enfant, parent, estMere)
         }
 
-        val p = trouverOuCreer(a.personneId, a.nom, a.prenoms, a.sexe, if (a.type == "N") a.date else "", a.persNouvelle)
+        val p = trouverOuCreer(a.personneId, a.nom, a.prenoms, a.sexe, if (a.type == "N") a.date else "", a.persNouvelle || "pers" in a.nouveauxForces)
         if (p == null) {
             message = "Acte non enregistr\u00E9 : personne concern\u00E9e non identifi\u00E9e."
             return
@@ -1795,7 +1795,7 @@ fun AppEcran(
         val idPere = if (pereLie != null && a.pereNom.isNotBlank() &&
             cle(pereLie.nom) == cle(a.pereNom) &&
             clePrenoms(pereLie.prenoms) == clePrenoms(a.perePrenoms)) pereLie.id else 0L
-        val pere = trouverOuCreer(idPere, a.pereNom, a.perePrenoms, "M", a.pereNe)
+        val pere = trouverOuCreer(idPere, a.pereNom, a.perePrenoms, "M", a.pereNe, "pere" in a.nouveauxForces)
         renseigner(pere, a.pereNe, a.pereLieu, a.pereDept, a.pereProf, a.pereDeces, a.pereLieuDeces,
             a.pereAge, a.pereSituation, a.pereDomicile, "l'acte de naissance de " + p.titre())
         lierParent(p, pere, false)
@@ -1803,7 +1803,7 @@ fun AppEcran(
         val idMere = if (mereLie != null && a.mereNom.isNotBlank() &&
             cle(mereLie.nom) == cle(a.mereNom) &&
             clePrenoms(mereLie.prenoms) == clePrenoms(a.merePrenoms)) mereLie.id else 0L
-        val mere = trouverOuCreer(idMere, a.mereNom, a.merePrenoms, "F", a.mereNe)
+        val mere = trouverOuCreer(idMere, a.mereNom, a.merePrenoms, "F", a.mereNe, "mere" in a.nouveauxForces)
         renseigner(mere, a.mereNe, a.mereLieu, a.mereDept, a.mereProf, a.mereDeces, a.mereLieuDeces,
             a.mereAge, a.mereSituation, a.mereDomicile, "l'acte de naissance de " + p.titre())
         lierParent(p, mere, true)
@@ -1873,7 +1873,7 @@ fun AppEcran(
         // Mariee et ses parents (mariage uniquement).
         var mariee: Personne? = null
         if (a.type == "M") {
-            mariee = trouverOuCreer(a.marieeId, a.marieeNom, a.marieePrenoms, "F")
+            mariee = trouverOuCreer(a.marieeId, a.marieeNom, a.marieePrenoms, "F", "", "mariee" in a.nouveauxForces)
             if (mariee != null) {
                 if (a.date.isNotBlank()) mariee.dateMariage = dateGreg(a.date)
                 if (a.heure.isNotBlank()) mariee.heureMariage = a.heure
@@ -1884,7 +1884,7 @@ fun AppEcran(
                     val inc = naissanceDepuisAge(mariee, a.date, a.marieeAge, "l'acte de mariage de " + p.titre())
                     if (inc != null) incoherenceAge = (if (incoherenceAge.isBlank()) "" else incoherenceAge + " ") + inc
                 }
-                val mMar = trouverOuCreer(0L, a.mMarieeNom, a.mMarieePrenoms, "F")
+                val mMar = trouverOuCreer(a.mMarieeId, a.mMarieeNom, a.mMarieePrenoms, "F", "", "mMariee" in a.nouveauxForces)
                 renseigner(mMar, a.mMarieeNe, a.mMarieeLieu, a.mMarieeDept, a.mMarieeProf, a.mMarieeDeces, a.mMarieeLieuDeces)
                 lierParent(mariee, mMar, true)
             }
@@ -1963,7 +1963,7 @@ fun AppEcran(
         // temoin de l'acte est enregistre.
         val fichesTemoins = mutableListOf<Personne>()
         a.temoins.filter { it.nom.isNotBlank() }.forEach { t ->
-            val ficheT = trouverOuCreer(0L, t.nom, t.prenoms, "", "", t.nouveau) ?: return@forEach
+            val ficheT = trouverOuCreer(t.id, t.nom, t.prenoms, "", "", t.nouveau) ?: return@forEach
             fichesTemoins.add(ficheT)
             if (t.profession.isNotBlank() && ficheT.profession.isBlank()) ficheT.profession = t.profession.trim()
             // v0.97 : situation, domicile et date de naissance CALCULEE du
