@@ -1326,7 +1326,7 @@ fun EcranSaisieActe(
 
         }
         // v0.58 : bouton TOUJOURS visible en bas, hors du defilement.
-        val enregistrerFormulaire: (Boolean) -> Unit = { suppression ->
+        val enregistrerFormulaire: (Boolean) -> Unit = formulaire@{ suppression ->
                 // v0.107 : la situation militaire est rangee dans l'intitule
                 // de l'evenement (aucun champ nouveau, GEDCOM sans perte).
                 val intituleFinal = if (type == "E" && intitule.trim().startsWith("Situation militaire")) {
@@ -1417,7 +1417,7 @@ fun EcranSaisieActe(
                 val alertesH = if (suppression) emptyList() else alertesHomonymes(personnes, acte)
                 if (alertesH.isNotEmpty()) {
                     alerteOuverte = alertesH.first()
-                    return@enregistrerFormulaire
+                    return@formulaire
                 }
                 val avrt = if (suppression) "" else avertissementCoherence(type, date, exPersonne, exMariee, parentEnfant)
                 if (avrt.isNotEmpty() && !confirme) {
