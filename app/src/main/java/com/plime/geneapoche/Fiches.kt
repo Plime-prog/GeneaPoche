@@ -1240,7 +1240,7 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         mMarieeDept = mConj?.deptNaissance ?: "", mMarieeProf = mConj?.profession ?: "",
         mMarieeDeces = mConj?.dateDeces ?: "", mMarieeLieuDeces = mConj?.lieuDeces ?: "",
         temoins = temoinsIds.mapNotNull { id ->
-            personneParId(personnes, id)?.let { q -> TemoinSaisie(q.nom, q.prenoms, q.profession, situation = q.situation, domicile = q.domicile) }
+            personneParId(personnes, id)?.let { q -> TemoinSaisie(q.nom, q.prenoms, q.profession, id = q.id, situation = q.situation, domicile = q.domicile) }
         },
         signataires = signatairesListe,
         conjointEnVie = conjointEnVie,
