@@ -1571,6 +1571,7 @@ fun AppEcran(
         }
         acteAConfirmer = null
         var crees = 0
+        val creesListe = mutableListOf<Personne>()
 
         // G\u00E9n\u00E9aPoche 10 : appui long sur un bloc = EDITION des champs de
         // la fiche (chantier 12.0 : plus aucun acte stock\u00E9 \u00E0 mettre \u00E0 jour).
@@ -1595,6 +1596,7 @@ fun AppEcran(
             personnes.add(np)
             IndexPersonnes.invalider()
             crees += 1
+            creesListe.add(np)
             return np
         }
 
@@ -1623,6 +1625,10 @@ fun AppEcran(
         }
 
 
+        // v0.151 : texte "et de Y" des actes de mariage (bloc Observations).
+        fun epouseActe(): String =
+            if (a.type == "M" && (a.marieeNom.isNotBlank() || a.marieePrenoms.isNotBlank()))
+                " et de " + (a.marieePrenoms.trim() + " " + a.marieeNom.trim()).trim() else ""
         // v0.60 : synchronisation TOTALE - le formulaire est la reference
         // pour tout champ non vide, identite comprise.
         // v0.65 : tout changement d'IDENTITE est signal\u00E9 dans le message
@@ -1703,7 +1709,7 @@ fun AppEcran(
             val decl = personneParId(personnes, p.declarantId)
             if (decl != null && decl.id != p.id) {
                 val dateDecl = a.declDDate.ifBlank { a.date }
-                val incohD = naissanceDepuisAge(decl, dateDecl, a.declarantAge, "l'acte de d\u00E9c\u00E8s de " + p.titre())
+                val incohD = naissanceDepuisAge(decl, dateDecl, a.declarantAge, "l'acte de d\u00E9c\u00E8s de " + p.titre(), p.id)
                 if (incohD != null) incoherenceAge = (if (incoherenceAge.isBlank()) "" else incoherenceAge + " ") + incohD
                 if (decl.profession.isBlank() && a.declarantProfession.isNotBlank()) decl.profession = a.declarantProfession
                 if (decl.domicile.isBlank() && a.declarantDomicile.isNotBlank()) decl.domicile = a.declarantDomicile
@@ -1866,7 +1872,7 @@ fun AppEcran(
                 "D" -> "l'acte de d\u00e9c\u00e8s"
                 else -> "l'acte de s\u00e9pulture"
             }
-            val inc = naissanceDepuisAge(p, a.date, a.ageConcerne, lib + " de " + p.titre())
+            val inc = naissanceDepuisAge(p, a.date, a.ageConcerne, lib + " de " + p.titre() + epouseActe(), p.id)
             if (inc != null) incoherenceAge = (if (incoherenceAge.isBlank()) "" else incoherenceAge + " ") + inc
         }
 
@@ -1881,7 +1887,7 @@ fun AppEcran(
                 if (a.dept.isNotBlank()) mariee.deptMariage = normaliserDept(a.dept)
                 if (a.marieeProf.isNotBlank()) mariee.profession = a.marieeProf.trim()
                 if (a.marieeAge.isNotBlank()) {
-                    val inc = naissanceDepuisAge(mariee, a.date, a.marieeAge, "l'acte de mariage de " + p.titre())
+                    val inc = naissanceDepuisAge(mariee, a.date, a.marieeAge, "l'acte de mariage de " + p.titre() + epouseActe(), p.id)
                     if (inc != null) incoherenceAge = (if (incoherenceAge.isBlank()) "" else incoherenceAge + " ") + inc
                 }
                 val mMar = trouverOuCreer(a.mMarieeId, a.mMarieeNom, a.mMarieePrenoms, "F", "", "mMariee" in a.nouveauxForces)
@@ -1980,7 +1986,7 @@ fun AppEcran(
                 "D" -> "l'acte de d\u00e9c\u00e8s"
                 else -> "l'acte de s\u00e9pulture"
             }
-            val incohT = naissanceDepuisAge(ficheT, a.date, t.age, libActe + " de " + p.titre())
+            val incohT = naissanceDepuisAge(ficheT, a.date, t.age, libActe + " de " + p.titre() + epouseActe(), p.id)
             if (incohT != null) incoherenceAge = (if (incoherenceAge.isBlank()) "" else incoherenceAge + " ") + incohT
             if (!p.temoinsDe(a.type).contains(ficheT.id)) p.temoinsDe(a.type).add(ficheT.id)
             if (a.type == "M" && mariee != null && !mariee.temoinsDe(a.type).contains(ficheT.id)) {
@@ -2027,6 +2033,11 @@ fun AppEcran(
             listeS.forEach { listeM.add(it) }
         }
 
+        // v0.151 : provenance des fiches creees par cet acte (bloc Observations).
+        creesListe.forEach { np ->
+            np.creeDepuis = origineCreation(a.type, (a.prenoms.trim() + " " + a.nom.trim()).trim(), epouseActe(), a.date)
+            np.creeDepuisFiche = p.id
+        }
         enregistrer()
         // v0.98 : le journal est resynchronise IMMEDIATEMENT pour les
         // personnes touchees : la coche "Enregistre" retire (ou remet)
@@ -2090,12 +2101,8 @@ fun AppEcran(
                 withContext(Dispatchers.IO) { Stockage.purgerActes(ctx) }
                 enregistrer()
             }
-            // v0.141 : on rouvre l'ecran laisse a la fermeture ; au tout premier
-            // lancement, aucun ecran memorise : le Journal reste affiche.
-            Stockage.lireEcran(ctx)?.let { (o, fiche) ->
-                onglet = o
-                if (fiche != 0L && personneParId(personnes, fiche) != null) idOuvert = fiche
-            }
+            // v0.151 : a chaque ouverture (installation ou fermeture complete),
+            // l'application affiche le Journal : aucun ecran n'est restaure.
             charge = true
             occupation = ""
             if (fichiersIllisibles.isEmpty()) {
@@ -2235,7 +2242,6 @@ fun AppEcran(
                     idOuvert = if (pileFiches.isNotEmpty()) pileFiches.removeAt(pileFiches.size - 1) else 0L
                 },
                 onOnglet = { onglet = it },
-                memoriserEcran = { o, fiche -> if (charge) Stockage.sauverEcran(ctx, o, fiche) },
                 onEditionOuverte = { editionOuverte = it },
                 onEditionCible = { editionCible = it },
                 onPickerRole = { pickerRole = it },

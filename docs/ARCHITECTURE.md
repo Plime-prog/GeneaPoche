@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 23 novembre 2026 (v0.150). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 24 novembre 2026 (v0.151). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -98,6 +98,12 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 - `decoderImageReduite` : 2048 px par défaut ; `android:largeHeap` ; `resumeMemoire`, `extraireFils` dans `DiagnosticBlocage`.
 - `departementsUtilises` (Geographie.kt) : damier limité aux départements présents.
 - Biographie : enfants via `enfantsChrono`.
+
+## Ajouts v0.151
+
+- Le Journal s'affiche à chaque ouverture : plus aucun écran n'est mémorisé ni restauré (`lireEcran`, `sauverEcran`, `reprendreEcran` supprimés).
+- Témoin d'un acte : `temoignagesDe` alimente la **chronologie** de la fiche (`evenementsFamille`), plus le récit ni la frise de la Biographie. Le préremplissage d'un acte (`prefillActe`) recalcule l'âge du témoin depuis sa fiche.
+- Bloc « Observations » (`Observations.kt`) : `observationsDe(p)` reconstruit les lignes « Identité créée d'après l'acte de… » (`creeDepuis`, `creeDepuisFiche`) et « Né vers N d'après l'acte de… » (`naissanceCalculee`, `naissanceCalculeeSource`, `naissanceCalculeeFiche`). Toucher une ligne ouvre la fiche dont l'acte a servi. Champs en JSON et GEDCOM (`_GPNCF`, `_GPCRD`, `_GPCRF`, ids remappés à l'import). Tout reste local.
 
 ## Ajouts v0.150
 

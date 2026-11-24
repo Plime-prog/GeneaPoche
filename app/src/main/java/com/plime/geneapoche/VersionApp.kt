@@ -19,10 +19,4 @@ fun versionApplication(ctx: Context): String = try {
     "?"
 }
 
-// v0.150 : le Journal s'affiche au PREMIER lancement apres une installation, une
-// mise a jour ou un changement de JOUR ; sinon l'application reprend le dernier
-// ecran. jour = jours depuis 1970 (heure locale).
-fun reprendreEcran(jourSauve: Long, versionSauvee: String, jourActuel: Long, versionActuelle: String): Boolean =
-    jourSauve == jourActuel && versionSauvee == versionActuelle
-
 fun jourCourant(): Long = java.time.LocalDate.now().toEpochDay()

@@ -19,6 +19,7 @@ Périmètre : France uniquement, actes N/B/M/D/S.
 - **Fiches par événements** : N/B/M/D/S regroupés dans l'ordre généalogique NBMDS, éditable par appui long via la saisie d'acte pré-remplie depuis la fiche.
 - **Saisie d'acte** : témoins, coche « Signe » derrière chaque personne citée, prêtre, officier d'état civil, transcription, conjoint survivant ou décédé persisté sur les actes D/S, enfant déclarant sur un décès ; actes enrichis (déclaration, légitimité, contrat de mariage, cérémonie, cimetière…).
 - **Numérotation automatique** : Sosa-Stradonitz et d'Aboville, rien ne se saisit.
+- **v0.151** : toujours le Journal à l'ouverture, témoin dans la chronologie (plus dans la biographie), âge du témoin conservé, bloc « Observations » de la fiche.
 - **v0.150** : avertissement sur les homonymes, témoins/officier (personne existante, âge, résidence, biographie), Journal à la première ouverture du jour.
 - **v0.149** : image 2048 px (mémoire), Stat. Géographie : départements utilisés seuls, Biographie : enfants chronologiques.
 - **v0.148** : diagnostic des blocages, déclarant d'un décès = personne existante (biographie, âge), Saisie personne/source en demi-écran avec image, sources : commune contrôlée.
@@ -59,7 +60,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.150)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.150-release.apk` (signé) ou `GeneaPoche-v0.150-debug.apk`. **Mise à jour depuis une version antérieure à la v0.140 : désinstaller une fois l'ancienne version après avoir exporté une sauvegarde `.gpbak` — voir `docs/SIGNATURE.md`.**
+**Téléchargement direct de la dernière version (v0.151)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.151-release.apk` (signé) ou `GeneaPoche-v0.151-debug.apk`. **Mise à jour depuis une version antérieure à la v0.140 : désinstaller une fois l'ancienne version après avoir exporté une sauvegarde `.gpbak` — voir `docs/SIGNATURE.md`.**
 
 Sinon, depuis les sources :
 

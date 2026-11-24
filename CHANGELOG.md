@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.151 — Journal à l'ouverture, témoin, Observations
+
+- **Ouverture** : après une installation ou une fermeture complète, l'application affiche toujours le **Journal** (la reprise de la dernière fiche est supprimée).
+- **Témoin d'un acte** : « Témoin de l'acte de mariage de A et B » apparaît dans la **chronologie** de la fiche du témoin, et n'est plus dans le bloc Biographie (récit et frise).
+- **Âge du témoin** : il est conservé quand on rouvre un acte (recalculé depuis la fiche du témoin) au lieu d'être remis à vide.
+- **Fiche — bloc « Observations »** (au-dessus de « Notes ») : déductions et créations tirées d'autres fiches, par exemple « Né vers 1845 d'après l'acte de mariage de X et de Y du 10/05/1905 » ou « Identité créée d'après l'acte de naissance de X le 01/02/1900 ». **Toucher une ligne ouvre la fiche dont l'acte a servi.** Les fiches déjà calculées affichent la naissance calculée ; l'origine de création n'est connue que pour les fiches créées à partir de cette version.
+- Tests : Observations, témoignages. L'application reste strictement locale.
+
 ## v0.150 — Homonymes, témoins et officier, première ouverture
 
 - **Homonymes** : à l'enregistrement d'un acte, si un nom + prénoms correspond à **plusieurs fiches**, l'application le signale et demande laquelle choisir ou de créer une nouvelle fiche ; si **une seule** fiche existe mais que ses dates ne concordent pas (âge saisi incompatible, née après l'acte, décédée avant l'acte, trop jeune pour témoigner), elle prévient avant de rattacher. **Rien n'est rattaché sans choix explicite** (père, mère, mari, mariée, mère de la mariée, témoins, officier). « Créer une nouvelle fiche » est désormais effectif aussi pour les parents (il était ignoré avant).
