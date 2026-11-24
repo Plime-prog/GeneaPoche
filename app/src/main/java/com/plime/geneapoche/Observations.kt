@@ -23,11 +23,21 @@ fun observationsDe(p: Personne): List<Observation> {
     val res = mutableListOf<Observation>()
     if (p.creeDepuis.isNotBlank()) res.add(Observation(p.creeDepuis.trim(), if (p.creeDepuisFiche != p.id) p.creeDepuisFiche else 0L))
     if (p.naissanceCalculee.isNotBlank() && p.dateNaissance.isBlank()) {
-        val ne = if (p.sexe == "F") "Née" else if (p.sexe == "M") "Né" else "Né(e)"
-        val src = p.naissanceCalculeeSource.trim().removePrefix("calculée d'après ").removePrefix("calcul\u00e9e d'apr\u00e8s ").trim()
+        val ne = if (p.sexe == "F") "N\u00E9e" else if (p.sexe == "M") "N\u00E9" else "N\u00E9(e)"
+        val src = p.naissanceCalculeeSource.trim()
         val an = anneeDe(p.naissanceCalculee)?.let { "vers $it" } ?: p.naissanceCalculee.trim()
-        res.add(Observation(ne + " " + an + (if (src.isNotEmpty()) " d'après " + src else "") + ".",
-            if (p.naissanceCalculeeFiche != p.id) p.naissanceCalculeeFiche else 0L))
+        val fin = when {
+            src.startsWith("estim") -> ", " + src
+            src.isEmpty() -> ""
+            else -> " d'apr\u00E8s " + src.removePrefix("calcul\u00e9e d'apr\u00e8s ").trim()
+        }
+        res.add(Observation(ne + " " + an + fin + ".", if (p.naissanceCalculeeFiche != p.id) p.naissanceCalculeeFiche else 0L))
+    }
+    if (p.decesCalcule.isNotBlank() && p.dateDeces.isBlank()) {
+        val dec = if (p.sexe == "F") "D\u00E9c\u00E9d\u00E9e" else if (p.sexe == "M") "D\u00E9c\u00E9d\u00E9" else "D\u00E9c\u00E8s"
+        val src = p.decesCalculeSource.trim()
+        res.add(Observation(dec + " " + p.decesCalcule.trim() + (if (src.isNotEmpty()) ", d'apr\u00E8s " + src else "") + ".",
+            if (p.decesCalculeFiche != p.id) p.decesCalculeFiche else 0L))
     }
     return res
 }

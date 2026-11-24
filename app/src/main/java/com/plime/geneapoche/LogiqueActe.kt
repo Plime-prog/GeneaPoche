@@ -131,7 +131,7 @@ fun naissanceDepuisAge(c: Personne?, dateActe: String, age: String, source: Stri
         else null
     }
     val dejaCalc = Regex("[0-9]{4}").find(c.naissanceCalculee)?.value?.toIntOrNull()
-    if (dejaCalc == null) {
+    if (dejaCalc == null || c.naissanceCalculeeSource.startsWith(PREFIXE_ESTIMEE)) {
         c.naissanceCalculee = "vers " + anCalc.toString()
         // v0.151 : la date de l'acte et la fiche source alimentent le bloc Observations.
         c.naissanceCalculeeSource = "calcul\u00e9e d'apr\u00e8s " + source + (if (dateActe.isNotBlank()) " du " + dateActe.trim() else "")

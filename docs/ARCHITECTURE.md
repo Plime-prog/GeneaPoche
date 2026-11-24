@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 24 novembre 2026 (v0.151). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 24 novembre 2026 (v0.152). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -98,6 +98,11 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 - `decoderImageReduite` : 2048 px par défaut ; `android:largeHeap` ; `resumeMemoire`, `extraireFils` dans `DiagnosticBlocage`.
 - `departementsUtilises` (Geographie.kt) : damier limité aux départements présents.
 - Biographie : enfants via `enfantsChrono`.
+
+## Ajouts v0.152
+
+- `DatesApproximatives.kt` : `completerDatesApproximatives(personnes)` (appelée à chaque `enregistrer()`, une passe en O(n)) déduit une naissance « vers N » (mère +28 ans, père +32, premier enfant −28/−32, mariage −25) et un décès « après N » (dernier événement connu : mariage, naissance d'un enfant, déclaration d'un décès, témoin d'un acte). Jamais d'écrasement d'une date saisie ; une estimation (`naissanceCalculeeSource` commençant par « estimée ») disparaît dès qu'une date est saisie et est remplacée par un calcul d'âge d'acte (`naissanceDepuisAge`). Nouveaux champs `decesCalcule`/`Source`/`Fiche` (JSON, GEDCOM `_GPDCA/_GPDCS/_GPDCF`). Affichage dans le bloc Observations.
+- Ouverture : plus d'ouverture automatique du de cujus (Journal au démarrage) ; `ModeleVueGeneaPoche.ficheAvantVerrou` rouvre la dernière fiche après un verrouillage puis le PIN.
 
 ## Ajouts v0.151
 

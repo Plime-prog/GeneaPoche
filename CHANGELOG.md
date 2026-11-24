@@ -1,5 +1,12 @@
 # Historique des versions
 
+## v0.152 — Dates approximatives, ouverture et PIN
+
+- **Dates approximatives automatiques** (dès l'enregistrement d'une fiche, d'un acte ou d'un enfant) : naissance « vers N » déduite de la naissance de la mère (+28 ans), du père (+32), du premier enfant (−28/−32) ou du mariage (−25) ; décès « après N » déduit du dernier événement connu (mariage, naissance d'un enfant, déclaration d'un décès, témoin d'un acte). **Jamais** à la place d'une date saisie ; une estimation disparaît dès qu'on saisit la date, et un âge lu sur un acte la remplace.
+- Chaque date calculée est indiquée dans le bloc **Observations** (« Né vers 1878, estimée d'après la naissance de sa mère X (1850) », « Décédée après 1880, d'après la naissance de son enfant Y ») ; toucher la ligne ouvre la fiche source.
+- **Ouverture** : après une installation ou une fermeture complète, toujours le **Journal** (la fiche du de cujus ne s'ouvre plus d'office) ; **après le déblocage par code PIN, retour à la dernière fiche ouverte.**
+- Tests : dates approximatives. L'application reste strictement locale.
+
 ## v0.151 — Journal à l'ouverture, témoin, Observations
 
 - **Ouverture** : après une installation ou une fermeture complète, l'application affiche toujours le **Journal** (la reprise de la dernière fiche est supprimée).

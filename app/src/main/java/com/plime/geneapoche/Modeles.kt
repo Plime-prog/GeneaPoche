@@ -285,6 +285,10 @@ data class Personne(
     var naissanceCalculeeFiche: Long = 0L,
     var creeDepuis: String = "",
     var creeDepuisFiche: Long = 0L,
+    // v0.152 : deces approximatif ("apres 1885") calcule d'apres d'autres fiches.
+    var decesCalcule: String = "",
+    var decesCalculeSource: String = "",
+    var decesCalculeFiche: Long = 0L,
     // v0.97 : mentions marginales d'un acte de naissance (mariage, deces),
     // avec date et lieu.
     var mentionMDate: String = "",
@@ -502,6 +506,9 @@ data class Personne(
         o.put("naissanceCalculeeFiche", naissanceCalculeeFiche)
         o.put("creeDepuis", creeDepuis)
         o.put("creeDepuisFiche", creeDepuisFiche)
+        o.put("decesCalcule", decesCalcule)
+        o.put("decesCalculeSource", decesCalculeSource)
+        o.put("decesCalculeFiche", decesCalculeFiche)
         o.put("mentionMDate", mentionMDate)
         o.put("mentionMLieu", mentionMLieu)
         o.put("mentionDDate", mentionDDate)
@@ -621,6 +628,9 @@ data class Personne(
                 naissanceCalculeeFiche = o.optLong("naissanceCalculeeFiche", 0L),
                 creeDepuis = o.optString("creeDepuis", ""),
                 creeDepuisFiche = o.optLong("creeDepuisFiche", 0L),
+                decesCalcule = o.optString("decesCalcule", ""),
+                decesCalculeSource = o.optString("decesCalculeSource", ""),
+                decesCalculeFiche = o.optLong("decesCalculeFiche", 0L),
                 mentionMDate = o.optString("mentionMDate", ""),
                 mentionMLieu = o.optString("mentionMLieu", ""),
                 mentionDDate = o.optString("mentionDDate", ""),
