@@ -21,8 +21,8 @@ data class Commune(val code: String, val nom: String, val dept: String, val cle:
 // "Saint-Denis" et "saintdenis" trouvent tous la commune "Saint-Denis".
 private fun normaliserCle(s: String): String =
     Normalizer.normalize(s.uppercase(), Normalizer.Form.NFD)
-        .replace(Regex("\\p{Mn}+"), "")
-        .replace(Regex("[^A-Z0-9]"), "")
+        .replace(RX1, "")
+        .replace(RX2, "")
 
 object BaseCommunes {
     @Volatile private var chargees = false
@@ -81,7 +81,7 @@ object BaseCommunes {
         if (t.length < 2) return emptyList()
         val n = normaliserCle(t)
         if (n.isEmpty()) return emptyList()
-        if (Regex("^\\d{5}$").matches(n) || Regex("^2[AB]\\d{3}$").matches(n)) {
+        if (RX16.matches(n) || RX17.matches(n)) {
             val parCode = liste.filter { it.code == n || it.code.startsWith(n) }
             if (parCode.isNotEmpty()) return parCode.take(max)
         }
@@ -122,4 +122,4 @@ fun insererLieu(v: String, c: Commune): String {
 // v0.105 : le lieu porte deja une commune CHOISIE (format interne
 // "Commune, code INSEE, Departement") : la liste de suggestions se replie.
 fun lieuDejaChoisi(v: String): Boolean =
-    Regex(", (\\d{5}|2[AB]\\d{3}), [^,]+$").containsMatchIn(v.trim())
+    RX18.containsMatchIn(v.trim())

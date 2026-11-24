@@ -36,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -207,8 +208,8 @@ fun ChampsParent.remplir(nom: String, prenoms: String, ne: String, lieu: String,
 
 // Age au moment de l'acte (calcule a partir des annees).
 fun ageActe(dateActe: String, naissance: String): String {
-    val a = Regex("[0-9]{4}").find(dateActe)?.value?.toIntOrNull() ?: return ""
-    val n = Regex("[0-9]{4}").find(naissance)?.value?.toIntOrNull() ?: return ""
+    val a = RX3.find(dateActe)?.value?.toIntOrNull() ?: return ""
+    val n = RX3.find(naissance)?.value?.toIntOrNull() ?: return ""
     if (a < n) return ""
     return (a - n).toString() + " ans"
 }
@@ -487,6 +488,16 @@ fun EcranSaisieActe(
     val exPersonne = personnes.firstOrNull { it.id == personneId }
     val exMariee = personnes.firstOrNull { it.id == marieeId }
     val parentEnfant = personnes.firstOrNull { it.id == parentPourEnfantId }
+    // v0.153 : l'age a l'acte se calcule seul quand la fiche connait la naissance
+    // (exacte ou approximative) et que la date de l'acte est saisie.
+    LaunchedEffect(date, exPersonne?.id, type) {
+        if (ageConcerne.isBlank() && (type == "M" || type == "D" || type == "S"))
+            exPersonne?.let { ageConcerne = ageProposeALActe(it, date) }
+    }
+    LaunchedEffect(date, exMariee?.id, type) {
+        if (marieeAge.isBlank() && type == "M")
+            exMariee?.let { marieeAge = ageProposeALActe(it, date) }
+    }
 
     // Re-remplit tout le formulaire depuis un ActeSaisie (personne choisie
     // dans le picker : ses informations connues et son acte existant).

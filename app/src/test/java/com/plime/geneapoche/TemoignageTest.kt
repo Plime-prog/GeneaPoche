@@ -178,4 +178,21 @@ class DatesApproximativesTest {
         assertEquals("vers 1860", a.naissanceCalculee)
         assertEquals("après 1885", t.decesCalcule)
     }
+
+    @Test fun descendanceEstimeeDeProcheEnProche() {
+        val a = Personne(id = 1, nom = "A", prenoms = "A", sexe = "M", dateMariage = "10/05/1885")
+        val b = Personne(id = 2, nom = "A", prenoms = "B", sexe = "M", pere = 1L)
+        val c = Personne(id = 3, nom = "A", prenoms = "C", sexe = "M", pere = 2L)
+        a.enfants.add(2); b.enfants.add(3)
+        completerDatesApproximatives(listOf(a, b, c))
+        assertEquals("vers 1860", a.naissanceCalculee)
+        assertEquals("vers 1892", b.naissanceCalculee)
+        assertEquals("vers 1924", c.naissanceCalculee)
+    }
+
+    @Test fun agePropose() {
+        val p = Personne(id = 1, nom = "A", prenoms = "A", naissanceCalculee = "vers 1860")
+        assertEquals("25", ageProposeALActe(p, "10/05/1885"))
+        assertEquals("", ageProposeALActe(Personne(id = 2, nom = "B", prenoms = "B"), "10/05/1885"))
+    }
 }

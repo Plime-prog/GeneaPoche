@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 24 novembre 2026 (v0.152). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 24 novembre 2026 (v0.153). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -98,6 +98,12 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 - `decoderImageReduite` : 2048 px par défaut ; `android:largeHeap` ; `resumeMemoire`, `extraireFils` dans `DiagnosticBlocage`.
 - `departementsUtilises` (Geographie.kt) : damier limité aux départements présents.
 - Biographie : enfants via `enfantsChrono`.
+
+## Ajouts v0.153
+
+- `Regexes.kt` : toutes les expressions régulières des chemins fréquents (dates, noms, `sansAccents`, lieux) sont compilées UNE fois (`RX…`). Correctif du figement de l'écran principal (trace : `Pattern.compile` dans la composition).
+- `DatesApproximatives.kt` : la naissance d'un enfant peut se déduire d'un parent lui-même estimé (passes répétées jusqu'à stabilité, 10 maximum) ; la descendance d'un couple marié reçoit donc ses dates de proche en proche. Descendre (parent → enfant) accepte une estimation ; remonter (enfant → parent) exige une naissance sûre, ce qui évite les boucles.
+- `ageProposeALActe` : l'âge à l'acte (concerné, mariée) est proposé d'après la naissance connue (exacte ou calculée) dès que la date de l'acte est saisie.
 
 ## Ajouts v0.152
 

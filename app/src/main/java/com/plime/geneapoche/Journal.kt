@@ -238,7 +238,7 @@ fun cleDoublon(idA: Long, idB: Long): String =
 
 // v0.88 : comparaison insensible aux accents, a la casse et a la ponctuation.
 private fun cleHomonyme(s: String): String =
-    sansAccents(s).lowercase().replace(Regex("[^a-z0-9]+"), " ").trim()
+    sansAccents(s).lowercase().replace(RX13, " ").trim()
 
 fun doublonsPotentiels(personnes: List<Personne>, gardes: Set<String> = emptySet()): List<Doublon> {
     val l = mutableListOf<Doublon>()
@@ -467,13 +467,13 @@ private fun propositionLieu(l: String): String {
     if (partie.length < 2) return ""
     // La partie tapee doit contenir des lettres (un "59" ou "Nord" seul
     // n'est pas une commune).
-    if (!Regex("[A-Za-z\u00C0-\u017F]").containsMatchIn(partie)) return ""
+    if (!RX15.containsMatchIn(partie)) return ""
     val s = BaseCommunes.suggestions(partie, 2)
     if (s.size != 1) return ""
     // Lieu-dit = ce qui precede, nettoye des anciens segments dept.
     val i = l.lastIndexOf(',')
     var prefixe = (if (i >= 0) l.substring(0, i) else "").trim().trimEnd(',', ';')
-    val m = Regex("[,; ](\\d{1,3}|2[AB]\\d{0,3}|\\d{5})$").find(prefixe)
+    val m = RX52.find(prefixe)
     if (m != null) prefixe = prefixe.substring(0, m.range.first).trim().trimEnd(',', ';')
     // ...et un nom de d\u00E9partement seul \u00E0 la fin ("Roubaix, Nord").
     val segs = prefixe.split(',').map { it.trim() }.filter { it.isNotEmpty() }

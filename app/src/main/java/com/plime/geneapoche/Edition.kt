@@ -374,7 +374,7 @@ fun DialogueNouvelEnfant(
 // réversible, le texte saisi n'est jamais modifié.
 private class SansCodeInsee : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
-        val m = Regex(", (\\d{5}|2[AB]\\d{3})(?=,|$)").find(text.text)
+        val m = RX38.find(text.text)
         if (m == null) return TransformedText(text, OffsetMapping.Identity)
         val debut = m.range.first
         val longueur = m.value.length

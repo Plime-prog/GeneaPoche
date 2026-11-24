@@ -714,8 +714,8 @@ fun EcranPersonne(
                                     // journal, il reste affiche).
                                     val texteFiche = textePisteActuel(ps, personnes)
                                         .replace(titreCourt(p), "")
-                                        .replace(Regex("\\s+de\\s*$"), "")
-                                        .replace(Regex("\\s{2,}"), " ")
+                                        .replace(RX19, "")
+                                        .replace(RX4, " ")
                                         .trim()
                                     // G\u00E9n\u00E9aPoche 9 : toucher une recherche ouvre
                                     // directement la saisie correspondante.
@@ -1200,7 +1200,7 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
     fun ageALActe(q: Personne?): String {
         if (q == null || anneeActe == null) return ""
         val an = anneeDe(q.dateNaissance)
-            ?: Regex("[0-9]{4}").find(q.naissanceCalculee)?.value?.toIntOrNull()
+            ?: RX3.find(q.naissanceCalculee)?.value?.toIntOrNull()
             ?: return ""
         val age = anneeActe - an
         return if (age in 0..120) age.toString() else ""
@@ -1340,7 +1340,7 @@ fun champsEvenement(p: Personne, type: String): EvChamps = when (type) {
 
 // Annee d'une date : gregorienne, ou conversion d'une date republicaine.
 fun anneeDe(s: String): Int? =
-    Regex("[0-9]{4}").find(s)?.value?.toIntOrNull()
+    RX3.find(s)?.value?.toIntOrNull()
         ?: repubAGregorien(s)?.takeLast(4)?.toIntOrNull()
 
 // v0.84 : cle de tri chronologique : date COMPLETE convertie en nombre
@@ -1348,7 +1348,7 @@ fun anneeDe(s: String): Int? =
 fun cleDate(date: String): Long {
     val t = date.trim()
     val g = repubAGregorien(t) ?: t
-    val m = Regex("^(\\d{2})/(\\d{2})/(\\d{4})$").find(g)
+    val m = RX23.find(g)
     if (m != null) {
         return m.groupValues[3].toLong() * 10000L +
             m.groupValues[2].toLong() * 100L + m.groupValues[1].toLong()

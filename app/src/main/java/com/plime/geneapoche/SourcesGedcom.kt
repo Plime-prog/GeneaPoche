@@ -46,8 +46,8 @@ fun typeDepuisTag(tag: String): String = when (tag.trim().uppercase()) {
 fun periodeGedcom(p: String): String? {
     val t = p.trim()
     if (t.isEmpty()) return null
-    if (Regex("^\\d{4}$").containsMatchIn(t)) return t
-    Regex("^(\\d{4})\\s*(?:-|\u2013|\u2014|/|\u00e0|a|au)\\s*(\\d{4})$").find(t)?.let { m ->
+    if (RX21.containsMatchIn(t)) return t
+    RX35.find(t)?.let { m ->
         return "FROM " + m.groupValues[1] + " TO " + m.groupValues[2]
     }
     return dateGedcom(t)

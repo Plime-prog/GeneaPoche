@@ -79,13 +79,13 @@ fun candidatsDeclarant(defunt: Personne, personnes: List<Personne>, anneeActe: I
 fun ageDeclarantAuto(q: Personne, anneeActe: Int?): String {
     if (anneeActe == null) return ""
     val n = anneeDe(q.dateNaissance)
-        ?: Regex("[0-9]{4}").find(q.naissanceCalculee)?.value?.toIntOrNull() ?: return ""
+        ?: RX3.find(q.naissanceCalculee)?.value?.toIntOrNull() ?: return ""
     val a = anneeActe - n
     return if (a in 0..120) a.toString() else ""
 }
 
 private fun ageTexte(age: String): String {
-    val n = Regex("[0-9]{1,3}").find(age)?.value ?: return ""
+    val n = RX48.find(age)?.value ?: return ""
     return n + (if (n == "1") " an" else " ans")
 }
 

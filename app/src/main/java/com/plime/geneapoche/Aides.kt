@@ -22,7 +22,7 @@ fun formaterDateHeure(ts: Long): String =
 // dates "jj/mm/aaaa", heures "14h05" (les valeurs saisies restent libres).
 fun dateAffichee(s: String): String {
     val t = s.trim()
-    Regex("^(\\d{1,2})[./\\- ](\\d{1,2})[./\\- ](\\d{4})$").find(t)?.let { m ->
+    RX20.find(t)?.let { m ->
         return m.groupValues[1].padStart(2, '0') + "/" + m.groupValues[2].padStart(2, '0') + "/" + m.groupValues[3]
     }
     // Date du calendrier republicain : affichee telle quelle, completee de sa
@@ -39,17 +39,17 @@ fun dateAffichee(s: String): String {
 fun dateLigne(s: String): String {
     val t = s.trim()
     if (t.isEmpty()) return ""
-    Regex("^(\\d{1,2})[./\\- ](\\d{1,2})[./\\- ](\\d{4})$").find(t)?.let { m ->
+    RX20.find(t)?.let { m ->
         return m.groupValues[1].padStart(2, '0') + "/" + m.groupValues[2].padStart(2, '0') + "/" + m.groupValues[3]
     }
     repubAGregorien(t)?.let { return it + " (" + t + ")" }
-    if (Regex("^\\d{4}$").matches(t)) return "  /  /" + t
+    if (RX21.matches(t)) return "  /  /" + t
     return t
 }
 
 fun heureAffichee(s: String): String {
     val t = s.trim()
-    Regex("^(\\d{1,2})[:hH](\\d{2})$").find(t)?.let { m ->
+    RX22.find(t)?.let { m ->
         return m.groupValues[1].padStart(2, '0') + ":" + m.groupValues[2]
     }
     return t
@@ -62,7 +62,7 @@ fun heureAffichee(s: String): String {
 fun lieuAffiche(s: String): String {
     val sans = sansPays(s)
     val parties = sans.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-    val i = parties.indexOfFirst { Regex("^\\d{5}$").matches(it) || Regex("^2[AB]\\d{3}$").matches(it) }
+    val i = parties.indexOfFirst { RX16.matches(it) || RX17.matches(it) }
     if (i < 0) return sans
     return (parties.take(i) + parties.drop(i + 1)).joinToString(", ")
 }
@@ -73,7 +73,7 @@ fun lieuAffiche(s: String): String {
 fun dateValide(s: String): Boolean {
     val t = s.trim()
     if (t.isEmpty()) return true
-    Regex("^(\\d{2})/(\\d{2})/(\\d{4})$").find(t)?.let { m ->
+    RX23.find(t)?.let { m ->
         val j = m.groupValues[1].toInt()
         val mois = m.groupValues[2].toInt()
         // G2-01 : date reelle verifiee avec java.time.LocalDate (31/02,
@@ -85,13 +85,13 @@ fun dateValide(s: String): Boolean {
             false
         }
     }
-    if (Regex("^\\d{4}$").matches(t)) return true
+    if (RX21.matches(t)) return true
     // v0.71 : les qualifications GEDCOM relues a l'import (ABT -> vers,
     // BEF -> avant, AFT -> apr\u00E8s, BET...AND -> entre) sont des dates
     // VALIDES : elles respectent la norme, un import GEDCOM ne doit plus
     // jamais les signaler comme fausses.
-    if (Regex("^(vers|avant|apr\\u00E8s)\\s+\\d{4}$", RegexOption.IGNORE_CASE).matches(t)) return true
-    if (Regex("^entre\\s+\\d{4}\\s+et\\s+\\d{4}$", RegexOption.IGNORE_CASE).matches(t)) return true
+    if (RX_APPROX_AN.matches(t)) return true
+    if (RX_ENTRE_AN.matches(t)) return true
     return repubAGregorien(t) != null
 }
 
@@ -102,7 +102,7 @@ fun dateValide(s: String): Boolean {
 // sauvegarde, export et reimport.
 fun normaliserDate(s: String): String {
     val t = s.trim()
-    Regex("^(\\d{1,2})[.\\- ](\\d{1,2})[.\\- ](\\d{4})$").find(t)?.let { m ->
+    RX24.find(t)?.let { m ->
         return m.groupValues[1].padStart(2, '0') + "/" +
             m.groupValues[2].padStart(2, '0') + "/" + m.groupValues[3]
     }
@@ -112,7 +112,7 @@ fun normaliserDate(s: String): String {
 // v0.71 : heure normalisee hh:mm ("9:05" -> "09:05").
 fun normaliserHeure(s: String): String {
     val t = s.trim()
-    Regex("^(\\d{1,2}):(\\d{2})$").find(t)?.let { m ->
+    RX25.find(t)?.let { m ->
         return m.groupValues[1].padStart(2, '0') + ":" + m.groupValues[2]
     }
     return t
@@ -122,7 +122,7 @@ fun normaliserHeure(s: String): String {
 fun heureValide(s: String): Boolean {
     val t = s.trim()
     if (t.isEmpty()) return true
-    val m = Regex("^(\\d{1,2}):(\\d{2})$").find(t) ?: return false
+    val m = RX25.find(t) ?: return false
     return m.groupValues[1].toInt() in 0..23 && m.groupValues[2].toInt() in 0..59
 }
 
@@ -134,7 +134,7 @@ fun heureValide(s: String): Boolean {
 // sec ("Echec de l'export GEDCOM.") est inexplorable depuis l'exterieur
 // (cas du signalement "0 Ko au-dela de 50 personnes").
 fun sansChemins(s: String): String =
-    s.replace(Regex("(content://|file://)?/?([A-Za-z0-9_.\\-]+/)+[A-Za-z0-9_.\\-]+"), "[chemin]")
+    s.replace(RX6, "[chemin]")
 
 fun messageErreur(e: Exception, defaut: String): String {
     val libelle = when (e) {
@@ -165,7 +165,7 @@ fun messageErreur(e: Exception, defaut: String): String {
 fun dateComplete(s: String): Boolean {
     val t = s.trim()
     if (t.isEmpty()) return false
-    if (Regex("^(\\d{1,2})[./\\- ](\\d{1,2})[./\\- ](\\d{4})$").matches(t)) return true
+    if (RX20.matches(t)) return true
     return repubAGregorien(t) != null
 }
 
@@ -298,7 +298,7 @@ fun couleurCompteur(n: Int, total: Int): androidx.compose.ui.graphics.Color =
 // naissance approximative calculee, signalee par un tilde "(~34 ans)".
 fun ageDePersonne(p: Personne, dateEvenement: String): String {
     if (p.dateNaissance.isNotBlank()) return ageAffiche(p.dateNaissance, dateEvenement)
-    val an = Regex("[0-9]{4}").find(p.naissanceCalculee)?.value ?: return ""
+    val an = RX3.find(p.naissanceCalculee)?.value ?: return ""
     val a = ageAffiche(an, dateEvenement)
     return if (a.startsWith("(")) "(~" + a.substring(1) else a
 }
@@ -306,7 +306,7 @@ fun ageDePersonne(p: Personne, dateEvenement: String): String {
 fun ageAffiche(dateNaissance: String, dateEvenement: String): String {
     fun versLocalDate(s: String): java.time.LocalDate? {
         val t = s.trim()
-        Regex("^(\\d{1,2})[./\\- ](\\d{1,2})[./\\- ](\\d{4})$").find(t)?.let { m ->
+        RX20.find(t)?.let { m ->
             return try {
                 java.time.LocalDate.of(m.groupValues[3].toInt(), m.groupValues[2].toInt(), m.groupValues[1].toInt())
             } catch (e: Exception) { null }

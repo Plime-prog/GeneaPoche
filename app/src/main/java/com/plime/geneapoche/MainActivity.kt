@@ -1033,7 +1033,7 @@ fun AppEcran(
     // remplace l'ancienne, et le champ "D\u00E9partement" suit le code INSEE.
     fun corrigerLieu(personneId: Long, champ: String, valeur: String) {
         val p = personnes.firstOrNull { it.id == personneId } ?: return
-        val code = Regex("(\\d{5}|2[AB]\\d{3})").find(valeur)?.value ?: ""
+        val code = RX36.find(valeur)?.value ?: ""
         val num = if (code.isNotEmpty()) code.take(2) else ""
         when (champ) {
             "naissance" -> { p.lieuNaissance = valeur; p.deptNaissance = num }
