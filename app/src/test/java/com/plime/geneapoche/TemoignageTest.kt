@@ -31,10 +31,11 @@ class TemoignageTest {
         assertTrue(s, s.contains("10"))
     }
 
-    @Test fun biographieEtChronologie() {
+    @Test fun chronologieDeLaFicheMaisPasBiographie() {
         val l = jeu()
-        assertTrue(recitBiographie(l[0], l).any { it.contains("témoin de l'acte de mariage") })
-        assertTrue(chronologieFamille(l[0], l).any { it.libelle.startsWith("Témoin de l'acte de mariage") })
+        assertTrue(recitBiographie(l[0], l).none { it.contains("témoin de l'acte") })
+        assertTrue(chronologieFamille(l[0], l).none { it.libelle.startsWith("Témoin") })
+        assertTrue(evenementsFamille(l[0], l).any { it.second.contains("Témoin de l'acte de mariage") })
     }
 
     @Test fun aucunTemoignage() {
@@ -85,14 +86,36 @@ class HomonymesTest {
     }
 }
 
-class OuvertureTest {
-    @Test fun memeJourMemeVersionReprend() {
-        assertTrue(reprendreEcran(100, "0.150", 100, "0.150"))
+class ObservationsTest {
+    @Test fun creationEtNaissanceCalculee() {
+        val p = Personne(id = 5, nom = "DUPONT", prenoms = "Jean", sexe = "M",
+            naissanceCalculee = "vers 1845", naissanceCalculeeSource = "calculée d'après l'acte de mariage de Luc MARTIN et de Anne DUPONT du 10/05/1905",
+            naissanceCalculeeFiche = 9L, creeDepuis = origineCreation("N", "Jean DUPONT", "", "01/02/1900"), creeDepuisFiche = 9L)
+        val o = observationsDe(p)
+        assertEquals(2, o.size)
+        assertEquals("Identité créée d'après l'acte de naissance de Jean DUPONT le 01/02/1900", o[0].texte)
+        assertEquals(9L, o[0].ficheId)
+        assertEquals("Né vers 1845 d'après l'acte de mariage de Luc MARTIN et de Anne DUPONT du 10/05/1905.", o[1].texte)
+        assertEquals(9L, o[1].ficheId)
     }
 
-    @Test fun nouveauJourOuNouvelleVersionJournal() {
-        assertFalse(reprendreEcran(99, "0.150", 100, "0.150"))
-        assertFalse(reprendreEcran(100, "0.149", 100, "0.150"))
-        assertFalse(reprendreEcran(-1, "", 100, "0.150"))
+    @Test fun rienAObserver() {
+        assertTrue(observationsDe(Personne(id = 1, nom = "A", prenoms = "B")).isEmpty())
+    }
+
+    @Test fun naissanceCalculeeMemorise() {
+        val c = Personne(id = 2, nom = "X", prenoms = "Y")
+        naissanceDepuisAge(c, "10/05/1905", "60", "l'acte de mariage de Z", 7L)
+        assertEquals("vers 1845", c.naissanceCalculee)
+        assertEquals(7L, c.naissanceCalculeeFiche)
+        assertTrue(c.naissanceCalculeeSource.endsWith("du 10/05/1905"))
+    }
+
+    @Test fun jsonConserveLesChamps() {
+        val p = Personne(id = 3, nom = "A", prenoms = "B", creeDepuis = "x", creeDepuisFiche = 4L, naissanceCalculeeFiche = 6L)
+        val q = Personne.depuisJson(p.versJson())
+        assertEquals(4L, q.creeDepuisFiche)
+        assertEquals(6L, q.naissanceCalculeeFiche)
+        assertEquals("x", q.creeDepuis)
     }
 }

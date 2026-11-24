@@ -71,6 +71,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -803,6 +804,25 @@ fun EcranPersonne(
                         onCreerSource = onCreerSource
                     )
                     if (ongletFiche == 0) {
+                        // v0.151 : deductions et creations tirees d'autres fiches ;
+                        // toucher une ligne ouvre la fiche dont l'acte a servi.
+                        val observations = observationsDe(p)
+                        if (observations.isNotEmpty()) CadrePliable("Observations", observations.first().texte, cle = p.id) {
+                            observations.forEach { o ->
+                                val cible = if (o.ficheId != 0L && personneParId(personnes, o.ficheId) != null) o.ficheId else 0L
+                                Text(
+                                    o.texte,
+                                    Modifier.fillMaxWidth().heightIn(min = 40.dp)
+                                        .then(if (cible != 0L) Modifier.clickable { onOuvrir(cible) } else Modifier)
+                                        .padding(vertical = 6.dp),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (cible != 0L) CouleurVertFonce else Color.Unspecified,
+                                    textDecoration = if (cible != 0L) TextDecoration.Underline else null
+                                )
+                            }
+                        }
+                    }
+                    if (ongletFiche == 0) {
                         CadrePliable("Notes", p.notesLibres.trim().lineSequence().firstOrNull().orEmpty(), cle = p.id) {
                             var libre by remember(p.id) { mutableStateOf(p.notesLibres) }
                             OutlinedTextField(
@@ -1240,7 +1260,7 @@ fun prefillActe(p: Personne, personnes: List<Personne>, t: String?, editionFiche
         mMarieeDept = mConj?.deptNaissance ?: "", mMarieeProf = mConj?.profession ?: "",
         mMarieeDeces = mConj?.dateDeces ?: "", mMarieeLieuDeces = mConj?.lieuDeces ?: "",
         temoins = temoinsIds.mapNotNull { id ->
-            personneParId(personnes, id)?.let { q -> TemoinSaisie(q.nom, q.prenoms, q.profession, id = q.id, situation = q.situation, domicile = q.domicile) }
+            personneParId(personnes, id)?.let { q -> TemoinSaisie(q.nom, q.prenoms, q.profession, id = q.id, age = ageALActe(q), situation = q.situation, domicile = q.domicile) }
         },
         signataires = signatairesListe,
         conjointEnVie = conjointEnVie,
@@ -1402,6 +1422,11 @@ fun evenementsFamille(p: Personne, personnes: List<Personne>): List<Pair<Int, St
         if (decesAffichable(e)) {
             ligne(e.dateDeces, e.lieuDeces, e.deptDeces, "D\u00E9c\u00E8s de " + lienE + " " + e.titre())?.let { res.add(it) }
         }
+    }
+    // v0.151 : actes dont la personne a ete temoin : dans la CHRONOLOGIE de sa
+    // fiche (et non dans le bloc Biographie).
+    temoignagesDe(p, personnes).forEach { t ->
+        ligne(t.date, t.lieu, "", libelleTemoin(t))?.let { res.add(it) }
     }
     return res.sortedBy { it.first }
 }

@@ -247,8 +247,6 @@ fun chronologieFamille(p: Personne, personnes: List<Personne>, masquerHorsVie: B
         ajoute(e.dateDeces, "D\u00E9c\u00E8s " + qui + e.titre(), 0, true)
     }
     p.evenementsLibres.forEach { e -> ajoute(e.date, e.intitule.trim().ifEmpty { "\u00C9v\u00E9nement" }, 1) }
-    // v0.150 : actes dont la personne a ete temoin.
-    temoignagesDe(p, personnes).forEach { ajoute(it.date, libelleTemoin(it), 1) }
     ajoute(p.dateSepulture, "S\u00E9pulture")
     if (p.dateDeces.isNotBlank()) ajoute(p.dateDeces, "D\u00E9c\u00E8s")
     return res.sortedWith(compareBy({ it.cle }, { it.libelle }))

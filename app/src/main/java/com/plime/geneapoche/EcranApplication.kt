@@ -196,7 +196,6 @@ class ActionsApplication(
     val onRetourFiche: () -> Unit,
     val onOnglet: (Int) -> Unit,
     // v0.141 : memorisation du dernier ecran ouvert.
-    val memoriserEcran: (Int, Long) -> Unit = { _, _ -> },
     val onEditionOuverte: (Boolean) -> Unit,
     val onEditionCible: (Personne?) -> Unit,
     val onPickerRole: (String) -> Unit,
@@ -340,7 +339,6 @@ fun EcranApplication(
             dernierEcran = courant
         }
         retourEnCours = false
-        memoriserEcran(onglet, idOuvert)
     }
     val retourArriere: () -> Unit = {
         when {

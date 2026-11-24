@@ -110,7 +110,7 @@ fun renseignerChampsActe(
 // deja une date EXACTE, le calcul n'ecrit rien mais VERIFIE la coherence :
 // un ecart de plus de 2 ans retourne un message d'incoherence (affiche au
 // moment de la saisie et rappele a l'enregistrement).
-fun naissanceDepuisAge(c: Personne?, dateActe: String, age: String, source: String): String? {
+fun naissanceDepuisAge(c: Personne?, dateActe: String, age: String, source: String, ficheSource: Long = 0L): String? {
     if (c == null) return null
     val t = age.trim()
     if (t.isBlank()) return null
@@ -123,6 +123,7 @@ fun naissanceDepuisAge(c: Personne?, dateActe: String, age: String, source: Stri
         // Une date exacte existe : une ancienne date calculee n'a plus lieu d'etre.
         c.naissanceCalculee = ""
         c.naissanceCalculeeSource = ""
+        c.naissanceCalculeeFiche = 0L
         return if (kotlin.math.abs(exacte - anCalc) > 2)
             "Incoh\u00e9rence : " + ansAge + " ans en " + anActe +
                 " donne une naissance vers " + anCalc + ", la fiche de " + c.titre() +
@@ -132,7 +133,9 @@ fun naissanceDepuisAge(c: Personne?, dateActe: String, age: String, source: Stri
     val dejaCalc = Regex("[0-9]{4}").find(c.naissanceCalculee)?.value?.toIntOrNull()
     if (dejaCalc == null) {
         c.naissanceCalculee = "vers " + anCalc.toString()
-        c.naissanceCalculeeSource = "calcul\u00e9e d'apr\u00e8s " + source
+        // v0.151 : la date de l'acte et la fiche source alimentent le bloc Observations.
+        c.naissanceCalculeeSource = "calcul\u00e9e d'apr\u00e8s " + source + (if (dateActe.isNotBlank()) " du " + dateActe.trim() else "")
+        c.naissanceCalculeeFiche = ficheSource
     } else if (kotlin.math.abs(dejaCalc - anCalc) > 2) {
         // Deuxieme age qui contredit la date deja calculee : on ne l'ecrase pas.
         return "Incoh\u00e9rence : " + ansAge + " ans en " + anActe + " donne une naissance vers " +

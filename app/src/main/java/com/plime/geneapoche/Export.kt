@@ -224,7 +224,7 @@ fun construireGedcom(
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.150") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
+    lignes.add("2 VERS 0.151") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
@@ -305,6 +305,9 @@ fun construireGedcom(
         if (p.domicile.trim().isNotEmpty()) lignes.add("1 _GPDOM " + texteGedcom(p.domicile.trim()))
         if (p.naissanceCalculee.trim().isNotEmpty()) lignes.add("1 _GPNCA " + texteGedcom(p.naissanceCalculee.trim()))
         if (p.naissanceCalculeeSource.trim().isNotEmpty()) lignes.add("1 _GPNCS " + texteGedcom(p.naissanceCalculeeSource.trim()))
+        if (p.naissanceCalculeeFiche != 0L) lignes.add("1 _GPNCF " + p.naissanceCalculeeFiche)
+        if (p.creeDepuis.trim().isNotEmpty()) lignes.add("1 _GPCRD " + texteGedcom(p.creeDepuis.trim()))
+        if (p.creeDepuisFiche != 0L) lignes.add("1 _GPCRF " + p.creeDepuisFiche)
         if (p.mentionMDate.trim().isNotEmpty()) lignes.add("1 _GPMM " + texteGedcom(p.mentionMDate.trim()))
         if (p.mentionMLieu.trim().isNotEmpty()) lignes.add("1 _GPML " + texteGedcom(p.mentionMLieu.trim()))
         if (p.mentionDDate.trim().isNotEmpty()) lignes.add("1 _GPDD " + texteGedcom(p.mentionDDate.trim()))
@@ -622,7 +625,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
         var verif = ""
         // v0.98 : round-trip complet - tous les champs _GP* relus.
         var gpLat = ""; var gpSit = ""; var gpDom = ""
-        var gpNca = ""; var gpNcs = ""
+        var gpNca = ""; var gpNcs = ""; var gpNcf = 0L; var gpCrd = ""; var gpCrf = 0L
         var gpMm = ""; var gpMl = ""; var gpDd = ""; var gpDl = ""
         var gpEnr = ""; var gpCed = true; var gpEtat = ""
         val gpTemoins = mutableMapOf<String, String>()
@@ -724,6 +727,9 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                     "_GPDOM" -> ind.gpDom = contenu.removePrefix("_GPDOM").trim()
                     "_GPNCA" -> ind.gpNca = contenu.removePrefix("_GPNCA").trim()
                     "_GPNCS" -> ind.gpNcs = contenu.removePrefix("_GPNCS").trim()
+                    "_GPNCF" -> ind.gpNcf = contenu.removePrefix("_GPNCF").trim().toLongOrNull() ?: 0L
+                    "_GPCRD" -> ind.gpCrd = contenu.removePrefix("_GPCRD").trim()
+                    "_GPCRF" -> ind.gpCrf = contenu.removePrefix("_GPCRF").trim().toLongOrNull() ?: 0L
                     "_GPMM" -> ind.gpMm = contenu.removePrefix("_GPMM").trim()
                     "_GPML" -> ind.gpMl = contenu.removePrefix("_GPML").trim()
                     "_GPDD" -> ind.gpDd = contenu.removePrefix("_GPDD").trim()
@@ -877,6 +883,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                 domicile = ind.gpDom.replace("@@", "@"),
                 naissanceCalculee = ind.gpNca.replace("@@", "@"),
                 naissanceCalculeeSource = ind.gpNcs.replace("@@", "@"),
+                creeDepuis = ind.gpCrd.replace("@@", "@"),
                 mentionMDate = ind.gpMm.replace("@@", "@"),
                 mentionMLieu = ind.gpMl.replace("@@", "@"),
                 mentionDDate = ind.gpDd.replace("@@", "@"),
@@ -926,6 +933,9 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
     indivs.forEach { (x, ind) ->
         val pid = ids[x] ?: return@forEach
         val pc = personnes.firstOrNull { it.id == pid } ?: return@forEach
+        // v0.151 : fiches liees du bloc Observations (ids remappes).
+        pc.naissanceCalculeeFiche = anciensIds[ind.gpNcf] ?: 0L
+        pc.creeDepuisFiche = anciensIds[ind.gpCrf] ?: 0L
         ind.gpTemoins.forEach { (t, v) ->
             val liste = pc.temoinsDe(t)
             liste.clear()
