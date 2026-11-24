@@ -68,6 +68,8 @@ class ModeleVueGeneaPoche : ViewModel() {
     var importRapport by mutableStateOf(listOf<String>())
     var cujusEdite by mutableStateOf<Personne?>(null)
     var cujasOuvert by mutableStateOf(false)
+    // v0.152 : fiche ouverte au moment du verrouillage, rouverte apres le PIN.
+    var ficheAvantVerrou by mutableStateOf(0L)
     // G1-04 : fichiers dont NI le contenu NI la copie .bak ne se lisent :
     // l'enregistrement est bloque jusqu'a restauration (ne rien ecraser).
     var fichiersIllisibles by mutableStateOf(listOf<String>())

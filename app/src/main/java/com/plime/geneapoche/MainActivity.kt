@@ -442,6 +442,8 @@ fun AppEcran(
         // syst\u00E9matiquement \u00E0 chaque enregistrement (saisie, \u00E9dition,
         // import : aucune \u00E9chapatoire).
         personnes.forEach { normaliserLieux(it) }
+        // v0.152 : dates approximatives de naissance et de deces deduites des autres fiches.
+        completerDatesApproximatives(personnes)
         // Numerotation Sosa / d'Aboville recalculee seulement quand la
         // structure des liens peut avoir change (creation, rattachement,
         // suppression) : une simple coche n'est plus un recalcul complet (G5).
@@ -2138,17 +2140,28 @@ fun AppEcran(
             sources.clear()
             citations.clear()
             pileFiches.clear()
+            // v0.152 : le dernier ecran est retrouve apres le deverrouillage.
+            if (idOuvert != 0L) modele.ficheAvantVerrou = idOuvert
             idOuvert = 0L
             charge = false
         }
     }
     LaunchedEffect(Unit) { aPin = Stockage.aPin(ctx) }
 
-    // Ouverture sur le de cujus des le deverrouillage
+    // v0.152 : apres un verrouillage puis le PIN, retour a la derniere fiche ouverte.
+    LaunchedEffect(charge, verrou.deverrouille) {
+        if (charge && verrou.deverrouille && modele.ficheAvantVerrou != 0L) {
+            val f = modele.ficheAvantVerrou
+            modele.ficheAvantVerrou = 0L
+            if (personneParId(personnes, f) != null) idOuvert = f
+        }
+    }
+
+    // Diagnostics annonces au premier deverrouillage
     LaunchedEffect(charge, verrou.deverrouille) {
         if (charge && verrou.deverrouille && !cujasOuvert) {
             cujasOuvert = true
-            idDuCujus().takeIf { it != 0L }?.let { idOuvert = it }
+            // v0.152 : plus d'ouverture automatique du de cujus (cold start = Journal).
             // GeneaPoche 12 : diagnostic de l'arbre annonce a l'ouverture de
             // l'application (anomalies + doublons + branches isolees).
             val nbDiag = anomaliesDeLArbre(personnes, anomaliesIgnorees).size +

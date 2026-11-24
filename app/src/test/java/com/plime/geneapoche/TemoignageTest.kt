@@ -119,3 +119,63 @@ class ObservationsTest {
         assertEquals("x", q.creeDepuis)
     }
 }
+
+class DatesApproximativesTest {
+    private fun famille(): List<Personne> {
+        val m = Personne(id = 1, nom = "DUPONT", prenoms = "Anne", sexe = "F", dateNaissance = "01/01/1850")
+        val e = Personne(id = 2, nom = "DUPONT", prenoms = "Luc", sexe = "M", mere = 1L)
+        m.enfants.add(2)
+        return listOf(m, e)
+    }
+
+    @Test fun enfantRecoitUneNaissanceEstimee() {
+        val l = famille()
+        completerDatesApproximatives(l)
+        assertEquals("vers 1878", l[1].naissanceCalculee)
+        assertTrue(l[1].naissanceCalculeeSource.startsWith("estimée d'après la naissance de sa mère"))
+        assertEquals(1L, l[1].naissanceCalculeeFiche)
+        assertTrue(observationsDe(l[1]).any { it.texte.startsWith("Né vers 1878, estimée d'après") && it.ficheId == 1L })
+    }
+
+    @Test fun mereAvecEnfantDecesApres() {
+        val l = famille()
+        l[1].dateNaissance = "05/05/1880"
+        completerDatesApproximatives(l)
+        assertEquals("après 1880", l[0].decesCalcule)
+        assertTrue(observationsDe(l[0]).any { it.texte.startsWith("Décédée après 1880") })
+    }
+
+    @Test fun neJamaisEcraserUneDateSaisie() {
+        val l = famille()
+        l[1].dateNaissance = "05/05/1880"; l[0].dateDeces = "01/01/1900"
+        completerDatesApproximatives(l)
+        assertEquals("", l[1].naissanceCalculee)
+        assertEquals("", l[0].decesCalcule)
+    }
+
+    @Test fun estimationDisparaitQuandOnSaisitLaDate() {
+        val l = famille()
+        completerDatesApproximatives(l)
+        l[1].dateNaissance = "05/05/1880"
+        completerDatesApproximatives(l)
+        assertEquals("", l[1].naissanceCalculee)
+    }
+
+    @Test fun unAgeRemplaceUneEstimation() {
+        val l = famille()
+        completerDatesApproximatives(l)
+        naissanceDepuisAge(l[1], "10/05/1905", "30", "l'acte de mariage de Luc")
+        assertEquals("vers 1875", l[1].naissanceCalculee)
+        completerDatesApproximatives(l)
+        assertEquals("vers 1875", l[1].naissanceCalculee)
+    }
+
+    @Test fun mariageDonneNaissanceEtTemoinDonneDeces() {
+        val a = Personne(id = 1, nom = "A", prenoms = "A", dateMariage = "10/05/1885")
+        val t = Personne(id = 2, nom = "T", prenoms = "T")
+        a.temoinsM.add(2)
+        completerDatesApproximatives(listOf(a, t))
+        assertEquals("vers 1860", a.naissanceCalculee)
+        assertEquals("après 1885", t.decesCalcule)
+    }
+}
