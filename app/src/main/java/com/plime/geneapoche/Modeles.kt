@@ -21,7 +21,7 @@ fun normaliserNom(s: String): String = s.trim().uppercase()
 // ajouté uniquement à l'export GEDCOM. Cette fonction retire un
 // éventuel ", France" (ou "; France") résiduel des anciennes saisies.
 fun sansPays(s: String): String =
-    s.trim().replace(Regex("[,;]\\s*France\\s*$", RegexOption.IGNORE_CASE), "").trim()
+    s.trim().replace(RX_FRANCE, "").trim()
 
 // v0.91 : le champ "D\u00E9partement" n'est plus saisi ni affich\u00E9 nulle
 // part ; il est DERIV\u00C9 du code INSEE du lieu ("17010" -> "17",
@@ -56,7 +56,7 @@ fun normaliserCommune(s: String): String {
     // v0.93 : le passage en minuscules a pu abimer un code INSEE de Corse
     // ("2A004" -> "2a004") : la lettre du departement est restauree en
     // MAJUSCULES, le code doit rester derivable en "2A".
-    return Regex("2([ab])(\\d{3})").replace(sb.toString()) { m -> m.value.uppercase() }
+    return RX5.replace(sb.toString()) { m -> m.value.uppercase() }
 }
 
 // G\u00E9n\u00E9aPoche 5 : d\u00E9partement au format NUM\u00C9RIQUE (norme GEDCOM),
@@ -162,7 +162,7 @@ fun moisRepubli(s: String): Int? {
     // v0.87 : les accents sont retires AVANT de filtrer (Vendemiaire,
     // Pluviose, Ventose, Floreal saisis avec leurs accents etaient refuses).
     val t = java.text.Normalizer.normalize(s.trim().lowercase(), java.text.Normalizer.Form.NFD)
-        .replace("\\p{M}+".toRegex(), "").replace("[^a-z]".toRegex(), "")
+        .replace(RX_MARQUES, "").replace(RX_NON_LETTRES, "")
     if (t.length < 3) return null
     MoisRepubli.forEachIndexed { i, m -> if (m.startsWith(t)) return i + 1 }
     // Jours complementaires (sansculottides) : "complementaire", "sansculottide".

@@ -15,10 +15,10 @@ fun cleNom(s: String): String =
         // v0.123 : les accents (marques combinantes apres NFD) sont SUPPRIMES ;
         // avant, ils devenaient une espace ("Lefèvre" -> "LEFE VRE") et ne
         // correspondaient plus a "Lefevre".
-        .replace(Regex("[\\p{Mn}\\p{Cf}]"), "")
+        .replace(RX11, "")
         .replace("'", " ")
         .replace("-", " ")
-        .split(Regex("\\s+")).filter { it.isNotEmpty() }.joinToString(" ")
+        .split(RX12).filter { it.isNotEmpty() }.joinToString(" ")
 
 // Prenoms compares SANS ORDRE ("Marie Jeanne" = "Jeanne Marie").
 fun clePrenomsNom(s: String): String =
@@ -115,7 +115,7 @@ fun naissanceDepuisAge(c: Personne?, dateActe: String, age: String, source: Stri
     val t = age.trim()
     if (t.isBlank()) return null
     val anActe = anneeDe(dateActe) ?: return null
-    val ansAge = Regex("[0-9]{1,3}").find(t)?.value?.toIntOrNull() ?: return null
+    val ansAge = RX48.find(t)?.value?.toIntOrNull() ?: return null
     if (ansAge !in 1..120) return null
     val anCalc = anActe - ansAge
     val exacte = anneeDe(c.dateNaissance)
@@ -130,7 +130,7 @@ fun naissanceDepuisAge(c: Personne?, dateActe: String, age: String, source: Stri
                 " dit " + c.dateNaissance + "."
         else null
     }
-    val dejaCalc = Regex("[0-9]{4}").find(c.naissanceCalculee)?.value?.toIntOrNull()
+    val dejaCalc = RX3.find(c.naissanceCalculee)?.value?.toIntOrNull()
     if (dejaCalc == null || c.naissanceCalculeeSource.startsWith(PREFIXE_ESTIMEE)) {
         c.naissanceCalculee = "vers " + anCalc.toString()
         // v0.151 : la date de l'acte et la fiche source alimentent le bloc Observations.
@@ -143,7 +143,7 @@ fun naissanceDepuisAge(c: Personne?, dateActe: String, age: String, source: Stri
             " (" + c.naissanceCalculeeSource + ")."
     }
     // Controle avec les autres evenements de la fiche (decès, mariage).
-    val an = Regex("[0-9]{4}").find(c.naissanceCalculee)?.value?.toIntOrNull() ?: anCalc
+    val an = RX3.find(c.naissanceCalculee)?.value?.toIntOrNull() ?: anCalc
     val anDeces = anneeDe(c.dateDeces)
     if (anDeces != null && an - anDeces > 2)
         return "Incoh\u00e9rence : naissance " + c.naissanceCalculee + " apr\u00e8s le d\u00e9c\u00e8s de " + c.titre() + " (" + c.dateDeces + ")."
@@ -158,7 +158,7 @@ fun naissanceDepuisAge(c: Personne?, dateActe: String, age: String, source: Stri
 fun erreurAge(dateNaissance: String, dateActe: String, age: String): String? {
     if (age.isBlank() || dateNaissance.isBlank()) return null
     val anActe = anneeDe(dateActe) ?: return null
-    val ansAge = Regex("[0-9]{1,3}").find(age.trim())?.value?.toIntOrNull() ?: return null
+    val ansAge = RX48.find(age.trim())?.value?.toIntOrNull() ?: return null
     val exacte = anneeDe(dateNaissance) ?: return null
     val calc = anActe - ansAge
     return if (kotlin.math.abs(exacte - calc) > 2)
@@ -253,7 +253,7 @@ fun refusSexeMariage(sexeMarie: String, sexeMariee: String): String? {
 // ANNEE est la meme (le jour peut différer : sources imprécises, une année
 // seule, une date républicaine...).
 fun anneesNaissanceCompatibles(a: String, b: String): Boolean {
-    val annee = { s: String -> Regex("[0-9]{4}").find(s)?.value }
+    val annee = { s: String -> RX3.find(s)?.value }
     val aa = annee(a) ?: return true
     val bb = annee(b) ?: return true
     return aa == bb
@@ -413,4 +413,14 @@ fun alertesHomonymes(personnes: List<Personne>, a: ActeSaisie): List<AlerteHomon
             t.id, t.nom, t.prenoms, t.nouveau, "", t.age, true, true)
     }
     return res
+}
+
+// v0.153 : age propose pour un acte d'apres la naissance connue (exacte, sinon calculee).
+fun ageProposeALActe(p: Personne, dateActe: String): String {
+    val anActe = anneeDe(dateActe) ?: return ""
+    val an = anneeDe(p.dateNaissance)
+        ?: (if (p.naissanceCalculee.isNotBlank()) RX_ANNEE4.find(p.naissanceCalculee)?.value?.toIntOrNull() else null)
+        ?: return ""
+    val age = anActe - an
+    return if (age in 0..120) age.toString() else ""
 }

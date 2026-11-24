@@ -26,7 +26,7 @@ fun sosaValide(s: String): Boolean {
 fun lateralValide(s: String): Boolean {
     val t = s.trim()
     if (t.isEmpty()) return true
-    return Regex("^[0-9]+(\\.[0-9]+)*$").matches(t)
+    return RX27.matches(t)
 }
 
 // Annee de naissance pour le tri (9999 si inconnue).

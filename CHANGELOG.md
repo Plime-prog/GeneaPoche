@@ -1,5 +1,11 @@
 # Historique des versions
 
+## v0.153 — Dates de la descendance, âge proposé, figement
+
+- **Descendance** : les enfants et petits-enfants d'un couple reçoivent une naissance approximative même si les parents n'ont eux-mêmes qu'une date estimée (de proche en proche). Chaque estimation reste signalée dans Observations.
+- **Âge à l'acte** : proposé automatiquement pour la personne concernée et la mariée d'après leur naissance connue (exacte ou calculée), une fois la date de l'acte saisie. Le marié sans âge reçoit en outre une naissance estimée d'après son mariage.
+- **Figement de l'écran principal** (rapport « Dernier incident », `Pattern.compile`) : les expressions régulières des chemins fréquents sont maintenant compilées une seule fois.
+
 ## v0.152 — Dates approximatives, ouverture et PIN
 
 - **Dates approximatives automatiques** (dès l'enregistrement d'une fiche, d'un acte ou d'un enfant) : naissance « vers N » déduite de la naissance de la mère (+28 ans), du père (+32), du premier enfant (−28/−32) ou du mariage (−25) ; décès « après N » déduit du dernier événement connu (mariage, naissance d'un enfant, déclaration d'un décès, témoin d'un acte). **Jamais** à la place d'une date saisie ; une estimation disparaît dès qu'on saisit la date, et un âge lu sur un acte la remplace.

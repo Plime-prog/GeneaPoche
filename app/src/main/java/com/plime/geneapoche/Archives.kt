@@ -33,16 +33,16 @@ val NomsDepartements: Map<Int, String> = linkedMapOf(
 // Extrait le numero de departement d'un lieu saisi :
 // "Roubaix (59)" -> 59, "Nord" -> 59, sinon null.
 fun numeroDepartement(t: String): Int? {
-    val m = Regex("\\((\\d{1,3})\\)").find(t)
+    val m = RX49.find(t)
     if (m != null) {
         val n = m.groupValues[1].toIntOrNull()
         if (n != null && NomsDepartements.containsKey(n)) return n
     }
-    val dep = Regex("\\((\\d[A-B])\\)").find(t)
+    val dep = RX50.find(t)
     if (dep != null) return null // corse 2A/2B : non g\u00E9r\u00E9
     // v0.88 : code INSEE ou code postal 5 chiffres dans le lieu
     // ("Arvert, 17010, Charente-Maritime, France") -> 17.
-    val insee = Regex("\\b(\\d{2})\\d{3}\\b").find(t)
+    val insee = RX51.find(t)
     if (insee != null) {
         val d = insee.groupValues[1].toIntOrNull()
         if (d != null && NomsDepartements.containsKey(d)) return d

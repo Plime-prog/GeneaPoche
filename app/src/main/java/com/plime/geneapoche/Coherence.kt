@@ -60,7 +60,7 @@ fun intervalleDe(s: String): Intervalle? {
     val t = s.trim()
     if (t.isEmpty()) return null
     val bas = sansAccents(t).lowercase()
-    val an = Regex("[0-9]{4}").find(bas)?.value?.toIntOrNull()
+    val an = RX3.find(bas)?.value?.toIntOrNull()
     if (bas.startsWith("avant") || bas.startsWith("bef")) {
         if (an == null || !annee(an)) return null
         return Intervalle(TresTot, LocalDate.of(an, 1, 1).minusDays(1))
@@ -143,7 +143,7 @@ private fun lignesDates(p: NoeudCoh): String {
 }
 
 private fun cleDeptCoh(s: String): String =
-    sansAccents(s).lowercase().replace(Regex("[^a-z0-9]+"), "")
+    sansAccents(s).lowercase().replace(RX13, "")
 
 fun anomaliesAVerifier(
     noeuds: List<NoeudCoh>,

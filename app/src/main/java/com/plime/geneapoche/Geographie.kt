@@ -20,7 +20,7 @@ data class EtapeVoyage(
 // segment numerique court (2-3 chiffres) ou la Corse "2A"/"2B".
 fun deptLegacyDuLieu(l: String): String {
     sansPays(l).split(",").map { it.trim() }.forEach { seg ->
-        if (Regex("^\\d{2,3}$").matches(seg)) return normaliserDept(seg)
+        if (RX26.matches(seg)) return normaliserDept(seg)
         if (seg == "2A" || seg == "2B") return seg
     }
     return ""
@@ -57,7 +57,7 @@ fun deptDePersonne(p: Personne): String {
 fun communeDuLieu(l: String): String {
     val t = sansPays(l).trim()
     if (t.isEmpty()) return ""
-    val m = Regex("(^|, )([^,]+), (\\d{5}|2[AB]\\d{3})(,|$)").find(t)
+    val m = RX37.find(t)
     if (m != null) return m.groupValues[2].trim()
     return t.split(",").first().trim()
 }
@@ -120,7 +120,7 @@ fun etapesVoyage(p: Personne): List<EtapeVoyage> {
             brutes.add(EtapeVoyage(ev.intitule, ev.date, lieuAffiche(ev.lieu), deptDuLieu(ev.lieu).ifEmpty { normaliserDept(ev.dept) }))
     }
     fun anneeDe(s: String): Int? {
-        val m = Regex("(\\d{4})").find(s)
+        val m = RX8.find(s)
         return m?.groupValues?.get(1)?.toIntOrNull()
     }
     return brutes.sortedWith(compareBy({ anneeDe(it.date) ?: 9999 }, { it.intitule }))

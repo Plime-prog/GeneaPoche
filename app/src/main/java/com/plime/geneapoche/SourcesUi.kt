@@ -67,7 +67,7 @@ private fun resumeSource(s: Source): String {
 // Nom de commune sans code INSEE ni departement ("Bourges, 18033, Cher" -> "Bourges").
 fun communeLisible(v: String): String {
     val t = v.trim()
-    val m = Regex("^(.*?),\\s*(\\d{5}|2[AB]\\d{3}),\\s*[^,]+$").find(t)
+    val m = RX39.find(t)
     return if (m != null) m.groupValues[1].trim() else t
 }
 

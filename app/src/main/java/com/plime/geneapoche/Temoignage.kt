@@ -44,7 +44,7 @@ private fun listeNoms(noms: List<String>): String =
 
 fun phraseTemoin(p: Personne, t: TemoignageActe): String {
     val anActe = anneeDe(t.date)
-    val nais = anneeDe(p.dateNaissance) ?: Regex("[0-9]{4}").find(p.naissanceCalculee)?.value?.toIntOrNull()
+    val nais = anneeDe(p.dateNaissance) ?: RX3.find(p.naissanceCalculee)?.value?.toIntOrNull()
     val age = if (anActe != null && nais != null && anActe - nais in 0..120) (anActe - nais).toString() + " ans" else ""
     val domicile = p.domicile.trim().let { if (it.isNotEmpty()) (if (p.sexe == "F") "domiciliée à " else "domicilié à ") + lieuAffiche(it) else "" }
     val identite = listOf(p.titre(), age, p.profession.trim(), domicile).filter { it.isNotEmpty() }.joinToString(", ")

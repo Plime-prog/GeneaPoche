@@ -15,7 +15,11 @@ private fun estEstimee(q: Personne) = q.naissanceCalculeeSource.startsWith("esti
 // Annee de naissance SURE : date saisie, ou calculee d'apres un age (pas estimee).
 private fun anneeSure(q: Personne): Int? =
     anneeDe(q.dateNaissance)
-        ?: if (q.naissanceCalculee.isNotBlank() && !estEstimee(q)) Regex("[0-9]{4}").find(q.naissanceCalculee)?.value?.toIntOrNull() else null
+        ?: if (q.naissanceCalculee.isNotBlank() && !estEstimee(q)) RX3.find(q.naissanceCalculee)?.value?.toIntOrNull() else null
+
+// v0.153 : annee de naissance, sure OU estimee (pour descendre aux enfants).
+private fun anneeApprox(q: Personne): Int? =
+    anneeDe(q.dateNaissance) ?: if (q.naissanceCalculee.isNotBlank()) RX_ANNEE4.find(q.naissanceCalculee)?.value?.toIntOrNull() else null
 
 class DateDeduite(val texte: String, val source: String, val fiche: Long)
 
@@ -24,8 +28,8 @@ private fun nomCourt(q: Personne): String = q.titre()
 fun estimerNaissance(p: Personne, parId: Map<Long, Personne>): DateDeduite? {
     val mere = parId[p.mere]
     val pere = parId[p.pere]
-    mere?.let { m -> anneeSure(m)?.let { return DateDeduite("vers " + (it + AGE_MERE), PREFIXE_ESTIMEE + "la naissance de sa m\u00E8re " + nomCourt(m) + " (" + it + ")", m.id) } }
-    pere?.let { f -> anneeSure(f)?.let { return DateDeduite("vers " + (it + AGE_PERE), PREFIXE_ESTIMEE + "la naissance de son p\u00E8re " + nomCourt(f) + " (" + it + ")", f.id) } }
+    mere?.let { m -> anneeApprox(m)?.let { return DateDeduite("vers " + (it + AGE_MERE), PREFIXE_ESTIMEE + "la naissance de sa m\u00E8re " + nomCourt(m) + " (" + it + ")", m.id) } }
+    pere?.let { f -> anneeApprox(f)?.let { return DateDeduite("vers " + (it + AGE_PERE), PREFIXE_ESTIMEE + "la naissance de son p\u00E8re " + nomCourt(f) + " (" + it + ")", f.id) } }
     val decalage = if (p.sexe == "F") AGE_MERE else AGE_PERE
     val enfant = p.enfants.mapNotNull { parId[it] }.mapNotNull { e -> anneeSure(e)?.let { e to it } }.minByOrNull { it.second }
     if (enfant != null) return DateDeduite("vers " + (enfant.second - decalage), PREFIXE_ESTIMEE + "la naissance de son enfant " + nomCourt(enfant.first) + " (" + enfant.second + ")", enfant.first.id)
@@ -68,7 +72,12 @@ fun completerDatesApproximatives(personnes: List<Personne>): Int {
         }
     }
     var modifs = 0
-    repeat(2) {
+    // Plusieurs passes : enfants, petits-enfants... se deduisent de proche en proche.
+    var passe = 0
+    var avant = -1
+    while (passe < 10 && modifs != avant) {
+        avant = modifs
+        passe++
         personnes.forEach { p ->
             // Une date saisie ensuite fait disparaitre l'estimation.
             if (p.dateNaissance.isNotBlank() && estEstimee(p)) { p.naissanceCalculee = ""; p.naissanceCalculeeSource = ""; p.naissanceCalculeeFiche = 0L; modifs++ }

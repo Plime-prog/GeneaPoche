@@ -15,7 +15,7 @@ fun moisGedcom(m: Int): String = when (m) {
 // (sans annee de naissance exploitable ou) nee il y a moins de 100 ans.
 fun estVivante(p: Personne, anneeCourante: Int): Boolean {
     if (p.dateDeces.isNotBlank()) return false
-    val annee = Regex("\\d{4}").find(p.dateNaissance)?.value?.toIntOrNull() ?: return true
+    val annee = RX40.find(p.dateNaissance)?.value?.toIntOrNull() ?: return true
     return annee > anneeCourante - 100
 }
 
@@ -28,7 +28,7 @@ fun dateGedcom(s: String): String? {
         val q = when (m.groupValues[1].lowercase()) { "vers" -> "ABT"; "avant" -> "BEF"; else -> "AFT" }
         return q + " " + m.groupValues[2]
     }
-    Regex("(\\d{1,2})/(\\d{1,2})/(\\d{4})").find(t)?.let { m ->
+    RX7.find(t)?.let { m ->
         val mois = m.groupValues[2].toIntOrNull() ?: return null
         val jour = m.groupValues[1].toIntOrNull() ?: return null
         val annee = m.groupValues[3].toIntOrNull() ?: return null
@@ -70,7 +70,7 @@ fun dateGedcom(s: String): String? {
             return jourL.toString() + " " + moisGedcom(index) + " " + m.groupValues[3]
         }
     }
-    Regex("(\\d{4})").find(t)?.let { m ->
+    RX8.find(t)?.let { m ->
         return m.groupValues[1]
     }
     return null
@@ -78,7 +78,7 @@ fun dateGedcom(s: String): String? {
 
 // Heure GEDCOM ("2 TIME hh:mm") si l'heure est renseignee.
 fun heureGedcom(s: String): String? {
-    val m = Regex("(\\d{1,2}):(\\d{2})").find(s.trim()) ?: return null
+    val m = RX41.find(s.trim()) ?: return null
     return m.groupValues[1] + ":" + m.groupValues[2]
 }
 
@@ -114,7 +114,7 @@ fun lieuGedcom(commune: String, dept: String): String {
     // "Commune, numero, nom de departement" est reconstruit.
     val c = sansPays(commune)
     val parties = c.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-    val code = parties.firstOrNull { Regex("^\\d{5}$").matches(it) || Regex("^2[AB]\\d{3}$").matches(it) }
+    val code = parties.firstOrNull { RX16.matches(it) || RX17.matches(it) }
     if (code != null) return listOf(c, "France").joinToString(", ")
     val n = dept.trim().toIntOrNull() ?: numeroDepartement(dept) ?: numeroDepartement(c)
     if (n == null) return c
@@ -224,7 +224,7 @@ fun construireGedcom(
     lignes.add("0 HEAD")
     lignes.add("1 SOUR GENEAPOCHE")
     lignes.add("2 NAME GeneaPoche")
-    lignes.add("2 VERS 0.152") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
+    lignes.add("2 VERS 0.153") // G2-02 : version REELLE de l'application ; un test verifie l'accord avec versionName
     lignes.add("1 CHAR UTF-8")
     lignes.add("1 LANG fr")
     // G\u00E9n\u00E9aPoche 3 : double format d'export. 5.5.1 pour Heredis ;
@@ -446,7 +446,7 @@ fun dateFrancaise(s: String): String {
     // complete ne doit pas disparaitre : "ABT 12 MAR 1850" donnait la date EXACTE
     // 12/03/1850. Le format interne ne porte le qualificatif qu'avec une annee :
     // on garde donc le qualificatif et l'annee ("vers 1850").
-    val annees = Regex("\\d{4}").findAll(t).map { it.value }.toList()
+    val annees = RX40.findAll(t).map { it.value }.toList()
     if (annees.isNotEmpty()) {
         val q = Regex("^(ABT|ABOUT|EST|CAL|BEF|BEFORE|AFT|AFTER|BET|BETWEEN)\\b", RegexOption.IGNORE_CASE)
             .find(t)?.groupValues?.get(1)?.uppercase()
@@ -457,7 +457,7 @@ fun dateFrancaise(s: String): String {
             "BET", "BETWEEN" -> if (annees.size >= 2) return "entre " + annees[0] + " et " + annees[1]
         }
     }
-    Regex("(\\d{1,2})\\s+([A-Z]{3})\\s+(\\d{4})").find(t.uppercase())?.let { m ->
+    RX9.find(t.uppercase())?.let { m ->
         val mois = moisAnglais[m.groupValues[2]]
         // v0.71 : ZERO D'OFFICE aussi a l'import : "5 OCT 1890" doit revenir
         // en "05/10/1890" (jj/mm/aaaa), sinon le probleme reviendrait apres
@@ -476,10 +476,10 @@ fun dateFrancaise(s: String): String {
     Regex("BET\\s+(\\d{4})\\s+AND\\s+(\\d{4})", RegexOption.IGNORE_CASE).find(t)?.let { m ->
         return "entre " + m.groupValues[1] + " et " + m.groupValues[2]
     }
-    Regex("^(\\d{4})$").find(t)?.let { m ->
+    RX28.find(t)?.let { m ->
         return m.groupValues[1]
     }
-    Regex("(\\d{4})").find(t)?.let { m ->
+    RX8.find(t)?.let { m ->
         return m.groupValues[1]
     }
     return t
@@ -498,7 +498,7 @@ fun couperLieu(plac: String): Pair<String, String> {
     if (parties.isNotEmpty() && parties.last().equals("France", ignoreCase = true)) {
         parties = parties.dropLast(1)
     }
-    val i = parties.indexOfFirst { Regex("^\\d{5}$").matches(it) || Regex("^2[AB]\\d{3}$").matches(it) }
+    val i = parties.indexOfFirst { RX16.matches(it) || RX17.matches(it) }
     if (i >= 0) {
         val deptNum = parties[i].take(2)
         val nomDept = parties.drop(i + 1).firstOrNull() ?: BaseCommunes.nomDept(deptNum)
@@ -577,7 +577,7 @@ fun recollerConcCont(brutes: List<String>): List<String> {
     val res = mutableListOf<String>()
     var cible = -1
     brutes.forEach { ligne ->
-        val m = Regex("^(\\d+)\\s+(CONC|CONT)(?:\\s(.*))?$").find(ligne.trim())
+        val m = RX42.find(ligne.trim())
         if (m == null || cible < 0) {
             res.add(ligne)
             cible = res.size - 1
@@ -611,7 +611,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
     }
     fun texteNote(valeur: String): String {
         val v = valeur.trim()
-        if (Regex("^@[^@]+@$").matches(v)) {
+        if (RX29.matches(v)) {
             notesUtilisees.add(v)
             return (notesPartagees[v] ?: "").trim()
         }
@@ -673,14 +673,14 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
         val contenu = m.groupValues[2].trim()
         if (niveau == 0) {
             blocActuel = ""
-            if (Regex("^@.*@\\s+INDI$").containsMatchIn(contenu)) {
-                val xref = Regex("^(@.*@)").find(contenu)?.groupValues?.get(1) ?: return@forEach
+            if (RX30.containsMatchIn(contenu)) {
+                val xref = RX43.find(contenu)?.groupValues?.get(1) ?: return@forEach
                 val ind = Ind()
                 indivs[xref] = ind
                 indCourant = ind
                 famCourante = null
-            } else if (Regex("^@.*@\\s+FAM$").containsMatchIn(contenu)) {
-                val xref = Regex("^(@.*@)").find(contenu)?.groupValues?.get(1) ?: return@forEach
+            } else if (RX31.containsMatchIn(contenu)) {
+                val xref = RX43.find(contenu)?.groupValues?.get(1) ?: return@forEach
                 val fam = Fam()
                 famsMap[xref] = fam
                 famCourante = fam
@@ -690,7 +690,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                 famCourante = null
                 // G2-04 : comptage des enregistrements non importes (SOUR,
                 // NOTE, REPO...) pour le rapport, sans perte silencieuse.
-                val balise = Regex("^(@.*@\\s+)?([A-Za-z_]+)").find(contenu)?.groupValues?.get(2) ?: "?"
+                val balise = RX44.find(contenu)?.groupValues?.get(2) ?: "?"
                 if (balise != "HEAD" && balise != "TRLR" && balise != "SOUR" && balise != "REPO" && balise != "NOTE") ignorer(enregistrementsIgnores, balise)
             }
             return@forEach
@@ -707,8 +707,8 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                     // femme redevenait "MARTIN" au lieu de son nom de naissance "DUPONT".
                     "NAME" -> if (ind.nom.isEmpty() && ind.prenoms.isEmpty()) {
                         val valeur = contenu.removePrefix("NAME").trim()
-                        val nomFamille = Regex("/([^/]*)/").find(valeur)?.groupValues?.get(1) ?: ""
-                        val reste = valeur.replace(Regex("/[^/]*/"), " ").trim()
+                        val nomFamille = RX45.find(valeur)?.groupValues?.get(1) ?: ""
+                        val reste = valeur.replace(RX10, " ").trim()
                         ind.nom = nomFamille.trim()
                         ind.prenoms = reste.trim()
                     }
@@ -719,7 +719,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
                     // G2-02 : GeneaPoche exporte "RFN Sosa 12" ; le numero
                     // Sosa (ou d'Aboville) est desormais RELU a l'import.
                     "RFN" -> {
-                        val numR = Regex("\\d+(\\.\\d+)*").find(contenu.removePrefix("RFN"))?.value
+                        val numR = RX46.find(contenu.removePrefix("RFN"))?.value
                         if (numR != null) ind.rfn = numR
                     }
                     // v0.89 : certification d'identit\u00E9 (export GeneaPoche).
@@ -928,7 +928,7 @@ fun importerGedcomRapporte(texte: String): ResultatImport {
     // pour les temoins et signataires ; lecture des etats et des coches.
     val anciensIds = mutableMapOf<Long, Long>()
     indivs.forEach { (x, _) ->
-        val m = Regex("@I(\\d+)@").find(x)
+        val m = RX47.find(x)
         val n = ids[x]
         if (m != null && n != null) anciensIds[m.groupValues[1].toLong()] = n
     }

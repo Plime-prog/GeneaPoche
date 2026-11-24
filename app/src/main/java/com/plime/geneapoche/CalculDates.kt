@@ -13,7 +13,7 @@ import java.time.temporal.ChronoUnit
 // Logique PURE (aucune dependance Android) : testee en JVM.
 
 fun sansAccents(s: String): String =
-    Normalizer.normalize(s, Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "")
+    Normalizer.normalize(s, Normalizer.Form.NFD).replace(RX14, "")
 
 private val MoisSansAccent = listOf(
     "janvier", "fevrier", "mars", "avril", "mai", "juin",
@@ -40,24 +40,24 @@ private fun dateOuNull(an: Int, mois: Int, jour: Int): LocalDate? =
 
 // "1er", "2e", "3\u00e8me" -> le jour seul.
 private fun sansSuffixeJour(t: String): String =
-    t.replace(Regex("^(\\d{1,2})\\s*(?:er|re|\u00e8re|e|\u00e8me)(?=\\s|$)", RegexOption.IGNORE_CASE), "$1")
+    t.replace(RX_ORDINAL, "$1")
 
 // Lit une date COMPLETE : "05/10/1798", "5.10.1798", "5 octobre 1798",
 // "1er mai 1843", ou date republicaine ("14 Vend\u00e9miaire an VII").
 fun lireDate(s: String): LocalDate? {
     val t = sansSuffixeJour(s.trim())
     if (t.isEmpty()) return null
-    Regex("^(\\d{1,2})[./\\- ](\\d{1,2})[./\\- ](\\d{4})$").find(t)?.let { m ->
+    RX20.find(t)?.let { m ->
         return dateOuNull(m.groupValues[3].toInt(), m.groupValues[2].toInt(), m.groupValues[1].toInt())
     }
-    Regex("^(\\d{1,2})\\s+([\\p{L}.]+)\\s+(\\d{4})$").find(t)?.let { m ->
+    RX32.find(t)?.let { m ->
         val mois = moisGregorienEnLettres(m.groupValues[2])
         if (mois != null) {
             return dateOuNull(m.groupValues[3].toInt(), mois, m.groupValues[1].toInt())
         }
     }
     val g = repubAGregorien(sansAccents(t)) ?: return null
-    return Regex("^(\\d{2})/(\\d{2})/(\\d{4})$").find(g)?.let { m ->
+    return RX23.find(g)?.let { m ->
         dateOuNull(m.groupValues[3].toInt(), m.groupValues[2].toInt(), m.groupValues[1].toInt())
     }
 }
@@ -71,12 +71,12 @@ fun lireDatePartielle(s: String): DatePartielle? {
     val t = s.trim()
     if (t.isEmpty()) return null
     lireDate(t)?.let { return DatePartielle(it.year, it.monthValue, it.dayOfMonth) }
-    Regex("^(\\d{4})$").find(t)?.let { return DatePartielle(it.groupValues[1].toInt(), null, null) }
-    Regex("^(\\d{1,2})[./\\- ](\\d{4})$").find(t)?.let { m ->
+    RX28.find(t)?.let { return DatePartielle(it.groupValues[1].toInt(), null, null) }
+    RX33.find(t)?.let { m ->
         val mois = m.groupValues[1].toInt()
         return if (mois in 1..12) DatePartielle(m.groupValues[2].toInt(), mois, null) else null
     }
-    Regex("^([\\p{L}.]+)\\s+(\\d{4})$").find(t)?.let { m ->
+    RX34.find(t)?.let { m ->
         val mois = moisGregorienEnLettres(m.groupValues[1]) ?: return null
         return DatePartielle(m.groupValues[2].toInt(), mois, null)
     }
