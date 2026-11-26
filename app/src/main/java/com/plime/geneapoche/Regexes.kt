@@ -61,3 +61,4 @@ internal val RX_ORDINAL = Regex("^(\\d{1,2})\\s*(?:er|re|\u00e8re|e|\u00e8me)(?=
 internal val RX_APPROX_AN = Regex("^(vers|avant|apr\\u00E8s)\\s+\\d{4}$", RegexOption.IGNORE_CASE)
 internal val RX_ENTRE_AN = Regex("^entre\\s+\\d{4}\\s+et\\s+\\d{4}$", RegexOption.IGNORE_CASE)
 internal val RX_ANNEE4 = Regex("[0-9]{4}")
+internal val RX_ANS_AGE = Regex("([0-9]+) ans")

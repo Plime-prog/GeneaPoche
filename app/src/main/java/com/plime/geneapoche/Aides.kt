@@ -297,6 +297,20 @@ fun couleurCompteur(n: Int, total: Int): androidx.compose.ui.graphics.Color =
 // v0.100 : age d'une PERSONNE ; sans date de naissance exacte, repli sur la
 // naissance approximative calculee, signalee par un tilde "(~34 ans)".
 fun ageDePersonne(p: Personne, dateEvenement: String): String {
+    val brut = ageBrutDePersonne(p, dateEvenement)
+    if (brut.isEmpty()) return brut
+    // v0.154 : un evenement posterieur au deces (ou un age invraisemblable,
+    // plus de 105 ans) n'affiche pas d'age : "(d\u00E9c\u00E9d\u00E9)".
+    if (p.dateDeces.isNotBlank()) {
+        val apres = ageAffiche(p.dateDeces, dateEvenement)
+        if (apres.isNotEmpty() && !apres.contains("jour") && apres != "(moins d'un an)") return "(d\u00E9c\u00E9d\u00E9)"
+    }
+    val ans = RX_ANS_AGE.find(brut)?.groupValues?.get(1)?.toIntOrNull()
+    if (ans != null && ans > 105) return "(d\u00E9c\u00E9d\u00E9)"
+    return brut
+}
+
+private fun ageBrutDePersonne(p: Personne, dateEvenement: String): String {
     if (p.dateNaissance.isNotBlank()) return ageAffiche(p.dateNaissance, dateEvenement)
     val an = RX3.find(p.naissanceCalculee)?.value ?: return ""
     val a = ageAffiche(an, dateEvenement)

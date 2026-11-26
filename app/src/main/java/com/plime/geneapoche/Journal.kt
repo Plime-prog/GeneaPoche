@@ -1161,10 +1161,18 @@ fun CarteRecherche(
                 modifier = Modifier.fillMaxWidth()
             )
             Row(Modifier.fillMaxWidth()) {
-                TextButton(onClick = { piste.enCours = noteJournal; onSauver() }) {
+                TextButton(onClick = {
+                    if (noteJournal != piste.enCours) { piste.enCours = noteJournal; piste.enCoursDate = System.currentTimeMillis() }
+                    onSauver()
+                }) {
                     Text("Enregistrer la note")
                 }
             }
+            // v0.154 : ce qui est enregistre est horodate.
+            if (piste.enCoursDate > 0L) Text(
+                "Enregistr\u00E9e le " + formaterDateHeure(piste.enCoursDate),
+                fontSize = 11.sp, color = Color.Gray
+            )
         }
     }
 }
@@ -1181,12 +1189,14 @@ fun CarteRecherche(
 @Composable
 fun BlocNotesLibres(texte: String, onChange: (String) -> Unit) {
     var local by remember { mutableStateOf(texte) }
+    val ctxNotes = androidx.compose.ui.platform.LocalContext.current
+    var horodate by remember { mutableStateOf(Stockage.lireDateNotesLibres(ctxNotes)) }
     val dernier = androidx.compose.runtime.rememberUpdatedState(local)
     val surChange = androidx.compose.runtime.rememberUpdatedState(onChange)
     val enregistre = androidx.compose.runtime.rememberUpdatedState(texte)
     LaunchedEffect(local) {
         kotlinx.coroutines.delay(700)
-        if (local != enregistre.value) surChange.value(local)
+        if (local != enregistre.value) { surChange.value(local); horodate = Stockage.lireDateNotesLibres(ctxNotes) }
     }
     androidx.compose.runtime.DisposableEffect(Unit) {
         onDispose { if (dernier.value != enregistre.value) surChange.value(dernier.value) }
@@ -1205,6 +1215,8 @@ fun BlocNotesLibres(texte: String, onChange: (String) -> Unit) {
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
             )
+            // v0.154 : ce qui est enregistre est horodate.
+            if (horodate > 0L) Text("Enregistr\u00E9 le " + formaterDateHeure(horodate), fontSize = 11.sp, color = Color.Gray)
         }
     }
 }

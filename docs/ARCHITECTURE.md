@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 24 novembre 2026 (v0.153). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 26 novembre 2026 (v0.154). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -98,6 +98,13 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 - `decoderImageReduite` : 2048 px par défaut ; `android:largeHeap` ; `resumeMemoire`, `extraireFils` dans `DiagnosticBlocage`.
 - `departementsUtilises` (Geographie.kt) : damier limité aux départements présents.
 - Biographie : enfants via `enfantsChrono`.
+
+## Ajouts v0.154
+
+- `ageDePersonne` renvoie « (décédé) » pour un événement postérieur au décès (hors 60 jours, sépulture) ou si l'âge dépasse 105 ans.
+- `Piste.enCoursDate` et `Stockage.lireDateNotesLibres` : les notes de l'onglet Recherches sont horodatées (« Enregistrée le … »).
+- `ficheHorsListe` (EcranApplication) : une fiche ouverte depuis le Journal, l'Arbre ou une Source reste affichée quand on touche Personnes.
+- Genre `genea` dans `EvenementsHistoriques` (exclu de la Biographie, de la frise et des rapprochements) ; `ReperesGenealogiques.kt` calcule les repères de la fiche. Détail : `docs/REPERES-GENEALOGIQUES.md`. Toujours aucun accès réseau.
 
 ## Ajouts v0.153
 

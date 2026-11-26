@@ -196,3 +196,55 @@ class DatesApproximativesTest {
         assertEquals("", ageProposeALActe(Personne(id = 2, nom = "B", prenoms = "B"), "10/05/1885"))
     }
 }
+
+class ReperesGenealogiquesTest {
+    @Test fun majoriteMatrimonialeParEpoque() {
+        assertEquals(25, majoriteMatrimoniale(1858, false))
+        assertEquals(21, majoriteMatrimoniale(1858, true))
+        assertEquals(21, majoriteMatrimoniale(1950, false))
+        assertEquals(18, majoriteMatrimoniale(1990, true))
+    }
+
+    @Test fun mariageSousLaMajorite() {
+        val p = Personne(id = 1, nom = "A", prenoms = "Marie", sexe = "F", dateNaissance = "01/01/1836", dateMariage = "10/05/1858")
+        val r = reperesGenealogiquesDe(p, listOf(p))
+        assertTrue(r.any { it.startsWith("À son mariage (1858), Marie a 22 ans") }.not())  // 22 >= 21 : majeure
+        val q = Personne(id = 2, nom = "A", prenoms = "Anne", sexe = "F", dateNaissance = "01/01/1840", dateMariage = "10/05/1858")
+        assertTrue(reperesGenealogiquesDe(q, listOf(q)).any { it.contains("a 18 ans") && it.contains("consentement de ses parents") && it.contains("émancipait") })
+    }
+
+    @Test fun conscriptionEtRecensements() {
+        val p = Personne(id = 1, nom = "A", prenoms = "Jean", sexe = "M", dateNaissance = "01/01/1817", dateDeces = "01/01/1880")
+        val r = reperesGenealogiquesDe(p, listOf(p))
+        assertTrue(r.any { it.contains("classe 1837") && it.contains("tirage au sort") })
+        assertTrue(r.any { it.startsWith("Peut figurer aux recensements nominatifs de 1836 à 1876") })
+        assertTrue(r.any { it.startsWith("Majeur en 1838") })
+    }
+
+    @Test fun veuvage() {
+        val m = Personne(id = 1, nom = "A", prenoms = "Paul", sexe = "M", dateNaissance = "01/01/1830", dateDeces = "01/01/1860")
+        val f = Personne(id = 2, nom = "A", prenoms = "Anne", sexe = "F", dateNaissance = "01/01/1835", conjoint = 1L)
+        assertTrue(reperesGenealogiquesDe(f, listOf(m, f)).any { it.startsWith("Veuve en 1860") })
+    }
+
+    @Test fun sansNaissanceRien() {
+        assertTrue(reperesGenealogiquesDe(Personne(id = 1, nom = "A", prenoms = "B"), emptyList()).isEmpty())
+    }
+
+    @Test fun reperesGeneaHorsBiographie() {
+        assertTrue(EvenementsHistoriques.any { it.genre == "genea" && it.annee == 1804 })
+        val p = Personne(id = 1, nom = "A", prenoms = "B", dateNaissance = "01/01/1800", dateDeces = "01/01/1850")
+        assertTrue(friseBiographie(p, listOf(p)).none { it.texte.contains("majorité matrimoniale") })
+    }
+}
+
+class AgeDecedeTest {
+    @Test fun apresLeDecesOuInvraisemblable() {
+        val p = Personne(id = 1, nom = "A", prenoms = "B", dateNaissance = "01/01/1800", dateDeces = "01/01/1850")
+        assertEquals("(décédé)", ageDePersonne(p, "05/05/1921"))
+        assertEquals("(50 ans)", ageDePersonne(p, "01/01/1850"))
+        val q = Personne(id = 2, nom = "A", prenoms = "B", dateNaissance = "01/01/1800")
+        assertEquals("(décédé)", ageDePersonne(q, "05/05/1921"))
+        assertEquals("(60 ans)", ageDePersonne(q, "05/05/1860"))
+    }
+}

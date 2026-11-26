@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.154 — Repères généalogiques, âges, recherches
+
+- **Chronologie** : l'âge d'un parent n'apparaît plus sur une ligne postérieure à son décès (ni au-delà de 105 ans) : « (décédé) » s'affiche à la place.
+- **Recherches** : chaque note enregistrée (fiche, Journal, bloc Notes) est horodatée (« Enregistrée le 26/11/2026 21:48 »).
+- **Personnes** : après avoir choisi une personne depuis le Journal, l'Arbre ou une Source, toucher Personnes affiche sa fiche individuelle.
+- **Repères généalogiques** : une vingtaine de repères datés (droit de la famille, état civil, conscription) dans l'outil Histoire, hors Biographie ; un bloc replié « Repères généalogiques » dans la fiche, avec des phrases calculées (majorité, consentement des parents au mariage, tirage au sort, recensements, délai de viduité). Voir `docs/REPERES-GENEALOGIQUES.md`.
+- Correction de la liste proposée : le divorce a été rétabli en 1884 (loi Naquet), pas en 1942.
+
 ## v0.153 — Dates de la descendance, âge proposé, figement
 
 - **Descendance** : les enfants et petits-enfants d'un couple reçoivent une naissance approximative même si les parents n'ont eux-mêmes qu'une date estimée (de proche en proche). Chaque estimation reste signalée dans Observations.

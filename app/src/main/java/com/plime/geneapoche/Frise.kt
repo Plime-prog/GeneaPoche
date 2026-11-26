@@ -430,7 +430,7 @@ fun nomCourtPeriode(nom: String): String =
 // Reperes historiques nationaux d'une plage d'annees : guerres et regimes d'abord,
 // puis le reste, au plus `max`, tries par annee.
 fun reperesHistoriques(anneeMin: Int, anneeMax: Int, max: Int): List<EvenementHistorique> {
-    val dansPlage = EvenementsHistoriques.filter { it.depts.isEmpty() && it.annee in anneeMin..anneeMax }
+    val dansPlage = EvenementsHistoriques.filter { it.depts.isEmpty() && it.genre != "genea" && it.annee in anneeMin..anneeMax }
     val prioritaires = dansPlage.filter { it.genre == "guerre" || it.genre == "regime" }
     val autres = dansPlage.filter { it.genre != "guerre" && it.genre != "regime" }
     return (prioritaires + autres).take(max).sortedBy { it.annee }
