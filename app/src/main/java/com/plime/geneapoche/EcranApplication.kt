@@ -297,6 +297,9 @@ fun EcranApplication(
     // personne touchee est memorisee et sa fiche s'ouvre seulement quand
     // on bascule vers l'onglet Personnes (l'appui long ouvre toujours).
     var idToucheArbre by remember { mutableStateOf(0L) }
+    // v0.154 : fiche ouverte depuis le Journal, l'Arbre ou une Source : toucher
+    // Personnes affiche CETTE fiche (et non la liste).
+    var ficheHorsListe by remember { mutableStateOf(false) }
     // v0.96 : changer d'onglet ferme l'ecran scinde (l'image ne doit
     // jamais rester affichee sur un autre ecran).
     val choisirOnglet: (Int) -> Unit = { o ->
@@ -308,6 +311,7 @@ fun EcranApplication(
             if (o != 5) { imageSaisiePresente = false; sourceSaisieOuverte = false; if (saisieOuverte) onEditionOuverte(false) }
         }
         if (o == 0 && idToucheArbre != 0L) {
+            ficheHorsListe = true
             onIdOuvert(idToucheArbre)
             idToucheArbre = 0L
         }
@@ -814,7 +818,7 @@ fun EcranApplication(
                                     item(key = p.id, contentType = "personne") {
                                         CartePersonne(
                                             p,
-                                            onOuvrir = { onIdOuvert(p.id) },
+                                            onOuvrir = { ficheHorsListe = false; onIdOuvert(p.id) },
                                             onSupprimer = { onConfirmSuppression(p) }
                                         )
                                     }
@@ -844,7 +848,7 @@ fun EcranApplication(
                                         val p = entree as Personne
                                         CartePersonne(
                                             p,
-                                            onOuvrir = { onIdOuvert(p.id) },
+                                            onOuvrir = { ficheHorsListe = false; onIdOuvert(p.id) },
                                             onSupprimer = { onConfirmSuppression(p) }
                                         )
                                     }
@@ -901,7 +905,7 @@ fun EcranApplication(
                                 // v0.97 : toucher une carte centre seulement
                                 // (mémorise la personne) ; l'appui long
                                 // ouvre la fiche.
-                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
+                                onOuvrir = { ficheHorsListe = true; onIdOuvert(it); onOnglet(0) },
                                 onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
                             )
                         } else if (vueArbre == 2) {
@@ -909,42 +913,42 @@ fun EcranApplication(
                             EcranEventail(
                                 personnes = personnes,
                                 idCentre = arbreCentre,
-                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
+                                onOuvrir = { ficheHorsListe = true; onIdOuvert(it); onOnglet(0) },
                                 onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
                             )
                         } else if (vueArbre == 3) {
                             EcranSablier(
                                 personnes = personnes,
                                 idCentre = arbreCentre,
-                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
+                                onOuvrir = { ficheHorsListe = true; onIdOuvert(it); onOnglet(0) },
                                 onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
                             )
                         } else if (vueArbre == 6) {
                             EcranDescendance(
                                 personnes = personnes,
                                 idCentre = arbreCentre,
-                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
+                                onOuvrir = { ficheHorsListe = true; onIdOuvert(it); onOnglet(0) },
                                 onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
                             )
                         } else if (vueArbre == 7) {
                             EcranCompletude(
                                 personnes = personnes,
                                 idCentre = arbreCentre,
-                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
+                                onOuvrir = { ficheHorsListe = true; onIdOuvert(it); onOnglet(0) },
                                 onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
                             )
                         } else if (vueArbre == 4) {
                             EcranParenteVue(
                                 personnes = personnes,
                                 idCentre = arbreCentre,
-                                onOuvrir = { onIdOuvert(it); onOnglet(0) },
+                                onOuvrir = { ficheHorsListe = true; onIdOuvert(it); onOnglet(0) },
                                 onCentrerSur = { onArbreCentre(it); idToucheArbre = it }
                             )
                         } else {
                             EcranFrise(
                                 personnes = personnes,
                                 idChoisie = arbreCentre,
-                                onOuvrir = { onIdOuvert(it) },
+                                onOuvrir = { ficheHorsListe = true; onIdOuvert(it) },
                                 onChoisir = { onArbreCentre(it) },
                                 histoire = vueArbre == 5
                             )
@@ -964,7 +968,7 @@ fun EcranApplication(
                         }
                     },
                     enOnglet = true,
-                    onOuvrirPersonne = { onIdOuvert(it) },
+                    onOuvrirPersonne = { ficheHorsListe = true; onIdOuvert(it) },
                     outil = outilOuvert,
                     onOutil = { outilOuvert = it }
                 )
@@ -985,7 +989,7 @@ fun EcranApplication(
                     onSupprimerSource = supprimerSource,
                     onEnregistrerCitation = enregistrerCitation,
                     onSupprimerCitation = supprimerCitation,
-                    onOuvrirPersonne = { id -> onIdOuvert(id) }
+                    onOuvrirPersonne = { id -> ficheHorsListe = true; onIdOuvert(id) }
                 )
                 }
             } else {
@@ -994,7 +998,7 @@ fun EcranApplication(
                     pistes = pistes,
                     personnes = personnes,
                     onSupprimer = { supprimerPiste(it) },
-                    onOuvrirPersonne = { onIdOuvert(it) },
+                    onOuvrirPersonne = { ficheHorsListe = true; onIdOuvert(it) },
                     onSauver = enregistrer,
                     onFusionner = { gardeId, supprimeId -> fusionner(gardeId, supprimeId) },
                     gardes = doublonsGardes,
@@ -1315,7 +1319,7 @@ fun EcranApplication(
                                         onSupprimerSource = supprimerSource,
                                         onEnregistrerCitation = enregistrerCitation,
                                         onSupprimerCitation = supprimerCitation,
-                                        onOuvrirPersonne = { id -> sourceSaisieOuverte = false; onIdOuvert(id) }
+                                        onOuvrirPersonne = { id -> sourceSaisieOuverte = false; ficheHorsListe = true; onIdOuvert(id) }
                                     )
                                 }
                             }
@@ -1765,7 +1769,7 @@ fun EcranApplication(
             // Menus de l'application TOUJOURS visibles en bas, meme fiche ouverte.
             // Choisir un onglet ferme la fiche et affiche l'onglet demande.
             SnackbarHost(etatSnackbar)
-            BarreOnglets(onglet) { o -> if (saisieOuverte || o == 5) { saisieType = null; saisieParentEnfant = 0L; if (o != 5) { imageSaisiePresente = false; sourceSaisieOuverte = false; if (saisieOuverte) onEditionOuverte(false) } }; onOnglet(o); onIdOuvert(0L) }
+            BarreOnglets(onglet) { o -> if (saisieOuverte || o == 5) { saisieType = null; saisieParentEnfant = 0L; if (o != 5) { imageSaisiePresente = false; sourceSaisieOuverte = false; if (saisieOuverte) onEditionOuverte(false) } }; if (o == 0 && ficheHorsListe && idOuvert != 0L) { ficheHorsListe = false; onOnglet(0) } else { onOnglet(o); onIdOuvert(0L) } }
         }
     }
 

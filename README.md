@@ -19,6 +19,7 @@ Périmètre : France uniquement, actes N/B/M/D/S.
 - **Fiches par événements** : N/B/M/D/S regroupés dans l'ordre généalogique NBMDS, éditable par appui long via la saisie d'acte pré-remplie depuis la fiche.
 - **Saisie d'acte** : témoins, coche « Signe » derrière chaque personne citée, prêtre, officier d'état civil, transcription, conjoint survivant ou décédé persisté sur les actes D/S, enfant déclarant sur un décès ; actes enrichis (déclaration, légitimité, contrat de mariage, cérémonie, cimetière…).
 - **Numérotation automatique** : Sosa-Stradonitz et d'Aboville, rien ne se saisit.
+- **v0.154** : repères généalogiques (datés et calculés), âge du parent remplacé par « (décédé) » après son décès, recherches horodatées, Personnes → fiche choisie. Voir `docs/REPERES-GENEALOGIQUES.md`.
 - **v0.153** : dates approximatives de proche en proche (enfants, petits-enfants), âge à l'acte proposé automatiquement, correctif du figement (expressions régulières compilées une seule fois).
 - **v0.152** : dates approximatives de naissance et de décès déduites des autres fiches (signalées dans Observations), Journal à l'ouverture, retour au dernier écran après le PIN.
 - **v0.151** : toujours le Journal à l'ouverture, témoin dans la chronologie (plus dans la biographie), âge du témoin conservé, bloc « Observations » de la fiche.
@@ -62,7 +63,7 @@ Détails dans [SECURITY.md](SECURITY.md) et [PRIVACY.md](PRIVACY.md) (politique 
 
 ## Installation
 
-**Téléchargement direct de la dernière version (v0.153)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.153-release.apk` (signé) ou `GeneaPoche-v0.153-debug.apk`. **Mise à jour depuis une version antérieure à la v0.140 : désinstaller une fois l'ancienne version après avoir exporté une sauvegarde `.gpbak` — voir `docs/SIGNATURE.md`.**
+**Téléchargement direct de la dernière version (v0.154)** : page [Releases](https://github.com/Plime-prog/GeneaPoche/releases/latest) — APK `GeneaPoche-v0.154-release.apk` (signé) ou `GeneaPoche-v0.154-debug.apk`. **Mise à jour depuis une version antérieure à la v0.140 : désinstaller une fois l'ancienne version après avoir exporté une sauvegarde `.gpbak` — voir `docs/SIGNATURE.md`.**
 
 Sinon, depuis les sources :
 

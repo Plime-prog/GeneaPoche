@@ -759,10 +759,18 @@ fun EcranPersonne(
                                                 placeholder = { Text("Recherche : pages, cotes, notes...", style = MaterialTheme.typography.bodySmall) },
                                                 textStyle = MaterialTheme.typography.bodySmall
                                             )
-                                            TextButton(onClick = { ps.enCours = notePiste; enregistrer() }) {
+                                            TextButton(onClick = {
+                                                if (notePiste != ps.enCours) { ps.enCours = notePiste; ps.enCoursDate = System.currentTimeMillis() }
+                                                enregistrer()
+                                            }) {
                                                 Text("Enregistrer", fontSize = 12.sp)
                                             }
                                         }
+                                        // v0.154 : ce qui est enregistre est horodate.
+                                        if (pisteOuverte && ps.enCoursDate > 0L) Text(
+                                            "Enregistr\u00E9e le " + formaterDateHeure(ps.enCoursDate),
+                                            fontSize = 11.sp, color = Color.Gray
+                                        )
                                     }
                                 }
                             }
@@ -806,6 +814,13 @@ fun EcranPersonne(
                     if (ongletFiche == 0) {
                         // v0.151 : deductions et creations tirees d'autres fiches ;
                         // toucher une ligne ouvre la fiche dont l'acte a servi.
+                        // v0.154 : reperes genealogiques calcules (bloc replie : la chronologie reste legere).
+                        val reperes = reperesGenealogiquesDe(p, personnes)
+                        if (reperes.isNotEmpty()) CadrePliable("Rep\u00E8res g\u00E9n\u00E9alogiques", reperes.size.toString() + " rep\u00E8re(s)", cle = p.id) {
+                            reperes.forEach { r ->
+                                Text(r, Modifier.fillMaxWidth().padding(vertical = 4.dp), style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
                         val observations = observationsDe(p)
                         if (observations.isNotEmpty()) CadrePliable("Observations", observations.first().texte, cle = p.id) {
                             observations.forEach { o ->

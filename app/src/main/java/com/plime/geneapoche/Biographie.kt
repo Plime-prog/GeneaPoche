@@ -49,7 +49,7 @@ fun friseBiographie(p: Personne, personnes: List<Personne>, avecHistoire: Boolea
     if (avecHistoire && anneeN != null && fin != null) {
         val dept = deptDePersonne(p)
         EvenementsHistoriques.forEach { h ->
-            if (h.annee in anneeN..fin && (h.depts.isEmpty() || (dept.isNotEmpty() && dept in h.depts))) {
+            if (h.genre != "genea" && h.annee in anneeN..fin && (h.depts.isEmpty() || (dept.isNotEmpty() && dept in h.depts))) {
                 res.add(LigneBio(h.annee * 10000L + h.mois * 100L + h.jour, quandBio(h.annee, h.mois, h.jour), h.titre, "histoire"))
             }
         }

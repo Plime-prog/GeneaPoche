@@ -15,7 +15,7 @@ class EvenementHistorique(
     val mois: Int,
     val jour: Int,
     val titre: String,
-    val genre: String, // "regime", "guerre", "loi", "societe"
+    val genre: String, // "regime", "guerre", "loi", "societe", "genea" (reperes genealogiques)
     val depts: Set<String> = emptySet()
 ) {
     val date: LocalDate? get() = if (mois in 1..12 && jour in 1..31) {
@@ -78,7 +78,32 @@ val EvenementsHistoriques: List<EvenementHistorique> = listOf(
     ev(1945, 5, 8, "Victoire du 8 mai 1945", "guerre"),
     ev(1946, 10, 27, "Quatri\u00E8me R\u00E9publique", "regime"),
     ev(1958, 10, 4, "Cinqui\u00E8me R\u00E9publique", "regime"),
-    ev(1962, 3, 19, "Cessez-le-feu en Alg\u00E9rie", "guerre")
+    ev(1962, 3, 19, "Cessez-le-feu en Alg\u00E9rie", "guerre"),
+    // v0.154 : reperes GENEALOGIQUES (genre "genea") : droit de la famille, etat civil,
+    // conscription. Exclus de la Biographie (lecture legere) ; presents dans l'outil
+    // Histoire et cites par les "Reperes genealogiques" de la fiche.
+    ev(1556, 2, 1, "\u00C9dit d'Henri II : mariage des mineurs sans consentement parental interdit ; majorit\u00E9 matrimoniale 30 ans (H) / 25 ans (F), variable selon les coutumes", "genea"),
+    ev(1563, 11, 11, "Concile de Trente : mariage devant le cur\u00E9 avec bans et t\u00E9moins obligatoires", "genea"),
+    ev(1639, 11, 26, "Ordonnance royale : d\u00E9sh\u00E9ritage des enfants mari\u00E9s sans le consentement de leurs parents", "genea"),
+    ev(1667, 4, 18, "Ordonnance de Saint-Germain-en-Laye : deux registres, dont un original d\u00E9pos\u00E9 au greffe ; mentions marginales", "genea"),
+    ev(1792, 9, 20, "Loi : \u00E9tat civil la\u00EFcis\u00E9, majorit\u00E9 \u00E0 21 ans, mariage possible d\u00E8s 15 ans (H) / 13 ans (F), divorce institu\u00E9", "genea"),
+    ev(1793, 1, 1, "Tables d\u00E9cennales : index des naissances, mariages et d\u00E9c\u00E8s par commune (tr\u00E8s lacunaires jusqu'en 1802)", "genea"),
+    ev(1798, 9, 5, "Loi Jourdan-Delbrel : conscription, appel \u00E0 20 ans, tirage au sort", "genea"),
+    ev(1804, 3, 21, "Code civil : majorit\u00E9 civile 21 ans ; majorit\u00E9 matrimoniale 25 ans (H) / 21 ans (F) ; mariage d\u00E8s 18 ans (H) / 15 ans (F) ; actes respectueux", "genea"),
+    ev(1816, 5, 8, "Divorce aboli sous la Restauration (loi Bonald)", "genea"),
+    ev(1836, 1, 1, "Recensements quinquennaux nominatifs de la population (nom, \u00E2ge, profession)", "genea"),
+    ev(1884, 7, 27, "Loi Naquet : le divorce est r\u00E9tabli (pour faute)", "genea"),
+    ev(1889, 7, 15, "Loi sur le recrutement : service militaire de 3 ans, fin de la plupart des dispenses", "genea"),
+    ev(1907, 6, 21, "Majorit\u00E9 matrimoniale 21 ans pour les hommes ; les actes respectueux sont remplac\u00E9s par une simple notification", "genea"),
+    ev(1907, 7, 13, "La femme mari\u00E9e dispose librement de son salaire", "genea"),
+    ev(1938, 2, 18, "La femme mari\u00E9e devient capable : plus d'autorisation du mari pour les actes civils", "genea"),
+    ev(1945, 4, 21, "Droit de vote des femmes", "genea"),
+    ev(1965, 7, 13, "La femme mari\u00E9e peut travailler et ouvrir un compte sans l'autorisation de son mari", "genea"),
+    ev(1970, 6, 4, "Autorit\u00E9 parentale conjointe (fin du chef de famille)", "genea"),
+    ev(1972, 1, 3, "\u00C9galit\u00E9 successorale entre enfants l\u00E9gitimes et naturels", "genea"),
+    ev(1974, 7, 5, "Majorit\u00E9 civile abaiss\u00E9e de 21 \u00E0 18 ans", "genea"),
+    ev(1997, 10, 28, "Fin de la conscription (service militaire suspendu)", "genea"),
+    ev(2006, 4, 4, "\u00C2ge minimal du mariage port\u00E9 \u00E0 18 ans pour les deux sexes", "genea")
 ).sortedWith(compareBy({ it.annee }, { it.mois }, { it.jour }))
 
 private fun d(a: Int, m: Int, j: Int): LocalDate = LocalDate.of(a, m, j)
@@ -127,6 +152,7 @@ fun rapprochementHistorique(date: LocalDate, dept: String = "", fenetre: Long = 
     var ecart = Long.MAX_VALUE
     EvenementsHistoriques.forEach { e ->
         val ed = e.date ?: return@forEach
+        if (e.genre == "genea") return@forEach
         if (e.depts.isNotEmpty() && (dept.isEmpty() || dept !in e.depts)) return@forEach
         val j = ChronoUnit.DAYS.between(ed, date)
         if (Math.abs(j) <= fenetre && Math.abs(j) < Math.abs(ecart)) {

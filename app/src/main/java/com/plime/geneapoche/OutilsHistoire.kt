@@ -63,6 +63,7 @@ private fun couleurGenre(g: String): Color = when (g) {
     "regime" -> Color(0xFF6A1B9A)
     "guerre" -> Color(0xFFB71C1C)
     "loi" -> Color(0xFF1565C0)
+    "genea" -> Color(0xFF00796B)
     else -> Color(0xFF2E7D32)
 }
 

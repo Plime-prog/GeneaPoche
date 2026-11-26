@@ -460,8 +460,14 @@ object Stockage {
             ""
         }
 
-    fun sauverNotesLibres(ctx: Context, texte: String): Boolean =
-        ecrireFichierChiffre(ctx, FICHIER_NOTES, texte)
+    fun sauverNotesLibres(ctx: Context, texte: String): Boolean {
+        val ok = ecrireFichierChiffre(ctx, FICHIER_NOTES, texte)
+        // v0.154 : horodatage de la derniere sauvegarde des notes.
+        if (ok) prefs(ctx).edit().putLong("notes_libres_date", System.currentTimeMillis()).apply()
+        return ok
+    }
+
+    fun lireDateNotesLibres(ctx: Context): Long = prefs(ctx).getLong("notes_libres_date", 0L)
 
     private fun ecrireFichierChiffre(ctx: Context, nom: String, texte: String): Boolean {
         return try {

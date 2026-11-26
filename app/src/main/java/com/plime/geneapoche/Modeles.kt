@@ -767,6 +767,7 @@ data class Piste(
     var debut: String = "",
     var fin: String = "",
     var enCours: String = "", // ce qui est en cours de recherche (bloc c)
+    var enCoursDate: Long = 0L, // v0.154 : horodatage (ms) du dernier enregistrement de la note
     var historique: MutableList<Recherche> = mutableListOf()
 ) {
     fun versJson(): JSONObject {
@@ -784,6 +785,7 @@ data class Piste(
         o.put("debut", debut)
         o.put("fin", fin)
         o.put("enCours", enCours)
+        o.put("enCoursDate", enCoursDate)
         val tableau = JSONArray()
         historique.forEach { tableau.put(it.versJson()) }
         o.put("historique", tableau)
@@ -805,6 +807,7 @@ data class Piste(
             debut = o.optString("debut", ""),
             fin = o.optString("fin", ""),
             enCours = o.optString("enCours", ""),
+            enCoursDate = o.optLong("enCoursDate", 0L),
             historique = mutableListOf<Recherche>().apply {
                 val tableau = o.optJSONArray("historique")
                 if (tableau != null) {
