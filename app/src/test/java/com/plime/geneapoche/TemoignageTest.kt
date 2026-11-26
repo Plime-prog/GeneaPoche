@@ -234,7 +234,7 @@ class ReperesGenealogiquesTest {
     @Test fun reperesGeneaHorsBiographie() {
         assertTrue(EvenementsHistoriques.any { it.genre == "genea" && it.annee == 1804 })
         val p = Personne(id = 1, nom = "A", prenoms = "B", dateNaissance = "01/01/1800", dateDeces = "01/01/1850")
-        assertTrue(friseBiographie(p, listOf(p)).none { it.texte.contains("Code civil") })
+        assertTrue(friseBiographie(p, listOf(p)).none { it.texte.contains("majorité matrimoniale") })
     }
 }
 
