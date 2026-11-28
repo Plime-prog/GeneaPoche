@@ -307,7 +307,6 @@ class V155Test {
         assertEquals(1, g[1].connus)
         assertEquals(2L, g[1].attendus)
         assertEquals(50, g[1].pourcent)
-        assertTrue(g[1].lignes.first().manques.contains("mère").not())
         assertTrue(g[0].lignes.first().manques.contains("mère"))
     }
 

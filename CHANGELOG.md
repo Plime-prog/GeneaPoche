@@ -1,5 +1,13 @@
 # Historique des versions
 
+## v0.155 — Manques par génération, conjoints, branches
+
+- **Suivi des manques** (Outils › Manques) : pour chaque génération d'ascendants, « n sur 2^g » avec jauge, et pour chaque ancêtre ce qu'il reste à trouver (naissance, mariage, décès, père, mère) ; toucher ouvre la fiche.
+- **Contrôle de cohérence** : il existe depuis la v0.88 (Journal › Diagnostic). Nouvelles règles : âge au décès supérieur à 110 ans, témoin décédé / pas encore né / de moins de 12 ans à la date de l'acte, déclarant décédé ou pas encore né.
+- **Conjoints** : numérotés par lettre d'union derrière le numéro de leur conjoint (« 6.2.4b » = 2e conjoint de la personne 6.2.4), classés juste après lui ; aucune recherche proposée pour eux. Voir `docs/NUMEROTATION.md`.
+- **Branches** : uniquement les ascendants et descendants des 4 grands-parents, sans les conjoints.
+- **Repères militaires** : durée légale du service selon la classe (« 7 ans (loi de 1832) »…) et, pour les guerres où l'homme était mobilisable, son âge et la durée de la guerre (« du 2 août 1914 au 11 novembre 1918, soit 4 ans et 3 mois »).
+
 ## v0.154 — Repères généalogiques, âges, recherches
 
 - **Chronologie** : l'âge d'un parent n'apparaît plus sur une ligne postérieure à son décès (ni au-delà de 105 ans) : « (décédé) » s'affiche à la place.

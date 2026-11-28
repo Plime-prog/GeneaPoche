@@ -18,6 +18,10 @@ Ils apparaissent dans l'outil **Histoire** (couleur verte) mais **pas** dans la 
 - **Recensements nominatifs** : tous les 5 ans de 1836 à 1936 pendant la vie.
 - **Veuvage d'une femme** : délai de viduité de 300 jours (Code civil).
 
+## Service militaire (v0.155)
+
+Durée légale du service actif selon la **classe** (année des 20 ans) : indicative, les lois, dispenses et le tirage au sort ont fait varier la durée réelle. 6 ans (1818), 7 ans (1832), 5 ans (1868 et 1872), 3 ans (1889), 2 ans (1905), 3 ans (1913), 18 mois (1923), 1 an (1928), 2 ans (1935), 18 mois (1950), 16 mois (1963), 12 mois (1970), 10 mois (1992), fin en 1997. Pour la guerre de 1870, les deux guerres mondiales et la guerre d'Algérie, la fiche indique aussi l'âge au début de la guerre et sa durée si l'homme était en âge d'être mobilisé.
+
 ## Limites
 
 Les règles varient selon les époques, les coutumes et les régions ; ce sont des **indications**, à vérifier dans les sources. Les dates et âges calculés restent signalés comme tels. Les repères locaux par département (champ `depts`) sont possibles pour de futurs ajouts.

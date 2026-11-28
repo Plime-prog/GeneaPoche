@@ -1,6 +1,6 @@
 # Architecture de GénéaPoche
 
-*Mise à jour : 26 novembre 2026 (v0.154). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
+*Mise à jour : 28 novembre 2026 (v0.155). Document de référence pour les contributeurs ; l'historique fonctionnel est dans [CHANGELOG.md](../CHANGELOG.md).*
 
 ## Vue d'ensemble
 
@@ -98,6 +98,14 @@ Règle : un déplacement mécanique par version, jamais de changement de logique
 - `decoderImageReduite` : 2048 px par défaut ; `android:largeHeap` ; `resumeMemoire`, `extraireFils` dans `DiagnosticBlocage`.
 - `departementsUtilises` (Geographie.kt) : damier limité aux départements présents.
 - Biographie : enfants via `enfantsChrono`.
+
+## Ajouts v0.155
+
+- `ManquesGeneration.kt` : `manquesParGeneration` (BFS des ascendants du de cujus, 2^n ancêtres attendus, ce qui manque par ancêtre) et outil « Manques » (Outils, chip 6).
+- `Coherence.kt` : nouvelles règles `deces-trop-age`, `temoin-decede`, `temoin-pas-ne`, `temoin-trop-jeune`, `declarant-decede`, `declarant-pas-ne` (`NoeudCoh.actesTemoins`, `declarantId`). Le contrôle de cohérence lui-même existe depuis v0.88 (Journal → Diagnostic).
+- `Numerotation.kt` : `renumeroter` numérote les conjoints des personnes numérotées par le numéro + lettre d'union (`lettreUnion`) ; `cleNumero` les place juste après leur conjoint ; `estConjointNumerote` exclut ces personnes de `suggestionsPour` (aucune recherche). Voir `docs/NUMEROTATION.md`.
+- `brancheDe` (onglet Personnes › Branches) : ascendants et descendants du grand-parent, sans conjoints.
+- `ReperesGenealogiques.kt` : `dureeServiceMilitaire(classe)`, `GuerresMobilisables`, durée des guerres. Toujours aucun accès réseau.
 
 ## Ajouts v0.154
 
