@@ -61,7 +61,7 @@ fun manquesParGeneration(personnes: List<Personne>, maxGenerations: Int = 12): L
     return res
 }
 
-fun nomGeneration(g: Int): String = when (g) {
+fun nomGenerationManques(g: Int): String = when (g) {
     0 -> "De cujus"
     1 -> "Parents"
     2 -> "Grands-parents"
@@ -85,7 +85,7 @@ fun OutilManques(personnes: List<Personne>, onOuvrirPersonne: (Long) -> Unit) {
     generations.forEach { gen ->
         Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
             Text(
-                "G" + gen.numero.toString() + " – " + (if (gen.numero <= 3) nomGeneration(gen.numero) else "Ancêtres") +
+                "G" + gen.numero.toString() + " – " + (if (gen.numero <= 3) nomGenerationManques(gen.numero) else "Ancêtres") +
                     " : " + gen.connus.toString() + " sur " + gen.attendus.toString() + " (" + gen.pourcent.toString() + " %)",
                 fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium
             )
