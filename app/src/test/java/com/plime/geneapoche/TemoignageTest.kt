@@ -248,3 +248,76 @@ class AgeDecedeTest {
         assertEquals("(60 ans)", ageDePersonne(q, "05/05/1860"))
     }
 }
+
+class V155Test {
+    @Test fun dureeDuServiceParClasse() {
+        assertEquals("7 ans (loi de 1832)", dureeServiceMilitaire(1837))
+        assertEquals("3 ans (loi de 1889)", dureeServiceMilitaire(1900))
+        assertEquals("2 ans (loi de 1905)", dureeServiceMilitaire(1910))
+        assertEquals("1 an (loi de 1928)", dureeServiceMilitaire(1930))
+        assertEquals(null, dureeServiceMilitaire(1997))
+    }
+
+    @Test fun phraseServiceEtGuerre() {
+        val p = Personne(id = 1, nom = "A", prenoms = "Jean", sexe = "M", dateNaissance = "01/01/1890")
+        val r = reperesGenealogiquesDe(p, listOf(p))
+        assertTrue(r.any { it.contains("classe 1910") && it.contains("durée légale du service : 2 ans (loi de 1905)") })
+        assertTrue(r.any { it.contains("Il avait 24 ans au début de la Première Guerre mondiale") && it.contains("soit 4 ans et 3 mois") })
+    }
+
+    @Test fun lettreUnion() {
+        assertEquals("a", lettreUnion(1)); assertEquals("b", lettreUnion(2)); assertEquals("z", lettreUnion(26)); assertEquals("aa", lettreUnion(27))
+    }
+
+    @Test fun conjointsNumerotesParLettre() {
+        val x = Personne(id = 1, nom = "X", prenoms = "A", sosa = "1")
+        val c1 = Personne(id = 2, nom = "C", prenoms = "A", sexe = "F")
+        val c2 = Personne(id = 3, nom = "C", prenoms = "B", sexe = "F")
+        val e = Personne(id = 4, nom = "X", prenoms = "E", pere = 1L)
+        x.conjoint = 2L; x.conjointsSupp.add(3L); x.enfants.add(4L)
+        val l = mutableListOf(x, c1, c2, e)
+        renumeroter(l, 1L)
+        assertEquals("1.1", e.lateral)
+        assertEquals("1a", c1.lateral)
+        assertEquals("1b", c2.lateral)
+        assertTrue(estConjointNumerote(c1))
+        assertTrue(suggestionsPour(c1, l).isEmpty())
+        // tri : 1, 1a, 1b, 1.1
+        val tri = trierParAboville(l).map { it.numeroBrut() }
+        assertEquals(listOf("1", "1a", "1b", "1.1"), tri)
+    }
+
+    @Test fun brancheSansConjointsAvecAscendants() {
+        val gp = Personne(id = 1, nom = "G", prenoms = "P")
+        val pgp = Personne(id = 9, nom = "A", prenoms = "A")
+        gp.pere = 9L
+        val sp = Personne(id = 2, nom = "S", prenoms = "S")
+        val enf = Personne(id = 3, nom = "G", prenoms = "E", pere = 1L, mere = 2L)
+        val pe = Personne(id = 4, nom = "P", prenoms = "P", pere = 3L)
+        gp.conjoint = 2L; gp.enfants.add(3L)
+        val b = brancheDe(1L, listOf(gp, pgp, sp, enf, pe))
+        assertEquals(setOf(1L, 9L, 3L, 4L), b)
+    }
+
+    @Test fun manquesParGenerationCompte() {
+        val c = Personne(id = 1, nom = "C", prenoms = "C", sosa = "1", pere = 2L)
+        val pere = Personne(id = 2, nom = "P", prenoms = "P", sosa = "2")
+        val g = manquesParGeneration(listOf(c, pere))
+        assertEquals(2, g.size)
+        assertEquals(1, g[1].connus)
+        assertEquals(2L, g[1].attendus)
+        assertEquals(50, g[1].pourcent)
+        assertTrue(g[1].lignes.first().manques.contains("mère").not())
+        assertTrue(g[0].lignes.first().manques.contains("mère"))
+    }
+
+    @Test fun coherenceTemoinEtDeclarant() {
+        val a = Personne(id = 1, nom = "A", prenoms = "A", dateMariage = "10/05/1900")
+        val t = Personne(id = 2, nom = "T", prenoms = "T", dateDeces = "01/01/1890")
+        a.temoinsM.add(2L)
+        val an = anomaliesDeLArbre(listOf(a, t), emptySet())
+        assertTrue(an.any { it.type == "temoin-decede" })
+        val v = Personne(id = 3, nom = "V", prenoms = "V", dateNaissance = "01/01/1700", dateDeces = "01/01/1830")
+        assertTrue(anomaliesDeLArbre(listOf(v), emptySet()).any { it.type == "deces-trop-age" })
+    }
+}

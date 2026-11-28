@@ -22,7 +22,13 @@ fun noeudsCoh(personnes: List<Personne>): List<NoeudCoh> = personnes.map { p ->
             EvLieu("mariage", p.dateMariage, p.deptMariage),
             EvLieu("d\u00E9c\u00E8s", p.dateDeces, p.deptDeces),
             EvLieu("s\u00E9pulture", p.dateSepulture, p.deptSepulture)
-        )
+        ),
+        actesTemoins = listOf(
+            Triple("naissance", p.dateNaissance, p.temoinsN), Triple("bapt\u00EAme", p.dateBapteme, p.temoinsB),
+            Triple("mariage", p.dateMariage, p.temoinsM), Triple("d\u00E9c\u00E8s", p.dateDeces, p.temoinsD),
+            Triple("s\u00E9pulture", p.dateSepulture, p.temoinsS)
+        ).flatMap { (acte, date, ids) -> ids.filter { it != 0L }.map { Triple(acte, date, it) } },
+        declarantId = p.declarantId
     )
 }
 

@@ -1870,20 +1870,32 @@ fun EcranApplication(
 // Branche d'un grand-parent : lui, ses conjoints et TOUS ses descendants,
 // quel que soit leur nom (les liens font la branche, pas le nom de famille).
 fun brancheDe(rootId: Long, personnes: List<Personne>): Set<Long> {
-    val racine = personnes.firstOrNull { it.id == rootId }
-    val res = mutableSetOf(rootId)
-    if (racine != null) {
-        racine.tousConjoints().forEach { c -> if (c != 0L) res.add(c) }
+    // v0.155 : ascendants ET descendants du grand-parent, SANS aucun conjoint.
+    val res = mutableSetOf<Long>()
+    val parId = personnes.associateBy { it.id }
+    if (parId[rootId] == null) return res
+    res.add(rootId)
+    // Ascendants (pere / mere de proche en proche).
+    var haut = listOf(rootId)
+    while (haut.isNotEmpty()) {
+        haut = haut.flatMap { id -> listOfNotNull(parId[id]?.pere, parId[id]?.mere) }
+            .filter { it != 0L && it in parId && it !in res }.distinct()
+        res.addAll(haut)
+    }
+    // Descendants (enfants par pere / mere).
+    val enfantsDe = HashMap<Long, MutableList<Long>>()
+    personnes.forEach { q ->
+        if (q.pere != 0L) enfantsDe.getOrPut(q.pere) { mutableListOf() }.add(q.id)
+        if (q.mere != 0L) enfantsDe.getOrPut(q.mere) { mutableListOf() }.add(q.id)
     }
     var front = listOf(rootId)
+    val desc = mutableSetOf<Long>()
     while (front.isNotEmpty()) {
-        val nouveaux = personnes
-            .filter { pers -> front.any { f -> pers.pere == f || pers.mere == f } }
-            .map { it.id }
-            .filter { it !in res }
-        res.addAll(nouveaux)
+        val nouveaux = front.flatMap { enfantsDe[it].orEmpty() }.filter { it !in desc && it != rootId }.distinct()
+        desc.addAll(nouveaux)
         front = nouveaux
     }
+    res.addAll(desc)
     return res
 }
 

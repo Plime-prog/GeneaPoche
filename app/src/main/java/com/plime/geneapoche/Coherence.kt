@@ -31,7 +31,10 @@ data class NoeudCoh(
     val mere: Long,
     val conjoints: List<Long>,
     val evenementsLibres: List<Pair<String, String>>,
-    val lieux: List<EvLieu>
+    val lieux: List<EvLieu>,
+    // v0.155 : (acte, date de l'acte, id du temoin) et declarant du deces.
+    val actesTemoins: List<Triple<String, String, Long>> = emptyList(),
+    val declarantId: Long = 0L
 )
 
 // niveau 1 : contradiction logique ; niveau 2 : improbable, a verifier.
@@ -254,6 +257,58 @@ fun anomaliesAVerifier(
                     ", d\u00e9c\u00e8s " + p.deces.trim() + ").",
                 "Au-del\u00e0 de 110 ans, une date est probablement fausse.", listOf(p)
             )
+        }
+        // --- v0.155 : age au deces invraisemblable.
+        if (n != null && d != null && ageMin(n, d) > 110) {
+            add(
+                "deces-trop-age", 2, listOf(p.id),
+                t + " aurait au moins " + ageMin(n, d).toString() + " ans au d\u00E9c\u00E8s (" + p.deces.trim() + ").",
+                "Plus de 110 ans : improbable, date de naissance ou de d\u00E9c\u00E8s \u00E0 v\u00E9rifier.", listOf(p)
+            )
+        }
+        // --- v0.155 : temoins et declarant (v0.150) compatibles avec la date de l'acte.
+        p.actesTemoins.forEach { (acte, date, tid) ->
+            val tm = parId[tid] ?: return@forEach
+            val da = intervalleDe(date) ?: return@forEach
+            val tn = intervalleDe(tm.naissance)
+            val td = intervalleDe(tm.deces)
+            if (td != null && certainementAvant(td, da)) {
+                add(
+                    "temoin-decede", 1, listOf(p.id, tm.id),
+                    nomDe(tm) + " est t\u00E9moin de l'acte de " + acte + " de " + t + " (" + date.trim() + ") mais d\u00E9c\u00E9d\u00E9 avant (" + tm.deces.trim() + ").",
+                    "Un t\u00E9moin doit \u00EAtre vivant \u00E0 la date de l'acte.", listOf(p, tm), dedoublonne = true
+                )
+            } else if (tn != null && certainementAvant(da, tn)) {
+                add(
+                    "temoin-pas-ne", 1, listOf(p.id, tm.id),
+                    nomDe(tm) + " est t\u00E9moin de l'acte de " + acte + " de " + t + " (" + date.trim() + ") avant sa naissance (" + tm.naissance.trim() + ").",
+                    "Un t\u00E9moin doit \u00EAtre n\u00E9 \u00E0 la date de l'acte.", listOf(p, tm), dedoublonne = true
+                )
+            } else if (tn != null && ageMax(tn, da) in 0..11) {
+                add(
+                    "temoin-trop-jeune", 2, listOf(p.id, tm.id),
+                    nomDe(tm) + " aurait au plus " + ageMax(tn, da).toString() + " an(s) comme t\u00E9moin de l'acte de " + acte + " de " + t + ".",
+                    "T\u00E9moin de moins de 12 ans : improbable.", listOf(p, tm), dedoublonne = true
+                )
+            }
+        }
+        if (p.declarantId != 0L && d != null) {
+            val dc = parId[p.declarantId]
+            val dn = dc?.let { intervalleDe(it.naissance) }
+            val dd = dc?.let { intervalleDe(it.deces) }
+            if (dc != null && dd != null && certainementAvant(dd, d)) {
+                add(
+                    "declarant-decede", 1, listOf(p.id, dc.id),
+                    nomDe(dc) + " a d\u00E9clar\u00E9 le d\u00E9c\u00E8s de " + t + " (" + p.deces.trim() + ") mais est d\u00E9c\u00E9d\u00E9(e) avant (" + dc.deces.trim() + ").",
+                    "Le d\u00E9clarant doit \u00EAtre vivant \u00E0 la date du d\u00E9c\u00E8s.", listOf(p, dc), dedoublonne = true
+                )
+            } else if (dc != null && dn != null && certainementAvant(d, dn)) {
+                add(
+                    "declarant-pas-ne", 1, listOf(p.id, dc.id),
+                    nomDe(dc) + " a d\u00E9clar\u00E9 le d\u00E9c\u00E8s de " + t + " (" + p.deces.trim() + ") avant sa naissance (" + dc.naissance.trim() + ").",
+                    "Le d\u00E9clarant doit \u00EAtre n\u00E9 \u00E0 la date du d\u00E9c\u00E8s.", listOf(p, dc), dedoublonne = true
+                )
+            }
         }
         // --- Age au mariage.
         if (n != null && m != null) {

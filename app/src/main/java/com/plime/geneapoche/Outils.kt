@@ -111,6 +111,9 @@ fun EcranOutils(
                     FilterChip(selected = outil == 4, onClick = { onOutil(4) }, label = { Text("Ann\u00e9e") })
                     Spacer(Modifier.width(8.dp))
                     FilterChip(selected = outil == 5, onClick = { onOutil(5) }, label = { Text("Famille") })
+                    // v0.155 : suivi des manques par generation.
+                    Spacer(Modifier.width(8.dp))
+                    FilterChip(selected = outil == 6, onClick = { onOutil(6) }, label = { Text("Manques") })
                 }
                 Spacer(Modifier.height(8.dp))
                 if (confirmation.isNotEmpty()) {
@@ -124,6 +127,7 @@ fun EcranOutils(
                         3 -> OutilHistoire(personnes, demanderNote)
                         4 -> OutilAnnee(personnes, onOuvrirPersonne, demanderNote)
                         5 -> OutilFamille(personnes, demanderNote)
+                        6 -> OutilManques(personnes, onOuvrirPersonne)
                         else -> OutilParente(personnes, demanderNote)
                     }
                     Spacer(Modifier.height(24.dp))

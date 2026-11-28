@@ -55,10 +55,24 @@ fun reperesGenealogiquesDe(p: Personne, personnes: List<Personne>): List<String>
         }
     }
 
-    // Conscription (hommes) : tirage au sort de 1798 a 1888, puis service obligatoire.
+    // Conscription (hommes) : tirage au sort de 1798 a 1888, puis service obligatoire ;
+    // duree LEGALE du service pour la classe (indicative) et guerres pendant sa vie.
     if (p.sexe == "M" && an + 20 in 1798..1996 && (fin == null || fin >= an + 20)) {
-        res.add(ne + " en " + vers + an + ", il appartient à la classe " + (an + 20) +
-            (if (an + 20 < 1889) " : soumis au tirage au sort de la conscription à 20 ans." else " : service militaire obligatoire."))
+        val classe = an + 20
+        val duree = dureeServiceMilitaire(classe)
+        res.add(ne + " en " + vers + an + ", il appartient \u00E0 la classe " + classe +
+            (if (classe < 1889) " : soumis au tirage au sort de la conscription \u00E0 20 ans" else " : service militaire obligatoire") +
+            (if (duree != null) " ; dur\u00E9e l\u00E9gale du service : " + duree + "." else "."))
+    }
+    if (p.sexe == "M") {
+        GuerresMobilisables.forEach { g ->
+            val ageDebut = g.debut.year - an
+            val vivant = fin == null || fin >= g.debut.year
+            if (ageDebut in g.ageMin..g.ageMax && vivant) {
+                res.add("Il avait " + (if (naiss.second) "environ " else "") + ageDebut + " ans au d\u00E9but de " + g.nom + " (" +
+                    libelleDureeGuerre(g) + ") : en \u00E2ge d'\u00EAtre mobilis\u00E9.")
+            }
+        }
     }
 
     // Recensements nominatifs (tous les 5 ans, 1836-1936) pendant sa vie.
@@ -79,3 +93,47 @@ fun reperesGenealogiquesDe(p: Personne, personnes: List<Personne>): List<String>
     }
     return res
 }
+
+// v0.155 : duree LEGALE du service actif selon la classe (annee des 20 ans). Indicatif :
+// les lois, les dispenses et le tirage au sort ont fait varier la duree reelle.
+fun dureeServiceMilitaire(classe: Int): String? = when {
+    classe < 1798 -> null
+    classe < 1818 -> "dur\u00E9e variable (levées de la R\u00E9volution et de l'Empire)"
+    classe < 1832 -> "6 ans (loi de 1818)"
+    classe < 1868 -> "7 ans (loi de 1832)"
+    classe < 1872 -> "5 ans (loi Niel, 1868)"
+    classe < 1889 -> "5 ans (loi de 1872 ; le tirage au sort pouvait la r\u00E9duire \u00E0 moins d'un an)"
+    classe < 1905 -> "3 ans (loi de 1889)"
+    classe < 1913 -> "2 ans (loi de 1905)"
+    classe < 1923 -> "3 ans (loi de 1913)"
+    classe < 1928 -> "18 mois (loi de 1923)"
+    classe < 1935 -> "1 an (loi de 1928)"
+    classe < 1950 -> "2 ans (loi de 1935)"
+    classe < 1963 -> "18 mois"
+    classe < 1970 -> "16 mois"
+    classe < 1992 -> "12 mois"
+    classe <= 1996 -> "10 mois"
+    else -> null
+}
+
+class GuerreMobilisable(val nom: String, val debut: java.time.LocalDate, val fin: java.time.LocalDate, val ageMin: Int, val ageMax: Int)
+
+val GuerresMobilisables: List<GuerreMobilisable> = listOf(
+    GuerreMobilisable("la guerre franco-prussienne", java.time.LocalDate.of(1870, 7, 19), java.time.LocalDate.of(1871, 1, 28), 20, 40),
+    GuerreMobilisable("la Premi\u00E8re Guerre mondiale", java.time.LocalDate.of(1914, 8, 2), java.time.LocalDate.of(1918, 11, 11), 18, 48),
+    GuerreMobilisable("la Seconde Guerre mondiale", java.time.LocalDate.of(1939, 9, 3), java.time.LocalDate.of(1945, 5, 8), 20, 48),
+    GuerreMobilisable("la guerre d'Alg\u00E9rie", java.time.LocalDate.of(1954, 11, 1), java.time.LocalDate.of(1962, 3, 19), 18, 30)
+)
+
+// "du 2 ao\u00FBt 1914 au 11 novembre 1918, soit 4 ans et 3 mois".
+fun libelleDureeGuerre(g: GuerreMobilisable): String {
+    val per = java.time.Period.between(g.debut, g.fin.plusDays(1))
+    val parts = mutableListOf<String>()
+    if (per.years > 0) parts.add(per.years.toString() + (if (per.years > 1) " ans" else " an"))
+    if (per.months > 0) parts.add(per.months.toString() + " mois")
+    if (per.years == 0 && per.months == 0) parts.add(per.days.toString() + " jours")
+    return "du " + g.debut.dayOfMonth + " " + MoisFr[g.debut.monthValue - 1] + " " + g.debut.year + " au " +
+        g.fin.dayOfMonth + " " + MoisFr[g.fin.monthValue - 1] + " " + g.fin.year + ", soit " + parts.joinToString(" et ")
+}
+
+private val MoisFr = listOf("janvier", "f\u00E9vrier", "mars", "avril", "mai", "juin", "juillet", "ao\u00FBt", "septembre", "octobre", "novembre", "d\u00E9cembre")

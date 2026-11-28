@@ -40,8 +40,27 @@ fun anneeNaissance(p: Personne): Int =
 fun cleNumero(p: Personne): List<Int> {
     val t = p.numeroBrut().trim()
     if (t.isEmpty()) return listOf(Int.MAX_VALUE)
-    return t.split(".").map { seg -> seg.toIntOrNull() ?: Int.MAX_VALUE }
+    // v0.155 : "4b" (conjoint) = [4, 0, rang] : juste apres "4", avant ses enfants "4.1".
+    return t.split(".").flatMap { seg ->
+        val m = RX_SEG_LETTRE.matchEntire(seg)
+        if (m != null) listOf(m.groupValues[1].toInt(), 0, rangLettre(m.groupValues[2]))
+        else listOf(seg.toIntOrNull() ?: Int.MAX_VALUE)
+    }
 }
+
+// v0.155 : lettre d'union : 1 -> "a", 2 -> "b", 26 -> "z", 27 -> "aa".
+fun lettreUnion(rang: Int): String {
+    var n = rang
+    val sb = StringBuilder()
+    while (n > 0) { n -= 1; sb.insert(0, 'a' + (n % 26)); n /= 26 }
+    return sb.toString()
+}
+
+fun rangLettre(s: String): Int = s.fold(0) { acc, c -> acc * 26 + (c - 'a' + 1) }
+
+// Conjoint(e) numerote(e) par lettre ("6.2.4b") : jamais un descendant ni un ascendant.
+fun estConjointNumerote(p: Personne): Boolean =
+    p.sosa.isBlank() && p.lateral.trim().isNotEmpty() && p.lateral.trim().last().isLetter()
 
 // Comparateur de numeros : segments une a une ("1.2" avant "1.10"),
 // le plus court d'abord en cas de prefixe identique ("7" avant "7.2").
@@ -112,6 +131,20 @@ fun renumeroter(personnes: MutableList<Personne>, cujusId: Long, sosaDeBase: Lon
                 e.lateral = pref + "." + (rang + 1).toString()
                 fileLat.addLast(e.id to e.lateral)
             }
+        }
+    }
+    // v0.155 : conjoints des personnes numerotees : numero du conjoint + lettre de
+    // l'union (a = 1re, b = 2e...) ; "6.2.4b" = 2e conjoint de la personne 6.2.4.
+    // Ils ne portent ni Sosa ni d'Aboville de descendance et ne generent aucune recherche.
+    val numerotes = personnes.filter { it.sosa.isNotEmpty() || it.lateral.isNotEmpty() }
+        .sortedWith { a, b -> comparerNumeros(cleNumero(a), cleNumero(b)) }
+    numerotes.forEach { h ->
+        val base = h.numeroBrut().trim()
+        var rang = 0
+        h.tousConjoints().forEach { cid ->
+            rang += 1
+            val c = personneParId(personnes, cid) ?: return@forEach
+            if (c.id != h.id && c.sosa.isEmpty() && c.lateral.isEmpty()) c.lateral = base + lettreUnion(rang)
         }
     }
 }

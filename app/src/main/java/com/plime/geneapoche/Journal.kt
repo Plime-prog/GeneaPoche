@@ -306,6 +306,8 @@ val LibellesSepulture = LibellesEv("l'acte de s\u00E9pulture", "l'heure de s\u00
 // deces pour tous ; baptismes et sepultures seulement si le bloc est ouvert.
 fun suggestionsPour(p: Personne, personnes: List<Personne>): List<Suggestion> {
     val res = mutableListOf<Suggestion>()
+    // v0.155 : aucune recherche pour un conjoint (numero a lettre : ni ascendant ni descendant).
+    if (estConjointNumerote(p)) return res
 
     fun suffixe(lieu: String, dept: String): String {
         var s = ""
